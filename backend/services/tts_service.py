@@ -566,7 +566,14 @@ class F5TTSService:
             # đổi nfe.
             for cu in thu_muc.glob(f"{c.id}__*.wav"):
                 cu.unlink(missing_ok=True)
-            p.write_bytes(wav)
+            try:
+                p.write_bytes(wav)
+            except OSError as e:
+                logger.warning(
+                    "Ghi câu đệm %r ra %s thất bại (%s) — giữ trong bộ nhớ, "
+                    "lần khởi động sau sẽ dựng lại.",
+                    c.id, p, e,
+                )
             self._filler_cache[khoa] = wav
             self._filler_ms[khoa] = self._wav_duration_ms(wav)
             dung_moi += 1

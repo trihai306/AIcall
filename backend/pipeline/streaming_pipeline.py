@@ -438,7 +438,7 @@ class StreamingPipeline:
         """Phát câu đệm đã dựng sẵn NGAY - đây mới là lúc AI bắt đầu nói theo tai khách.
 
         Phải là await ĐẦU TIÊN của lượt: audio đã nằm sẵn trong cache từ lúc khởi
-        động (presynthesize_fillers) nên không tốn GPU, chỉ tốn thời gian gửi.
+        động (dung_fillers) nên không tốn GPU, chỉ tốn thời gian gửi.
 
         ttfa_ms bên dưới đo tới mảnh THẬT đầu tiên và bỏ qua hoàn toàn filler,
         nên nhìn một mình ttfa_ms sẽ tưởng khách phải chờ im lặng lâu hơn thực tế.
