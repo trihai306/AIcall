@@ -1,0 +1,37 @@
+{
+  "chu_de": [
+    { "id": "chung", "ten": "Dùng được mọi lúc", "tu_khoa": [] }
+  ],
+  "cau": [
+    { "id": "ngan_01", "text": "Dạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_02", "text": "Vâng ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_03", "text": "Dạ vâng ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_04", "text": "Được rồi ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_05", "text": "Dạ em nghe", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_06", "text": "Vâng em nghe", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "ngan_07", "text": "Dạ em rõ", "chu_de": "chung", "hop_cau_hoi": false },
+    { "id": "ngan_08", "text": "Vâng, em nghe đây", "chu_de": "chung", "hop_cau_hoi": true },
+
+    { "id": "vua_01", "text": "Vâng, để em xem", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_02", "text": "Dạ, em kiểm tra ngay", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_03", "text": "Vâng, anh chị chờ em chút", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_04", "text": "Dạ, em xem lại chút nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_05", "text": "Vâng, em tra giúp anh chị nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_06", "text": "Dạ, cái này để em xem", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_07", "text": "Vâng, em nắm được rồi", "chu_de": "chung", "hop_cau_hoi": false },
+    { "id": "vua_08", "text": "Dạ, anh chị đợi em một chút", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_09", "text": "Vâng, em xem ngay đây ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "vua_10", "text": "Dạ, để em tra lại chút", "chu_de": "chung", "hop_cau_hoi": true },
+
+    { "id": "dai_01", "text": "Dạ vâng, anh chị chờ em một chút để em kiểm tra lại thông tin nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_02", "text": "Vâng ạ, em đang tra lại thông tin cho anh chị, anh chị chờ em một lát nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_03", "text": "Dạ, để em xem lại cho chính xác rồi em trả lời anh chị ngay đây ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_04", "text": "Vâng, cái này em cần tra lại một chút, anh chị chờ em xíu nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_05", "text": "Dạ vâng, em xem lại giúp anh chị rồi em báo lại ngay bây giờ ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_06", "text": "Vâng ạ, anh chị giữ máy giúp em một lát, em tra lại rồi báo anh chị ngay", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_07", "text": "Dạ, phần này em phải xem lại cho kỹ, anh chị chờ em một chút nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_08", "text": "Vâng, em kiểm tra lại thông tin rồi trả lời anh chị cho chính xác nhé", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_09", "text": "Dạ vâng, anh chị đợi em một lát, em tra xong là em báo lại ngay ạ", "chu_de": "chung", "hop_cau_hoi": true },
+    { "id": "dai_10", "text": "Vâng ạ, để em xem lại một chút rồi em nói rõ hơn cho anh chị nghe nhé", "chu_de": "chung", "hop_cau_hoi": true }
+  ]
+}

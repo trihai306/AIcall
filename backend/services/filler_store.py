@@ -83,3 +83,29 @@ def nap(duong_dan: Path) -> Kho:
                           hop_cau_hoi=bool(c.get("hop_cau_hoi", True))))
 
     return Kho(chu_de=chu_de, cau=tuple(cau))
+
+
+DUONG_DAN_MAC_DINH = Path("data/fillers.json")
+
+_kho: Kho | None = None
+
+
+def lay_kho() -> Kho:
+    """Kho câu đệm dùng chung, nạp một lần.
+
+    Singleton như `settings`: nạp file ở mỗi lượt gọi là đọc đĩa trên đường
+    găng của cuộc gọi, mà nội dung thì chỉ đổi khi người dùng sửa file.
+    """
+    global _kho
+    if _kho is None:
+        _kho = nap(DUONG_DAN_MAC_DINH)
+        logger.info("Đã nạp kho câu đệm: %d câu, %d chủ đề",
+                    len(_kho.cau), len(_kho.chu_de))
+    return _kho
+
+
+def nap_lai() -> Kho:
+    """Quên bản đang nhớ và đọc lại từ đĩa (dùng sau khi sửa file)."""
+    global _kho
+    _kho = None
+    return lay_kho()
