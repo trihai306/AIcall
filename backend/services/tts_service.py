@@ -512,8 +512,14 @@ class F5TTSService:
         return THU_MUC_FILLER / voice / f"{cau_id}__{vt}.wav"
 
     def _van_tay_filler(self, text: str, voice: str) -> str:
-        return van_tay(text, voice, settings.f5tts_nfe_step,
-                       settings.f5tts_speed, settings.f5tts_ref_text)
+        # Tốc và câu mẫu phải lấy từ bản riêng của giọng, không phải giá trị chung
+        # trong .env. Nếu dùng settings.f5tts_speed: người dùng đặt tốc riêng giọng
+        # đó -> tiếng WAV đã dựng theo tốc mới, nhưng vân tay tính từ tốc chung nên
+        # không đổi -> hệ thống tưởng file còn tốt và phát câu đệm tốc cũ.
+        speed = self.toc_do_cua(voice)
+        entry = self._voices.get(voice)
+        ref_text = entry[2] if entry is not None else settings.f5tts_ref_text
+        return van_tay(text, voice, settings.f5tts_nfe_step, speed, ref_text)
 
     async def dung_fillers(self, cau: list[CauDem], voice: str | None = None):
         """Bảo đảm mọi câu đệm đều có tiếng sẵn sàng cho giọng này.
@@ -664,12 +670,22 @@ class F5TTSService:
         Tên biến là `_synth_cache`, KHÔNG phải `_cache` - viết nhầm thì hàm này
         chạy êm mà không dọn gì, và người dùng kéo thanh tốc xong nghe y như cũ
         rồi tưởng nút hỏng.
+
+        Phải dọn cả `_filler_cache`/`_filler_ms`: chúng dùng khoá `(voice, cau_id)`,
+        kiểm tra bằng `k[0] == voice`. KHÔNG dùng `voice in k` cho filler vì có thể
+        trùng tên với cau_id và xoá nhầm khoá của giọng khác.
         """
         try:
             for k in [k for k in self._synth_cache if isinstance(k, tuple) and voice in k]:
                 self._synth_cache.pop(k, None)
         except Exception as e:
-            logger.debug("Không dọn được cache giọng %s: %s", voice, e)
+            logger.debug("Không dọn được synth_cache giọng %s: %s", voice, e)
+        try:
+            for k in [k for k in self._filler_cache if k[0] == voice]:
+                self._filler_cache.pop(k, None)
+                self._filler_ms.pop(k, None)
+        except Exception as e:
+            logger.debug("Không dọn được filler_cache giọng %s: %s", voice, e)
 
 
     # --- Hệ số tốc riêng cho ĐƯỜNG THOẠI -------------------------------------
