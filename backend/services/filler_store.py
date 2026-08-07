@@ -4,6 +4,7 @@ KHÔNG import torch (dù gián tiếp). Module này phải chạy được trên
 GPU để test - `backend.core.device` import torch ở tầng module, nên mọi thứ
 chạm `tts_service` đều kéo theo nó.
 """
+import hashlib
 import json
 import logging
 from dataclasses import dataclass
@@ -35,6 +36,20 @@ class CauDem:
 class Kho:
     chu_de: tuple[ChuDe, ...]
     cau: tuple[CauDem, ...]
+
+
+def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
+    """Vân tay của MỘT bản tiếng câu đệm.
+
+    Thiếu cái này là bẫy im lặng: đổi `nfe` hay `speed` trong cài đặt thì câu
+    trả lời thật đọc theo tham số mới, còn câu đệm vẫn là tiếng cũ trên đĩa ->
+    khách nghe hai chất giọng nối liền nhau ngay đầu mỗi lượt. Không có gì báo
+    lỗi, log vẫn sạch.
+
+    `speed` ép về chuỗi 3 số lẻ để 1.0 và 1.000 ra cùng một vân tay.
+    """
+    mau = f"{text}\x00{giong}\x00{nfe}\x00{speed:.3f}\x00{ref_text}"
+    return hashlib.sha256(mau.encode("utf-8")).hexdigest()[:12]
 
 
 def nap(duong_dan: Path) -> Kho:

@@ -62,3 +62,30 @@ def test_hop_cau_hoi_mac_dinh_la_true(tmp_path):
 def test_file_khong_ton_tai_thi_bao_loi(tmp_path):
     with pytest.raises(LoiKho, match="không đọc được"):
         nap(tmp_path / "khong_co.json")
+
+
+from backend.services.filler_store import van_tay
+
+_GOC = dict(text="Dạ", giong="fosd_1", nfe=16, speed=1.0, ref_text="xin chào")
+
+
+def test_van_tay_on_dinh_giua_hai_lan_goi():
+    assert van_tay(**_GOC) == van_tay(**_GOC)
+
+
+def test_van_tay_an_toan_lam_ten_file():
+    vt = van_tay(**_GOC)
+    assert len(vt) == 12
+    assert all(k in "0123456789abcdef" for k in vt)
+
+
+@pytest.mark.parametrize("truong,gia_tri_moi", [
+    ("text", "Vâng ạ"),
+    ("giong", "giong_khac"),
+    ("nfe", 12),
+    ("speed", 1.2),
+    ("ref_text", "câu mẫu khác"),
+])
+def test_van_tay_doi_khi_bat_ky_tham_so_nao_doi(truong, gia_tri_moi):
+    khac = {**_GOC, truong: gia_tri_moi}
+    assert van_tay(**khac) != van_tay(**_GOC)
