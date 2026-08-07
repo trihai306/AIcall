@@ -1,0 +1,719 @@
+import asyncio
+import logging
+import concurrent.futures
+from collections import OrderedDict
+from contextlib import nullcontext
+from pathlib import Path
+import numpy as np
+import soundfile as sf
+
+from backend.config import settings
+from backend.pipeline.text_normalizer import normalize_for_tts
+from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
+from backend.core.logging_config import Timer
+from backend.core.device import DEVICE
+
+logger = logging.getLogger(__name__)
+
+# Below this peak amplitude a reference clip is treated as an empty recording.
+SILENCE_PEAK = 1e-3
+
+def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
+                 keep_ms: int = 25) -> np.ndarray:
+    """Cắt khoảng lặng đầu/cuối của một mảnh TTS.
+
+    Ngưỡng để thấp (0.005) và chừa lại 25ms hai đầu: phụ âm bật hơi đầu câu
+    ("kh", "th", "ph") vào rất nhẹ, cắt sát quá là mất luôn tiếng đầu.
+    """
+    if audio is None or len(audio) == 0:
+        return audio
+    amp = np.abs(audio)
+    nz = np.nonzero(amp > thresh)[0]
+    if len(nz) == 0:
+        return audio            # cả mảnh im lặng - trả nguyên, đừng cắt thành rỗng
+    keep = int(sr * keep_ms / 1000)
+    start = max(0, int(nz[0]) - keep)
+    end = min(len(audio), int(nz[-1]) + keep)
+    return audio[start:end]
+
+
+class F5TTSService:
+    """F5-TTS Vietnamese ViVoice wrapper for text-to-speech.
+
+    Reference voices are held in a registry keyed by name, never as a single
+    "current voice" on the instance: concurrent calls can be running on
+    different phone lines with different voices, and a shared mutable ref would
+    make one call switch voice mid-sentence. Every cache is keyed by voice for
+    the same reason.
+    """
+
+    def __init__(self):
+        self._model = None
+        self._vocoder = None
+        self._is_loaded = False
+        # One worker: F5-TTS inference is GPU-bound, parallel CUDA calls just
+        # interleave. Voice registration runs on the same thread, so _voices is
+        # only ever mutated there.
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self._default_voice = Path(settings.f5tts_ref_audio).stem
+        self._voices: dict[str, tuple] = {}          # name -> (wave, sr, ref_text)
+        self._filler_cache: dict[tuple[str, str], bytes] = {}   # (voice, phrase) -> wav
+        self._filler_ms: dict[tuple[str, str], float] = {}      # (voice, phrase) -> ms
+        self._synth_cache: "OrderedDict[tuple, bytes]" = OrderedDict()  # (voice, text, fast, sr)
+        self._synth_cache_max = 256
+
+    def load(self):
+        """Load F5-TTS model and vocoder. Call once at startup."""
+        if self._is_loaded:
+            return
+
+        logger.info("Loading F5-TTS Vietnamese ViVoice model...")
+
+        try:
+            import torch
+
+            if str(DEVICE).startswith("cuda"):
+                # TF32 for fp32 matmuls that fall outside the autocast region
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.set_float32_matmul_precision("high")
+                torch.backends.cudnn.allow_tf32 = True
+                # KHÔNG bật torch.backends.cudnn.benchmark: đã thử và nó làm CHẬM
+                # HẲN. Độ dài câu TTS thay đổi liên tục nên mỗi kích thước mới lại
+                # kích hoạt một lượt dò thuật toán. Đo thực tế trên 8 câu dài ngắn
+                # khác nhau: 6/8 câu mất ~1420ms thay vì ~500ms.
+                # cudnn.benchmark chỉ đáng bật khi kích thước đầu vào cố định.
+
+            from f5_tts.infer.utils_infer import load_model, load_vocoder
+            from f5_tts.model import DiT
+
+            ckpt_path = settings.f5tts_ckpt_path
+            vocab_path = settings.f5tts_vocab_path
+
+            if not Path(ckpt_path).exists():
+                raise FileNotFoundError(f"F5-TTS checkpoint not found: {ckpt_path}")
+            if not Path(vocab_path).exists():
+                raise FileNotFoundError(
+                    f"F5-TTS vocab not found: {vocab_path}. "
+                    "Did you rename config.json to vocab.txt?"
+                )
+
+            self._vocoder = load_vocoder(vocoder_name="vocos", device=DEVICE)
+            # Arch phải khớp configs/F5TTS_Base.yaml - checkpoint ViVoice fine-tune
+            # từ F5TTS_Base (bản cũ), KHÔNG phải F5TTS_v1_Base.
+            # text_mask_padding và pe_attn_head chỉ đổi cách tính, không đổi shape
+            # tensor, nên load_state_dict vẫn pass sạch nếu để sai - model clone
+            # đúng giọng nhưng đọc ra tiếng Việt vô nghĩa, không có lỗi nào báo ra.
+            # Mặc định của DiT là (True, None) = arch v1 => bắt buộc truyền tay.
+            self._model = load_model(
+                model_cls=DiT,
+                model_cfg=dict(
+                    dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512,
+                    text_mask_padding=False, conv_layers=4, pe_attn_head=1,
+                ),
+                ckpt_path=ckpt_path,
+                vocab_file=vocab_path,
+                device=DEVICE,
+            )
+
+            # torch.compile gộp kernel, cắt chi phí phóng kernel. Đây đúng là nút
+            # thắt của F5-TTS: 16 bước khuếch tán nối tiếp, mỗi bước một kernel nhỏ
+            # -> đo được GPU chỉ đạt 73% và CPU 5%, không bên nào đầy.
+            #
+            # dynamic=True là BẮT BUỘC: độ dài câu thay đổi liên tục, để mặc định
+            # thì mỗi shape mới lại biên dịch lại (đúng cái bẫy đã dính với
+            # cudnn.benchmark: 6/8 câu chậm gấp 3).
+            #
+            # Tắt bằng F5TTS_COMPILE=false trong .env nếu gặp trục trặc.
+            # PHẢI biên dịch self._model.transformer, KHÔNG phải self._model.
+            # infer_batch_process gọi model.sample(), mà torch.compile chỉ chặn
+            # forward/__call__ - bọc lớp ngoài thì .sample() đi thẳng vào bản gốc
+            # chưa biên dịch, tức là không có tác dụng gì (đã thử và đo ra).
+            # Bên trong sample(): odeint chạy 16 bước, mỗi bước gọi transformer 2
+            # lần (classifier-free guidance) => 32 lượt. Đó mới là chỗ nóng.
+            if settings.f5tts_compile and str(DEVICE).startswith("cuda"):
+                try:
+                    che_do = (settings.f5tts_compile_mode or "").strip()
+                    self._model.transformer = torch.compile(
+                        self._model.transformer, dynamic=True,
+                        **({"mode": che_do} if che_do else {})
+                    )
+                    logger.info("F5-TTS: đã bật torch.compile cho DiT "
+                                "(dynamic=True, mode=%s)", che_do or "mặc định")
+                except Exception as e:
+                    logger.warning(f"F5-TTS: torch.compile hỏng, chạy bản thường: {e}")
+
+            ref_audio_path = settings.f5tts_ref_audio
+            if Path(ref_audio_path).exists():
+                self._register_voice_sync(
+                    self._default_voice, ref_audio_path, settings.f5tts_ref_text
+                )
+                logger.info(f"Reference voice loaded: {ref_audio_path}")
+            else:
+                # Giọng mặc định có thể đã bị xoá qua UI. Nhận giọng đầu tiên còn
+                # trên đĩa làm mặc định: ensure_voice() fallback về _default_voice
+                # mỗi khi gặp tên lạ, trỏ nó vào một giọng không tồn tại thì cả
+                # cuộc gọi chết chứ không chỉ riêng giọng đó.
+                fallback = next(
+                    (v for v in self.list_voices() if v["ref_text"] and not v["silent"]),
+                    None,
+                )
+                if fallback:
+                    self._default_voice = fallback["name"]
+                    self._register_voice_sync(
+                        fallback["name"], fallback["wav_path"], fallback["ref_text"]
+                    )
+                    logger.warning(
+                        f"Không thấy {ref_audio_path}, dùng giọng '{fallback['name']}' "
+                        "làm giọng mặc định."
+                    )
+                else:
+                    logger.warning(
+                        f"Reference audio not found: {ref_audio_path}, và không có "
+                        "giọng mẫu nào khác. TTS sẽ không đọc được cho tới khi "
+                        "upload một giọng."
+                    )
+
+            # Warmup chỉ chạy được khi đã có giọng. Trước đây gọi vô điều kiện nên
+            # xoá giọng default là load() ném RuntimeError -> chết luôn cả TTS.
+            if self._voices:
+                logger.info(f"Warming up F5-TTS on {DEVICE} (first inference)...")
+                # Chạy warmup QUA executor chứ đừng gọi thẳng. Với torch.compile,
+                # lần suy luận đầu mới là lúc thật sự biên dịch (Triton sinh
+                # kernel), và biên dịch ở luồng NÀY rồi chạy ở luồng KHÁC là chỗ
+                # backend chết câm: không traceback, không log, tiến trình biến
+                # mất - vì `load()` chạy ở luồng khởi động còn mọi lượt tổng hợp
+                # sau đó chạy trong `self._executor`.
+                #
+                # Executor chỉ có ĐÚNG MỘT worker (bắt buộc, F5-TTS không an toàn
+                # đa luồng), nên biên dịch ở đây thì mọi lượt sau dùng lại đúng
+                # kernel đã biên dịch trên đúng luồng đó.
+                self._executor.submit(
+                    self._synthesize_sync, "xin chào", self._default_voice
+                ).result()
+            else:
+                logger.warning("Bỏ qua warmup: chưa có giọng mẫu nào được nạp.")
+
+            self._is_loaded = True
+            logger.info("F5-TTS Vietnamese loaded successfully")
+
+        except ImportError:
+            logger.error(
+                "F5-TTS not installed. "
+                "Run: git clone https://github.com/nguyenthienhy/F5-TTS-Vietnamese && "
+                "pip install -e F5-TTS-Vietnamese"
+            )
+            raise
+
+    def unload(self) -> dict:
+        """Nhả trọng số model khỏi VRAM để nhường GPU cho việc fine-tune.
+
+        Fine-tune LLM cần 8-10GB, mà F5-TTS đang giữ một phần đáng kể. Không
+        nhả ra thì train OOM.
+
+        CHỈ bỏ model và vocoder. Giữ nguyên _voices và các cache: chúng nằm ở
+        RAM thường, xoá đi không nhả thêm được VRAM nào mà lần dùng lại phải
+        giải mã âm thanh từ đầu.
+
+        Gọi load() sau đó là dùng lại được (_is_loaded về False nên load()
+        không early-return).
+
+        Người gọi phải đảm bảo không còn lượt tổng hợp nào đang chạy - executor
+        chỉ có một luồng, nhưng unload() không chờ luồng đó.
+
+        Trả về mức VRAM trước/sau (MiB) để bên gọi ghi log và quyết định có đủ
+        chỗ train hay chưa.
+        """
+        do = {"vram_free_truoc_mib": None, "vram_free_sau_mib": None, "da_nha": False}
+        if not self._is_loaded:
+            do["ghi_chu"] = "F5-TTS chưa nạp, không có gì để nhả"
+            return do
+
+        try:
+            import torch
+            co_cuda = torch.cuda.is_available()
+        except Exception:
+            torch, co_cuda = None, False
+
+        if co_cuda:
+            do["vram_free_truoc_mib"] = round(torch.cuda.mem_get_info()[0] / 1024**2)
+
+        logger.info("Nhả F5-TTS khỏi VRAM để nhường chỗ train...")
+        self._model = None
+        self._vocoder = None
+        self._is_loaded = False
+
+        import gc
+        gc.collect()
+        if co_cuda:
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            do["vram_free_sau_mib"] = round(torch.cuda.mem_get_info()[0] / 1024**2)
+
+        do["da_nha"] = True
+        if do["vram_free_truoc_mib"] is not None:
+            logger.info(
+                "VRAM trống: %s -> %s MiB (nhả thêm %s MiB)",
+                do["vram_free_truoc_mib"], do["vram_free_sau_mib"],
+                do["vram_free_sau_mib"] - do["vram_free_truoc_mib"],
+            )
+        return do
+
+    # --- voice registry ------------------------------------------------------
+
+    @staticmethod
+    def probe_ref(wav_path: str | Path) -> dict:
+        """Duration and peak level of a reference clip.
+
+        F5-TTS clones the reference audio, so a silent file (peak ~0) yields
+        silent speech - it synthesizes "successfully" and plays back as nothing,
+        which is impossible to diagnose from the UI. Callers use this to refuse
+        such a file up front.
+        """
+        try:
+            data, sr = sf.read(str(wav_path), dtype="float32", always_2d=True)
+        except Exception:
+            return {"readable": False, "duration": 0.0, "peak": 0.0, "silent": False}
+
+        mono = data.mean(axis=1)
+        peak = float(np.abs(mono).max()) if len(mono) else 0.0
+        return {
+            "readable": True,
+            "duration": round(len(mono) / sr, 2) if sr else 0.0,
+            "peak": round(peak, 4),
+            "silent": peak < SILENCE_PEAK,
+        }
+
+    def _register_voice_sync(self, name: str, wav_path: str, ref_text: str):
+        """Preprocess a reference voice ONCE and keep it on the device.
+
+        Disk read, mono mix, resample to 24kHz and device transfer would
+        otherwise be redone by infer_process on every single synthesize call.
+        Runs on the executor thread, which is the only writer of _voices.
+        """
+        import torch
+        import torchaudio
+        from f5_tts.infer.utils_infer import preprocess_ref_audio_text
+
+        probe = self.probe_ref(wav_path)
+        if probe["silent"]:
+            logger.warning(
+                f"Giọng mẫu '{name}' ({wav_path}) không có tiếng - mọi câu đọc bằng "
+                "giọng này sẽ im lặng. Thu lại file 5-10 giây rồi upload đè."
+            )
+
+        ref_audio, processed_text = preprocess_ref_audio_text(wav_path, ref_text)
+
+        audio, sr = torchaudio.load(ref_audio)
+        if audio.shape[0] > 1:
+            audio = torch.mean(audio, dim=0, keepdim=True)
+        target_sr = 24000
+        if sr != target_sr:
+            audio = torchaudio.transforms.Resample(sr, target_sr)(audio)
+            sr = target_sr
+        audio = audio.to(DEVICE)
+
+        self._voices[name] = (audio, sr, processed_text)
+
+        duration = audio.shape[-1] / sr
+        logger.info(f"Voice '{name}' cached in memory: {duration:.1f}s on {DEVICE}")
+        if duration > 8:
+            logger.warning(
+                f"Ref audio giọng '{name}' dài {duration:.1f}s - ref càng dài mỗi lần "
+                "synth càng chậm (ODE chạy trên cả ref). Khuyến nghị dùng clip 3-6s."
+            )
+
+    async def ensure_voice(self, name: str) -> str:
+        """Register a voice if it isn't loaded yet. Returns the usable voice name.
+
+        Falls back to the default voice when `name` is unknown, so a bad
+        voice_name degrades to the wrong-but-working voice instead of killing
+        the call.
+        """
+        # "default" là TÊN QUY ƯỚC nghĩa là "giọng mặc định", không phải tên một
+        # file giọng. Phiên mới và ô chọn giọng lúc chưa nạp xong đều gửi chuỗi
+        # này. Không chặn ở đây thì mỗi mảnh audio lại đi tra danh sách giọng,
+        # trượt, rồi ghi một dòng cảnh báo - log đầy rác mà chẳng có gì sai.
+        if not name or name == "default" or name in self._voices:
+            return self._default_voice if (not name or name == "default") else name
+
+        voice = next((v for v in self.list_voices() if v["name"] == name), None)
+        if not voice or not voice["ref_text"]:
+            logger.warning(f"Voice '{name}' not found (or has no transcript), using default")
+            return self._default_voice
+
+        loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(
+                self._executor, self._register_voice_sync,
+                name, voice["wav_path"], voice["ref_text"],
+            )
+        except Exception as e:
+            logger.warning(f"Failed to load voice '{name}': {e}. Using default.")
+            return self._default_voice
+        return name
+
+    def drop_voice(self, name: str):
+        """Forget a voice and everything synthesized with it (used after delete/retrain)."""
+        self._voices.pop(name, None)
+        for key in [k for k in self._synth_cache if k[0] == name]:
+            del self._synth_cache[key]
+        for key in [k for k in self._filler_cache if k[0] == name]:
+            del self._filler_cache[key]
+
+    # --- synthesis -----------------------------------------------------------
+
+    def _autocast_ctx(self):
+        """fp16 autocast on CUDA (~1.5-2x faster on RTX). Full precision elsewhere."""
+        import torch
+
+        if str(DEVICE).startswith("cuda"):
+            return torch.autocast("cuda", dtype=torch.float16)
+        return nullcontext()
+
+    def _synthesize_sync(
+        self, text: str, voice: str, nfe_step: int | None = None,
+        speed: float | None = None,
+    ) -> tuple[np.ndarray, int]:
+        """Synchronous TTS synthesis (runs in thread executor).
+
+        Calls infer_batch_process directly with the registered ref tensor —
+        skips infer_process's per-call disk load/resample of the ref audio.
+        Text is passed as a single batch (pipeline already chunks upstream).
+        """
+        from f5_tts.infer.utils_infer import infer_batch_process
+
+        entry = self._voices.get(voice)
+        if entry is None:
+            raise RuntimeError(f"No reference audio loaded for voice '{voice}'")
+        ref_wave, ref_sr, ref_text = entry
+
+        # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
+        # của autograd. Suy luận thuần nên không mất gì.
+        import torch as _t
+        with _t.inference_mode(), self._autocast_ctx():
+            audio, sr, _ = next(
+                infer_batch_process(
+                    (ref_wave, ref_sr),
+                    ref_text,
+                    [text],
+                    self._model,
+                    self._vocoder,
+                    mel_spec_type="vocos",
+                    progress=None,
+                    nfe_step=nfe_step or settings.f5tts_nfe_step,
+                    speed=speed if speed is not None else self.toc_do_cua(voice),
+                    device=DEVICE,
+                )
+            )
+        return audio, sr
+
+    async def synthesize(
+        self,
+        text: str,
+        target_sr: int = 24000,
+        fast: bool = False,
+        voice: str | None = None,
+        use_cache: bool = True,
+        nfe_step: int | None = None,
+        speed: float | None = None,
+    ) -> bytes:
+        """
+        Synthesize text to WAV bytes (async).
+        fast=True uses f5tts_nfe_step_first (fewer diffusion steps) —
+        slightly lower quality, ~2x faster; used for the first chunk to cut TTFA.
+        voice selects a registered reference voice; None uses the default.
+        use_cache=False forces a real synthesis and skips storing the result —
+        the voice-test page needs true timings, and its throwaway phrases must
+        not evict the ones live calls depend on.
+        """
+        if not self._is_loaded:
+            self.load()
+
+        voice = await self.ensure_voice(voice or self._default_voice)
+
+        # Chuẩn hoá ở đây, không ở từng caller: pipeline gọi, trang test gọi,
+        # benchmark gọi, filler gọi - đặt một chỗ thì cả bốn cùng đi qua.
+        # Đặt trước cache_key luôn để "ABC" và "abc" dùng chung một bản ghi.
+        text = normalize_for_tts(text)
+
+        # Sentence cache: repeated phrases served instantly. Keyed by voice -
+        # two lines saying the same sentence in different voices must not share.
+        # `speed` PHẢI nằm trong khoá: thiếu nó thì đổi tốc xong đọc lại cùng
+        # câu vẫn trả bản cũ, người dùng kéo thanh trượt mà không nghe khác gì.
+        cache_key = (voice, text, fast, target_sr, nfe_step,
+                     speed if speed is not None else self.toc_do_cua(voice))
+        if use_cache:
+            cached = self._synth_cache.get(cache_key)
+            if cached is not None:
+                self._synth_cache.move_to_end(cache_key)
+                logger.info(f"TTS cache hit [{voice}]: '{text[:30]}...'")
+                return cached
+
+        loop = asyncio.get_event_loop()
+        # nfe_step truyền tay chỉ dùng để ĐO (so các mức nfe với nhau).
+        # Đường chạy thật luôn để None và lấy theo cấu hình.
+        nfe = nfe_step or (settings.f5tts_nfe_step_first if fast
+                           else settings.f5tts_nfe_step)
+
+        with Timer("TTS", logger) as t:
+            audio, sr = await loop.run_in_executor(
+                self._executor, self._synthesize_sync, text, voice, nfe, speed
+            )
+
+        # F5-TTS trả về mỗi mảnh kèm khoảng lặng riêng: đo được 224-607ms ở ĐẦU
+        # (trung bình 376ms) và ~38ms ở cuối. Ghép các mảnh lại thì mỗi ranh giới
+        # câu có ~414ms chết -> nghe như bị vấp giữa các câu.
+        # Lặng đầu của mảnh ĐẦU TIÊN còn cộng thẳng vào thời gian khách chờ:
+        # TTFA 816ms nhưng phải 1150ms mới thực sự nghe thấy tiếng.
+        audio = trim_silence(audio, sr)
+
+        # Resample if needed
+        if sr != target_sr:
+            audio = resample_audio(audio, sr, target_sr)
+
+        pcm_bytes = float32_to_int16(audio)
+        wav_bytes = pcm_to_wav(pcm_bytes, sample_rate=target_sr)
+
+        # Store in LRU cache
+        if use_cache:
+            self._synth_cache[cache_key] = wav_bytes
+            if len(self._synth_cache) > self._synth_cache_max:
+                self._synth_cache.popitem(last=False)
+
+        duration_ms = len(audio) / target_sr * 1000
+        logger.info(f"TTS [{voice}]: '{text[:30]}...' -> {duration_ms:.0f}ms audio ({t.elapsed_ms:.0f}ms)")
+        return wav_bytes
+
+    # --- fillers -------------------------------------------------------------
+
+    def default_voice_name(self) -> str:
+        """Tên giọng mặc định THẬT SỰ đang dùng.
+
+        Không đọc thẳng `settings.f5tts_ref_audio` ở nơi khác: khi file đó thiếu,
+        `load()` rơi về giọng đầu tiên tìm được trên đĩa và ghi đè `_default_voice`
+        - lấy từ cấu hình sẽ ra một cái tên không tồn tại.
+        """
+        return self._default_voice
+
+    def co_filler(self, voice: str | None = None) -> bool:
+        """Giọng này đã có câu đệm dựng sẵn chưa."""
+        name = voice or self._default_voice
+        if name not in self._voices:
+            name = self._default_voice
+        return any(k[0] == name for k in self._filler_cache)
+
+    async def presynthesize_fillers(self, phrases: list[str], voice: str | None = None):
+        """Pre-synthesize filler phrases so they play at 0ms latency.
+
+        Called at startup for the default voice, and again per voice the first
+        time a call switches to it.
+        """
+        voice = await self.ensure_voice(voice or self._default_voice)
+        pending = [p for p in phrases if (voice, p) not in self._filler_cache]
+        if not pending:
+            return
+
+        logger.info(f"Pre-synthesizing {len(pending)} filler phrases for voice '{voice}'...")
+        for phrase in pending:
+            try:
+                wav = await self.synthesize(phrase, voice=voice)
+                self._filler_cache[(voice, phrase)] = wav
+                # Ghi lại độ dài để chọn filler đủ che độ trễ, thay vì bốc ngẫu
+                # nhiên: filler ngắn hơn TTFA thì khách nghe hụt một khoảng lặng.
+                self._filler_ms[(voice, phrase)] = self._wav_duration_ms(wav)
+                logger.info(
+                    f"  Cached filler [{voice}]: '{phrase}' "
+                    f"({self._filler_ms[(voice, phrase)]:.0f}ms)"
+                )
+            except Exception as e:
+                logger.warning(f"  Failed to cache filler '{phrase}': {e}")
+        logger.info(f"Filler cache ready for '{voice}': {len(pending)} phrases")
+
+    @staticmethod
+    def _wav_duration_ms(wav_bytes: bytes) -> float:
+        """Độ dài tiếng của một WAV PCM 16-bit mono (bỏ 44 byte header)."""
+        try:
+            import struct
+            sr = struct.unpack_from("<I", wav_bytes, 24)[0]
+            return max(0.0, (len(wav_bytes) - 44) / 2 / sr * 1000)
+        except Exception:
+            return 0.0
+
+    def pick_filler(self, phrases: list[str], voice: str | None = None,
+                    min_ms: float = 0.0,
+                    tranh: set[str] | None = None) -> tuple[bytes | None, str]:
+        """Chọn filler ĐỦ DÀI để che độ trễ, thay vì bốc ngẫu nhiên.
+
+        Đo thực tế: 4 câu filler dài 656/815/1225/1269ms trong khi TTFA đường
+        thoại ~1127ms -> bốc ngẫu nhiên thì một nửa số cuộc gọi khách vẫn nghe
+        hụt 312-471ms im lặng. Ưu tiên các câu che đủ, còn giữ ngẫu nhiên trong
+        nhóm đó để không lặp lại một câu duy nhất.
+        """
+        import random as _r
+        name = voice or self._default_voice
+        if name not in self._voices:
+            name = self._default_voice
+        có = [(p, self._filler_ms.get((name, p), 0.0)) for p in phrases
+              if (name, p) in self._filler_cache]
+        if not có:
+            return None, ""
+        # Bỏ những câu vừa dùng gần đây. Lọc "đủ dài" thu hẹp nhóm chọn rất mạnh
+        # (đo được: 12 câu nhưng chỉ 2-3 câu vượt ngưỡng 1100ms), nên bốc ngẫu
+        # nhiên trong nhóm đó là lặp ngay - cuộc gọi 9 lượt nghe "Dạ em hiểu rồi"
+        # bốn lần. Người dùng nghe ra ngay.
+        chua_dung = [(p, ms) for p, ms in có if not tranh or p not in tranh]
+        du_va_moi = [p for p, ms in chua_dung if ms >= min_ms]
+
+        if du_va_moi:
+            # Có câu vừa che đủ vừa chưa dùng -> ngẫu nhiên trong nhóm đó.
+            chọn = _r.choice(du_va_moi)
+        else:
+            # KHÔNG câu nào che đủ (hoặc những câu che đủ đều vừa dùng). Tới đây
+            # thì độ dài là tiêu chí DUY NHẤT còn nghĩa - khách chắc chắn sẽ nghe
+            # một quãng lặng, việc còn lại là làm nó ngắn nhất có thể.
+            #
+            # Bản cũ bốc NGẪU NHIÊN trong nhóm chưa dùng ở đúng nhánh này, và đó
+            # là lỗi thật: cuộc gọi 07-08 chờ 2456ms mà nó bốc trúng "Dạ" (303ms)
+            # - câu NGẮN NHẤT trong 12 câu - cho ra 2153ms im lặng. Lấy câu dài
+            # nhất (1688ms) thì quãng đó còn 768ms, chỉ bằng cách đổi cách chọn.
+            ung = chua_dung or có
+            chọn = max(ung, key=lambda x: x[1])[0]
+        return self._filler_cache.get((name, chọn)), chọn
+
+    def get_filler(self, phrase: str, voice: str | None = None) -> bytes | None:
+        """Pre-synthesized filler audio (0ms latency), or None if not cached yet."""
+        name = voice or self._default_voice
+        hit = self._filler_cache.get((name, phrase))
+        if hit is not None:
+            return hit
+        # Phiên mới mặc định voice_name="default", trong khi giọng thật tên theo
+        # file (vd "giong_ngan") nên filler cache dưới tên đó -> tra khoá
+        # ("default", câu) LUÔN TRƯỢT và filler chưa bao giờ phát.
+        # ensure_voice() rơi về _default_voice khi gặp tên lạ, filler phải rơi
+        # về đúng chỗ đó thì mới khớp với giọng sẽ đọc câu trả lời.
+        if name not in self._voices:
+            return self._filler_cache.get((self._default_voice, phrase))
+        return None
+
+    # --- discovery -----------------------------------------------------------
+
+
+    # --- Tốc độ riêng cho từng giọng -----------------------------------------
+    #
+    # `settings.f5tts_speed` là MỘT số cho mọi giọng, mà F5 sao chép cả nhịp nói
+    # của đoạn mẫu - nên một số chung không thể vừa cho mọi giọng. Đo trên chính
+    # các đoạn mẫu đang có:
+    #     giong_heu  3.44 âm tiết/giây      nam_moi1  3.01
+    #     giong_nam  2.95                   nam_moi2  2.30
+    # Chênh 1.5 lần giữa nhanh nhất và chậm nhất. Đặt tốc chung 0.64 cho vừa
+    # giọng nữ thì giọng nam thành lê thê - đúng thứ người dùng kêu "đọc chậm".
+    #
+    # Lưu vào tệp `<giọng>.speed` nằm cạnh `<giọng>.wav`: giọng là một bộ ba
+    # (wav + txt + speed) đi liền nhau, chép sang máy khác là còn nguyên. Nhét
+    # vào .env thì mỗi lần thêm giọng phải sửa cấu hình rồi khởi động lại.
+
+    _TRAN_SPEED = (0.3, 2.5)
+
+    def _tep_speed(self, voice: str | None) -> Path:
+        goc = Path(settings.f5tts_ref_audio)
+        ten = voice or goc.stem
+        return goc.parent / f"{ten}.speed"
+
+    def toc_do_cua(self, voice: str | None = None) -> float:
+        """Tốc của giọng này; chưa đặt riêng thì lấy tốc chung trong .env."""
+        p = self._tep_speed(voice)
+        if p.exists():
+            try:
+                v = float(p.read_text(encoding="utf-8").strip())
+                lo, hi = self._TRAN_SPEED
+                return min(max(v, lo), hi)
+            except ValueError:
+                logger.warning("Tốc giọng hỏng ở %s, dùng tốc chung", p)
+        return settings.f5tts_speed
+
+    def dat_toc_do(self, voice: str, toc: float) -> float:
+        lo, hi = self._TRAN_SPEED
+        toc = min(max(float(toc), lo), hi)
+        self._tep_speed(voice).write_text(f"{toc:.3f}", encoding="utf-8")
+        # Bộ nhớ đệm giữ tiếng đã dựng theo tốc CŨ - không dọn thì đổi tốc xong
+        # vẫn nghe y như trước và tưởng nút không ăn.
+        self._xoa_cache_giong(voice)
+        logger.info("Đặt tốc giọng %s = %.2f", voice, toc)
+        return toc
+
+    def _xoa_cache_giong(self, voice: str):
+        """Dọn tiếng đã dựng của một giọng.
+
+        Tên biến là `_synth_cache`, KHÔNG phải `_cache` - viết nhầm thì hàm này
+        chạy êm mà không dọn gì, và người dùng kéo thanh tốc xong nghe y như cũ
+        rồi tưởng nút hỏng.
+        """
+        try:
+            for k in [k for k in self._synth_cache if isinstance(k, tuple) and voice in k]:
+                self._synth_cache.pop(k, None)
+        except Exception as e:
+            logger.debug("Không dọn được cache giọng %s: %s", voice, e)
+
+
+    # --- Hệ số tốc riêng cho ĐƯỜNG THOẠI -------------------------------------
+    #
+    # Kênh GSM là 8kHz, nén mạnh, và mất gần hết dải cao - chính dải mang phụ âm
+    # (s, x, ch, tr). Cùng một tốc, nghe trên trình duyệt thì rõ mà qua điện
+    # thoại thì dính chữ. Nên tốc thoại phải chỉnh RIÊNG, không dùng chung với
+    # tốc nghe trên web.
+    #
+    # Là HỆ SỐ NHÂN chứ không phải một số tuyệt đối: mỗi giọng đã có tốc riêng
+    # (xem `toc_do_cua`), đặt số tuyệt đối cho đường thoại sẽ xoá sạch phần
+    # chỉnh theo giọng và mọi giọng lại nói cùng một nhịp.
+    _TEP_HE_SO_THOAI = "_he_so_thoai.txt"
+    _TRAN_HE_SO = (0.6, 1.4)
+
+    def _tep_he_so(self) -> Path:
+        return Path(settings.f5tts_ref_audio).parent / self._TEP_HE_SO_THOAI
+
+    def he_so_thoai(self) -> float:
+        p = self._tep_he_so()
+        if p.exists():
+            try:
+                v = float(p.read_text(encoding="utf-8").strip())
+                lo, hi = self._TRAN_HE_SO
+                return min(max(v, lo), hi)
+            except ValueError:
+                pass
+        return 1.0
+
+    def dat_he_so_thoai(self, he_so: float) -> float:
+        lo, hi = self._TRAN_HE_SO
+        he_so = min(max(float(he_so), lo), hi)
+        self._tep_he_so().write_text(f"{he_so:.3f}", encoding="utf-8")
+        # Dọn sạch cache: tiếng đã dựng theo hệ số cũ còn nằm đó thì đổi xong
+        # vẫn nghe y như trước.
+        try:
+            self._synth_cache.clear()
+        except Exception:
+            pass
+        logger.info("Đặt hệ số tốc đường thoại = %.2f", he_so)
+        return he_so
+
+    def list_voices(self) -> list[dict]:
+        """List available reference voices."""
+        voices_dir = Path(settings.f5tts_ref_audio).parent
+        voices = []
+        for wav_file in sorted(voices_dir.glob("*.wav")):
+            txt_file = wav_file.with_suffix(".txt")
+            # encoding="utf-8" BẮT BUỘC: mặc định của Windows là cp1252, gặp chữ
+            # có dấu là ném UnicodeDecodeError và kéo sập cả danh sách giọng -
+            # tức là hỏng luôn ô chọn giọng và `ensure_voice` cho mọi giọng
+            # không phải giọng mặc định (giọng mặc định lấy lời từ .env nên
+            # không đi qua đây, vì thế lỗi náu được rất lâu).
+            ref_text = (txt_file.read_text(encoding="utf-8", errors="replace").strip()
+                        if txt_file.exists() else "")
+            voices.append({
+                "name": wav_file.stem,
+                "wav_path": str(wav_file),
+                "ref_text": ref_text,
+                "speed": self.toc_do_cua(wav_file.stem),
+                "speed_rieng": (wav_file.parent / f"{wav_file.stem}.speed").exists(),
+                **self.probe_ref(wav_file),
+            })
+        return voices

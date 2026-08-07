@@ -1,0 +1,7 @@
+{
+  "name": "voicebank-ai",
+  "version": "1.0.0",
+  "description": "VoiceBank AI - Offline Voice AI Call System",
+  "author": "AI Banking Team",
+  "main": "main.js"
+}

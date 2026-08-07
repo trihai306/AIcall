@@ -1,0 +1,438 @@
+/* ===== VoiceBank AI — Custom Styles ===== */
+
+/* Noise overlay for depth */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Sidebar nav buttons */
+/* Nút chọn thứ trong tuần (khung giờ chạy chiến dịch).
+   Viết bằng CSS thật chứ không dùng `peer-checked:` của Tailwind: biến thể đó
+   chỉ ghép được với utility của Tailwind, còn `.tag`/`.tag-cyan` là class riêng
+   của file này nên `peer-checked:tag-cyan` không sinh ra luật nào cả. */
+.nut-thu input { display: none; }
+.nut-thu input:checked + .tag {
+  color: #22d3ee;
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(6, 182, 212, 0.12);
+}
+
+/* Tiêu đề nhóm trong thanh điều hướng. Nhóm theo VIỆC (vận hành / cấu hình /
+   hệ thống) để người bán hàng không phải lướt qua "Training LLM" mỗi lần mở
+   danh bạ. */
+.nav-group {
+  padding: 14px 12px 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #475569;
+  user-select: none;
+}
+.nav-group:first-child { padding-top: 4px; }
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+.nav-btn:hover {
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+}
+.nav-btn.active {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.1));
+  color: #22d3ee;
+  border: 1px solid rgba(6, 182, 212, 0.15);
+}
+.nav-btn.active svg {
+  color: #22d3ee;
+}
+
+/* Typing dots */
+.typing-dot {
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Message bubbles */
+.msg-bubble-user {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  color: white;
+  border-radius: 16px 16px 4px 16px;
+}
+.msg-bubble-ai {
+  background: #111827;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+  border-radius: 16px 16px 16px 4px;
+}
+.msg-bubble-system {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-radius: 12px;
+}
+
+/* Mic recording state */
+.mic-btn.recording {
+  background: #ef4444 !important;
+  color: white !important;
+  border-color: #ef4444 !important;
+  animation: pulseRing 2s ease-out infinite;
+}
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Target badge states */
+.target-badge.pass {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+.target-badge.fail {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+/* Status dot */
+.status-dot.connected {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+.status-dot.connecting {
+  background: #f59e0b;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  50% { opacity: 0.5; }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* Select styling */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+select option {
+  background: #111827;
+  color: #e2e8f0;
+}
+
+/* ===== Component classes dùng chung cho trang Danh bạ / Thiết bị ===== */
+
+/* Khung nội dung */
+.panel {
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1e293b;
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Dải thống kê: 1 khối liền, các ô ngăn nhau bằng đường kẻ 1px */
+.stat-strip {
+  display: grid;
+  gap: 1px;
+  background: #1e293b;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.stat-cell {
+  background: #111827;
+  padding: 11px 16px;
+}
+.stat-cell .k {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-cell .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+.stat-cell .v.stat-name {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Form */
+.fld {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+.inp {
+  width: 100%;
+  background-color: #06080f;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: #cbd5e1;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+.inp:focus { border-color: rgba(6, 182, 212, 0.4); }
+.inp::placeholder { color: #475569; }
+select.inp { padding-right: 26px; }
+
+/* Nút */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #06b6d4, #10b981);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.18);
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-soft {
+  background: rgba(6, 182, 212, 0.1);
+  color: #22d3ee;
+}
+.btn-soft:hover { background: rgba(6, 182, 212, 0.18); }
+.btn-ghost {
+  background: #0b0f1a;
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+.btn-ghost:hover { color: #e2e8f0; border-color: #334155; }
+.btn-danger {
+  background: transparent;
+  color: #64748b;
+  padding: 7px 9px;
+}
+.btn-danger:hover { color: #f87171; background: rgba(239, 68, 68, 0.1); }
+
+/* Thao tác phụ trong bảng: mờ đi, rõ lên khi rê chuột vào dòng */
+.row-actions { opacity: 0.45; transition: opacity 0.15s ease; }
+.data-table tbody tr:hover .row-actions { opacity: 1; }
+
+/* Chip lọc chiến dịch */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid #1e293b;
+  background: #0b0f1a;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.chip:hover { color: #e2e8f0; border-color: #334155; }
+.chip.active {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.35);
+  color: #22d3ee;
+}
+.chip-add { border-style: dashed; color: #64748b; }
+.chip-x { margin-left: 2px; opacity: 0.6; font-size: 13px; line-height: 1; }
+.chip-x:hover { opacity: 1; color: #f87171; }
+
+/* Nhãn nhỏ (Mặc định...) */
+.tag {
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.tag-cyan { background: rgba(6, 182, 212, 0.12); color: #22d3ee; }
+
+/* Trạng thái: pill tĩnh và select cùng bảng màu */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.pill .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+select.status-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+.st-online   { color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
+.st-calling  { color: #22d3ee; border-color: rgba(6, 182, 212, 0.4); }
+.st-error    { color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); }
+.st-offline  { color: #f87171; border-color: rgba(239, 68, 68, 0.35); }
+.st-unknown  { color: #94a3b8; border-color: #334155; }
+
+/* Data tables (danh bạ gọi) */
+.data-table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  text-align: left;
+  padding: 9px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  border-bottom: 1px solid #1e293b;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  vertical-align: middle;
+}
+
+/* Cửa sổ hẹp: bỏ bớt cột phụ để số điện thoại và thao tác luôn nhìn thấy,
+   thay vì phải cuộn ngang cả bảng. */
+@media (max-width: 1400px) { .data-table .col-product { display: none; } }
+@media (max-width: 1280px) { .data-table .col-campaign { display: none; } }
+@media (max-width: 1150px) { .data-table .col-when { display: none; } }
+.data-table tbody tr:hover {
+  background: rgba(30, 41, 59, 0.25);
+}
+.data-table input[type="checkbox"] {
+  accent-color: #06b6d4;
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+/* Bench result running shimmer */
+.bench-result.running {
+  background: linear-gradient(90deg, rgba(6,182,212,0.03) 0%, rgba(6,182,212,0.08) 50%, rgba(6,182,212,0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Page transitions */
+.page {
+  animation: fadeUp 0.2s ease-out;
+}
+
+/* Gradient border glow on hover */
+.bench-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, transparent, transparent);
+  z-index: -1;
+  transition: background 0.3s;
+}
+.bench-card {
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+   `hidden` phải thắng mọi class component đặt `display`.
+
+   File này nạp SAU tailwind.css, mà `.btn` đặt `display: inline-flex` với cùng
+   độ cụ thể như `.hidden` của Tailwind — nên nút mang class `hidden` vẫn hiện.
+   Bắt được đúng lỗi đó: bốn nút Bắt đầu / Tạm dừng / Tiếp tục / Dừng của khối
+   chạy chiến dịch hiện cùng lúc thay vì hiện đúng nút hợp trạng thái.
+
+   Cách chuẩn của Tailwind là để lớp utility nạp sau cùng; ở đây giữ nguyên thứ
+   tự nạp và ghi đè đúng một luật, ít rủi ro hơn đảo thứ tự file.
+   --------------------------------------------------------------------------- */
+.hidden { display: none !important; }

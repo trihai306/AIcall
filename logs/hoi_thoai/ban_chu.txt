@@ -1,0 +1,15 @@
+AI    | Dạ em chào anh chị ạ. Em là nhân viên tư vấn của ngân hàng ABC, em gọi để giới thiệu chương trình vay ưu đãi ạ.
+KHÁCH | Alo ai đấy
+AI    | Dạ em chào anh chị ạ. Em xin phép hỏi anh chị đang quan tâm sản phẩm gì
+KHÁCH | Ừ em nói đi
+AI    | Bên em có cả vay tín chấp và vay mua nhà. Anh chị thích loại nào hơn ạ
+KHÁCH | Lãi suất bao nhiêu em
+AI    | Dạ bên em lãi suất từ bảy phẩy chín phần trăm một năm ạ. Anh chị định vay khoảng bao nhiêu
+KHÁCH | Thế vay được nhiều nhất là bao nhiêu
+AI    | Bên em hạn mức vay lên đến năm trăm triệu đồng. Tuy nhiên anh chị đang làm ở đâu để em tư vấn hạn mức chuẩn hơn ạ
+KHÁCH | Cần giấy tờ gì không
+AI    | Dạ chỉ cần căn cước và sao kê lương ba tháng gần nhất. Anh chị đang làm ở đâu để em tư vấn hạn mức ạ
+KHÁCH | Bao lâu thì có tiền
+AI    | Giải ngân nhanh chóng, anh chị nhận tiền trong hai mươi bốn giờ sau khi phê duyệt ạ
+KHÁCH | Ừ để anh xem đã nhé
+AI    | Dạ em cảm ơn anh chị đã quan tâm ạ. Em sẽ ghi nhận và có chuyên viên liên hệ lại

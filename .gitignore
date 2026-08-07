@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Models (large files)
+models/whisper/
+models/tts/F5-TTS-Vietnamese-ViVoice/
+models/tts/ref_voices/*.wav
+models/embedding/
+
+# Tools (built from source)
+tools/
+
+# Data
+data/chroma_db/
+data/voice_recordings/
+*.db
+
+# Environment
+.env
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bổ sung 07-08: ba mục nặng còn sót, git init thẳng sẽ nuốt >800MB
+models/phowhisper/
+desktop/node_modules/
+data/recordings/
+logs/**/*.wav
+logs/**/*.mp3

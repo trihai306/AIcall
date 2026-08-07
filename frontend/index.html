@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceBank AI</title>
+  <!-- Chạy offline hoàn toàn: không nạp gì từ internet.
+       Trước đây dùng cdn.tailwindcss.com (JIT trong trình duyệt) + fonts.googleapis.com,
+       nên mất mạng là vỡ toàn bộ giao diện — trái với mục tiêu "chạy 100% offline".
+       Tailwind giờ build sẵn (xem frontend/tailwind.config.js), font tự lưu trong
+       frontend/fonts/ (chỉ subset latin + latin-ext + vietnamese). -->
+  <link rel="stylesheet" href="/static/tailwind.css">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-void text-gray-200 font-sans h-screen overflow-hidden flex">
+
+  <!-- ========== SIDEBAR ========== -->
+  <nav class="sidebar w-[220px] bg-abyss border-r border-slate-750 flex flex-col shrink-0">
+    <!-- Logo -->
+    <div class="px-5 pt-5 pb-4 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      </div>
+      <div>
+        <div class="text-sm font-bold text-white tracking-tight">VoiceBank</div>
+        <div class="text-[10px] text-gray-500 font-medium tracking-widest uppercase">AI System</div>
+      </div>
+    </div>
+
+    <!-- Nav — gom thành ba nhóm theo VIỆC, không theo module kỹ thuật.
+         Trước đây 12 tab phẳng ngang hàng nhau: người bán hàng phải lướt qua
+         "Benchmark" và "Training LLM" mỗi lần muốn mở danh bạ. -->
+    <div class="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto">
+      <div class="nav-group">Vận hành</div>
+      <button class="nav-btn active" data-page="overview" onclick="switchPage('overview')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 5a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 5a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
+        <span>Tổng quan</span>
+      </button>
+      <button class="nav-btn" data-page="chat" onclick="switchPage('chat')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span>Hội thoại</span>
+      </button>
+      <button class="nav-btn" data-page="contacts" onclick="switchPage('contacts')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Danh bạ gọi</span>
+      </button>
+      <button class="nav-btn" data-page="reports" onclick="switchPage('reports')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>Báo cáo</span>
+      </button>
+
+      <div class="nav-group">Cấu hình</div>
+      <button class="nav-btn" data-page="scenarios" onclick="switchPage('scenarios')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Kịch bản</span>
+      </button>
+      <button class="nav-btn" data-page="datasources" onclick="switchPage('datasources')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.657 3.582 3 8 3s8-1.343 8-3V5M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3"/></svg>
+        <span>Nguồn dữ liệu</span>
+      </button>
+      <button class="nav-btn" data-page="knowledge" onclick="switchPage('knowledge')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Tri thức AI</span>
+      </button>
+      <button class="nav-btn" data-page="voice" onclick="switchPage('voice')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        <span>Giọng nói</span>
+      </button>
+      <button class="nav-btn" data-page="devices" onclick="switchPage('devices')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <span>Thiết bị</span>
+      </button>
+      <button class="nav-btn" data-page="settings" onclick="switchPage('settings')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Cài đặt</span>
+      </button>
+
+      <div class="nav-group">Hệ thống</div>
+      <button class="nav-btn" data-page="sessions" onclick="switchPage('sessions')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Phiên gọi</span>
+      </button>
+      <button class="nav-btn" data-page="voice-test" onclick="switchPage('voice-test')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><circle cx="12" cy="12" r="9"/></svg>
+        <span>Test giọng</span>
+      </button>
+      <button class="nav-btn" data-page="voice-training" onclick="switchPage('voice-training')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 11a7 7 0 01-14 0M12 19v3m0-3a4 4 0 004-4V7a4 4 0 10-8 0v8a4 4 0 004 4z"/></svg>
+        <span>Training giọng</span>
+      </button>
+      <button class="nav-btn" data-page="training" onclick="switchPage('training')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span>Training LLM</span>
+      </button>
+      <button class="nav-btn" data-page="models" onclick="switchPage('models')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <span>Cài Model</span>
+      </button>
+      <button class="nav-btn" data-page="benchmark" onclick="switchPage('benchmark')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span>Benchmark</span>
+      </button>
+      <button class="nav-btn" data-page="logs" onclick="switchPage('logs')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <span>Logs</span>
+      </button>
+    </div>
+
+    <!-- Status -->
+    <div class="px-3 pb-4">
+      <div id="serverStatus" class="status-badge flex items-center gap-2.5 px-3.5 py-2.5 bg-deep rounded-lg border border-slate-750">
+        <span class="status-dot w-2 h-2 rounded-full bg-amber-500 shrink-0" id="statusDot"></span>
+        <span class="text-xs text-gray-400 font-medium" id="statusText">Đang kết nối...</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== MAIN ========== -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- ===== PAGE: TỔNG QUAN ===== -->
+    <!-- Trang chủ mới. Trước đây mở app lên là vào thẳng khung chat, nên không
+         nhìn thấy chiến dịch đang chạy hay máy nào rụng cho tới khi tự đi tìm. -->
+    <div class="page flex-1 overflow-y-auto" id="page-overview">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Tổng quan</h2>
+            <p class="text-xs text-gray-500 mt-1">Tình hình hôm nay và các chiến dịch đang chạy</p>
+          </div>
+          <button onclick="loadOverview()" class="btn btn-ghost">Làm mới</button>
+        </div>
+
+        <div class="stat-strip" style="grid-template-columns:repeat(5,1fr)" id="overviewStats"></div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Chiến dịch đang chạy</span>
+            <button onclick="switchPage('contacts')" class="text-[10px] text-cyan-400 hover:text-cyan-300">Mở danh bạ →</button>
+          </div>
+          <div class="p-4" id="overviewCampaigns">
+            <div class="text-xs text-gray-600">Đang tải…</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Thiết bị</span>
+              <button onclick="switchPage('devices')" class="text-[10px] text-cyan-400 hover:text-cyan-300">Quản lý →</button>
+            </div>
+            <div class="p-4" id="overviewDevices"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Cuộc gọi gần nhất</span>
+              <button onclick="switchPage('reports')" class="text-[10px] text-cyan-400 hover:text-cyan-300">Xem báo cáo →</button>
+            </div>
+            <div class="p-4" id="overviewRecent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: CHAT ===== -->
+    <div class="page hidden flex-1 overflow-hidden" id="page-chat">
+      <!-- Chat main -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="h-14 border-b border-slate-750 flex items-center justify-between px-6 shrink-0 bg-abyss/50 backdrop-blur-sm">
+          <div class="flex items-center gap-3">
+            <h2 class="text-sm font-semibold text-white">Hội thoại</h2>
+            <div class="h-4 w-px bg-slate-750"></div>
+            <select id="product" onchange="sendSessionConfig()" class="bg-transparent text-xs text-gray-400 border-none outline-none cursor-pointer">
+              <option value="vay tín chấp">Vay tín chấp</option>
+              <option value="vay mua nhà">Vay mua nhà</option>
+              <option value="thẻ tín dụng">Thẻ tín dụng</option>
+              <option value="tiết kiệm">Tiết kiệm</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="customerName" value="Anh Minh" onchange="sendSessionConfig()" class="bg-deep border border-slate-750 rounded-md px-2.5 py-1 text-xs text-gray-300 w-28 outline-none focus:border-cyan-500/50 transition-colors">
+            <select id="voiceSelect" class="bg-deep border border-slate-750 rounded-md px-2 py-1 text-xs text-gray-400 outline-none">
+              <option value="default">Giọng mặc định</option>
+            </select>
+            <button onclick="clearChat()" class="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Xóa hội thoại">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto px-6 py-5 space-y-1" id="chat">
+          <div id="welcomeMsg" class="flex flex-col items-center justify-center h-full text-center pb-10 animate-fade-up">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/20 flex items-center justify-center mb-5">
+              <svg class="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Xin chào!</h3>
+            <p class="text-sm text-gray-500 max-w-xs leading-relaxed">Bấm micro rồi nói như đang gọi điện. Bấm lần nữa khi nói xong để AI trả lời.</p>
+          </div>
+        </div>
+
+        <!-- Typing -->
+        <div id="typing" class="hidden px-6 pb-2">
+          <div class="flex items-center gap-2 text-xs text-gray-500">
+            <div class="flex gap-1">
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400" style="animation-delay:0.15s"></span>
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400" style="animation-delay:0.3s"></span>
+            </div>
+            <span>AI đang trả lời</span>
+          </div>
+        </div>
+
+        <!-- Nói chuyện: chỉ có micro, không gõ chữ.
+             Gọi điện thật thì khách không gõ được, nên bỏ hẳn ô nhập để mọi thứ
+             đo được đều là số của đường thoại. Ô gõ chữ vẫn còn trong DOM nhưng
+             ẩn đi - trang Benchmark và Test giọng vẫn gọi sendText(). -->
+        <div class="border-t border-slate-750 p-6 bg-abyss/80 backdrop-blur-sm">
+          <div class="flex flex-col items-center gap-3 max-w-3xl mx-auto">
+            <!-- Chỉ dùng lớp có sẵn trong frontend/tailwind.css (file biên dịch
+                 sẵn, không có bước build lúc chạy). w-20/h-20/border-2 KHÔNG có
+                 trong đó nên nút mất viền - đã đo bằng cách xem trang thật. -->
+            <button id="micBtn" onclick="toggleMic()" class="mic-btn w-16 h-16 rounded-full bg-deep border border-slate-750 flex items-center justify-center text-gray-400 hover:text-cyan-400 hover:border-cyan-500/40 transition-all shadow-lg">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <div id="micHint" class="text-xs text-gray-500 font-mono">Bấm để nói · bấm lần nữa khi nói xong</div>
+            <input type="hidden" id="textInput">
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Sidebar -->
+      <aside class="w-[260px] border-l border-slate-750 bg-abyss/50 flex flex-col overflow-y-auto shrink-0">
+        <div class="p-4 space-y-4">
+          <!-- Target -->
+          <div class="text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">Khách chờ tới khi AI nói</div>
+            <div id="targetIndicator" class="target-badge px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-deep border border-slate-750 text-gray-400">
+              &lt; 1000ms
+            </div>
+          </div>
+
+          <!-- Bars -->
+          <div class="space-y-3">
+            <div class="metric-row">
+              <div class="flex items-center justify-between mb-1"><span class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">STT</span><span class="text-[11px] font-mono font-semibold text-gray-400" id="valSTT">—</span></div>
+              <div class="h-1.5 bg-deep rounded-full overflow-hidden"><div class="h-full bg-cyan-500 rounded-full transition-all duration-700 ease-out" id="barSTT" style="width:0%"></div></div>
+            </div>
+            <div class="metric-row">
+              <div class="flex items-center justify-between mb-1"><span class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">RAG</span><span class="text-[11px] font-mono font-semibold text-gray-400" id="valRAG">—</span></div>
+              <div class="h-1.5 bg-deep rounded-full overflow-hidden"><div class="h-full bg-violet-500 rounded-full transition-all duration-700 ease-out" id="barRAG" style="width:0%"></div></div>
+            </div>
+            <div class="metric-row">
+              <div class="flex items-center justify-between mb-1"><span class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">TTFA</span><span class="text-[11px] font-mono font-semibold text-gray-400" id="valTTFA">—</span></div>
+              <div class="h-1.5 bg-deep rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out" id="barTTFA" style="width:0%"></div></div>
+            </div>
+            <div class="metric-row">
+              <div class="flex items-center justify-between mb-1"><span class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Total</span><span class="text-[11px] font-mono font-semibold text-gray-400" id="valTotal">—</span></div>
+              <div class="h-1.5 bg-deep rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full transition-all duration-700 ease-out" id="barTotal" style="width:0%"></div></div>
+            </div>
+          </div>
+
+          <!-- Session -->
+          <div class="border-t border-slate-750 pt-4">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-3">Phiên làm việc</div>
+            <div class="space-y-2">
+              <div class="flex justify-between"><span class="text-xs text-gray-500">Lượt hội thoại</span><span class="text-xs font-mono font-semibold text-white" id="turnCount">0</span></div>
+              <div class="flex justify-between"><span class="text-xs text-gray-500">Thời gian</span><span class="text-xs font-mono font-semibold text-white" id="duration">0:00</span></div>
+              <div class="flex justify-between"><span class="text-xs text-gray-500">Session ID</span><span class="text-[10px] font-mono text-gray-600" id="sessionId">—</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ===== PAGE: CONTACTS (danh bạ gọi) ===== -->
+    <div class="page hidden overflow-y-auto" id="page-contacts">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Danh bạ gọi</h2>
+            <p class="text-xs text-gray-500 mt-1">Số khách hàng, chiến dịch và kết quả từng cuộc gọi</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="toggleContactPanel('import')" class="btn btn-ghost">Nhập danh sách</button>
+            <button onclick="exportContacts()" class="btn btn-ghost">Xuất CSV</button>
+            <button onclick="toggleContactPanel('add')" class="btn btn-soft">+ Thêm số</button>
+            <button onclick="callNext()" class="btn btn-primary">Gọi số tiếp theo</button>
+          </div>
+        </div>
+
+        <!-- Đang gọi -->
+        <div id="activeCallBar" class="hidden panel border-cyan-500/25 px-4 py-3">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-3">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 status-dot connecting shrink-0"></span>
+              <div>
+                <div class="text-sm font-semibold text-white" id="activeCallPhone">—</div>
+                <div class="text-[10px] text-gray-500 mt-0.5" id="activeCallDetail">—</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button onclick="switchPage('chat')" class="btn btn-soft">Mở hội thoại</button>
+              <span class="text-[10px] text-gray-600 mx-1">Kết quả:</span>
+              <button onclick="finishCall('done')" class="btn btn-ghost hover:text-emerald-400">Đã tư vấn xong</button>
+              <button onclick="finishCall('no_answer')" class="btn btn-ghost hover:text-amber-400">Không nghe máy</button>
+              <button onclick="finishCall('busy')" class="btn btn-ghost hover:text-amber-400">Máy bận</button>
+              <button onclick="finishCall('refused')" class="btn btn-ghost hover:text-red-400">Từ chối</button>
+              <button onclick="finishCall('dnc')" class="btn btn-ghost hover:text-red-400">Không gọi lại</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thống kê -->
+        <div class="stat-strip" style="grid-template-columns:repeat(5,1fr)" id="contactStats"></div>
+
+        <!-- ===== Chạy chiến dịch tự động (Điều 6: B1 -> B2 -> B3) ===== -->
+        <div class="panel" id="campaignRunner">
+          <div class="panel-head">
+            <span class="panel-title">Chạy chiến dịch tự động</span>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleCampaignSettings()" class="text-[10px] text-gray-500 hover:text-white" id="cpSettingsToggle">Cài đặt khác</button>
+              <button onclick="importFromCampaign()" class="text-[10px] text-cyan-400 hover:text-cyan-300">Nhập từ chiến dịch khác</button>
+            </div>
+          </div>
+
+          <div class="p-4 space-y-3">
+            <div class="text-[11px] text-gray-500" id="cpNoCampaign">
+              Chọn một chiến dịch ở ô lọc phía dưới để bật chế độ chạy tự động.
+            </div>
+
+            <div id="cpBody" class="hidden space-y-3">
+              <!-- B1 + B2 -->
+              <div class="grid grid-cols-4 gap-3">
+                <div>
+                  <label class="fld">B1 · Kịch bản</label>
+                  <select id="cpScenario" class="inp"></select>
+                </div>
+                <div>
+                  <label class="fld">Giọng đọc</label>
+                  <select id="cpVoice" class="inp"></select>
+                </div>
+                <div>
+                  <label class="fld">Máy gọi (giữ Ctrl để chọn nhiều)</label>
+                  <select id="cpDevices" class="inp" multiple size="1" style="height:34px"></select>
+                </div>
+                <div>
+                  <label class="fld">Số cuộc gọi cùng lúc</label>
+                  <input type="number" id="cpConcurrency" class="inp" min="1" max="20" value="1">
+                </div>
+              </div>
+
+              <!-- B3: cài đặt khác -->
+              <div id="cpSettings" class="hidden space-y-3 pt-1 border-t border-slate-750">
+                <div class="grid grid-cols-4 gap-3 pt-3">
+                  <div>
+                    <label class="fld">Ngày bắt đầu</label>
+                    <input type="date" id="cpStartDate" class="inp">
+                  </div>
+                  <div>
+                    <label class="fld">Ngày kết thúc</label>
+                    <input type="date" id="cpEndDate" class="inp">
+                  </div>
+                  <div class="col-span-2">
+                    <label class="fld">Khung giờ chạy</label>
+                    <div id="cpWindows" class="space-y-1.5"></div>
+                    <button onclick="addCallWindow()" class="text-[10px] text-cyan-400 hover:text-cyan-300 mt-1.5">+ Thêm khung giờ</button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3">
+                  <div class="col-span-2">
+                    <label class="fld">Gọi lại khi</label>
+                    <div class="flex items-center gap-3 pt-1">
+                      <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                        <input type="checkbox" id="cpRetryNoAnswer" class="accent-cyan-500"> Không bắt máy</label>
+                      <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                        <input type="checkbox" id="cpRetryBusy" class="accent-cyan-500"> Máy bận</label>
+                      <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                        <input type="checkbox" id="cpRetryVoicemail" class="accent-cyan-500"> Hộp thư thoại</label>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="fld">Số lần gọi lại tối đa</label>
+                    <input type="number" id="cpRetryMax" class="inp" min="1" max="10" value="3">
+                  </div>
+                  <div>
+                    <label class="fld">Gọi lại sau (phút)</label>
+                    <input type="number" id="cpRetryDelay" class="inp" min="1" value="30">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3">
+                  <div>
+                    <label class="fld">Khi vào hộp thư thoại</label>
+                    <select id="cpOnVoicemail" class="inp">
+                      <option value="hangup">Tắt máy ngay</option>
+                      <option value="continue">Vẫn nói tiếp</option>
+                    </select>
+                  </div>
+                  <div class="flex items-end pb-1.5">
+                    <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                      <input type="checkbox" id="cpDetectGender" class="accent-cyan-500"> Nhận diện giới tính</label>
+                  </div>
+                  <div class="flex items-end pb-1.5">
+                    <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+                      <input type="checkbox" id="cpRecord" class="accent-cyan-500"> Ghi âm cuộc gọi</label>
+                  </div>
+                  <div class="flex items-end justify-end">
+                    <button onclick="saveCampaignSettings()" class="btn btn-soft">Lưu cài đặt</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Điều khiển + tiến độ -->
+              <div class="flex items-center justify-between gap-4 flex-wrap pt-1 border-t border-slate-750">
+                <div class="flex items-center gap-2 pt-3">
+                  <button onclick="startCampaign()" class="btn btn-primary" id="cpBtnStart">Bắt đầu</button>
+                  <button onclick="pauseCampaign()" class="btn btn-ghost hidden" id="cpBtnPause">Tạm dừng</button>
+                  <button onclick="resumeCampaign()" class="btn btn-soft hidden" id="cpBtnResume">Tiếp tục</button>
+                  <button onclick="stopCampaign()" class="btn btn-ghost hover:text-red-400 hidden" id="cpBtnStop">Dừng</button>
+                </div>
+                <div class="text-[11px] text-gray-500 pt-3" id="cpProgress"></div>
+              </div>
+
+              <div id="cpActiveCalls" class="space-y-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: thêm số -->
+        <div id="panelAddContact" class="panel hidden">
+          <div class="panel-head">
+            <span class="panel-title">Thêm số vào danh bạ</span>
+            <button onclick="toggleContactPanel('add')" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-5 gap-3">
+              <div>
+                <label class="fld">Số điện thoại</label>
+                <input type="text" id="contactPhone" placeholder="0912 345 678" class="inp font-mono">
+              </div>
+              <div>
+                <label class="fld">Tên khách hàng</label>
+                <input type="text" id="contactName" placeholder="Anh Minh" class="inp">
+              </div>
+              <div>
+                <label class="fld">Sản phẩm quan tâm</label>
+                <select id="contactProduct" class="inp">
+                  <option value="vay tín chấp">Vay tín chấp</option>
+                  <option value="vay mua nhà">Vay mua nhà</option>
+                  <option value="thẻ tín dụng">Thẻ tín dụng</option>
+                  <option value="tiết kiệm">Tiết kiệm</option>
+                </select>
+              </div>
+              <div>
+                <label class="fld">Chiến dịch</label>
+                <select id="contactCampaign" class="inp"></select>
+              </div>
+              <div>
+                <label class="fld">Ghi chú</label>
+                <input type="text" id="contactNote" placeholder="vd: gọi sau 17h" class="inp">
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+              <button onclick="toggleContactPanel('add')" class="btn btn-ghost">Hủy</button>
+              <button onclick="addContact()" class="btn btn-soft">Thêm vào danh bạ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: nhập danh sách -->
+        <div id="panelImport" class="panel hidden">
+          <div class="panel-head">
+            <span class="panel-title">Nhập danh sách số</span>
+            <button onclick="toggleContactPanel('import')" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4 grid grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <div>
+                <label class="fld">File CSV</label>
+                <input type="file" id="contactCsvFile" accept=".csv,.txt" class="w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
+              </div>
+              <div>
+                <label class="fld">Hoặc dán danh sách</label>
+                <textarea id="contactPasteText" rows="4" placeholder="0912345678,Anh Minh&#10;0987654321,Chị Hoa" class="inp font-mono resize-none"></textarea>
+              </div>
+            </div>
+            <div class="flex flex-col justify-between">
+              <div class="text-[11px] text-gray-500 leading-relaxed">
+                Nhận file CSV có cột <span class="font-mono text-gray-400">sđt, tên, sản phẩm, ghi chú</span> (tên cột tiếng Việt hoặc tiếng Anh đều được), hoặc danh sách số mỗi dòng một số.<br><br>
+                Số đã có trong danh bạ sẽ được cập nhật thông tin, <span class="text-gray-400">không tạo bản sao</span> và <span class="text-gray-400">không mất trạng thái đã gọi</span>.<br><br>
+                Nhập vào chiến dịch: <span class="text-cyan-400 font-semibold" id="importTargetCampaign">Tất cả</span>
+              </div>
+              <button onclick="importContacts()" class="btn btn-soft self-end mt-3">Nhập danh sách</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chiến dịch -->
+        <div class="flex items-center gap-2 flex-wrap" id="campaignChips"></div>
+
+        <!-- Bảng danh bạ -->
+        <div class="panel">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-750 flex-wrap">
+            <div class="relative flex-1 min-w-[180px]">
+              <svg class="w-3.5 h-3.5 text-gray-600 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input type="text" id="contactSearch" placeholder="Tìm số hoặc tên khách hàng..." oninput="debouncedContactSearch()" class="inp pl-9">
+            </div>
+            <select id="filterStatus" onchange="loadContacts(1)" class="inp w-40">
+              <option value="">Mọi trạng thái</option>
+            </select>
+            <div id="bulkBar" class="hidden items-center gap-2">
+              <span class="text-[11px] text-gray-500"><span id="bulkCount">0</span> số đã chọn</span>
+              <button onclick="deleteSelectedContacts()" class="btn btn-danger">Xóa</button>
+            </div>
+            <button onclick="loadContacts()" class="btn btn-ghost">Làm mới</button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="data-table w-full">
+              <thead>
+                <tr>
+                  <th class="w-9"><input type="checkbox" id="contactCheckAll" onchange="toggleAllContacts(this.checked)"></th>
+                  <th>Số điện thoại</th>
+                  <th>Khách hàng</th>
+                  <th class="col-product">Sản phẩm</th>
+                  <th class="col-campaign">Chiến dịch</th>
+                  <th>Trạng thái</th>
+                  <th class="text-center">Lần gọi</th>
+                  <th class="col-when">Gọi lúc</th>
+                  <th class="text-right pr-4">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="contactTableBody">
+                <tr><td colspan="9" class="text-center text-xs text-gray-600 py-12">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center justify-between px-4 py-3 border-t border-slate-750">
+            <div class="text-[11px] text-gray-500" id="contactPageInfo">—</div>
+            <div class="flex gap-2">
+              <button onclick="changeContactPage(-1)" class="btn btn-ghost">Trước</button>
+              <button onclick="changeContactPage(1)" class="btn btn-ghost">Sau</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lịch sử cuộc gọi của 1 số -->
+        <div id="attemptPanel" class="hidden panel">
+          <div class="panel-head">
+            <span class="panel-title">Lịch sử gọi — <span id="attemptPhone" class="font-mono text-cyan-400"></span></span>
+            <button onclick="document.getElementById('attemptPanel').classList.add('hidden')" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div id="attemptList" class="p-4 space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: DEVICES (thiết bị kết nối) ===== -->
+    <!-- ===== PAGE: SESSIONS (quản lý phiên hội thoại) ===== -->
+    <div class="page hidden overflow-y-auto" id="page-sessions">
+      <div class="p-6 max-w-[1200px] mx-auto">
+        <div class="flex items-start justify-between mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-white">Phiên hội thoại</h2>
+            <p class="text-xs text-gray-500 mt-1">Lịch sử toàn bộ cuộc gọi: nội dung hội thoại, độ trễ, kết quả</p>
+          </div>
+          <button onclick="loadSessionStats(); loadSessionHistory()" class="px-3 py-2 rounded-lg bg-deep border border-slate-750 text-xs text-gray-400 hover:text-white hover:border-gray-600 transition-colors">Làm mới</button>
+        </div>
+
+        <!-- Thống kê -->
+        <div class="grid grid-cols-5 gap-3 mb-5" id="sessionStats"></div>
+
+        <!-- Toolbar -->
+        <div class="flex items-center gap-2 mb-4">
+          <div class="relative flex-1 max-w-sm">
+            <svg class="w-4 h-4 text-gray-600 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="sessSearch" oninput="sessSearchChanged()" placeholder="Tìm theo tên khách, sản phẩm, mã phiên..."
+                   class="w-full bg-deep border border-slate-750 rounded-lg pl-9 pr-3 py-2 text-xs text-gray-300 outline-none focus:border-cyan-500/40">
+          </div>
+          <select id="sessStatusFilter" onchange="sessFilterChanged()" class="bg-deep border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang diễn ra</option>
+            <option value="ended">Đã kết thúc</option>
+          </select>
+        </div>
+
+        <!-- Danh sách -->
+        <div class="bg-deep border border-slate-750 rounded-xl overflow-hidden">
+          <div class="grid grid-cols-[90px_1fr_150px_70px_90px_130px_70px] gap-2 px-4 py-2.5 border-b border-slate-750 text-[10px] text-gray-500 uppercase tracking-wider">
+            <span>Mã phiên</span><span>Khách hàng</span><span>Sản phẩm</span><span>Lượt</span><span>Thời lượng</span><span>Bắt đầu</span><span></span>
+          </div>
+          <div id="sessionList"></div>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="flex items-center justify-between mt-4">
+          <span class="text-[11px] text-gray-500" id="sessPageInfo"></span>
+          <div class="flex gap-2">
+            <button onclick="sessPrevPage()" id="sessPrevBtn" class="px-3 py-1.5 rounded-lg bg-deep border border-slate-750 text-xs text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors">← Trước</button>
+            <button onclick="sessNextPage()" id="sessNextBtn" class="px-3 py-1.5 rounded-lg bg-deep border border-slate-750 text-xs text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Sau →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal chi tiết phiên -->
+      <div id="sessModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6" style="background: rgba(3,5,10,0.75)" onclick="if(event.target===this) closeSessModal()">
+        <div class="bg-abyss border border-slate-750 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-750">
+            <div>
+              <h3 class="text-sm font-bold text-white" id="sessModalTitle">Chi tiết phiên</h3>
+              <p class="text-[10px] text-gray-500 mt-0.5 font-mono" id="sessModalMeta"></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="deleteSessionRecord(currentSessId, true)" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-[11px] font-semibold hover:bg-red-500/20 transition-colors">Xoá phiên</button>
+              <button onclick="closeSessModal()" class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-slate-750 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5" id="sessModalBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page hidden overflow-y-auto" id="page-devices">
+      <div class="p-6 max-w-[1300px] mx-auto space-y-4">
+        <!-- Tốc độ đọc khi GỌI ĐIỆN. Tách riêng khỏi tốc từng giọng vì kênh
+             GSM 8kHz cắt sạch dải trên 4kHz - đúng dải mang phụ âm - nên tốc
+             nghe rõ trên web chưa chắc rõ qua điện thoại. -->
+        <div class="panel p-4 mb-4">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div class="text-xs font-semibold text-white">Tốc độ đọc khi gọi điện thoại</div>
+              <div class="text-[10px] text-gray-600 mt-1 max-w-xl leading-relaxed">
+                Nhân vào tốc riêng của từng giọng, chỉ áp cho cuộc gọi thật.
+                Kênh GSM 8kHz cắt mất dải cao — dải mang phụ âm s, x, ch, tr —
+                nên qua điện thoại thường phải đọc chậm hơn nghe trên web.
+              </div>
+            </div>
+            <div class="text-right">
+              <div id="tocThoaiSo" class="text-2xl font-bold font-mono text-cyan-400">1.00</div>
+              <div class="text-[9px] text-gray-600 uppercase tracking-wider">hệ số</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 mt-3">
+            <span class="text-[10px] text-gray-600 w-14">chậm 0.6</span>
+            <input type="range" id="tocThoai" min="0.6" max="1.4" step="0.02" value="1"
+                   oninput="document.getElementById('tocThoaiSo').textContent = (+this.value).toFixed(2)"
+                   onchange="luuTocThoai(this.value)"
+                   class="flex-1 accent-cyan-500 cursor-pointer">
+            <span class="text-[10px] text-gray-600 w-14 text-right">1.4 nhanh</span>
+          </div>
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
+            <select id="tocThoaiGiong" class="bg-void border border-slate-750 rounded-lg px-3 py-1.5 text-xs text-gray-300 outline-none"></select>
+            <button onclick="ngheThuThoai(true)" class="btn btn-primary text-xs">Nghe như khách nghe (8kHz)</button>
+            <button onclick="ngheThuThoai(false)" class="btn text-xs">Nghe bản gốc</button>
+            <span id="tocThoaiTrangThai" class="text-[10px] text-gray-600"></span>
+          </div>
+        </div>
+
+
+        <!-- Bot nhận cuộc gọi đến (Điều 6: bot tiếp nhận cuộc gọi vào) -->
+        <div class="panel hidden" id="inboundPanel">
+          <div class="panel-head">
+            <span class="panel-title">Tự nhận cuộc gọi đến</span>
+            <button onclick="document.getElementById('inboundPanel').classList.add('hidden')"
+                    class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4">
+            <p class="text-[11px] text-gray-500 mb-3">
+              Máy bật mục này sẽ tự bắt máy khi có cuộc gọi tới, mở phiên AI theo
+              kịch bản đã chọn rồi nói chuyện với khách. Chỉ máy trong phone farm
+              (kết nối ADB) làm được.
+            </p>
+            <div id="inboundRows" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Thiết bị kết nối</h2>
+            <p class="text-xs text-gray-500 mt-1">Điện thoại / gateway / modem mà hệ thống dùng để gọi ra và nhận cuộc gọi vào</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="scanDevices()" class="btn btn-ghost">Quét cổng USB</button>
+            <button onclick="checkAllDevices()" class="btn btn-ghost">Kiểm tra tất cả</button>
+            <button onclick="loadInboundPanel()" class="btn btn-ghost">Nhận cuộc gọi đến</button>
+            <button onclick="toggleDevicePanel(true)" class="btn btn-soft">+ Thêm thiết bị</button>
+          </div>
+        </div>
+
+        <!-- Thống kê -->
+        <div class="stat-strip" style="grid-template-columns:repeat(4,1fr)" id="deviceStats"></div>
+
+        <!-- ===== Quét thiết bị thật (ADB) + kiểm tra máy ===== -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+
+          <!-- Phone farm qua ADB -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Phone farm (ADB)</span>
+              <button onclick="scanAdb()" class="btn btn-soft">Quét máy</button>
+            </div>
+            <div class="p-4">
+              <p class="text-[11px] text-gray-500 mb-3">
+                Cắm điện thoại Android qua USB hub, bật <span class="text-gray-400">Gỡ lỗi USB</span> trên máy.
+                Hệ thống sẽ tự bấm số và đọc trạng thái cuộc gọi qua ADB.
+              </p>
+              <div id="adbScanResult" class="space-y-2">
+                <div class="text-xs text-gray-600 text-center py-6">Đang tìm điện thoại đang cắm...</div>
+              </div>
+              <div id="adbImportBar" class="hidden flex items-center justify-between gap-2 mt-3 pt-3 border-t border-slate-750/60">
+                <span class="text-[11px] text-gray-500" id="adbSelectedInfo"></span>
+                <button onclick="importScanned('adb')" class="btn btn-primary">Thêm máy đã chọn</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kiểm tra máy vừa cắm -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Kiểm tra máy</span>
+              <span class="text-[10px] text-gray-500" id="diagTarget"></span>
+            </div>
+            <div class="p-4">
+              <p class="text-[11px] text-gray-500 mb-3">
+                Cắm máy vào mà chưa gọi được thì tắc ở đâu? Bấm
+                <span class="text-gray-400">Kiểm tra</span> ở một máy bên trái để soi từng khâu:
+                kết nối USB, màn hình, SIM, sóng, pin, root và app cầu nối tiếng.
+              </p>
+              <div id="diagResult" class="space-y-1.5">
+                <div class="text-xs text-gray-600 text-center py-6">Chưa kiểm tra máy nào.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gợi ý từ cổng USB -->
+        <div id="deviceSuggestions" class="hidden panel p-4"></div>
+
+        <!-- Panel: thêm / sửa thiết bị -->
+        <div id="panelDevice" class="panel hidden">
+          <div class="panel-head">
+            <span class="panel-title" id="deviceFormTitle">Thêm thiết bị</span>
+            <button onclick="toggleDevicePanel(false)" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="fld">Tên thiết bị</label>
+                <input type="text" id="deviceName" placeholder="vd: Samsung A54 — SIM Viettel" class="inp">
+              </div>
+              <div>
+                <label class="fld">Loại kết nối</label>
+                <select id="deviceKind" class="inp">
+                  <option value="adb">Điện thoại phone farm (ADB/USB)</option>
+                  <option value="phone_link">Điện thoại qua app/gateway</option>
+                  <option value="usb_modem">USB modem / SIM box</option>
+                  <option value="sip">SIP / tổng đài</option>
+                  <option value="audio">Sound card / mic-loa</option>
+                </select>
+              </div>
+              <div>
+                <label class="fld">Số thuê bao của thiết bị</label>
+                <input type="text" id="devicePhone" placeholder="0912 345 678" class="inp font-mono">
+              </div>
+              <div>
+                <label class="fld">Địa chỉ <span class="text-gray-600 normal-case">— để kiểm tra kết nối</span></label>
+                <input type="text" id="deviceAddress" placeholder="192.168.1.50:8080 hoặc /dev/ttyUSB0" class="inp font-mono">
+              </div>
+              <div class="col-span-2">
+                <label class="fld">Link gọi <span class="text-gray-600 normal-case">— hệ thống thay {number} bằng số cần gọi, bỏ trống nếu bấm số thủ công</span></label>
+                <input type="text" id="deviceDialUrl" placeholder="http://192.168.1.50:8080/call?number={number}" class="inp font-mono">
+              </div>
+              <div class="col-span-3">
+                <label class="fld">Ghi chú</label>
+                <input type="text" id="deviceNote" placeholder="vd: máy để bàn phòng kinh doanh" class="inp">
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+              <button onclick="toggleDevicePanel(false)" class="btn btn-ghost">Hủy</button>
+              <button onclick="saveDevice()" id="deviceSaveBtn" class="btn btn-soft">Thêm thiết bị</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danh sách thiết bị -->
+        <div id="deviceList" class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div class="col-span-2 text-xs text-gray-600 text-center py-10">Đang tải...</div>
+        </div>
+
+        <!-- Gọi thử -->
+        <div class="panel p-4">
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-2 mr-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></div>
+              <span class="text-sm font-semibold text-white">Gọi thử</span>
+            </div>
+            <select id="testCallDevice" class="inp w-56"></select>
+            <input type="text" id="testCallNumber" placeholder="Số cần gọi thử" class="inp flex-1 min-w-[160px] font-mono">
+            <button onclick="testCall()" class="btn btn-primary">Gọi thử</button>
+            <span id="testCallResult" class="text-[11px] hidden"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: BENCHMARK ===== -->
+    <div class="page hidden overflow-y-auto" id="page-benchmark">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Benchmark</h2>
+          <p class="text-xs text-gray-500 mt-1">Đo hiệu năng từng module trong pipeline AI</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <!-- STT -->
+          <div class="bench-card group bg-deep border border-slate-750 rounded-xl p-5 hover:border-cyan-500/20 transition-colors">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg></div>
+              <div><div class="text-sm font-semibold text-white" id="benchTenSTT">STT</div><div class="text-[10px] text-gray-500">Nhận dạng giọng nói</div></div>
+            </div>
+            <button onclick="runBenchmark('stt')" class="w-full py-2 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/20 transition-colors mb-3">Chạy Test</button>
+            <pre class="bench-result text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-3 max-h-32 overflow-y-auto" id="benchResultSTT">Chưa chạy</pre>
+          </div>
+          <!-- LLM -->
+          <div class="bench-card group bg-deep border border-slate-750 rounded-xl p-5 hover:border-emerald-500/20 transition-colors">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
+              <div><div class="text-sm font-semibold text-white" id="benchTenLLM">LLM</div><div class="text-[10px] text-gray-500">Sinh câu trả lời</div></div>
+            </div>
+            <button onclick="runBenchmark('llm')" class="w-full py-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors mb-3">Chạy Test</button>
+            <pre class="bench-result text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-3 max-h-32 overflow-y-auto" id="benchResultLLM">Chưa chạy</pre>
+          </div>
+          <!-- TTS -->
+          <div class="bench-card group bg-deep border border-slate-750 rounded-xl p-5 hover:border-violet-500/20 transition-colors">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg></div>
+              <div><div class="text-sm font-semibold text-white" id="benchTenTTS">TTS</div><div class="text-[10px] text-gray-500">Tổng hợp giọng nói</div></div>
+            </div>
+            <button onclick="runBenchmark('tts')" class="w-full py-2 rounded-lg bg-violet-500/10 text-violet-400 text-xs font-semibold hover:bg-violet-500/20 transition-colors mb-3">Chạy Test</button>
+            <pre class="bench-result text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-3 max-h-32 overflow-y-auto" id="benchResultTTS">Chưa chạy</pre>
+          </div>
+          <!-- RAG -->
+          <div class="bench-card group bg-deep border border-slate-750 rounded-xl p-5 hover:border-amber-500/20 transition-colors">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg></div>
+              <div><div class="text-sm font-semibold text-white" id="benchTenRAG">RAG</div><div class="text-[10px] text-gray-500">Truy vấn knowledge base</div></div>
+            </div>
+            <button onclick="runBenchmark('rag')" class="w-full py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors mb-3">Chạy Test</button>
+            <pre class="bench-result text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-3 max-h-32 overflow-y-auto" id="benchResultRAG">Chưa chạy</pre>
+          </div>
+        </div>
+        <!-- Full Pipeline -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="text-sm font-semibold text-white">Full Pipeline Benchmark</div>
+              <div class="text-[10px] text-gray-500 mt-0.5">STT → RAG → LLM → TTS — End-to-end</div>
+            </div>
+            <button onclick="runBenchmark('full')" class="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">Chạy Full Pipeline</button>
+          </div>
+          <pre class="bench-result text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-4 max-h-64 overflow-y-auto" id="benchResultFull">Nhấn nút để chạy benchmark toàn bộ pipeline</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: VOICE ===== -->
+    <div class="page hidden overflow-y-auto" id="page-voice">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Quản lý giọng nói</h2>
+          <p class="text-xs text-gray-500 mt-1">Upload giọng mẫu, test TTS, và quản lý voice profiles</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <!-- Upload Voice -->
+          <div class="col-span-1 bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Upload giọng mẫu</h3>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên giọng</label>
+                <input type="text" id="voiceUploadName" placeholder="vd: nu_hanoi" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-violet-500/40">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">File WAV (5-10 giây)</label>
+                <input type="file" id="voiceUploadFile" accept=".wav,.mp3,.flac" class="w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-violet-500/10 file:text-violet-400 hover:file:bg-violet-500/20">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Transcript (nội dung đọc)</label>
+                <input type="text" id="voiceUploadText" placeholder="Nội dung trong file audio..." class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-violet-500/40">
+              </div>
+              <button onclick="uploadVoice()" class="w-full py-2 rounded-lg bg-violet-500/10 text-violet-400 text-xs font-semibold hover:bg-violet-500/20 transition-colors">Upload giọng mẫu</button>
+            </div>
+          </div>
+
+          <!-- Voice List -->
+          <div class="col-span-2 bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
+                <h3 class="text-sm font-semibold text-white">Danh sách giọng</h3>
+              </div>
+              <button onclick="loadVoiceList()" class="text-[10px] text-cyan-400 hover:text-cyan-300">Làm mới</button>
+            </div>
+            <div id="voiceList" class="space-y-2">
+              <div class="text-xs text-gray-600 text-center py-8">Đang tải...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test TTS -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <h3 class="text-sm font-semibold text-white">Test giọng nói (TTS)</h3>
+          </div>
+          <div class="flex gap-3">
+            <select id="ttsTestVoice" class="bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none w-40">
+              <option value="default">Giọng mặc định</option>
+            </select>
+            <input type="text" id="ttsTestText" value="Xin chào anh chị, em là nhân viên tư vấn ngân hàng ABC" class="flex-1 bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-emerald-500/40">
+            <button onclick="testTTS()" id="ttsTestBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Phát thử</button>
+          </div>
+          <div id="ttsTestResult" class="mt-3 text-xs text-gray-500 hidden">
+            <audio id="ttsTestAudio" controls class="w-full h-8 mt-2"></audio>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: VOICE TEST ===== -->
+    <div class="page hidden overflow-y-auto" id="page-voice-test">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Test giọng nói</h2>
+          <p class="text-xs text-gray-500 mt-1">Nghe thử, so sánh hai giọng cạnh nhau, đo độ trễ tổng hợp</p>
+        </div>
+
+        <div id="vtestWarn" class="hidden mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-300"></div>
+
+        <!-- Nội dung đọc -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mb-4">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg></div>
+            <h3 class="text-sm font-semibold text-white">Nội dung đọc</h3>
+          </div>
+          <textarea id="vtestText" rows="2" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-cyan-500/40 resize-y">Dạ em chào anh ạ, bên em đang có chương trình vay ưu đãi lãi suất chỉ từ bảy phẩy chín phần trăm một năm ạ.</textarea>
+          <div class="mt-3">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Câu hay đọc vấp — bấm để thử</div>
+            <div id="vtestPresets" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- So sánh A/B -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">So sánh A / B</h3>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer">
+              <input type="checkbox" id="vtestFast" class="accent-emerald-500">
+              Chunk đầu — hiện đang để bằng chunk sau (nfe 16), bật lên không đổi gì
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-slate-750 p-4">
+              <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Giọng A</div>
+              <select id="vtestVoiceA" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none mb-3"></select>
+              <div id="vtestMetaA" class="text-[11px] text-gray-500 mb-2">—</div>
+              <audio id="vtestAudioA" controls class="w-full h-8"></audio>
+              <button onclick="downloadVoiceTest('A')" id="vtestDlA" class="hidden mt-2 text-[10px] text-cyan-400 hover:text-cyan-300">Tải WAV</button>
+            </div>
+            <div class="rounded-lg border border-slate-750 p-4">
+              <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Giọng B</div>
+              <select id="vtestVoiceB" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none mb-3"></select>
+              <div id="vtestMetaB" class="text-[11px] text-gray-500 mb-2">—</div>
+              <audio id="vtestAudioB" controls class="w-full h-8"></audio>
+              <button onclick="downloadVoiceTest('B')" id="vtestDlB" class="hidden mt-2 text-[10px] text-cyan-400 hover:text-cyan-300">Tải WAV</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 mt-4">
+            <button onclick="runVoiceTest()" id="vtestBtn" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Tổng hợp cả hai</button>
+            <span id="vtestStatus" class="text-[11px] text-gray-500"></span>
+          </div>
+          <p class="text-[10px] text-gray-600 mt-3">Nghe thử qua loa điện thoại thật trước khi chốt — cuộc gọi thực tế nén giọng xuống băng hẹp, nhiều lỗi chỉ lộ ra ở đó.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: VOICE TRAINING ===== -->
+    <div class="page hidden overflow-y-auto" id="page-voice-training">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Training giọng nói</h2>
+          <p class="text-xs text-gray-500 mt-1">Thu 60 câu kịch bản → chuẩn hoá → fine-tune F5-TTS</p>
+        </div>
+
+        <div class="mb-4 rounded-xl border border-slate-750 bg-deep/60 px-4 py-3 text-[11px] text-gray-400">
+          <span class="text-amber-400 font-semibold">Pháp lý:</span>
+          giọng nói là dữ liệu sinh trắc học (Nghị định 13/2023). Phải có văn bản đồng ý của người được thu âm trước khi clone giọng, kể cả nhân viên công ty.
+        </div>
+
+        <!-- ① Chọn giọng -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mb-4">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 text-xs font-bold">1</div>
+            <h3 class="text-sm font-semibold text-white">Chọn giọng</h3>
+          </div>
+          <div class="flex gap-3 items-end">
+            <div class="flex-1">
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên giọng (chữ thường, không dấu)</label>
+              <input type="text" id="vtrainName" placeholder="vd: giong_lan" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-violet-500/40">
+            </div>
+            <button onclick="loadVoiceTraining()" class="px-4 py-2 rounded-lg bg-violet-500/10 text-violet-400 text-xs font-semibold hover:bg-violet-500/20 transition-colors">Mở bộ thu âm</button>
+          </div>
+          <div id="vtrainVoices" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- ② Thu âm -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mb-4" id="vtrainRecordCard">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 text-xs font-bold">2</div>
+              <h3 class="text-sm font-semibold text-white">Thu âm</h3>
+            </div>
+            <div id="vtrainProgress" class="text-[11px] text-gray-500">—</div>
+          </div>
+
+          <div id="vtrainRecorder" class="hidden">
+            <div class="rounded-lg border border-slate-750 bg-void/40 p-5">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] text-gray-500">Câu <span id="vtrainNo" class="text-cyan-400 font-semibold">001</span> / <span id="vtrainTotal">60</span></span>
+                <span id="vtrainGroup" class="text-[11px] text-gray-600"></span>
+              </div>
+              <p id="vtrainSentence" class="text-base text-gray-200 leading-relaxed my-4 min-h-[3.5rem]"></p>
+              <div class="flex items-center gap-3 flex-wrap">
+                <button onclick="toggleVoiceTrainRecord()" id="vtrainRecBtn" class="px-5 py-2 rounded-lg bg-red-500/15 text-red-400 text-xs font-bold hover:bg-red-500/25 transition-colors">● Thu</button>
+                <button onclick="playVoiceTrainTake()" id="vtrainPlayBtn" class="px-4 py-2 rounded-lg bg-deep border border-slate-750 text-gray-400 text-xs hover:text-cyan-400 transition-colors">▶ Nghe lại</button>
+                <button onclick="deleteVoiceTrainTake()" id="vtrainDelBtn" class="px-4 py-2 rounded-lg bg-deep border border-slate-750 text-gray-400 text-xs hover:text-red-400 transition-colors">↺ Thu lại</button>
+                <div class="flex-1"></div>
+                <button onclick="stepVoiceTrain(-1)" class="px-3 py-2 rounded-lg bg-deep border border-slate-750 text-gray-400 text-xs hover:text-white">← Trước</button>
+                <button onclick="stepVoiceTrain(1)" class="px-4 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/20">Câu sau →</button>
+              </div>
+              <audio id="vtrainAudio" class="hidden"></audio>
+              <div id="vtrainRecMsg" class="text-[11px] text-gray-500 mt-3"></div>
+            </div>
+
+            <div class="mt-4">
+              <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Tiến độ 60 câu — bấm để nhảy tới</div>
+              <div id="vtrainGrid" class="flex flex-wrap gap-1"></div>
+            </div>
+
+            <div class="mt-4 border-t border-slate-750 pt-4">
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Hoặc upload file đã thu sẵn (tên file = số thứ tự câu)</label>
+              <div class="flex gap-3 items-center">
+                <input type="file" id="vtrainUploadFiles" multiple accept=".wav,.mp3,.m4a,.flac,.ogg" class="flex-1 text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20">
+                <button onclick="uploadVoiceTrainFiles()" class="px-4 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/20">Upload</button>
+              </div>
+              <div id="vtrainUploadMsg" class="text-[11px] text-gray-500 mt-2"></div>
+            </div>
+
+            <!-- Đường riêng cho BẢN THU DÀI. Không gộp vào ô upload ở trên vì
+                 hai thứ khác hẳn: trên đòi tên file là số câu để gán transcript
+                 theo kịch bản; dưới nhận một file liền mạch rồi tự cắt, và nội
+                 dung sau khi cắt gần như chắc chắn không khớp kịch bản nên buộc
+                 phải phiên âm bằng PhoWhisper ở bước 3. -->
+            <div class="mt-4 border-t border-slate-750 pt-4">
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Hoặc upload MỘT bản thu dài (30-60 phút) — tự cắt thành từng câu</label>
+              <div class="flex gap-3 items-center">
+                <input type="file" id="vtrainLongFile" accept=".wav,.mp3,.m4a,.flac,.ogg" class="flex-1 text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
+                <button onclick="uploadVoiceTrainLong()" class="px-4 py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20">Cắt &amp; nạp</button>
+              </div>
+              <div id="vtrainLongMsg" class="text-[11px] text-gray-500 mt-2">
+                Cắt tại chỗ ngắt giọng bằng Silero VAD. Sau khi cắt xong nhớ tích
+                "Dùng PhoWhisper cho file ngoài kịch bản" ở bước 3.
+              </div>
+            </div>
+          </div>
+          <div id="vtrainRecorderEmpty" class="text-xs text-gray-600 text-center py-6">Nhập tên giọng rồi bấm "Mở bộ thu âm".</div>
+        </div>
+
+        <!-- ③ Chuẩn hoá + ④ Train -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 text-xs font-bold">3</div>
+              <h3 class="text-sm font-semibold text-white">Chuẩn hoá dataset</h3>
+            </div>
+            <p class="text-[11px] text-gray-500 mb-3">Hạ 24kHz mono, cắt khoảng lặng, chuẩn âm lượng, gán transcript theo kịch bản.</p>
+            <label class="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer">
+              <input type="checkbox" id="vtrainUseAsr" checked class="accent-amber-500">
+              Dùng PhoWhisper cho file ngoài kịch bản
+            </label>
+            <!-- Lời giải thích khi hệ thống TỰ tích và khoá ô ở trên. Im lặng
+                 đổi lựa chọn của người dùng là tệ hơn cả bắt họ tự tích. -->
+            <p id="vtrainAsrVi" class="text-[10px] text-amber-400/80 mb-3 ml-6"></p>
+            <button onclick="startVoicePrepare()" id="vtrainPrepBtn" class="w-full py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors">Chuẩn hoá dataset</button>
+            <p class="text-[10px] text-amber-500/70 mt-3">Transcript sinh bằng ASR phải soát lại từng file trước khi train — sai transcript là giọng train ra đọc sai.</p>
+          </div>
+
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xs font-bold">4</div>
+              <h3 class="text-sm font-semibold text-white">Fine-tune</h3>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Epochs</label>
+                <input type="number" id="vtrainEpochs" value="100" min="1" max="1000" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Batch size</label>
+                <input type="number" id="vtrainBatch" value="3200" min="400" max="20000" step="100" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+              </div>
+            </div>
+            <button onclick="startVoiceTrain()" id="vtrainTrainBtn" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Bắt đầu train</button>
+            <div id="vtrainGpuWarn" class="hidden mt-3 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-[11px] text-red-300"></div>
+          </div>
+        </div>
+
+        <!-- Log -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-slate-750 flex items-center justify-center"><svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Log</h3>
+              <span id="vtrainJobStatus" class="text-[11px] text-gray-500"></span>
+            </div>
+            <button onclick="cancelVoiceTrainJob()" id="vtrainCancelBtn" class="hidden px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors">Hủy</button>
+          </div>
+
+          <!-- Tiến độ. Trước đây trang này KHÔNG có gì ngoài log tqdm thô: thanh
+               vẽ vỡ font, tiếng Anh, và ETA của tqdm chỉ tính cho epoch hiện tại
+               (báo "còn 2 phút" trong khi cả buổi còn gần 3 tiếng). -->
+          <div id="vtrainTienDo" class="hidden mb-4">
+            <div class="flex items-center justify-between text-[10px] mb-1.5">
+              <span id="vtrainPct" class="font-mono font-bold text-emerald-400">0%</span>
+              <span id="vtrainEta" class="font-mono text-gray-500"></span>
+            </div>
+            <div class="h-1.5 bg-void rounded-full overflow-hidden">
+              <div id="vtrainBar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-500" style="width:0%"></div>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mt-3">
+              <div class="bg-void/50 rounded-lg px-2 py-1.5">
+                <div class="text-[9px] text-gray-600 uppercase tracking-wider">Vòng</div>
+                <div id="vtrainEpoch" class="text-[11px] font-mono text-gray-300">—</div>
+              </div>
+              <div class="bg-void/50 rounded-lg px-2 py-1.5">
+                <div class="text-[9px] text-gray-600 uppercase tracking-wider">Bước</div>
+                <div id="vtrainStep" class="text-[11px] font-mono text-gray-300">—</div>
+              </div>
+              <div class="bg-void/50 rounded-lg px-2 py-1.5">
+                <div class="text-[9px] text-gray-600 uppercase tracking-wider">Sai số</div>
+                <div id="vtrainLoss" class="text-[11px] font-mono text-gray-300">—</div>
+              </div>
+              <div class="bg-void/50 rounded-lg px-2 py-1.5">
+                <div class="text-[9px] text-gray-600 uppercase tracking-wider">Tốc độ</div>
+                <div id="vtrainSpeed" class="text-[11px] font-mono text-gray-300">—</div>
+              </div>
+            </div>
+            <div id="vtrainGiaiThich" class="mt-2 text-[10px] text-gray-600"></div>
+          </div>
+          <pre class="text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-4 h-64 overflow-y-auto leading-relaxed" id="vtrainLog">Chưa có tiến trình nào đang chạy.</pre>
+          <div id="vtrainDone" class="hidden mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-[11px] text-emerald-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: TRAINING ===== -->
+    <div class="page hidden overflow-y-auto" id="page-training">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Training Model</h2>
+          <p class="text-xs text-gray-500 mt-1">Fine-tune LLM với dữ liệu tư vấn ngân hàng của bạn</p>
+        </div>
+
+        <!-- ① Trạng thái: phải đủ điều kiện mới train được -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mb-4">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Trạng thái</h3>
+            </div>
+            <button onclick="refreshTrainStatus()" class="text-[10px] text-violet-400 hover:text-violet-300">Làm mới</button>
+          </div>
+          <!-- stat-strip + inline grid-template-columns: tailwind.css biên dịch
+               sẵn không có lớp grid-cols-4, khai nó thì các ô rơi xuống một cột.
+               Trang Thiết bị cũng né đúng kiểu này. -->
+          <div id="trainStatusGrid" class="stat-strip mb-4" style="grid-template-columns:repeat(3,1fr)">
+            <div class="stat-cell text-xs text-gray-600 text-center py-4">Đang tải...</div>
+          </div>
+          <div class="flex items-center gap-3 border-t border-slate-750 pt-3">
+            <button onclick="setupTrainEnv()" id="btnSetupEnv" class="px-4 py-2 rounded-lg bg-violet-500/10 text-violet-400 text-xs font-semibold hover:bg-violet-500/20 transition-colors">Cài môi trường training</button>
+            <span class="text-[11px] text-gray-600">Tải vài GB, chỉ cần làm một lần</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <!-- Upload Dataset -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Upload Dataset</h3>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên dataset</label>
+                <input type="text" id="datasetName" placeholder="vd: banking_conversations" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-amber-500/40">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">File CSV, JSONL hoặc TXT</label>
+                <input type="file" id="datasetFile" accept=".csv,.jsonl,.json,.txt" class="w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20">
+              </div>
+              <button onclick="uploadDataset()" class="w-full py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors">Upload Dataset</button>
+
+              <!-- Bắt đầu từ file mẫu: người điền không phải đoán định dạng,
+                   và các dòng mẫu đều đạt luật phong cách để nhìn là biết viết sao. -->
+              <div class="border-t border-slate-750 pt-3 space-y-2">
+                <a href="/api/training/datasets/template" download
+                   class="block w-full py-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors text-center">
+                  Tải file mẫu CSV để điền
+                </a>
+                <p class="text-[11px] text-gray-600 leading-relaxed">
+                  Mở bằng Excel, điền hai cột <span class="text-gray-400">khách hỏi</span> và
+                  <span class="text-gray-400">tư vấn trả lời</span>, lưu lại rồi upload.
+                  Khi lưu nhớ chọn <span class="text-gray-400">CSV UTF-8</span>.
+                </p>
+                <button onclick="generateSampleDataset()" class="w-full py-2 rounded-lg bg-deep border border-dashed border-slate-650 text-gray-500 text-xs hover:text-amber-400 hover:border-amber-500/30 transition-colors">Tạo dataset mẫu (5 samples)</button>
+              </div>
+              <div id="datasetCheck" class="hidden text-[11px] rounded-lg p-3 border"></div>
+            </div>
+          </div>
+
+          <!-- Dataset List -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg></div>
+                <h3 class="text-sm font-semibold text-white">Datasets</h3>
+              </div>
+              <button onclick="loadDatasets()" class="text-[10px] text-cyan-400 hover:text-cyan-300">Làm mới</button>
+            </div>
+            <div id="datasetList" class="space-y-2">
+              <div class="text-xs text-gray-600 text-center py-8">Đang tải...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Training Config -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>
+            <h3 class="text-sm font-semibold text-white">Cấu hình Training</h3>
+          </div>
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Base Model</label>
+              <select id="trainBaseModel" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+                <option value="Qwen/Qwen2.5-3B-Instruct" selected>Qwen2.5-3B (đang chạy)</option>
+                <option value="Qwen/Qwen2.5-7B-Instruct">Qwen2.5-7B (mạnh hơn, chậm hơn)</option>
+                <option value="Qwen/Qwen2.5-1.5B-Instruct">Qwen2.5-1.5B (nhẹ nhất)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Epochs</label>
+              <input type="number" id="trainEpochs" value="3" min="1" max="50" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Learning Rate</label>
+              <input type="text" id="trainLR" value="0.0002" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">LoRA Rank</label>
+              <select id="trainLoraRank" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+                <option value="8">8 (Nhẹ)</option>
+                <option value="16" selected>16 (Cân bằng)</option>
+                <option value="32">32 (Chi tiết)</option>
+                <option value="64">64 (Nặng)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Batch Size</label>
+              <input type="number" id="trainBatch" value="2" min="1" max="32" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Grad Accum</label>
+              <input type="number" id="trainGradAccum" value="8" min="1" max="64" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-[11px] text-gray-400 mb-4">
+            <input type="checkbox" id="trainAutoDeploy" checked class="accent-emerald-500">
+            Train xong tự nạp vào Ollama và chuyển sang dùng model mới
+          </label>
+          <div class="text-[11px] text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2 mb-4">
+            Trong lúc train, F5-TTS và Ollama sẽ được nhả khỏi VRAM — hệ thống không nhận cuộc gọi cho tới khi train xong.
+          </div>
+          <div class="flex gap-3">
+            <button onclick="startTraining()" id="btnStartTrain" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Bắt đầu Training</button>
+            <button onclick="cancelTrainJob()" id="btnCancelTrain" class="px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors hidden">Huỷ</button>
+          </div>
+        </div>
+
+        <!-- ③ Tiến độ + log trực tiếp -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mt-4 hidden" id="trainProgressCard">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white" id="trainJobLabel">Đang train</h3>
+            <span class="text-[11px] font-semibold" id="trainJobStatus">—</span>
+          </div>
+
+          <div class="w-full h-2 rounded-full bg-void overflow-hidden mb-2">
+            <div id="trainBar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300" style="width:0%"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-gray-500 mb-4">
+            <span id="trainBarLeft">—</span>
+            <span id="trainBarRight">—</span>
+          </div>
+
+          <div class="stat-strip mb-4" style="grid-template-columns:repeat(4,1fr)">
+            <div class="stat-cell"><div class="k">Bước</div><div class="v text-cyan-400" id="trainStep">—</div></div>
+            <div class="stat-cell"><div class="k">Epoch</div><div class="v text-violet-400" id="trainEpochNow">—</div></div>
+            <div class="stat-cell"><div class="k">Loss</div><div class="v text-amber-400" id="trainLoss">—</div></div>
+            <div class="stat-cell"><div class="k">Còn lại</div><div class="v text-emerald-400" id="trainEta">—</div></div>
+          </div>
+
+          <pre id="trainingOutput" class="text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-4 max-h-72 overflow-y-auto"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: MODELS (cài đặt) ===== -->
+    <div class="page hidden overflow-y-auto" id="page-models">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-white">Cài đặt Model</h2>
+            <p class="text-xs text-gray-500 mt-1">Tải model AI về máy — mỗi model chạy độc lập, cài cái nào dùng cái đó</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="loadSetupStatus()" class="px-3 py-1.5 bg-deep border border-slate-750 rounded-lg text-xs text-gray-400 hover:text-white hover:border-gray-600 transition-colors">Kiểm tra lại</button>
+            <button onclick="installComponent('all')" id="installAllBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/20">Cài tất cả còn thiếu</button>
+          </div>
+        </div>
+
+        <!-- Danh sách model -->
+        <div class="grid grid-cols-2 gap-4 mb-6" id="modelList">
+          <div class="col-span-2 text-xs text-gray-600 text-center py-10">Đang kiểm tra...</div>
+        </div>
+
+        <!-- Dịch vụ -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5 mb-6">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <h3 class="text-sm font-semibold text-white">Dịch vụ</h3>
+            <span class="text-[10px] text-gray-600">Model đã tải xong vẫn cần bật dịch vụ mới dùng được</span>
+          </div>
+          <div class="grid grid-cols-3 gap-3" id="serviceList"></div>
+        </div>
+
+        <!-- Log -->
+        <div class="bg-deep border border-slate-750 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-semibold text-white">Tiến trình cài đặt</h3>
+              <span id="setupJobStatus" class="text-[10px] font-mono text-gray-600"></span>
+            </div>
+            <button onclick="cancelSetupJob()" id="setupCancelBtn" class="hidden px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors">Hủy</button>
+          </div>
+          <pre class="text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-4 h-64 overflow-y-auto leading-relaxed" id="setupLog">Chưa có tiến trình nào đang chạy.</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: SETTINGS ===== -->
+    <div class="page hidden overflow-y-auto" id="page-settings">
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-white">Cài đặt</h2>
+          <p class="text-xs text-gray-500 mt-1">Cấu hình hệ thống AI</p>
+        </div>
+
+        <!-- ===== Kênh thông báo (Điều 6: gửi báo cáo qua Telegram) ===== -->
+        <div class="panel mb-4">
+          <div class="panel-head">
+            <span class="panel-title">Gửi báo cáo qua Telegram</span>
+            <button onclick="addNotifyChannel()" class="text-[10px] text-cyan-400 hover:text-cyan-300">+ Thêm bot</button>
+          </div>
+          <div class="p-4 space-y-3">
+            <details class="text-[11px] text-gray-500 leading-relaxed">
+              <summary class="cursor-pointer text-gray-400 hover:text-white">Lấy token và chat_id ở đâu?</summary>
+              <ol class="mt-2 ml-4 list-decimal space-y-0.5">
+                <li>Nhắn <span class="font-mono text-gray-400">@BotFather</span> trên Telegram, gõ <span class="font-mono text-gray-400">/newbot</span> để tạo bot và lấy token.</li>
+                <li>Nhắn một câu bất kỳ cho chính bot vừa tạo.</li>
+                <li>Mở <span class="font-mono text-gray-400">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</span> và lấy <span class="font-mono text-gray-400">chat.id</span>.</li>
+              </ol>
+            </details>
+            <div id="notifyChannels" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- ===== Dung lượng ghi âm ===== -->
+        <div class="panel mb-4">
+          <div class="panel-head"><span class="panel-title">Ghi âm cuộc gọi</span></div>
+          <div class="p-4 flex items-end gap-3 flex-wrap">
+            <div class="text-xs text-gray-400" id="recordingStats">Đang tải…</div>
+            <div class="ml-auto flex items-end gap-2">
+              <div>
+                <label class="fld">Xoá bản ghi cũ hơn (ngày)</label>
+                <input type="number" id="recCleanupDays" class="inp" style="width:120px" min="1" value="90">
+              </div>
+              <button onclick="cleanupRecordings()" class="btn btn-ghost hover:text-red-400">Dọn ổ đĩa</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Model -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">LLM Model</h3>
+            </div>
+            <select id="settingModel" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-cyan-500/40 transition-colors">
+              <option value="qwen2.5:3b">Qwen2.5-3B — Nhanh, TTFT thấp</option>
+              <option value="qwen2.5:7b">Qwen2.5-7B — Chất lượng cao</option>
+              <option value="qwen3:4b">Qwen3-4B — Thinking mode</option>
+            </select>
+          </div>
+          <!-- Banking -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Thông tin ngân hàng</h3>
+            </div>
+            <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1 mt-2">Tên ngân hàng</label>
+            <input type="text" id="settingBank" value="Ngân hàng ABC" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-cyan-500/40 transition-colors mb-3">
+            <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên nhân viên AI</label>
+            <input type="text" id="settingAgent" value="Lan" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-cyan-500/40 transition-colors">
+          </div>
+          <!-- Voice -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Giọng nói</h3>
+            </div>
+            <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">File giọng mẫu (ref audio)</label>
+            <div class="flex gap-2">
+              <input type="text" id="settingVoicePath" readonly placeholder="models/tts/ref_voices/default.wav" class="flex-1 bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-500 outline-none">
+              <button class="px-3 py-2 bg-violet-500/10 text-violet-400 rounded-lg text-xs font-semibold hover:bg-violet-500/20 transition-colors">Chọn file</button>
+            </div>
+          </div>
+          <!-- System -->
+          <div class="bg-deep border border-slate-750 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg></div>
+              <h3 class="text-sm font-semibold text-white">Thông tin hệ thống</h3>
+            </div>
+            <pre class="text-[10px] font-mono text-gray-500 bg-void/50 rounded-lg p-3 max-h-44 overflow-y-auto leading-relaxed" id="systemInfo">Đang tải...</pre>
+            <button onclick="checkHealth()" class="mt-3 w-full py-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors">Kiểm tra Health</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: LOGS ===== -->
+    <div class="page hidden flex-col" id="page-logs">
+      <div class="flex items-center justify-between p-6 pb-3">
+        <div>
+          <h2 class="text-lg font-bold text-white">Server Logs</h2>
+          <p class="text-xs text-gray-500 mt-1">Nhật ký hoạt động backend</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="logNguon" onchange="doiNguonLog()" class="px-3 py-1.5 bg-deep border border-slate-750 rounded-lg text-xs text-gray-300">
+            <option value="backend">Backend</option>
+            <option value="whisper">PhoWhisper (STT)</option>
+            <option value="ollama">Ollama (LLM)</option>
+            <option value="train_llm">Training LLM</option>
+            <option value="train_giong">Training giọng</option>
+          </select>
+          <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+            <input type="checkbox" id="logTuCuon" checked class="accent-cyan-500"> Bám đáy
+          </label>
+          <span id="logTrangThai" class="text-[10px] text-gray-600"></span>
+          <button onclick="clearLogs()" class="px-3 py-1.5 bg-deep border border-slate-750 rounded-lg text-xs text-gray-400 hover:text-white hover:border-gray-600 transition-colors">Xóa logs</button>
+        </div>
+      </div>
+      <pre class="flex-1 mx-6 mb-6 bg-deep border border-slate-750 rounded-xl p-4 text-[10px] font-mono text-gray-500 overflow-y-auto leading-relaxed" id="logViewer">Đang chờ kết nối server...</pre>
+    </div>
+
+    <!-- ===== PAGE: KỊCH BẢN (Điều 6 - B1: Chọn kịch bản) ===== -->
+    <div class="page hidden flex-1 overflow-y-auto" id="page-scenarios">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Kịch bản</h2>
+            <p class="text-xs text-gray-500 mt-1">
+              Bot xưng danh gì, chào thế nào, luật riêng của ngành. Các luật chung
+              (độ dài câu, cấm bịa số, cấm liệt kê) cố định trong hệ thống.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="/api/scenarios/template" class="btn btn-ghost">Tải form mẫu</a>
+            <label class="btn btn-ghost cursor-pointer">
+              Nhập từ file
+              <input type="file" accept=".json" class="hidden" onchange="importScenario(this)">
+            </label>
+            <button onclick="newScenario()" class="btn btn-primary">+ Kịch bản mới</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-[320px_1fr] gap-4 items-start">
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title">Danh sách</span></div>
+            <div id="scenarioList" class="p-2 space-y-1"></div>
+          </div>
+
+          <div class="panel" id="scenarioEditor">
+            <div class="panel-head">
+              <span class="panel-title" id="scenarioEditTitle">Chọn một kịch bản</span>
+              <div class="flex items-center gap-2" id="scenarioActions"></div>
+            </div>
+            <div class="p-4 space-y-4" id="scenarioForm">
+              <div class="text-xs text-gray-600">Chọn kịch bản bên trái, hoặc tạo mới.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: BÁO CÁO (Điều 6 - mục Báo cáo) ===== -->
+    <div class="page hidden flex-1 overflow-y-auto" id="page-reports">
+      <div class="p-6 max-w-[1600px] mx-auto space-y-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Báo cáo cuộc gọi</h2>
+            <p class="text-xs text-gray-500 mt-1">Lọc theo trạng thái, chất lượng, thời lượng, nhãn — nghe lại ghi âm và đọc tóm tắt</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="summarizePending()" class="btn btn-ghost">Tóm tắt các cuộc còn thiếu</button>
+            <button onclick="exportReport()" class="btn btn-soft">Xuất CSV</button>
+          </div>
+        </div>
+
+        <div class="stat-strip" style="grid-template-columns:repeat(5,1fr)" id="reportStats"></div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Bộ lọc</span>
+            <button onclick="resetReportFilter()" class="text-[10px] text-gray-500 hover:text-white">Xoá lọc</button>
+          </div>
+          <div class="p-4 grid grid-cols-6 gap-3">
+            <div><label class="fld">Từ ngày</label><input type="date" id="rpFrom" class="inp"></div>
+            <div><label class="fld">Đến ngày</label><input type="date" id="rpTo" class="inp"></div>
+            <div><label class="fld">Chiến dịch</label><select id="rpCampaign" class="inp"><option value="">Tất cả</option></select></div>
+            <div><label class="fld">Kết quả</label><select id="rpOutcome" class="inp"><option value="">Tất cả</option></select></div>
+            <div><label class="fld">Chất lượng</label><select id="rpQuality" class="inp"><option value="">Tất cả</option></select></div>
+            <div><label class="fld">Nhãn</label><select id="rpLabel" class="inp"><option value="">Tất cả</option></select></div>
+            <div><label class="fld">Thời lượng từ (giây)</label><input type="number" id="rpMinDur" class="inp" placeholder="0"></div>
+            <div><label class="fld">Đến (giây)</label><input type="number" id="rpMaxDur" class="inp" placeholder="—"></div>
+            <div><label class="fld">Giới tính</label><select id="rpGender" class="inp">
+              <option value="">Tất cả</option><option value="male">Nam</option>
+              <option value="female">Nữ</option><option value="unknown">Không rõ</option></select></div>
+            <div><label class="fld">Hướng gọi</label><select id="rpDirection" class="inp">
+              <option value="">Tất cả</option><option value="outbound">Gọi ra</option>
+              <option value="inbound">Gọi vào</option></select></div>
+            <div class="col-span-2"><label class="fld">Tìm (tên, số, nội dung hội thoại)</label>
+              <input type="text" id="rpQuery" class="inp" placeholder="ví dụ: lãi suất" onkeydown="if(event.key==='Enter')loadReport()"></div>
+            <div class="col-span-6 flex items-center gap-3">
+              <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                <input type="checkbox" id="rpHasRec" class="accent-cyan-500"> Chỉ cuộc có ghi âm
+              </label>
+              <!-- Phiên thử trên trang Hội thoại không quay số nên KHÔNG phải cuộc
+                   gọi; mặc định để ngoài báo cáo. Bật lên khi cần soi lại buổi thử. -->
+              <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                <input type="checkbox" id="rpGomThu" class="accent-amber-500"> Gộp cả phiên thử trên trình duyệt
+              </label>
+              <button onclick="loadReport()" class="btn btn-primary ml-auto">Áp dụng lọc</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title" id="reportCount">Cuộc gọi</span>
+            <div class="flex items-center gap-2" id="reportBulk"></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table w-full">
+              <thead><tr>
+                <th style="width:32px"><input type="checkbox" id="rpAll" onchange="toggleAllReportRows(this)" class="accent-cyan-500"></th>
+                <th>Thời gian</th><th>Khách</th><th>Số</th><th>Chiến dịch</th>
+                <th>Thời lượng</th><th>Kết quả</th><th>Chất lượng</th><th>Nhãn</th>
+                <th>Ghi âm</th><th>Tóm tắt</th><th></th>
+              </tr></thead>
+              <tbody id="reportRows"></tbody>
+            </table>
+          </div>
+          <div class="p-3 flex items-center justify-between" id="reportPager"></div>
+        </div>
+
+        <div class="panel hidden" id="reportDetail">
+          <div class="panel-head">
+            <span class="panel-title" id="reportDetailTitle">Chi tiết cuộc gọi</span>
+            <button onclick="closeCallDetail()" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4 space-y-4" id="reportDetailBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: NGUỒN DỮ LIỆU (Điều 6 - kết nối CSDL/Excel) ===== -->
+    <!-- ================= TRI THỨC AI ================= -->
+    <div class="page hidden flex-1 overflow-y-auto" id="page-knowledge">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Tri thức AI</h2>
+            <p class="text-xs text-gray-500 mt-1">
+              Đây là thứ AI đọc để tư vấn. Mọi con số bot nói cho khách — lãi suất,
+              hạn mức, điều kiện — đều lấy từ đây.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="napLaiTriThuc()" class="btn">Nạp lại toàn bộ</button>
+            <button onclick="soanTaiLieu()" class="btn btn-primary">+ Soạn tài liệu</button>
+          </div>
+        </div>
+
+        <div id="knCanhBao" class="hidden rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[11px] text-amber-300"></div>
+
+        <div class="panel p-4">
+          <div class="text-xs font-semibold text-white mb-2">Tải tài liệu lên</div>
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Nhóm</label>
+              <select id="knNhom" class="bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+                <option value="products">Sản phẩm</option>
+                <option value="faq">Câu hỏi thường gặp</option>
+                <option value="chinh_sach">Chính sách / điều kiện</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[240px]">
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">File</label>
+              <input type="file" id="knFile" accept=".md,.txt,.csv,.xlsx,.xls"
+                     class="w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-slate-750 file:text-gray-300 file:text-xs file:cursor-pointer">
+            </div>
+            <button onclick="uploadTriThuc()" id="knUpBtn" class="btn btn-primary">Tải lên</button>
+          </div>
+          <div class="text-[10px] text-gray-600 mt-2">
+            Nhận <span class="text-gray-400">.md .txt</span> và cả bảng tính
+            <span class="text-gray-400">.csv .xlsx</span> — bảng lãi suất Excel được
+            chuyển thành bảng cho AI đọc, không phải gõ lại tay. File Word/PDF thì
+            lưu thành .txt rồi tải lên.
+          </div>
+          <div id="knUpKetQua" class="hidden mt-3 text-[11px]"></div>
+        </div>
+
+        <div class="panel">
+          <div class="overflow-x-auto">
+            <table class="data-table w-full">
+              <thead><tr>
+                <th>Tài liệu</th><th>Nhóm</th><th>Kích thước</th>
+                <th>AI đã đọc</th><th>Sửa lần cuối</th><th></th>
+              </tr></thead>
+              <tbody id="knRows"><tr><td colspan="6" class="text-center text-gray-600 py-8 text-xs">Đang tải…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Soạn / sửa tài liệu -->
+      <div id="knEditor" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6">
+        <div class="bg-deep border border-slate-750 rounded-xl w-full max-w-3xl max-h-[88vh] flex flex-col">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-750">
+            <h3 id="knEditTitle" class="text-sm font-semibold text-white">Soạn tài liệu</h3>
+            <button onclick="dongSoanTaiLieu()" class="text-gray-500 hover:text-white text-lg leading-none">&times;</button>
+          </div>
+          <div class="p-5 space-y-3 overflow-y-auto">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên file</label>
+                <input type="text" id="knEditTen" placeholder="vay_tin_chap"
+                       class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Nhóm</label>
+                <select id="knEditNhom" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
+                  <option value="products">Sản phẩm</option>
+                  <option value="faq">Câu hỏi thường gặp</option>
+                  <option value="chinh_sach">Chính sách / điều kiện</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Nội dung</label>
+              <textarea id="knEditNoiDung" rows="18" spellcheck="false"
+                        class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-[11px] font-mono text-gray-300 outline-none leading-relaxed"></textarea>
+            </div>
+            <div class="text-[10px] text-gray-600">
+              Ghi số cụ thể, đừng ghi khoảng mơ hồ. Bot đọc nguyên con số ở đây cho
+              khách nghe — và có lưới chặn đối chiếu số trong câu trả lời với tài liệu này.
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-750">
+            <button onclick="dongSoanTaiLieu()" class="btn">Huỷ</button>
+            <button onclick="luuTaiLieu()" id="knLuuBtn" class="btn btn-primary">Lưu và nạp cho AI</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page hidden flex-1 overflow-y-auto" id="page-datasources">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Nguồn dữ liệu</h2>
+            <p class="text-xs text-gray-500 mt-1">
+              File Excel/CSV/SQLite trên máy để bot tra cứu khi tư vấn. Chỉ nhận
+              đường dẫn cục bộ — hệ thống chạy offline hoàn toàn.
+            </p>
+          </div>
+          <button onclick="newDataSource()" class="btn btn-primary">+ Thêm nguồn</button>
+        </div>
+
+        <!-- Upload. Trước đây trang này chỉ có ô gõ đường dẫn: người dùng phải tự
+             copy file vào máy chủ, tự biết đường tuyệt đối, tự biết tên bảng bên
+             trong .db. Giờ tải lên rồi CHỌN bảng từ danh sách dò được. -->
+        <div class="panel p-4">
+          <div class="text-xs font-semibold text-white mb-2">Tải file lên máy chủ</div>
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[260px]">
+              <input type="file" id="dsFile" accept=".db,.sqlite,.sqlite3,.db3,.csv,.xlsx,.xls"
+                     class="w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-slate-750 file:text-gray-300 file:text-xs file:cursor-pointer">
+            </div>
+            <button onclick="uploadNguonDuLieu()" id="dsUpBtn" class="btn btn-primary">Tải lên &amp; dò cấu trúc</button>
+          </div>
+          <div class="text-[10px] text-gray-600 mt-2">
+            Nhận <span class="text-gray-400">.db .sqlite</span> (cơ sở dữ liệu) và
+            <span class="text-gray-400">.xlsx .csv</span> (bảng tính), tối đa 200 MB.
+            File lưu vào <span class="font-mono">data/nguon/</span>.
+          </div>
+          <div id="dsUpKetQua" class="hidden mt-3 text-[11px]"></div>
+        </div>
+
+        <div class="panel">
+          <div class="p-4 text-xs text-gray-400 leading-relaxed border-b border-slate-750">
+            <div class="mb-1"><span class="tag tag-cyan">Tri thức chung</span>
+              Bảng giá, biểu phí, danh mục sản phẩm. Nạp vào kho tri thức, bot tìm gần đúng theo nghĩa.</div>
+            <div><span class="tag">Tra theo khách</span>
+              Dư nợ, đơn hàng. Khớp CHÍNH XÁC theo cột khoá (ví dụ số điện thoại), đọc thẳng từ file mỗi lần tra.</div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table w-full">
+              <thead><tr>
+                <th>Tên</th><th>Kiểu</th><th>Chế độ</th><th>Đường dẫn</th>
+                <th>Số dòng</th><th>Nạp lần cuối</th><th>Trạng thái</th><th></th>
+              </tr></thead>
+              <tbody id="dsRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel hidden" id="dsEditor">
+          <div class="panel-head">
+            <span class="panel-title" id="dsEditTitle">Nguồn dữ liệu</span>
+            <button onclick="closeDataSource()" class="text-[10px] text-gray-500 hover:text-white">Đóng</button>
+          </div>
+          <div class="p-4 space-y-4" id="dsForm"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/trang_moi.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "name": "voicebank-ai",
+  "version": "1.0.0",
+  "description": "VoiceBank AI - Offline Voice AI Call System",
+  "//main": "File này là package.json PHÁT TRIỂN. Ứng dụng thật nằm ở app/ và có package.json riêng - electron-builder tự nhận app/ làm thư mục ứng dụng (quy ước hai package.json), lấy entry từ app/package.json. Nên `main` ở đây chỉ dùng cho `electron .` chạy tay; đừng trỏ nó vào main.js ngoài này (bản cũ 23/5, port 8000, không có PhoWhisper).",
+  "main": "app/main.js",
+  "//build-notes": {
+    "files": "Đường dẫn trong build.files tính TỪ app/ chứ không phải từ thư mục này, vì app/ mới là thư mục ứng dụng. Viết `app/**/*` là sai gốc và ra asar rỗng: build đổ ở bước sanity check, báo không tìm thấy main.js.",
+    "khong-kem-model": "Chỉ đóng gói phần vỏ Electron. KHÔNG kèm backend/knowledge/models: máy đích đã có sẵn chúng cạnh file exe, mà riêng models là 5.3GB. (Ghi chú phải nằm NGOÀI khối build - electron-builder kiểm tra schema nghiêm ngặt và từ chối mọi key lạ trong đó.)",
+    "portable": "File exe tự bung vào %TEMP% rồi chạy, nên main.js phải dùng PORTABLE_EXECUTABLE_DIR để tìm thư mục dự án chứ không phải process.execPath."
+  },
+  "scripts": {
+    "start": "node launcher.js",
+    "dev": "node launcher.js --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "author": "AI Banking Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^42.2.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.aibanking.callsystem",
+    "productName": "VoiceBank AI",
+    "directories": {
+      "output": "../dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "VoiceBank-AI.exe"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "assets/icon.png",
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}

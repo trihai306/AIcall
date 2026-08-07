@@ -1,0 +1,26 @@
+# Vistral-7B fine-tuned theo phong cách tư vấn riêng
+# GGUF: xuất bởi training/llm/train_lora.py
+# Tạo model: cd models/llm && ollama create vistral-tuvan -f Modelfile.tuvan
+
+FROM ./vistral-tuvan-q4.gguf
+
+TEMPLATE """{{- if .Messages }}
+{{- range $i, $m := .Messages }}
+{{- if eq $m.Role "system" }}<s>[INST] <<SYS>>
+{{ $m.Content }}
+<</SYS>>
+
+{{ else if eq $m.Role "user" }}{{ if $i }}<s>[INST] {{ end }}{{ $m.Content }} [/INST] {{ else if eq $m.Role "assistant" }}{{ $m.Content }}</s>{{ end }}
+{{- end }}
+{{- else }}<s>[INST] <<SYS>>
+{{ .System }}
+<</SYS>>
+
+{{ .Prompt }} [/INST] {{ end }}"""
+
+PARAMETER stop "[INST]"
+PARAMETER stop "[/INST]"
+PARAMETER stop "</s>"
+PARAMETER stop "Khách:"
+PARAMETER num_ctx 2048
+PARAMETER temperature 0.7

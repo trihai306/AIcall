@@ -1,0 +1,38 @@
+# Qwen2.5-3B-Instruct đã fine-tune theo phong cách tư vấn riêng.
+# GGUF xuất bởi training/llm/train_lora.py, nạp bằng training/llm/deploy_ollama.py.
+#
+#   cd models/llm && ollama create tuvan-qwen -f Modelfile.tuvan-qwen
+#
+# Vì sao không dùng Modelfile.tuvan: file đó viết cho Vistral (Mistral), dùng
+# mẫu [INST] <<SYS>>. Qwen dùng ChatML <|im_start|>. Gán nhầm mẫu thì model vẫn
+# chạy và vẫn ra tiếng Việt, chỉ là không theo phong cách đã train - một lỗi
+# không có thông báo nào báo cho biết.
+
+FROM ./tuvan-qwen-q4.gguf
+
+# ChatML rút gọn: bỏ phần tool-calling của bản Qwen gốc vì hệ thống này không
+# dùng tool, giữ lại chỉ làm rộng chỗ cho lỗi.
+TEMPLATE """{{- if .Messages }}
+{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}
+{{- range .Messages }}
+{{- if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{ else if eq .Role "assistant" }}<|im_start|>assistant
+{{ .Content }}<|im_end|>
+{{ end }}
+{{- end }}<|im_start|>assistant
+{{ else }}<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+{{ end }}"""
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+# Chặn model tự đóng vai khách rồi nói tiếp cả hai bên.
+PARAMETER stop "Khách:"
+PARAMETER num_ctx 2048
+PARAMETER temperature 0.7

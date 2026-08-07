@@ -1,0 +1,11 @@
+khach_nói.wav
+mức gốc -22.7 dBFS, đã kéo lên -15 dBFS
+
+lượt 1: 4.7-6.0s, 460ms tiếng
+lượt 2: 8.9-10.4s, 660ms tiếng
+lượt 3: 12.0-14.7s, 1800ms tiếng
+lượt 4: 15.6-16.9s, 380ms tiếng
+lượt 5: 18.6-19.8s, 380ms tiếng
+
+Nghe từng lượt rồi ghi lại anh THỰC SỰ nói gì, để đối chiếu với
+bản máy nghe ra trong logs/tieng_that/ban_chu.txt

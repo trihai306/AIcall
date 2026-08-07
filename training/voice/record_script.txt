@@ -1,0 +1,76 @@
+# Kịch bản thu âm giọng tư vấn ngân hàng — 60 câu
+# Mỗi câu thu thành 1 file: 001.wav, 002.wav, ... (tên file = số thứ tự)
+# Đọc tự nhiên như đang nói chuyện điện thoại, KHÔNG đọc như đọc văn bản.
+# Giữ khoảng cách micro đều, tốc độ đều giữa các câu.
+
+## Nhóm 1: Chào hỏi, mở đầu (10 câu)
+001. Dạ em chào anh ạ, em là Lan gọi đến từ ngân hàng ABC ạ.
+002. Dạ em chào chị ạ, em xin phép chị hai phút để giới thiệu chương trình ưu đãi ạ.
+003. Dạ cho em hỏi đây có phải số máy của anh Minh không ạ?
+004. Dạ em gọi cho chị để xác nhận lịch hẹn vào sáng mai ạ.
+005. Dạ anh có tiện nghe máy bây giờ không ạ?
+006. Dạ vâng, em cảm ơn anh đã nghe máy ạ.
+007. Dạ em xin phép được tư vấn nhanh cho chị về gói vay mới ạ.
+008. Alo, dạ em nghe ạ.
+009. Dạ đúng rồi ạ, em gọi từ phòng chăm sóc khách hàng ạ.
+010. Dạ em xin lỗi đã gọi vào giờ này ạ.
+
+## Nhóm 2: Số tiền, lãi suất, con số (15 câu — quan trọng nhất)
+011. Dạ lãi suất hiện tại là sáu phẩy năm phần trăm một năm ạ.
+012. Dạ khoản vay hai trăm triệu trong ba năm, mỗi tháng anh trả khoảng sáu triệu tám ạ.
+013. Dạ hạn mức thẻ của chị là năm mươi triệu đồng ạ.
+014. Dạ phí thường niên là ba trăm chín mươi chín nghìn đồng một năm ạ.
+015. Dạ anh được giảm mười lăm phần trăm trong hai năm đầu ạ.
+016. Dạ số tài khoản của chị có đuôi là bốn số tám sáu tám sáu ạ.
+017. Dạ em xin xác nhận số điện thoại không chín một hai, ba bốn năm, sáu bảy tám ạ.
+018. Dạ khoản vay tối thiểu là mười triệu, tối đa là năm trăm triệu ạ.
+019. Dạ thời hạn vay từ sáu tháng đến sáu mươi tháng ạ.
+020. Dạ một triệu hai trăm nghìn đồng mỗi tháng ạ.
+021. Dạ lãi suất năm đầu cố định, từ năm thứ hai thả nổi cộng biên độ ba phẩy năm ạ.
+022. Dạ tổng số tiền anh cần thanh toán là bảy triệu không trăm hai mươi nghìn ạ.
+023. Dạ chị được hoàn tiền hai phần trăm cho mọi giao dịch ạ.
+024. Dạ khoản trả trước tối thiểu là hai mươi phần trăm giá trị căn nhà ạ.
+025. Dạ mã khách hàng của anh là ka hát không một hai ba bốn ạ.
+
+## Nhóm 3: Ngày tháng, thời gian (10 câu)
+026. Dạ lịch hẹn của anh là chín giờ sáng thứ năm, ngày mười lăm tháng ba ạ.
+027. Dạ hồ sơ sẽ được duyệt trong vòng hai mươi bốn giờ ạ.
+028. Dạ chương trình ưu đãi kéo dài đến hết ngày ba mươi mốt tháng này ạ.
+029. Dạ em sẽ gọi lại cho chị vào chiều mai, khoảng hai giờ ạ.
+030. Dạ thẻ sẽ được giao trong ba đến năm ngày làm việc ạ.
+031. Dạ kỳ sao kê của anh là ngày hai mươi hàng tháng ạ.
+032. Dạ hạn thanh toán là ngày mùng năm tháng sau ạ.
+033. Dạ chi nhánh làm việc từ tám giờ sáng đến năm giờ chiều, thứ hai đến thứ sáu ạ.
+034. Dạ ngày mai là thứ tư, ngày mùng hai tháng tám ạ.
+035. Dạ anh vui lòng đến trước mười một giờ trưa ạ.
+
+## Nhóm 4: Tư vấn, giải thích (10 câu)
+036. Dạ để vay tín chấp, anh chỉ cần căn cước công dân và sao kê lương ba tháng ạ.
+037. Dạ gói này phù hợp với người có thu nhập từ tám triệu một tháng trở lên ạ.
+038. Dạ chị có thể trả nợ trước hạn, phí là hai phần trăm số tiền còn lại ạ.
+039. Dạ thẻ tín dụng của mình được miễn lãi tối đa bốn mươi lăm ngày ạ.
+040. Dạ anh có thể đăng ký ngay qua điện thoại, không cần ra chi nhánh ạ.
+041. Dạ khoản vay mua nhà cần có tài sản đảm bảo là chính căn nhà đó ạ.
+042. Dạ em sẽ gửi chi tiết qua tin nhắn cho chị tham khảo ạ.
+043. Dạ điều kiện là anh không có nợ xấu trong vòng năm năm gần nhất ạ.
+044. Dạ mình có ba gói là gói cơ bản, gói vàng và gói bạch kim ạ.
+045. Dạ em xin phép hỏi thu nhập hàng tháng của anh khoảng bao nhiêu ạ?
+
+## Nhóm 5: Xử lý tình huống, xin lỗi, từ chối (10 câu)
+046. Dạ em xin lỗi anh, để em kiểm tra lại thông tin này ạ.
+047. Dạ câu hỏi này em xin phép ghi nhận và có chuyên viên gọi lại tư vấn kỹ hơn ạ.
+048. Dạ em hiểu ạ, vậy em xin phép không làm phiền anh nữa ạ.
+049. Dạ chị yên tâm, thông tin của mình được bảo mật tuyệt đối ạ.
+050. Dạ nếu anh bận, em có thể gọi lại vào lúc khác thuận tiện hơn ạ.
+051. Dạ em xin lỗi vì sự bất tiện này ạ.
+052. Dạ anh cứ suy nghĩ thêm, không cần quyết định ngay ạ.
+053. Dạ em xin phép chuyển máy cho bộ phận chuyên trách hỗ trợ anh ạ.
+054. Dạ vâng, em hiểu rồi ạ, cảm ơn anh đã chia sẻ ạ.
+055. Dạ chị cần hỗ trợ gì thêm cứ gọi tổng đài một chín không không, sáu tám sáu tám ạ.
+
+## Nhóm 6: Kết thúc cuộc gọi (5 câu)
+056. Dạ em cảm ơn anh đã dành thời gian, chúc anh một ngày tốt lành ạ.
+057. Dạ vậy em chốt lịch hẹn cho chị vào sáng thứ năm nhé ạ.
+058. Dạ em cảm ơn chị nhiều ạ, em chào chị ạ.
+059. Dạ hẹn gặp anh tại chi nhánh vào ngày mai ạ.
+060. Dạ nếu cần thêm thông tin, anh cứ liên hệ lại với em ạ. Em chào anh ạ.

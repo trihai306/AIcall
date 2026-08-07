@@ -1,0 +1,51 @@
+# NOTE: Install PyTorch FIRST with correct backend before this file.
+# The install script (05_python_env.sh) handles this automatically.
+#
+# Manual install:
+#   CUDA (RTX 50xx cần cu128): pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+#   macOS: pip install torch torchaudio
+#   CPU:   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+websockets==14.2
+
+# ML (torch must be pre-installed)
+numpy>=1.24.0
+scipy>=1.11.0
+soundfile>=0.12.1
+# torchaudio >=2.9 bỏ backend đọc audio riêng, torchaudio.load() ủy quyền sang
+# load_with_torchcodec -> thiếu gói này thì F5-TTS chết lúc nạp giọng mẫu.
+torchcodec>=0.5
+
+# Ollama client
+ollama>=0.4.0
+
+# STT - PhoWhisper (faster-whisper/CTranslate2)
+faster-whisper>=1.1.0
+ctranslate2>=4.5
+
+# RAG
+chromadb>=0.5.0
+sentence-transformers>=3.0.0
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.20.0
+
+# Audio processing
+librosa>=0.10.0
+resampy>=0.4.0
+
+# Utilities
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+aiofiles>=24.0.0
+httpx>=0.27.0
+
+# Nguồn dữ liệu ngoài: đọc bảng Excel để bot tra cứu khi tư vấn
+# (Điều 6 hợp đồng). CSV và SQLite dùng thư viện chuẩn, không cần gói thêm.
+openpyxl>=3.1.0

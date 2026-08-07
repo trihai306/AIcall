@@ -1,0 +1,10 @@
+KHÁCH | a lô em ơi
+AI    | Dạ em chào anh chị ạ. Em là Lan bên Ngân hàng ABC, em gọi để giới thiệu chương trình vay tín chấp ưu đãi.
+KHÁCH | có nghe theo anh nói không
+AI    | Em nghe rõ ạ.
+KHÁCH | alo một hai ba bốn tám sáu bảy tám
+AI    | Dạ em xin lỗi đã làm phiền ạ. Em cảm ơn anh chị quan tâm. Em sẽ ghi nhận và có chuyên viên liên hệ lại
+KHÁCH | a lô a lô
+AI    | Em vẫn nghe anh chị ạ.
+KHÁCH | có lỗi không
+AI    | Dạ em xin lỗi đã làm phiền ạ. Em cảm ơn anh chị cho phép em giải đáp những thắc mắc khác

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>VoiceBank AI - Lỗi khởi động</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #06080f; color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      -webkit-app-region: drag;
+    }
+    /* Nội dung phải no-drag, nếu không mọi cú click bị nuốt thành kéo cửa sổ */
+    .content {
+      -webkit-app-region: no-drag;
+      display: flex; flex-direction: column; align-items: center;
+      max-width: 560px; padding: 0 24px;
+    }
+    .icon { font-size: 44px; margin-bottom: 14px; }
+    h1 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #f87171; }
+    p { font-size: 13px; color: #64748b; text-align: center; line-height: 1.7; }
+    code { background: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #94a3b8; }
+    .missing {
+      display: none;
+      margin-top: 16px; padding: 12px 16px;
+      background: #1a1420; border: 1px solid #7f1d1d; border-radius: 10px;
+      font-size: 12px; color: #fca5a5; text-align: left; line-height: 1.8;
+      max-width: 100%; word-break: break-all;
+    }
+    .buttons { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+    button {
+      padding: 10px 20px; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      background: #1e293b; color: #cbd5e1;
+    }
+    button.primary { background: linear-gradient(135deg, #06b6d4, #10b981); color: white; }
+    button:hover { opacity: 0.88; }
+    .autostatus { font-size: 11px; color: #475569; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <div class="icon">&#9888;&#65039;</div>
+    <h1>Backend chưa lên sau 5 phút</h1>
+    <p id="detail">
+      Dịch vụ không phản hồi ở cổng backend. Lần chạy đầu có thể lâu do nạp model,
+      nhưng quá 5 phút thì thường là lỗi thật.
+    </p>
+
+    <div class="missing" id="missing"></div>
+
+    <div class="buttons">
+      <button class="primary" onclick="location.href='loading.html'">Thử lại</button>
+      <button onclick="window.electronAPI.restartServices(); location.href='loading.html'">Khởi động lại dịch vụ</button>
+      <button onclick="window.electronAPI.openLogs()">Xem log backend</button>
+    </div>
+
+    <div class="autostatus" id="autostatus">Đang tự kiểm tra lại mỗi 3 giây…</div>
+  </div>
+
+  <script>
+    // Nguyên nhân hay gặp nhất là exe bị chép ra khỏi thư mục dự án: lúc đó
+    // không có .venv/ hay backend/ nào cạnh nó. Kiểm tra và nói thẳng ra,
+    // thay vì để người dùng đoán qua log.
+    (async () => {
+      try {
+        const missing = await window.electronAPI.getMissingFiles();
+        const dir = await window.electronAPI.getProjectDir();
+        if (missing && missing.length) {
+          const box = document.getElementById('missing');
+          box.style.display = 'block';
+          box.innerHTML = `<b>Thiếu file trong ${dir}:</b><br>` +
+            missing.map((f) => '• ' + f).join('<br>') +
+            '<br><br>File exe phải nằm trong thư mục dự án (cạnh <code>backend/</code> và <code>.venv/</code>).';
+          document.getElementById('detail').textContent =
+            'Không tìm thấy các file cần thiết cạnh file exe.';
+        }
+      } catch (e) {}
+    })();
+
+    // Backend có thể vẫn đang nạp model - tự poll và vào app khi nó lên
+    setInterval(async () => {
+      try {
+        const health = await window.electronAPI.checkHealth();
+        if (health && health.status === 'ok' && health.services
+            && health.services.tts === 'loaded') {
+          location.href = await window.electronAPI.getBackendUrl();
+        }
+      } catch (e) {}
+    }, 3000);
+  </script>
+</body>
+</html>
