@@ -17,8 +17,7 @@ _warmups: set[asyncio.Task] = set()
 def _warm_fillers(tts, voice: str):
     """Pre-synthesize this voice's fillers in the background.
 
-    Without them get_filler() returns None and the call loses the instant
-    "Dạ vâng ạ" that hides most of the pipeline latency.
+    Thiếu chúng thì `pick_filler` trả None và cuộc gọi mất câu đệm che độ trễ.
     """
     async def run():
         try:
