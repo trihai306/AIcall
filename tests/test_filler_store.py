@@ -89,3 +89,10 @@ def test_van_tay_an_toan_lam_ten_file():
 def test_van_tay_doi_khi_bat_ky_tham_so_nao_doi(truong, gia_tri_moi):
     khac = {**_GOC, truong: gia_tri_moi}
     assert van_tay(**khac) != van_tay(**_GOC)
+
+
+def test_van_tay_khong_nham_ranh_gioi_truong():
+    # "A\x00B" + "C" va "A" + "B\x00C" tao ra cung chuoi neu dung \x00 lam ngan
+    vt1 = van_tay(text="A\x00B", giong="C", nfe=16, speed=1.0, ref_text="ref")
+    vt2 = van_tay(text="A", giong="B\x00C", nfe=16, speed=1.0, ref_text="ref")
+    assert vt1 != vt2

@@ -48,7 +48,8 @@ def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str
 
     `speed` ép về chuỗi 3 số lẻ để 1.0 và 1.000 ra cùng một vân tay.
     """
-    mau = f"{text}\x00{giong}\x00{nfe}\x00{speed:.3f}\x00{ref_text}"
+    mau = json.dumps([text, giong, nfe, f"{speed:.3f}", ref_text],
+                     ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(mau.encode("utf-8")).hexdigest()[:12]
 
 
