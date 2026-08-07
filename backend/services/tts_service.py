@@ -501,11 +501,19 @@ class F5TTSService:
         """
         return self._default_voice
 
+    def _giong_thuc(self, voice: str | None) -> str:
+        """Quy tên giọng lạ về giọng mặc định.
+
+        Phiên mới mặc định voice_name="default" trong khi giọng thật tên theo
+        file (vd "giong_ngan") - không quy về thì mọi tra cứu cache đều trượt và
+        câu đệm chưa bao giờ phát.
+        """
+        name = voice or self._default_voice
+        return name if name in self._voices else self._default_voice
+
     def co_filler(self, voice: str | None = None) -> bool:
         """Giọng này đã có câu đệm dựng sẵn chưa."""
-        name = voice or self._default_voice
-        if name not in self._voices:
-            name = self._default_voice
+        name = self._giong_thuc(voice)
         return any(k[0] == name for k in self._filler_cache)
 
     def _duong_dan_filler(self, voice: str, cau_id: str, vt: str) -> Path:
@@ -577,46 +585,27 @@ class F5TTSService:
         except Exception:
             return 0.0
 
-    def pick_filler(self, phrases: list[str], voice: str | None = None,
+    def do_dai_filler(self, cau_id: str, voice: str | None = None) -> float:
+        """Độ dài tiếng (ms) của một câu đệm, 0 nếu chưa dựng."""
+        return self._filler_ms.get((self._giong_thuc(voice), cau_id), 0.0)
+
+    def pick_filler(self, cau: list[CauDem], voice: str | None = None,
                     min_ms: float = 0.0,
-                    tranh: set[str] | None = None) -> tuple[bytes | None, str]:
-        """Chọn filler ĐỦ DÀI để che độ trễ, thay vì bốc ngẫu nhiên.
+                    dem: dict[str, int] | None = None
+                    ) -> tuple[bytes | None, CauDem | None]:
+        """Chọn câu đệm đã có tiếng cho giọng này. Trả (wav, CauDem).
 
-        Đo thực tế: 4 câu filler dài 656/815/1225/1269ms trong khi TTFA đường
-        thoại ~1127ms -> bốc ngẫu nhiên thì một nửa số cuộc gọi khách vẫn nghe
-        hụt 312-471ms im lặng. Ưu tiên các câu che đủ, còn giữ ngẫu nhiên trong
-        nhóm đó để không lặp lại một câu duy nhất.
+        Lớp mỏng: luật chọn nằm ở services/filler_pick.py để test được mà không
+        cần GPU. Ở đây chỉ lo tra cache và quy giọng lạ về giọng mặc định.
         """
-        import random as _r
-        name = voice or self._default_voice
-        if name not in self._voices:
-            name = self._default_voice
-        có = [(p, self._filler_ms.get((name, p), 0.0)) for p in phrases
-              if (name, p) in self._filler_cache]
-        if not có:
-            return None, ""
-        # Bỏ những câu vừa dùng gần đây. Lọc "đủ dài" thu hẹp nhóm chọn rất mạnh
-        # (đo được: 12 câu nhưng chỉ 2-3 câu vượt ngưỡng 1100ms), nên bốc ngẫu
-        # nhiên trong nhóm đó là lặp ngay - cuộc gọi 9 lượt nghe "Dạ em hiểu rồi"
-        # bốn lần. Người dùng nghe ra ngay.
-        chua_dung = [(p, ms) for p, ms in có if not tranh or p not in tranh]
-        du_va_moi = [p for p, ms in chua_dung if ms >= min_ms]
-
-        if du_va_moi:
-            # Có câu vừa che đủ vừa chưa dùng -> ngẫu nhiên trong nhóm đó.
-            chọn = _r.choice(du_va_moi)
-        else:
-            # KHÔNG câu nào che đủ (hoặc những câu che đủ đều vừa dùng). Tới đây
-            # thì độ dài là tiêu chí DUY NHẤT còn nghĩa - khách chắc chắn sẽ nghe
-            # một quãng lặng, việc còn lại là làm nó ngắn nhất có thể.
-            #
-            # Bản cũ bốc NGẪU NHIÊN trong nhóm chưa dùng ở đúng nhánh này, và đó
-            # là lỗi thật: cuộc gọi 07-08 chờ 2456ms mà nó bốc trúng "Dạ" (303ms)
-            # - câu NGẮN NHẤT trong 12 câu - cho ra 2153ms im lặng. Lấy câu dài
-            # nhất (1688ms) thì quãng đó còn 768ms, chỉ bằng cách đổi cách chọn.
-            ung = chua_dung or có
-            chọn = max(ung, key=lambda x: x[1])[0]
-        return self._filler_cache.get((name, chọn)), chọn
+        name = self._giong_thuc(voice)
+        theo_id = {c.id: c for c in cau}
+        ung_vien = [(c.id, self._filler_ms[(name, c.id)])
+                    for c in cau if (name, c.id) in self._filler_cache]
+        chon_id = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
+        if chon_id is None:
+            return None, None
+        return self._filler_cache[(name, chon_id)], theo_id[chon_id]
 
     # --- discovery -----------------------------------------------------------
 
