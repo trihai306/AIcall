@@ -21,58 +21,10 @@ from backend.services.stt_service import STTService
 from backend.services.llm_service import LLMService
 from backend.services.tts_service import F5TTSService
 from backend.services.rag_service import RAGService
+from backend.services.filler_store import lay_kho
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
-
-# Cố ý KHÔNG phải câu nào cũng "Dạ ... ạ". Filler phát ở ĐẦU mỗi lượt, nên bốn
-# câu cùng khuôn thì khách nghe đúng một điệp khúc suốt cuộc gọi - đây là một nửa
-# của lời than "AI cứ ạ liên tục". Nửa còn lại là câu trả lời, xử ở `BotLichSu`.
-FILLER_PHRASES = [
-    # NGẮN - dùng khi đường đang nhanh
-    "Dạ",
-    "Vâng ạ",
-    "Dạ vâng ạ",
-    "Được rồi ạ",
-    # DÀI - cần đủ nhiều câu ở nhóm này, xem chú thích bên dưới
-    "Vâng, để em xem",
-    "Dạ em hiểu rồi",
-    "Dạ, em kiểm tra ngay",
-    "Vâng, anh chị chờ em chút",
-    "Dạ, để em tra lại giúp anh chị",
-    "Vâng, em xem giúp anh chị ngay đây",
-    "Dạ, em nắm được rồi ạ",
-    "Vâng, cái này để em xem lại",
-    # RẤT DÀI - thêm 07-08 vì nhóm trên vẫn không đủ che. Đo trên cuộc gọi thật:
-    # câu dài nhất chỉ 1688ms trong khi TTFA đường thoại 2456-3633ms, nên lượt
-    # nào cũng hụt ít nhất 0,8 giây. Hai câu này nhắm mốc ~2,5s.
-    "Dạ vâng, anh chị chờ em một chút để em kiểm tra lại thông tin nhé",
-    "Vâng ạ, em đang tra lại thông tin cho anh chị, anh chị chờ em một lát nhé",
-]
-# Vì sao phải nhiều câu DÀI đến vậy: `pick_filler` chỉ lấy những câu đủ dài để
-# che hết độ trễ, nên nhóm ngắn bị loại sạch khi đường đang chậm. Bản cũ có 6
-# câu nhưng chỉ 2 câu vượt ngưỡng ~1100ms -> cuộc gọi 9 lượt nghe "Dạ em hiểu
-# rồi" tới bốn năm lần. Người dùng kêu đúng chỗ này.
-#
-# "Dạ em hiểu rồi" còn SAI NGHĨA sau câu hỏi - khách hỏi lãi suất mà đáp "em
-# hiểu rồi" nghe như gạt đi. Giữ lại nhưng để `_send_filler` tránh dùng nó khi
-# khách vừa hỏi.
-FILLER_HOP_CAU_HOI = {
-    "Vâng, để em xem",
-    "Dạ, em kiểm tra ngay",
-    "Vâng, anh chị chờ em chút",
-    "Dạ, để em tra lại giúp anh chị",
-    "Vâng, em xem giúp anh chị ngay đây",
-    "Vâng, cái này để em xem lại",
-    "Dạ",
-    "Vâng ạ",
-    "Dạ vâng ạ",
-    # Hai câu dài phải CÓ MẶT ở đây, không chỉ ở FILLER_PHRASES: từ lượt 2 trở đi
-    # `_send_filler` lọc kho về đúng nhóm này, thiếu thì chúng không bao giờ được
-    # chọn - tức thêm câu dài mà vô tác dụng ở đúng những lượt cần nhất.
-    "Dạ vâng, anh chị chờ em một chút để em kiểm tra lại thông tin nhé",
-    "Vâng ạ, em đang tra lại thông tin cho anh chị, anh chị chờ em một lát nhé",
-}
 
 # Strong refs to in-flight background writes: asyncio only holds a weak
 # reference to a task, so an unreferenced one can be collected mid-write.
@@ -514,29 +466,28 @@ class StreamingPipeline:
             metrics["filler_bo_qua"] = f"nhanh sẵn ({can_che:.0f}ms)"
             return
 
-        # Khách vừa HỎI thì "Dạ em hiểu rồi" nghe như gạt đi - lọc còn nhóm hợp
-        # với câu hỏi. Không biết khách hỏi hay kể (chưa có phiên âm ở thời điểm
-        # này, filler phải phát TRƯỚC STT) nên chỉ dựa vào lượt trước: đang tư
-        # vấn thì đa số lượt là câu hỏi.
-        kho = [p for p in FILLER_PHRASES if p in FILLER_HOP_CAU_HOI] \
-            if session.turn_count > 0 else list(FILLER_PHRASES)
+        # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi - lọc bỏ những
+        # câu gắn cờ không hợp câu hỏi. Chưa có phiên âm ở mốc này nên vẫn suy
+        # từ lượt trước: đang tư vấn thì đa số lượt là câu hỏi. (Mốc 2 sẽ đọc
+        # session.spec_stt để biết chắc thay vì đoán.)
+        kho = lay_kho().cau
+        if session.turn_count > 0:
+            kho = [c for c in kho if c.hop_cau_hoi]
 
-        # Nhớ vài câu vừa dùng để không lặp. Ba là đủ: nhóm đủ dài thường chỉ
-        # còn 3-5 câu, tránh nhiều hơn nữa là hết câu để chọn.
-        vua_dung = getattr(session, "filler_vua_dung", None)
-        if vua_dung is None:
-            vua_dung = session.filler_vua_dung = []
+        dem = getattr(session, "dem_filler", None)
+        if dem is None:
+            dem = session.dem_filler = {}
 
-        filler_audio, filler_phrase = self.tts.pick_filler(
-            kho, session.voice_name, min_ms=can_che, tranh=set(vua_dung),
+        filler_audio, cau = self.tts.pick_filler(
+            kho, session.voice_name, min_ms=can_che, dem=dem,
         )
         if not filler_audio:
             return
-        vua_dung.append(filler_phrase)
-        del vua_dung[:-3]
+        dem[cau.id] = dem.get(cau.id, 0) + 1
         await self._send_audio(ws, filler_audio, is_filler=True, turn_id=session.turn_id)
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
-        metrics["filler_text"] = filler_phrase
+        metrics["filler_text"] = cau.text
+        metrics["filler_id"] = cau.id
 
     async def process_turn(self, audio_bytes: bytes, session: CallSession, ws: WebSocket):
         """Full pipeline: Audio -> STT -> RAG -> LLM -> TTS -> Audio."""

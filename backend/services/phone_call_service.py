@@ -1379,12 +1379,11 @@ class PhoneCallManager:
         # phải là thứ che được nhiều nhất.
         async def _dung_filler():
             try:
-                from backend.pipeline.streaming_pipeline import FILLER_PHRASES
+                from backend.services.filler_store import lay_kho
                 if bridge.pipeline.tts.co_filler(session.voice_name):
                     return
-                theo_dai = sorted(FILLER_PHRASES, key=len, reverse=True)
-                await bridge.pipeline.tts.presynthesize_fillers(
-                    theo_dai, voice=session.voice_name)
+                await bridge.pipeline.tts.dung_fillers(
+                    lay_kho().cau, voice=session.voice_name)
                 logger.info(f"{bridge.tag} đã dựng câu đệm cho giọng "
                             f"'{session.voice_name}'")
             except Exception as e:

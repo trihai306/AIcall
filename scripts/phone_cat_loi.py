@@ -121,14 +121,14 @@ async def main() -> int:
     from backend.services.tts_service import F5TTSService
     from backend.pipeline.streaming_pipeline import StreamingPipeline
 
-    from backend.pipeline.streaming_pipeline import FILLER_PHRASES
+    from backend.services.filler_store import lay_kho
 
     print("Nạp model ...")
     stt, llm, tts, rag = STTService(), LLMService(), F5TTSService(), RAGService()
     tts.load()
     # Backend thật làm bước này lúc khởi động. Bỏ qua thì filler rỗng và khách
     # phải nghe cả giây im lặng - lần đầu chạy test tôi tưởng đó là lỗi sản phẩm.
-    await tts.presynthesize_fillers(FILLER_PHRASES)
+    await tts.dung_fillers(lay_kho().cau)
     rag.load()
     pipeline = StreamingPipeline(stt=stt, llm=llm, tts=tts, rag=rag)
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
-from backend.pipeline.streaming_pipeline import FILLER_PHRASES
+from backend.services.filler_store import lay_kho
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -21,7 +21,7 @@ def _warm_fillers(tts, voice: str):
     """
     async def run():
         try:
-            await tts.presynthesize_fillers(FILLER_PHRASES, voice=voice)
+            await tts.dung_fillers(lay_kho().cau, voice=voice)
         except Exception as e:
             logger.warning(f"Filler warmup for '{voice}' failed: {e}")
 
