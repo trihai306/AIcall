@@ -1,0 +1,2 @@
+# Chỉ dùng khi phát triển. KHÔNG cài trên máy chạy thật.
+pytest>=8.0
