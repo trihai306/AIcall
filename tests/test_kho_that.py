@@ -15,10 +15,11 @@ def test_moc_1_chi_co_chu_de_chung():
 
 def test_du_cau_ngan_va_cau_dai():
     # Xấp xỉ theo số ký tự, KHÔNG phải bảo đảm về mili giây: độ dài thật đo
-    # lúc dựng tiếng và khác nhau theo giọng. Đây chỉ để bắt lỗi soạn thiếu
-    # nguyên một rổ. Số ms thật kiểm bằng scripts/do_cau_dem.py.
+    # lúc dựng tiếng và khác nhau theo giọng. Kiểm ba khoảng ký tự để bắt lỗi
+    # soạn thiếu nguyên một rổ. Số ms thật kiểm bằng scripts/do_cau_dem.py.
     cau = nap(DUONG_DAN_MAC_DINH).cau
     assert sum(1 for c in cau if len(c.text) <= 20) >= 8
+    assert sum(1 for c in cau if 20 < len(c.text) < 55) >= 8
     assert sum(1 for c in cau if len(c.text) >= 55) >= 10
 
 
