@@ -40,3 +40,6 @@ desktop/node_modules/
 data/recordings/
 logs/**/*.wav
 logs/**/*.mp3
+
+# Thu muc lam viec tam cua superpowers (agent tu tao)
+.superpowers/
