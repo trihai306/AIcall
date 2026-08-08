@@ -30,6 +30,63 @@ def _warm_fillers(tts, voice: str):
     task.add_done_callback(_warmups.discard)
 
 
+def _ham_llm(llm):
+    """Hâm nóng LLM cho phiên trang Hội thoại, chạy nền.
+
+    Đường gọi điện thật hâm trong lúc đổ chuông (`chao_khi_bat_may`); đường
+    WebSocket không có quãng đó nên trước giờ KHÔNG hâm gì, và toàn bộ giá nguội
+    rơi vào lượt khách hỏi đầu tiên.
+
+    Hâm CẢ HAI hình dạng: lệnh thường và lệnh có `tools`. Chúng khác nhau nên
+    hâm cái nọ không làm ấm cái kia - đo 08-08: lượt quyết định công cụ đầu tiên
+    của mỗi cuộc tốn ~2700ms trong khi các lượt sau chỉ 115-600ms.
+    """
+    async def run():
+        try:
+            from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
+            async for _ in llm.stream_response(
+                    [{"role": "user", "content": "xin chào"}], "Trả lời đúng một từ."):
+                break
+            await ham_luot_quyet_dinh(llm)
+            logger.info("Đã hâm nóng LLM cho phiên trang Hội thoại")
+        except Exception as e:
+            logger.debug("Hâm LLM cho phiên bỏ qua: %s", e)
+
+    task = asyncio.create_task(run())
+    _warmups.add(task)
+    task.add_done_callback(_warmups.discard)
+
+
+def _tra_san_ho_so(session, so: str):
+    """Tra hồ sơ khách NGAY khi biết số, đừng đợi tới lượt hỏi đầu tiên.
+
+    Đường gọi điện thật đã tra sẵn lúc mở phiên (`call_session_service`), nhưng
+    trang Hội thoại vào bằng WebSocket nên không đi qua đó - và `_tra_ho_so_khach`
+    chỉ dùng lại `session.ngu_canh_khach` khi nó CÓ SẴN, không thì đọc nguồn
+    ngoài ngay giữa đường găng.
+
+    Đo 08-08 trên trang Hội thoại: lượt 1 tốn 2741-2901ms cho đúng khâu này, các
+    lượt sau cùng công cụ đó chỉ 2-4ms. Chạy nền nên không chặn gì; hỏng thì
+    lượt đầu chậm như cũ, không mất tính năng.
+    """
+    async def run():
+        try:
+            from backend.services import data_source_service as ds
+            ho_so = await ds.tra_cuu_tat_ca(so)
+            session.ngu_canh_khach = ds.dung_ngu_canh(ho_so)
+            gop: dict = {}
+            for m in ho_so:
+                gop.update(m.get("du_lieu") or {})
+            session.ho_so_khach = gop
+            logger.info("Đã tra sẵn hồ sơ khách %s (%d trường)", so, len(gop))
+        except Exception as e:
+            logger.warning("Tra sẵn hồ sơ khách %s hỏng (bỏ qua): %s", so, e)
+
+    task = asyncio.create_task(run())
+    _warmups.add(task)
+    task.add_done_callback(_warmups.discard)
+
+
 async def _flush_on_disconnect(session: CallSession):
     """Chốt phiên khi trình duyệt ngắt kết nối. Luôn await, nên luôn chạy xong.
 
@@ -93,6 +150,9 @@ async def websocket_call(websocket: WebSocket, session_id: str):
 
     await websocket.accept()
     logger.info(f"WebSocket connected: session={session_id}")
+    # Hâm ngay khi mở phiên, đừng đợi khách gõ/nói. Người dùng còn phải bấm nút
+    # và nói câu đầu, nên đây là khoảng rảnh y như lúc đổ chuông bên đường thoại.
+    _ham_llm(app_state.llm)
 
     session = app_state.sessions.get(session_id)
     if not session:
@@ -270,6 +330,7 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 # `tra_ho_so_khach` không tra được và không thử được tính năng.
                 if data.get("phone"):
                     session.phone = str(data["phone"]).strip()
+                    _tra_san_ho_so(session, session.phone)
                 await websocket.send_json({"type": "session_updated", "session": session.to_dict()})
 
             elif msg_type == "set_voice":

@@ -238,3 +238,29 @@ async def chay(ten: str, tham_so: dict, session, rag=None) -> str:
         logger.warning("Công cụ %s lỗi: %s", ten, e)
         return _KHONG_CO
     return (ket or "").strip() or _KHONG_CO
+
+
+async def ham_luot_quyet_dinh(llm) -> None:
+    """Chạy MỘT lượt quyết định công cụ bỏ đi, để lượt thật không phải trả giá.
+
+    Vì sao cần riêng, trong khi đã có hâm nóng LLM thường: hai lệnh khác HÌNH
+    DẠNG. Lệnh thường không kèm `tools`, lệnh này có `tools=DINH_NGHIA` và
+    prompt riêng - hâm cái nọ không làm ấm cái kia.
+
+    Đo trên máy thật 08-08, sau khi đã chữa xong chuyện model bị đẩy khỏi VRAM:
+    lượt quyết định ĐẦU TIÊN của mỗi cuộc vẫn tốn ~2700ms, các lượt sau 115-600ms.
+    Khoản đó rơi trọn vào lượt khách hỏi đầu tiên - đúng lúc ấn tượng đầu.
+
+    Nuốt mọi lỗi: hâm không được thì cuộc gọi vẫn diễn ra bình thường, chỉ chậm
+    lượt đầu như trước.
+    """
+    xin: list[dict] = []
+    try:
+        async for _ in llm.stream_response(
+                [{"role": "user", "content": "a lô"}],
+                PROMPT_QUYET_DINH,
+                tools=DINH_NGHIA,
+                on_tool_calls=xin.extend):
+            pass
+    except Exception as e:
+        logger.debug("Hâm lượt quyết định công cụ bỏ qua: %s", e)
