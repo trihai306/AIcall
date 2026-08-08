@@ -14,8 +14,8 @@ from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import nhip_nghi_sau, should_flush
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
-                                              chan_so_sai, chan_tien_sai,
-                                              sua_xung_ho)
+                                              chan_chu_ngoai, chan_so_sai,
+                                              chan_tien_sai, sua_xung_ho)
 from backend.services.audio_utils import chen_lang_dau_wav
 from backend.services.stt_service import STTService
 from backend.services.llm_service import LLMService
@@ -910,6 +910,10 @@ class StreamingPipeline:
                 return da_co + them
             return da_co + " " + them
 
+        from backend.services.gender_detect import xung_ho as _xh_goi
+        _goi_khach = _xh_goi(getattr(session, "gender", ""),
+                             getattr(session, "gender_do_tin", None))
+
         def _don_loi(doan: str) -> str:
             # `sua_xung_ho` chạy TRƯỚC: nó bỏ số thứ tự đầu câu, mà các bước sau
             # xét chữ đầu ("Dạ", con số) nên phải sạch trước khi tới đó.
@@ -917,7 +921,18 @@ class StreamingPipeline:
             # `bo_cau_lui_thua` đứng SAU `sua_xung_ho` để câu lùi đã về đúng dạng
             # "anh/chị" trước khi đem so, và TRƯỚC `_chan_so` để phần bị cắt bỏ
             # không mang theo con số nào làm lệch bộ chặn số.
-            return bot_lich_su(_chan_so(bo_cau_lui_thua(sua_xung_ho(doan))))
+            #
+            # Truyền `goi_khach`: `sua_xung_ho` ép luôn "bạn" về đúng đại từ.
+            # Model nhỏ hay tuột về "bạn" dù prompt đã dặn - đo 08-08 trên
+            # qwen2.5:3b: 4/9 lượt gọi khách là "bạn".
+            # `chan_chu_ngoai` chạy ĐẦU TIÊN: các bước sau xét chữ đầu và đếm
+            # số, mà chữ Hán lẫn vào làm lệch cả hai.
+            doan, lot = chan_chu_ngoai(doan)
+            if lot:
+                logger.warning("Model để lọt chữ nước ngoài %r - đã bỏ. "
+                               "Lọt nhiều thì model đang trượt khỏi tiếng Việt.", lot)
+            return bot_lich_su(_chan_so(bo_cau_lui_thua(
+                sua_xung_ho(doan, goi_khach=_goi_khach))))
 
         t_llm = time.perf_counter()
         n_tokens = 0

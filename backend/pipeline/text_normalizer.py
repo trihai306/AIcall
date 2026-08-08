@@ -378,6 +378,9 @@ _SO_TT_DAU_RE = re.compile(r"^\s*\d{1,2}\s*[.)]\s+")
 #    cách nhân viên ngân hàng nói.
 _CHUNG_TOI_RE = re.compile(r"\bchúng\s+tôi\b", re.IGNORECASE)
 _TOI_RE = re.compile(r"\btôi\b", re.IGNORECASE)
+# "bạn" khi nó là ĐẠI TỪ gọi khách. Loại trừ "bạn bè", "bạn hàng", "bạn đọc" -
+# đó là danh từ, thay vào thành "anh chị bè" thì thành câu vô nghĩa.
+_BAN_RE = re.compile(r"\bbạn\b(?!\s+(?:bè|hàng|đọc|thân))", re.IGNORECASE)
 
 
 def _giu_hoa(goc: str, moi: str) -> str:
@@ -385,13 +388,61 @@ def _giu_hoa(goc: str, moi: str) -> str:
     return moi[:1].upper() + moi[1:] if goc[:1].isupper() else moi
 
 
-def sua_xung_ho(text: str) -> str:
-    """Bỏ số thứ tự đầu câu và ép xưng hô về "em"."""
+# Chữ Hán, Kana, Hangul. KHÔNG đụng tiếng Việt: chữ Việt có dấu nằm ở dải Latin
+# mở rộng, không dính dải nào dưới đây.
+_CHU_NGOAI_RE = re.compile(
+    r"[぀-ヿ㐀-䶿一-鿿가-힯豈-﫿]+")
+# Khoảng trắng thừa còn lại sau khi cắt, và khoảng trắng trước dấu câu.
+_TRANG_THUA_RE = re.compile(r"\s{2,}")
+_TRANG_TRUOC_DAU_RE = re.compile(r"\s+([.,!?;:])")
+
+
+def chan_chu_ngoai(text: str) -> tuple[str, str | None]:
+    """Bỏ chữ Hán/Nhật/Hàn khỏi câu sắp đọc cho khách.
+
+    Trả (câu đã sạch, cụm đầu tiên bị bỏ) - cụm đó để ghi log, vì lọt chữ nước
+    ngoài là dấu hiệu model đang trượt khỏi tiếng Việt và cần biết tần suất.
+
+    Vì sao cần: qwen2.5 là model Trung Quốc. Đo 08-08 trên qwen2.5:3b, nó trả
+    lời "CMND hoặc CCCD bản chính và 复印件" - chữ Hán nghĩa là "bản photo".
+    F5-TTS không đọc được, khách nghe ra tiếng lạ ngay giữa câu tư vấn.
+
+    Bỏ chứ không thay bằng gì: đoán nghĩa rồi dịch là tự bịa thêm một tầng sai.
+    Câu còn lại có thể hơi cụt ("bản chính và, Hộ khẩu") nhưng vẫn đọc được và
+    không sai sự thật - hơn hẳn để TTS đọc bừa.
+    """
+    if not text:
+        return text, None
+    tim = _CHU_NGOAI_RE.search(text)
+    if not tim:
+        return text, None
+    ra = _CHU_NGOAI_RE.sub("", text)
+    ra = _TRANG_THUA_RE.sub(" ", ra)
+    ra = _TRANG_TRUOC_DAU_RE.sub(r"\1", ra)
+    return ra.strip(), tim.group(0)
+
+
+def sua_xung_ho(text: str, goi_khach: str = "anh chị") -> str:
+    """Bỏ số thứ tự đầu câu, ép cách AI TỰ XƯNG và cách nó GỌI KHÁCH.
+
+    Hai chuyện khác nhau, bản cũ chỉ lo chuyện đầu:
+      - tự xưng: "tôi" -> "em", "chúng tôi" -> "bên em"
+      - gọi khách: "bạn" -> `goi_khach`
+
+    Vì sao thêm vế sau (đo 08-08): đổi sang qwen2.5:3b thì mô hình gọi khách là
+    "bạn" ở 4/9 lượt - "Bạn có thể vay tối đa 500 triệu". Tổng đài ngân hàng gọi
+    cho khách mà xưng "bạn" là sai vai, nghe như quảng cáo dạo. Prompt có dặn
+    nhưng model nhỏ không giữ được, nên chặn bằng code.
+
+    `goi_khach` lấy từ `gender_detect.xung_ho()` để hợp giới tính đã đoán; không
+    chắc thì mặc định "anh chị" - trung tính, không sai được với ai.
+    """
     if not text:
         return text
     text = _SO_TT_DAU_RE.sub("", text)
     text = _CHUNG_TOI_RE.sub(lambda m: _giu_hoa(m.group(0), "bên em"), text)
     text = _TOI_RE.sub(lambda m: _giu_hoa(m.group(0), "em"), text)
+    text = _BAN_RE.sub(lambda m: _giu_hoa(m.group(0), goi_khach), text)
     return text
 
 
