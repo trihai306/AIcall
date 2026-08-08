@@ -42,6 +42,17 @@ ACRONYM_OVERRIDES = {
 # 2 chữ hoa liên tiếp trở lên. Không đụng tới chữ hoa đầu câu ("Dạ", "Anh").
 _ACRONYM_RE = re.compile(r"\b[A-Z]{2,}\b")
 
+# Tên thương hiệu kiểu "VPBank", "TPBank": cụm viết tắt DÍNH LIỀN một từ thường.
+# `_ACRONYM_RE` không bắt được vì nó đòi ranh giới từ ngay sau cụm hoa, mà ở đây
+# ngay sau "VP" lại là "B" - vẫn là ký tự chữ nên không có ranh giới. Hệ quả: F5
+# nhận nguyên chuỗi "vpbank" và đoán bừa. Đo 2026-08-08 trên giọng khách đang
+# dùng, PhoWhisper-medium nhận dạng lại 15 lượt: SAI 15/15 và mỗi lần một kiểu
+# ("pháp banh", "vấp banh", "việt bang", "vạc banh").
+# Tách ra thành "vê pê bank" thì đúng và ổn định 3/3.
+# Viết TOÀN HOA ("VPBANK") không phải lối thoát: lúc đó `_ACRONYM_RE` đánh vần
+# thừa cả phần đuôi thành "vê pê bê a en ca".
+_THUONG_HIEU_RE = re.compile(r"\b([A-Z]{2,})([A-Z][a-z]+)\b")
+
 _VOWELS = set("aeiouy")
 # Âm tiết tiếng Việt chỉ kết thúc bằng nguyên âm hoặc một trong các phụ âm cuối này.
 _VALID_CODAS = {"", "c", "ch", "m", "n", "ng", "nh", "p", "t", "i", "y", "o", "u"}
@@ -75,6 +86,15 @@ def _spell_out(match: re.Match) -> str:
     if _looks_like_vi_syllable(word):
         return word  # để .lower() ở dưới xử lý
     return " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in word)
+
+
+def _tach_thuong_hieu(match: re.Match) -> str:
+    """"VPBank" -> "vê pê Bank": đánh vần phần viết tắt, giữ nguyên phần từ."""
+    viet_tat, duoi = match.group(1), match.group(2)
+    if _looks_like_vi_syllable(viet_tat):
+        return match.group(0)       # "ANHTuan" - "anh" là từ thật, đừng đánh vần
+    danh_van = " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in viet_tat)
+    return f"{danh_van} {duoi}"
 
 
 # "Dạ" đứng đầu câu mà dính liền chữ sau thì F5-TTS đọc nhoè thành "giả".
@@ -512,11 +532,49 @@ def doc_dau_xien(text: str) -> str:
     return _XIEN_CHUNG_RE.sub(" hoặc ", text)
 
 
+# --- gộp dấu câu lặp ---------------------------------------------------------
+
+# Mỗi dấu câu thừa là MỘT KHOẢNG THỜI GIAN ĐƯỢC CẤP MÀ KHÔNG CÓ CHỮ ĐỂ ĐỌC.
+# F5 tính độ dài audio theo SỐ BYTE UTF-8 của chữ (utils_infer.py:470):
+#
+#     duration = ref_audio_len + int(ref_audio_len / ref_text_len * gen_text_len / speed)
+#
+# Kịch bản khách viết "...bên em......" - 6 dấu chấm = 6 byte = 5,5% ngân sách
+# thời gian của mảnh đó. Model lấp chỗ trống bằng cách kéo giãn âm tiết rồi bịa
+# một âm ở đuôi. Đo 2026-08-08 trên giọng khách, PhoWhisper-medium nhận dạng lại:
+#
+#     có "......"     -> 6/6 lượt đẻ âm rác: "bên em i", "bên em em", "bên em y",
+#                        "bên em nhìm", "bên em in"   (dài thêm 230ms, trong đó
+#                        260ms là TIẾNG chứ không phải khoảng lặng)
+#     một dấu chấm    -> 0/6
+#
+# Khách nghe chính thứ đó thành "Bêm", "Bên e b", "Bên e e" và ghi vào biên bản
+# thành ba lỗi khác nhau (đọc sai từ / âm thanh lạ / lắp từ).
+#
+# ĐỪNG chữa bằng cách tăng tốc độ đọc: `speed` nằm ngay trong công thức trên nên
+# 6 byte vẫn chiếm đúng 5,5% ở mọi tốc. Đo được tốc 0.64 -> 3/5 lỗi, 0.80 -> 5/5,
+# 0.95 -> 2/5 nhưng đổi sang lỗi nặng hơn (sai nguyên từ: "sổ đỏ vitamin").
+#
+# Đánh đổi: mất ~200ms nghỉ (696 -> 496ms). Cần nghỉ dài hơn thì chèn im lặng
+# bằng code (xem `text_chunker.nhip_nghi_sau`) - đúng bao nhiêu ra bấy nhiêu.
+_DAU_LAP_RE = re.compile(r"([.?!])\1+")
+
+
+def _gop_dau_cham(text: str) -> str:
+    """Gộp mọi chuỗi dấu câu lặp (và "…") về đúng một dấu.
+
+    Chạy CUỐI CÙNG, sau `doc_so_trong_cau`: tiền tiếng Việt viết "142.500.000"
+    và phải được đọc thành chữ trước, không thì con số vỡ làm đôi.
+    """
+    return _DAU_LAP_RE.sub(r"\1", text.replace("…", "."))
+
+
 def normalize_for_tts(text: str) -> str:
     """Bung viết tắt rồi lowercase, cho khớp phân bố text lúc train model.
 
-    Không đụng tới dấu câu: F5-TTS dùng dấu câu để ngắt nhịp, bỏ đi thì giọng
-    đọc liền tù tì một hơi. Chỉ THÊM một dấu phẩy sau "Dạ" mở đầu (xem trên).
+    Không BỎ dấu câu: F5-TTS dùng dấu câu để ngắt nhịp, bỏ đi thì giọng đọc liền
+    tù tì một hơi. Chỉ THÊM một dấu phẩy sau "Dạ" mở đầu (xem trên), và GỘP dấu
+    câu lặp về một ("......" -> ".", xem `_gop_dau_cham`).
     """
     if not text:
         return text
@@ -530,8 +588,12 @@ def normalize_for_tts(text: str) -> str:
     # Xử "/" TRƯỚC khi bung viết tắt: "CMND/CCCD" phải còn nguyên dạng viết tắt
     # thì luật liệt kê mới nhận ra hai vế.
     text = doc_dau_xien(text)
+    # Tên thương hiệu TRƯỚC bảng viết tắt: sau khi tách, "VP" đã thành chữ
+    # thường nên `_ACRONYM_RE` không còn gì để đụng vào.
+    text = _THUONG_HIEU_RE.sub(_tach_thuong_hieu, text)
     text = _ACRONYM_RE.sub(_spell_out, text).lower()
-    return _DA_DAU_CAU_RE.sub(r"\1, ", text)
+    text = _DA_DAU_CAU_RE.sub(r"\1, ", text)
+    return _gop_dau_cham(text)
 
 
 # --- bỏ câu lùi thừa ở đầu lượt -----------------------------------------------

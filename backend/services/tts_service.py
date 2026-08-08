@@ -396,6 +396,16 @@ class F5TTSService:
         # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
         # của autograd. Suy luận thuần nên không mất gì.
         import torch as _t
+
+        # Gieo lại NGAY TRƯỚC mỗi lần sinh, không phải một lần lúc khởi động:
+        # gieo một lần thì lượt thứ hai đã đi tiếp chuỗi ngẫu nhiên và cho ra kết
+        # quả khác. Đặt lại mỗi lượt thì cùng chữ luôn ra cùng tiếng, bất kể
+        # trước đó đã sinh bao nhiêu câu.
+        # An toàn với executor: `self._executor` cố định MỘT worker nên không có
+        # lượt nào chen vào giữa chỗ gieo và chỗ dùng.
+        if settings.f5tts_seed is not None:
+            _t.manual_seed(settings.f5tts_seed)
+
         with _t.inference_mode(), self._autocast_ctx():
             audio, sr, _ = next(
                 infer_batch_process(

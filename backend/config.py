@@ -30,6 +30,17 @@ class Settings(BaseSettings):
     # Để bằng nhau thì cờ fast=True thành vô hiệu - đó là chủ ý, không phải quên.
     f5tts_nfe_step_first: int = 16
     f5tts_speed: float = 1.0
+    # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
+    # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
+    # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08
+    # ("Cùng 1 câu, mỗi lần gen ra 1 kiểu").
+    # Đặt số cố định -> cùng chữ + cùng giọng + cùng tốc luôn cho ra ĐÚNG MỘT
+    # file. Nghĩa là bản nghe thử chính là bản cuộc gọi thật sẽ dùng, và lỗi nào
+    # tái hiện được thì mới sửa được.
+    # Đánh đổi: seed cố định KHÔNG làm giọng hay hơn, nó chỉ khoá lại một lần
+    # bốc. Câu nào rơi vào lần bốc xấu thì xấu mãi - đổi `f5tts_seed` sang số
+    # khác là bốc lại. Để trống trong .env thì quay về ngẫu nhiên như cũ.
+    f5tts_seed: int | None = 0
     # torch.compile cho DiT. Cần Triton; máy Windows ĐÃ CÓ (gói `triton`), nên
     # bật được — trước đây tắt vì tưởng thiếu.
     #
