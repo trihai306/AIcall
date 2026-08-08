@@ -286,6 +286,34 @@ Mốc 4 **phải để sau cùng** — nó cần dữ liệu cuộc gọi thật
 | Độ dài vừa khít | `min_ms=900` và có sẵn câu 2600ms → **không** chọn câu đó |
 | Đo thật | Mô phỏng 10 lượt, đếm số câu đệm khác nhau. Hiện tại **2**; đạt khi ≥ **8** |
 
+## Số đo thật sau mốc 1 (2026-08-08, RTX 5070, giọng `giong_heu`)
+
+| Kiểm | Mục tiêu | Đo được |
+|---|---|---|
+| Câu khác nhau / 10 lượt (mô phỏng) | ≥ 8 | **10/10** (trước: 2) |
+| Câu khác nhau / 9 lượt (hội thoại thật) | ≥ 6 | **9/9** |
+| Khởi động backend gọi F5 mấy lần | 0 | **0** — log: `42 đọc từ đĩa, 0 dựng mới` |
+| Thời gian nạp kho tiếng | < 5s | **0,00s** (gọi F5 thật mất ~45s) |
+| Tiếng đầu tới tai khách | tức thì | **5–10ms** mọi lượt |
+| Độ dài câu đệm khi cần che 1800ms | vừa khít | **1826–2568ms** |
+
+### Kho phải rải liền mạch, không chỉ "có đủ ba rổ"
+
+Bản 28 câu đầu tiên **đạt** tiêu chí 10/10 nhưng vẫn sai: nó có hai khoảng trống
+(1474→2162ms và 2687→3284ms). Đường thoại cần che ~1800ms nên khoảng "vừa khít"
+`[1800, 2600]` rỗng, luật rơi xuống tầng "đủ dài" và phát câu 3284–3990ms — khách
+nghe thừa gần 2 giây sau khi câu trả lời đã sẵn sàng.
+
+Phải thêm 14 câu rải đều 1,8–3,3s mới hết. Bài học: khoảng chọn rộng 800ms **trượt
+theo độ trễ thật**, nên kho cần phổ độ dài liên tục, không phải ba cụm rời.
+
+### Việc còn hở, không thuộc mốc 1
+
+Lượt ĐẦU của mỗi cuộc chưa có số đo nào nên dùng mặc định `_FILLER_MIN_THOAI_MS =
+1800`. Đo được lượt 1 có TTFA 8026ms (tra hồ sơ lần đầu mất 6173ms vì nguội) trong
+khi câu đệm 1826ms → khách nghe hụt ~6 giây. **Có sẵn từ trước, không phải do mốc
+này gây ra**, nhưng số đo mới làm nó lộ rõ.
+
 ## Việc KHÔNG làm
 
 - Không train / fine-tune mô hình nào.

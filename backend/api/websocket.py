@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
-from backend.pipeline.streaming_pipeline import FILLER_PHRASES
+from backend.services.filler_store import lay_kho
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,12 +17,11 @@ _warmups: set[asyncio.Task] = set()
 def _warm_fillers(tts, voice: str):
     """Pre-synthesize this voice's fillers in the background.
 
-    Without them get_filler() returns None and the call loses the instant
-    "Dạ vâng ạ" that hides most of the pipeline latency.
+    Thiếu chúng thì `pick_filler` trả None và cuộc gọi mất câu đệm che độ trễ.
     """
     async def run():
         try:
-            await tts.presynthesize_fillers(FILLER_PHRASES, voice=voice)
+            await tts.dung_fillers(lay_kho().cau, voice=voice)
         except Exception as e:
             logger.warning(f"Filler warmup for '{voice}' failed: {e}")
 

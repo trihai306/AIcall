@@ -9,7 +9,8 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.vad_service import VADService
-from backend.pipeline.streaming_pipeline import StreamingPipeline, FILLER_PHRASES
+from backend.pipeline.streaming_pipeline import StreamingPipeline
+from backend.services.filler_store import lay_kho
 from backend.pipeline.session_manager import SessionStore
 from backend.core.device import get_system_info
 
@@ -79,7 +80,7 @@ async def startup(state: AppState):
     logger.info("[6/6] Loading F5-TTS Vietnamese...")
     try:
         state.tts.load()
-        await state.tts.presynthesize_fillers(FILLER_PHRASES)
+        await state.tts.dung_fillers(lay_kho().cau)
         logger.info("  TTS: OK")
     except Exception as e:
         # exc_info: không có stack trace thì chỉ biết "nạp hỏng" chứ không biết

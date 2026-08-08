@@ -12,11 +12,17 @@ from backend.pipeline.text_normalizer import normalize_for_tts
 from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
+from backend.services.filler_store import CauDem, van_tay
+from backend.services.filler_pick import chon as _chon_filler
 
 logger = logging.getLogger(__name__)
 
 # Below this peak amplitude a reference clip is treated as an empty recording.
 SILENCE_PEAK = 1e-3
+
+# Tiếng câu đệm cất ở đây để khởi động không phải gọi F5 lại. Tên file mang vân
+# tay: đổi nfe/speed/giọng là vân tay lệch -> dựng lại đúng câu đó.
+THU_MUC_FILLER = Path("data/fillers_wav")
 
 def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
                  keep_ms: int = 25) -> np.ndarray:
@@ -57,8 +63,8 @@ class F5TTSService:
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._default_voice = Path(settings.f5tts_ref_audio).stem
         self._voices: dict[str, tuple] = {}          # name -> (wave, sr, ref_text)
-        self._filler_cache: dict[tuple[str, str], bytes] = {}   # (voice, phrase) -> wav
-        self._filler_ms: dict[tuple[str, str], float] = {}      # (voice, phrase) -> ms
+        self._filler_cache: dict[tuple[str, str], bytes] = {}   # (voice, cau_id) -> wav
+        self._filler_ms: dict[tuple[str, str], float] = {}      # (voice, cau_id) -> ms
         self._synth_cache: "OrderedDict[tuple, bytes]" = OrderedDict()  # (voice, text, fast, sr)
         self._synth_cache_max = 256
 
@@ -495,39 +501,86 @@ class F5TTSService:
         """
         return self._default_voice
 
+    def _giong_thuc(self, voice: str | None) -> str:
+        """Quy tên giọng lạ về giọng mặc định.
+
+        Phiên mới mặc định voice_name="default" trong khi giọng thật tên theo
+        file (vd "giong_ngan") - không quy về thì mọi tra cứu cache đều trượt và
+        câu đệm chưa bao giờ phát.
+        """
+        name = voice or self._default_voice
+        return name if name in self._voices else self._default_voice
+
     def co_filler(self, voice: str | None = None) -> bool:
         """Giọng này đã có câu đệm dựng sẵn chưa."""
-        name = voice or self._default_voice
-        if name not in self._voices:
-            name = self._default_voice
+        name = self._giong_thuc(voice)
         return any(k[0] == name for k in self._filler_cache)
 
-    async def presynthesize_fillers(self, phrases: list[str], voice: str | None = None):
-        """Pre-synthesize filler phrases so they play at 0ms latency.
+    def _duong_dan_filler(self, voice: str, cau_id: str, vt: str) -> Path:
+        return THU_MUC_FILLER / voice / f"{cau_id}__{vt}.wav"
 
-        Called at startup for the default voice, and again per voice the first
-        time a call switches to it.
+    def _van_tay_filler(self, text: str, voice: str) -> str:
+        # Tốc và câu mẫu phải lấy từ bản riêng của giọng, không phải giá trị chung
+        # trong .env. Nếu dùng settings.f5tts_speed: người dùng đặt tốc riêng giọng
+        # đó -> tiếng WAV đã dựng theo tốc mới, nhưng vân tay tính từ tốc chung nên
+        # không đổi -> hệ thống tưởng file còn tốt và phát câu đệm tốc cũ.
+        speed = self.toc_do_cua(voice)
+        entry = self._voices.get(voice)
+        ref_text = entry[2] if entry is not None else settings.f5tts_ref_text
+        return van_tay(text, voice, settings.f5tts_nfe_step, speed, ref_text)
+
+    async def dung_fillers(self, cau: list[CauDem], voice: str | None = None):
+        """Bảo đảm mọi câu đệm đều có tiếng sẵn sàng cho giọng này.
+
+        Đọc từ đĩa trước, chỉ gọi F5 cho những câu còn thiếu hoặc lệch vân tay.
+        Nhờ vậy khởi động lần hai trở đi KHÔNG chạm GPU - quan trọng vì
+        `_warm_fillers` chạy đúng lúc cuộc gọi bắt đầu (api/websocket.py:286),
+        và 28 câu gọi F5 nền sẽ giành GPU với chính cuộc gọi đang sống.
         """
         voice = await self.ensure_voice(voice or self._default_voice)
-        pending = [p for p in phrases if (voice, p) not in self._filler_cache]
-        if not pending:
-            return
+        thu_muc = THU_MUC_FILLER / voice
+        thu_muc.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Pre-synthesizing {len(pending)} filler phrases for voice '{voice}'...")
-        for phrase in pending:
+        doc_dia = dung_moi = 0
+        for c in cau:
+            khoa = (voice, c.id)
+            if khoa in self._filler_cache:
+                continue
+            vt = self._van_tay_filler(c.text, voice)
+            p = self._duong_dan_filler(voice, c.id, vt)
+            if p.exists():
+                try:
+                    wav = p.read_bytes()
+                    self._filler_cache[khoa] = wav
+                    self._filler_ms[khoa] = self._wav_duration_ms(wav)
+                    doc_dia += 1
+                    continue
+                except OSError as e:
+                    logger.warning("Đọc %s hỏng, dựng lại: %s", p, e)
             try:
-                wav = await self.synthesize(phrase, voice=voice)
-                self._filler_cache[(voice, phrase)] = wav
-                # Ghi lại độ dài để chọn filler đủ che độ trễ, thay vì bốc ngẫu
-                # nhiên: filler ngắn hơn TTFA thì khách nghe hụt một khoảng lặng.
-                self._filler_ms[(voice, phrase)] = self._wav_duration_ms(wav)
-                logger.info(
-                    f"  Cached filler [{voice}]: '{phrase}' "
-                    f"({self._filler_ms[(voice, phrase)]:.0f}ms)"
-                )
+                wav = await self.synthesize(c.text, voice=voice)
             except Exception as e:
-                logger.warning(f"  Failed to cache filler '{phrase}': {e}")
-        logger.info(f"Filler cache ready for '{voice}': {len(pending)} phrases")
+                logger.warning("Không dựng được câu đệm %r: %s", c.id, e)
+                continue
+            # Xoá bản vân tay cũ của cùng câu, nếu không đĩa phình mãi mỗi lần
+            # đổi nfe.
+            for cu in thu_muc.glob(f"{c.id}__*.wav"):
+                cu.unlink(missing_ok=True)
+            try:
+                p.write_bytes(wav)
+            except OSError as e:
+                logger.warning(
+                    "Ghi câu đệm %r ra %s thất bại (%s) — giữ trong bộ nhớ, "
+                    "lần khởi động sau sẽ dựng lại.",
+                    c.id, p, e,
+                )
+            self._filler_cache[khoa] = wav
+            self._filler_ms[khoa] = self._wav_duration_ms(wav)
+            dung_moi += 1
+
+        logger.info("Câu đệm [%s]: %d đọc từ đĩa, %d dựng mới, tổng %d",
+                    voice, doc_dia, dung_moi,
+                    sum(1 for k in self._filler_cache if k[0] == voice))
 
     @staticmethod
     def _wav_duration_ms(wav_bytes: bytes) -> float:
@@ -539,61 +592,27 @@ class F5TTSService:
         except Exception:
             return 0.0
 
-    def pick_filler(self, phrases: list[str], voice: str | None = None,
+    def do_dai_filler(self, cau_id: str, voice: str | None = None) -> float:
+        """Độ dài tiếng (ms) của một câu đệm, 0 nếu chưa dựng."""
+        return self._filler_ms.get((self._giong_thuc(voice), cau_id), 0.0)
+
+    def pick_filler(self, cau: list[CauDem], voice: str | None = None,
                     min_ms: float = 0.0,
-                    tranh: set[str] | None = None) -> tuple[bytes | None, str]:
-        """Chọn filler ĐỦ DÀI để che độ trễ, thay vì bốc ngẫu nhiên.
+                    dem: dict[str, int] | None = None
+                    ) -> tuple[bytes | None, CauDem | None]:
+        """Chọn câu đệm đã có tiếng cho giọng này. Trả (wav, CauDem).
 
-        Đo thực tế: 4 câu filler dài 656/815/1225/1269ms trong khi TTFA đường
-        thoại ~1127ms -> bốc ngẫu nhiên thì một nửa số cuộc gọi khách vẫn nghe
-        hụt 312-471ms im lặng. Ưu tiên các câu che đủ, còn giữ ngẫu nhiên trong
-        nhóm đó để không lặp lại một câu duy nhất.
+        Lớp mỏng: luật chọn nằm ở services/filler_pick.py để test được mà không
+        cần GPU. Ở đây chỉ lo tra cache và quy giọng lạ về giọng mặc định.
         """
-        import random as _r
-        name = voice or self._default_voice
-        if name not in self._voices:
-            name = self._default_voice
-        có = [(p, self._filler_ms.get((name, p), 0.0)) for p in phrases
-              if (name, p) in self._filler_cache]
-        if not có:
-            return None, ""
-        # Bỏ những câu vừa dùng gần đây. Lọc "đủ dài" thu hẹp nhóm chọn rất mạnh
-        # (đo được: 12 câu nhưng chỉ 2-3 câu vượt ngưỡng 1100ms), nên bốc ngẫu
-        # nhiên trong nhóm đó là lặp ngay - cuộc gọi 9 lượt nghe "Dạ em hiểu rồi"
-        # bốn lần. Người dùng nghe ra ngay.
-        chua_dung = [(p, ms) for p, ms in có if not tranh or p not in tranh]
-        du_va_moi = [p for p, ms in chua_dung if ms >= min_ms]
-
-        if du_va_moi:
-            # Có câu vừa che đủ vừa chưa dùng -> ngẫu nhiên trong nhóm đó.
-            chọn = _r.choice(du_va_moi)
-        else:
-            # KHÔNG câu nào che đủ (hoặc những câu che đủ đều vừa dùng). Tới đây
-            # thì độ dài là tiêu chí DUY NHẤT còn nghĩa - khách chắc chắn sẽ nghe
-            # một quãng lặng, việc còn lại là làm nó ngắn nhất có thể.
-            #
-            # Bản cũ bốc NGẪU NHIÊN trong nhóm chưa dùng ở đúng nhánh này, và đó
-            # là lỗi thật: cuộc gọi 07-08 chờ 2456ms mà nó bốc trúng "Dạ" (303ms)
-            # - câu NGẮN NHẤT trong 12 câu - cho ra 2153ms im lặng. Lấy câu dài
-            # nhất (1688ms) thì quãng đó còn 768ms, chỉ bằng cách đổi cách chọn.
-            ung = chua_dung or có
-            chọn = max(ung, key=lambda x: x[1])[0]
-        return self._filler_cache.get((name, chọn)), chọn
-
-    def get_filler(self, phrase: str, voice: str | None = None) -> bytes | None:
-        """Pre-synthesized filler audio (0ms latency), or None if not cached yet."""
-        name = voice or self._default_voice
-        hit = self._filler_cache.get((name, phrase))
-        if hit is not None:
-            return hit
-        # Phiên mới mặc định voice_name="default", trong khi giọng thật tên theo
-        # file (vd "giong_ngan") nên filler cache dưới tên đó -> tra khoá
-        # ("default", câu) LUÔN TRƯỢT và filler chưa bao giờ phát.
-        # ensure_voice() rơi về _default_voice khi gặp tên lạ, filler phải rơi
-        # về đúng chỗ đó thì mới khớp với giọng sẽ đọc câu trả lời.
-        if name not in self._voices:
-            return self._filler_cache.get((self._default_voice, phrase))
-        return None
+        name = self._giong_thuc(voice)
+        theo_id = {c.id: c for c in cau}
+        ung_vien = [(c.id, self._filler_ms[(name, c.id)])
+                    for c in cau if (name, c.id) in self._filler_cache]
+        chon_id = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
+        if chon_id is None:
+            return None, None
+        return self._filler_cache[(name, chon_id)], theo_id[chon_id]
 
     # --- discovery -----------------------------------------------------------
 
@@ -647,12 +666,22 @@ class F5TTSService:
         Tên biến là `_synth_cache`, KHÔNG phải `_cache` - viết nhầm thì hàm này
         chạy êm mà không dọn gì, và người dùng kéo thanh tốc xong nghe y như cũ
         rồi tưởng nút hỏng.
+
+        Phải dọn cả `_filler_cache`/`_filler_ms`: chúng dùng khoá `(voice, cau_id)`,
+        kiểm tra bằng `k[0] == voice`. KHÔNG dùng `voice in k` cho filler vì có thể
+        trùng tên với cau_id và xoá nhầm khoá của giọng khác.
         """
         try:
             for k in [k for k in self._synth_cache if isinstance(k, tuple) and voice in k]:
                 self._synth_cache.pop(k, None)
         except Exception as e:
-            logger.debug("Không dọn được cache giọng %s: %s", voice, e)
+            logger.debug("Không dọn được synth_cache giọng %s: %s", voice, e)
+        try:
+            for k in [k for k in self._filler_cache if k[0] == voice]:
+                self._filler_cache.pop(k, None)
+                self._filler_ms.pop(k, None)
+        except Exception as e:
+            logger.debug("Không dọn được filler_cache giọng %s: %s", voice, e)
 
 
     # --- Hệ số tốc riêng cho ĐƯỜNG THOẠI -------------------------------------

@@ -104,6 +104,10 @@ class CallSession:
         # không thiếu chữ nào. Đây là thứ DUY NHẤT cắt được STT khỏi đường găng:
         # `process_turn` vốn luôn phiên âm lại từ đầu, tốn 212-502ms mỗi lượt.
         self.spec_stt: tuple[int, str] | None = None
+        # Đếm số lần mỗi câu đệm đã dùng TRONG CUỘC GỌI NÀY, để chọn câu ít
+        # dùng nhất. Thuộc về phiên: khách mới thì không việc gì phải tránh
+        # câu đã dùng với khách trước.
+        self.dem_filler: dict[str, int] = {}
         # Tần số của tiếng NẰM TRONG đệm. Trình duyệt đẩy 16kHz; đường thoại đẩy
         # 8kHz thô và KHÔNG tự nâng tần - xem `PhoneAudioBridge._read_loop`. Mọi
         # chỗ đọc đệm phải theo số này chứ đừng đoán 16kHz.

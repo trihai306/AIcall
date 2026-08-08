@@ -145,7 +145,8 @@ async def main() -> int:
 
     from backend.config import settings
     from backend.pipeline.session_manager import CallSession
-    from backend.pipeline.streaming_pipeline import FILLER_PHRASES, StreamingPipeline
+    from backend.pipeline.streaming_pipeline import StreamingPipeline
+    from backend.services.filler_store import lay_kho
     from backend.services import adb_service
     from backend.services.llm_service import LLMService
     from backend.services.phone_call_service import PhoneCallBridge
@@ -166,7 +167,7 @@ async def main() -> int:
                   f"'{session.voice_name}'")
     # Nạp sẵn từ đệm CHO ĐÚNG GIỌNG đang dùng. Nạp cho giọng khác thì
     # `pick_filler` không tìm thấy và khách phải chờ im lặng hết TTFA.
-    await tts.presynthesize_fillers(FILLER_PHRASES, voice=session.voice_name)
+    await tts.dung_fillers(lay_kho().cau, voice=session.voice_name)
     print(f"    giọng: {session.voice_name}")
 
     print(f"\n[1] Bật cầu tiếng trên máy (nguồn {args.src}) ...")
