@@ -53,3 +53,55 @@ def test_it_dung_nhat_duoc_uu_tien_hon_ca_do_vua_khit():
     ra = chon([("a", 900.0), ("b", 1000.0)], min_ms=900,
               dem={"a": 2}, rng=RNG())
     assert ra == "b"
+
+
+# --- can_che_ms: cần che bao nhiêu mili giây ------------------------------
+
+from backend.services.filler_pick import can_che_ms  # noqa: E402
+
+
+def _luot(ttfa, la_thoai=True, cau_san=False):
+    m = {"ttfa_ms": ttfa, "la_thoai": la_thoai}
+    if cau_san:
+        m["luot_thuong_gap"] = "chào hỏi"
+    return m
+
+
+def test_lich_su_rong_thi_lay_mac_dinh():
+    assert can_che_ms([], la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+def test_bo_qua_luot_tra_loi_bang_cau_san():
+    # Lượt trúng bảng câu sẵn KHÔNG gọi LLM nên nhanh có cấu trúc. Dùng nó để
+    # đoán cho lượt phải gọi LLM là đoán trượt - đo thật 08-08: hai lượt câu sẵn
+    # 450/458ms khiến lượt 3 bị bỏ câu đệm, rồi lượt 3 mất 3399ms -> khách nghe
+    # im 3,4 giây.
+    su = [_luot(450, cau_san=True), _luot(458, cau_san=True)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+def test_chi_tinh_luot_that_khi_co_ca_hai_loai():
+    su = [_luot(450, cau_san=True), _luot(2000), _luot(1500)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 2000.0
+
+
+def test_loc_dung_duong_thoai_hay_chat():
+    su = [_luot(3000, la_thoai=False), _luot(1200, la_thoai=True)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1200.0
+    assert can_che_ms(su, la_thoai=False, mac_dinh=900.0) == 3000.0
+
+
+def test_lay_max_cua_ba_luot_gan_nhat():
+    su = [_luot(5000), _luot(1000), _luot(1100), _luot(1200)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1200.0
+
+
+def test_bo_qua_luot_thieu_ttfa():
+    su = [_luot(None), _luot(0), _luot(1300)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1300.0
+
+
+def test_suy_ra_duong_tu_stt_ms_khi_ban_ghi_cu_khong_co_la_thoai():
+    # Bản ghi cũ trong DB không có khoá `la_thoai`. Suy từ stt_ms như bản trước.
+    cu = [{"ttfa_ms": 1400, "stt_ms": 300}]
+    assert can_che_ms(cu, la_thoai=True, mac_dinh=1800.0) == 1400.0

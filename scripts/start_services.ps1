@@ -61,8 +61,18 @@ function Start-Detached($Name, $Body) {
         "set PATH=C:\ffmpeg-shared\bin;%PATH%",
         # -1 = giữ model trong VRAM vĩnh viễn. Mặc định Ollama đẩy ra sau 5 phút,
         # nên lượt gọi đầu sau lúc nghỉ phải nạp lại 2.1GB -> TTFT vọt lên ~1700ms
-        # thay vì ~515ms. Máy này VRAM dư (4.5/12GB) nên giữ luôn.
+        # thay vì ~515ms.
         "set OLLAMA_KEEP_ALIVE=-1",
+        # 1 = CHI giu dung mot model. Chu thich cu o day noi "may nay VRAM du
+        # (4.5/12GB) nen giu luon" - SAI tu khi them F5-TTS va model thu hai.
+        #
+        # Do that 08-08: qwen2.5:7b (5.1GB) + qwen2.5:3b (2.4GB, khong ma chay
+        # that nao dung) cung bi ghim Forever tren card 11.9GB. F5-TTS gianh
+        # cho trong luc goi -> Ollama day 7B ra. Cuoc sau nap lai 5.1GB TU O
+        # CUNG = ~6 giay, roi tron vao luot dau tien khach hoi that.
+        # Bo 3B ra thi 7B tru duoc qua ca cuoc goi, cu 6 giay bien mat
+        # (cong_cu_ms cao nhat 6294ms -> 393ms).
+        "set OLLAMA_MAX_LOADED_MODELS=1",
         "set OLLAMA_NUM_PARALLEL=2",
         "cd /d `"$PROJECT`"",
         $Body
@@ -195,6 +205,27 @@ if (Get-Process ollama -EA SilentlyContinue) {
     Start-Detached "ollama" "ollama serve > `"$LOGS\ollama.log`" 2>&1" | Out-Null
     Start-Sleep -Seconds 3
     Write-Host "[OK] Ollama da khoi dong"
+}
+
+# Day model THUA ra khoi VRAM. OLLAMA_MAX_LOADED_MODELS chi an tu lan Ollama
+# khoi dong lai; model dang ghim san van nam do, nen phai don bang tay o day.
+# Xem chu thich o Start-Detached ben tren de biet vi sao ton tai buoc nay.
+$modelChinh = ""
+if (Test-Path "$PROJECT\.env") {
+    $d = Select-String -Path "$PROJECT\.env" -Pattern '^\s*OLLAMA_MODEL\s*=\s*(.+?)\s*$' -EA SilentlyContinue
+    if ($d) { $modelChinh = $d.Matches[0].Groups[1].Value.Trim() }
+}
+if ($modelChinh) {
+    $dangNap = @(ollama ps 2>$null | Select-Object -Skip 1 |
+                 ForEach-Object { ($_ -split '\s+')[0] } | Where-Object { $_ })
+    foreach ($m in $dangNap) {
+        if ($m -ne $modelChinh) {
+            ollama stop $m 2>$null | Out-Null
+            Write-Host "[OK] Da day model thua '$m' khoi VRAM (chi giu '$modelChinh')"
+        }
+    }
+} else {
+    Write-Host "[--] Khong doc duoc OLLAMA_MODEL tu .env, bo qua buoc don VRAM"
 }
 
 # --- 2. PhoWhisper STT ---

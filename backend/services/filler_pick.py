@@ -6,6 +6,33 @@ import random
 NOI_RONG_MS = 800.0
 
 
+def can_che_ms(lich_su: list[dict], la_thoai: bool, mac_dinh: float) -> float:
+    """Câu đệm phải dài ít nhất bằng độ trễ gần đây của CHÍNH đường này.
+
+    Ngắn hơn thì khách nghe hụt đúng phần thiếu; dài quá thì câu trả lời thật bị
+    đẩy ra sau một cách vô ích.
+
+    BỎ những lượt trả lời bằng bảng câu sẵn (`luot_thuong_gap`). Chúng không gọi
+    LLM nên nhanh có cấu trúc, và dùng chúng để đoán cho lượt phải gọi LLM là
+    đoán trượt. Đo thật 08-08: hai lượt câu sẵn 450/458ms làm hệ thống tưởng
+    đường đang nhanh nên BỎ câu đệm, rồi lượt 3 phải gọi LLM mất 3399ms - khách
+    nghe im lặng 3,4 giây, đúng thứ câu đệm sinh ra để chặn.
+
+    Tách thoại/chat vì hai đường chênh nhau đúng phần STT. Ưu tiên khoá
+    `la_thoai` ghi thẳng; bản ghi cũ không có khoá đó thì suy từ `stt_ms` như
+    trước - lưu ý cách suy này SAI ở những lượt dùng lại bản phiên âm đoán trước
+    (stt_ms = 0), đó là lý do có khoá tường minh.
+    """
+    def dung_duong(m: dict) -> bool:
+        if "la_thoai" in m:
+            return bool(m["la_thoai"]) == la_thoai
+        return bool(m.get("stt_ms")) == la_thoai
+
+    qua = [m["ttfa_ms"] for m in lich_su[-6:]
+           if m.get("ttfa_ms") and not m.get("luot_thuong_gap") and dung_duong(m)]
+    return float(max(qua[-3:])) if qua else mac_dinh
+
+
 def chon(ung_vien: list[tuple[str, float]], min_ms: float,
          dem: dict[str, int], rng: random.Random | None = None) -> str | None:
     """Chọn một câu đệm trong `ung_vien` = [(id, độ dài ms)].

@@ -611,6 +611,18 @@ class F5TTSService:
                     for c in cau if (name, c.id) in self._filler_cache]
         chon_id = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
         if chon_id is None:
+            # Về tay không là khách nghe im lặng trọn TTFA, nên phải nói RÕ vì
+            # sao: xin giọng nào, quy về giọng nào, cache còn gì. Bản trước chỉ
+            # trả None và nơi gọi in "KHÔNG có filler cho giọng X" - mà X là tên
+            # XIN chứ không phải tên đã quy, nên đọc log không biết trượt ở đâu.
+            logger.warning(
+                "pick_filler về tay không: xin='%s' -> quy về '%s'; kho đưa %d câu, "
+                "trong đó %d câu đã có tiếng; cache giọng này %d mục / tổng %d; "
+                "giọng đã nạp: %s",
+                voice, name, len(cau), len(ung_vien),
+                sum(1 for k in self._filler_cache if k[0] == name),
+                len(self._filler_cache), sorted(self._voices),
+            )
             return None, None
         return self._filler_cache[(name, chon_id)], theo_id[chon_id]
 

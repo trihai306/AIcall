@@ -22,6 +22,7 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
+from backend.services.filler_pick import can_che_ms
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
@@ -421,17 +422,8 @@ class StreamingPipeline:
     _FILLER_BO_QUA_MS = 700.0
 
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
-        """Filler phải dài ít nhất bằng TTFA gần đây của CHÍNH đường này.
-
-        Ngắn hơn thì khách nghe hụt một khoảng lặng đúng bằng phần thiếu; dài
-        quá thì câu trả lời thật bị đẩy ra sau một cách vô ích. Tách thoại/chat
-        theo stt_ms vì hai đường chênh nhau đúng phần STT.
-        """
-        qua = [
-            m["ttfa_ms"] for m in session.latency_log[-6:]
-            if m.get("ttfa_ms") and bool(m.get("stt_ms")) == la_thoai
-        ]
-        return max(qua[-3:]) if qua else mac_dinh
+        """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
+        return can_che_ms(session.latency_log, la_thoai, mac_dinh)
 
     async def _send_filler(self, ws: WebSocket, session: CallSession, t_start: float,
                            metrics: dict, la_thoai: bool):
@@ -492,7 +484,10 @@ class StreamingPipeline:
     async def process_turn(self, audio_bytes: bytes, session: CallSession, ws: WebSocket):
         """Full pipeline: Audio -> STT -> RAG -> LLM -> TTS -> Audio."""
         t_start = time.perf_counter()
-        metrics = {}
+        # Ghi THẲNG đường nào, đừng để `can_che_ms` phải suy từ stt_ms: lượt
+        # dùng lại bản phiên âm đoán trước có stt_ms = 0, suy ra sẽ thành
+        # "đường chat" và lịch sử thoại mất đúng những lượt nhanh nhất.
+        metrics = {"la_thoai": True}
 
         await self._send_filler(ws, session, t_start, metrics, la_thoai=True)
 
@@ -629,7 +624,7 @@ class StreamingPipeline:
     async def process_text_turn(self, text: str, session: CallSession, ws: WebSocket):
         """Text-only turn (skip STT)."""
         t_start = time.perf_counter()
-        metrics = {"stt_ms": 0}
+        metrics = {"stt_ms": 0, "la_thoai": False}
 
         # Đường chat trước đây KHÔNG có filler: khách gõ xong bấm gửi rồi ngồi im
         # 1.2-1.4 giây (đo thật) mới nghe tiếng, trong khi gọi điện thì nghe ngay.
@@ -1032,9 +1027,18 @@ class StreamingPipeline:
                 bat_dau_noi, metrics.get("filler_text", ""),
                 metrics.get("ttfa_ms", "-"), metrics.get("ttfa_ms", "-"),
             )
+        elif metrics.get("filler_bo_qua"):
+            # BỎ QUA CÓ CHỦ Ý, không phải hỏng. Đường đang nhanh thì một khoảng
+            # lặng ngắn nghe tự nhiên hơn hẳn câu đệm chèn vào.
+            #
+            # Tách khỏi nhánh dưới vì bản cũ gộp cả hai và LUÔN in "KHÔNG có
+            # filler" - đọc log không phân biệt được máy đang chạy đúng hay kho
+            # câu đệm hỏng, và đó đúng là thứ đã làm mất một buổi truy lỗi.
+            logger.info("Bỏ câu đệm (%s) -> khách chờ %sms, ngắn nên nghe tự nhiên",
+                        metrics["filler_bo_qua"], metrics.get("ttfa_ms", "-"))
         else:
-            # Cả hai đường đều gửi filler, nên tới đây nghĩa là cache filler rỗng
-            # cho giọng đang dùng - khách phải chờ im lặng hết TTFA.
+            # Tới đây mới THẬT SỰ là không tìm được câu đệm nào - khách phải chờ
+            # im lặng hết TTFA. `pick_filler` đã ghi log chi tiết vì sao trượt.
             logger.warning(
                 "KHÔNG có filler cho giọng '%s' -> khách chờ im lặng đủ %sms",
                 session.voice_name, metrics.get("ttfa_ms", "-"),
