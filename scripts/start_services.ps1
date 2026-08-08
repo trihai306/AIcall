@@ -73,7 +73,13 @@ function Start-Detached($Name, $Body) {
         # Bo 3B ra thi 7B tru duoc qua ca cuoc goi, cu 6 giay bien mat
         # (cong_cu_ms cao nhat 6294ms -> 393ms).
         "set OLLAMA_MAX_LOADED_MODELS=1",
-        "set OLLAMA_NUM_PARALLEL=2",
+        # 1, KHONG phai 2. Do 08-08 tren 2 cuoc goi song song:
+        #   NUM_PARALLEL=2 -> TTFA cao nhat 7512 / 8270 ms
+        #   NUM_PARALLEL=1 -> TTFA cao nhat 2646 / 2121 ms, trung vi cung tot hon
+        # Hai khe ngu canh tren card 11.9GB lam duoi tre vot gap ba ma dinh VRAM
+        # khong giam (11453 vs 11400 MiB). Mot khe thi hai cuoc xep hang o Ollama,
+        # nhung moi lenh LLM chi 200-600ms nen cho khong dang ke.
+        "set OLLAMA_NUM_PARALLEL=1",
         "cd /d `"$PROJECT`"",
         $Body
     ) | Set-Content -Path $bat -Encoding ascii
@@ -205,6 +211,37 @@ if (Get-Process ollama -EA SilentlyContinue) {
     Start-Detached "ollama" "ollama serve > `"$LOGS\ollama.log`" 2>&1" | Out-Null
     Start-Sleep -Seconds 3
     Write-Host "[OK] Ollama da khoi dong"
+}
+
+# CANH BAO neu bien Ollama chua dat o MUC MAY.
+#
+# Nhung dong "set OLLAMA_*" trong Start-Detached ben tren CHI an khi chinh script
+# nay khoi dong Ollama. Thuc te app khay he thong (ollama app.exe) thuong dung
+# Ollama len TRUOC, luc do cac dong set do khong bao gio cham toi no - da mat
+# ca buoi 08-08 moi phat hien NUM_PARALLEL chua tung co tac dung.
+#
+# Dat o muc may thi an bat ke ai khoi dong Ollama. Doi bien phai TAT HAN ollama
+# (ca "ollama app") roi bat lai moi ap dung.
+$canCo = @{
+    "OLLAMA_FLASH_ATTENTION"   = "1"        # nhanh hon VA cho phep nen KV cache
+    "OLLAMA_KV_CACHE_TYPE"     = "q8_0"     # nen KV cache: dinh 1 cuoc 10257 -> 8610 MiB
+    "OLLAMA_CONTEXT_LENGTH"    = "2048"     # app chi bao gio xin 2048, dung tra tien 4096
+    "OLLAMA_NUM_PARALLEL"      = "1"        # xem chu thich o Start-Detached
+    "OLLAMA_MAX_LOADED_MODELS" = "1"
+}
+$thieu = @()
+foreach ($k in $canCo.Keys) {
+    if ([Environment]::GetEnvironmentVariable($k, "Machine") -ne $canCo[$k]) {
+        $thieu += "$k=$($canCo[$k])"
+    }
+}
+if ($thieu.Count) {
+    Write-Host "[!!] Bien Ollama chua dat dung o muc may: $($thieu -join ', ')"
+    Write-Host "     Dat bang PowerShell quyen admin, roi TAT HAN ollama va bat lai:"
+    foreach ($t in $thieu) {
+        $kv = $t -split '=', 2
+        Write-Host "       [Environment]::SetEnvironmentVariable('$($kv[0])','$($kv[1])','Machine')"
+    }
 }
 
 # Day model THUA ra khoi VRAM. OLLAMA_MAX_LOADED_MODELS chi an tu lan Ollama
