@@ -327,6 +327,21 @@ class F5TTSService:
                 f"Ref audio giọng '{name}' dài {duration:.1f}s - ref càng dài mỗi lần "
                 "synth càng chậm (ODE chạy trên cả ref). Khuyến nghị dùng clip 3-6s."
             )
+        elif duration < 3:
+            # ĐO THẬT 08-08, cùng câu, lặp 3 lần mỗi giọng, cho STT nghe lại:
+            #   giong_heu (ref 2.21s): âm rác 2/3 lượt, biên độ vượt trần 3/3
+            #   fosd_1    (ref 4.95s): âm rác 0/3,      vượt trần 0/3
+            # Ref ngắn thì F5 thiếu ngữ cảnh, nó BỊA ra một cụm 2-5 âm tiết ở
+            # ĐẦU mỗi lần sinh - khách nghe "hiếu... nhìn..." trước mỗi câu.
+            # `trim_silence` không cắt được vì cụm đó rất TO (biên độ ~0.5).
+            #
+            # Cảnh báo chứ không chặn: giọng vẫn dùng được, chỉ là bẩn.
+            logger.warning(
+                "Ref audio giọng '%s' CHỈ %.1fs - NGẮN QUÁ. Đo được ref dưới 3s "
+                "làm F5 bịa âm rác ở đầu ~2/3 số lượt và biên độ vượt trần. "
+                "Thu lại clip 4-6s của cùng người rồi thay file, sẽ sạch.",
+                name, duration,
+            )
 
     async def ensure_voice(self, name: str) -> str:
         """Register a voice if it isn't loaded yet. Returns the usable voice name.

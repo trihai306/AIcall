@@ -24,9 +24,31 @@ def pcm_to_wav(pcm_bytes: bytes, sample_rate: int = 16000, channels: int = 1, sa
     return buf.getvalue()
 
 
+def ha_muc_neu_qua(audio: np.ndarray) -> np.ndarray:
+    """Vượt trần biên độ thì hạ MỨC cả mảnh, giữ nguyên dạng sóng.
+
+    Khác `np.clip`: clip cắt phẳng ngọn sóng nên sinh méo; hạ mức chỉ làm cả
+    mảnh nhỏ đi, tai gần như không nhận ra.
+
+    Vì sao cần (đo 08-08): F5 với đoạn mẫu ngắn trả về đỉnh 1.09-1.40, tức vượt
+    trần thường xuyên. Bản ghi một cuộc hội thoại có 114 chuỗi mẫu bão hoà -
+    nghe gắt ở những chỗ to nhất.
+
+    KHÔNG khuếch đại khi tiếng nhỏ: đó là việc của bước kiểm soát mức, không
+    phải của hàm này.
+    """
+    if audio is None or len(audio) == 0:
+        return audio
+    dinh = float(np.abs(audio).max())
+    if dinh <= 1.0:
+        return audio
+    return audio / dinh
+
+
 def float32_to_int16(audio: np.ndarray) -> bytes:
     """Convert float32 numpy array [-1, 1] to int16 PCM bytes."""
-    audio = np.clip(audio, -1.0, 1.0)
+    audio = ha_muc_neu_qua(audio)
+    audio = np.clip(audio, -1.0, 1.0)   # lưới cuối cho NaN/inf
     return (audio * 32767).astype(np.int16).tobytes()
 
 
