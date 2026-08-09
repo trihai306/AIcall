@@ -124,3 +124,49 @@ def test_nhip_nghi_theo_dau_cuoi_manh():
 def test_dem_rong_khong_cat():
     assert tach_manh("")[0] is None
     assert tach_manh("   ")[0] is None
+
+
+# --- cắt ở dấu câu để code chèn được nhịp nghỉ ---------------------------
+#
+# Từ 2026-08-09 dấu câu bị bỏ khỏi chữ đưa vào F5 (`bo_dau_cau_cho_f5`), nên dấu
+# nằm GIỮA mảnh sẽ mất luôn quãng nghỉ: F5 không nghỉ nữa mà code cũng không chèn
+# vì chỗ đó không phải ranh giới mảnh. Cắt ở dấu thì dấu luôn rơi vào ranh giới.
+
+from backend.pipeline.text_chunker import (  # noqa: E402
+    NGHI_CHAM_MS, NGHI_PHAY_MS, TOI_THIEU_TU_KHI_CAT_O_DAU,
+)
+
+
+def test_cat_ngay_o_dau_phay_du_chua_du_5_tu():
+    m = cat("dạ vâng ạ, anh chị chờ em chút")
+    assert m[0] == "dạ vâng ạ,"
+
+
+def test_cat_o_dau_cham():
+    m = cat("em hiểu rồi ạ. anh chị cho em hỏi thêm")
+    assert m[0] == "em hiểu rồi ạ."
+
+
+def test_khong_cat_o_dau_khi_chua_du_toi_thieu():
+    """"Dạ," một mình là mảnh 1 từ - tốn trọn một lượt F5 cho 0,3 giây tiếng."""
+    assert TOI_THIEU_TU_KHI_CAT_O_DAU == 3
+    m = cat("dạ, anh chị cho em xin ít phút")
+    assert len(m[0].split()) >= TOI_THIEU_TU_KHI_CAT_O_DAU
+
+
+def test_van_cat_o_5_tu_khi_khong_co_dau():
+    m = cat("anh chị vui lòng chờ em chút xíu nhé ạ")
+    assert m[0] == "anh chị vui lòng chờ"
+
+
+def test_khong_cat_o_dau_phan_cach_nghin():
+    """"142." đứng ở từ thứ 3 vẫn không được coi là hết câu."""
+    m = cat("dư nợ 142.500.000 đồng ạ nhé anh")
+    assert not m[0].endswith("142.")
+
+
+def test_nhip_nghi_dat_cung_theo_yeu_cau():
+    assert NGHI_CHAM_MS == 200.0
+    assert NGHI_PHAY_MS == 100.0
+    assert nhip_nghi_sau("em hiểu rồi ạ.") == NGHI_CHAM_MS
+    assert nhip_nghi_sau("em hiểu rồi ạ,") == NGHI_PHAY_MS

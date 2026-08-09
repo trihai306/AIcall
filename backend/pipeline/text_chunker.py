@@ -67,6 +67,12 @@ GIOI_HAN_TU_MANH = 5
 # Giữ tên cũ cho chỗ nào còn gọi tới; nay chỉ là trần chặn cụm số kéo dài.
 GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
 
+# Cắt ở dấu câu thì phải có ít nhất bấy nhiêu từ. Không có sàn này thì "Dạ," ra
+# một mảnh 1 từ: tốn trọn một lượt gọi F5 (~250ms chi phí cố định cho đoạn mẫu)
+# để sinh 0,3 giây tiếng, và mảnh quá ngắn thì sinh không kịp phát - đo được 3
+# từ/mảnh gây 21 lần đói khung khi Ollama đang chạy.
+TOI_THIEU_TU_KHI_CAT_O_DAU = 3
+
 # Trần cho phép chặn-vì-đang-giữa-cụm-số kéo dài. Không có trần thì một chuỗi
 # toàn từ số ("một hai ba bốn...") giữ buffer mãi không giao.
 # PHẢI CAO HƠN ngưỡng cắt, không phải bằng: để bằng thì guard hết hiệu lực đúng
@@ -82,8 +88,15 @@ TRAN_CHO_CUM_SO_SAU = TRAN_CHO_CUM_SO_DAU
 # 260-573), dấu chấm 411ms (dải 198-596).
 # Trừ đi ~50ms vì trim_silence đã chừa lại 25ms ở mỗi đầu mảnh, ranh giới sẵn có
 # chừng đó rồi.
-NGHI_PHAY_MS = 305.0
-NGHI_CHAM_MS = 360.0
+# ĐẶT CỨNG từ 2026-08-09, không còn đo từ model nữa. Lý do: dấu câu đã bị bỏ
+# khỏi chữ đưa vào F5 (`bo_dau_cau_cho_f5`) nên F5 không tự nghỉ ở dấu nào cả -
+# toàn bộ nhịp nghỉ giờ do code chèn. Chèn bằng con số cố định thì mọi chỗ ngắt
+# đều y hệt nhau, không còn chuyện chỗ nghỉ 160ms chỗ nghỉ 320ms tuỳ F5.
+#
+# Giá trị cũ (305/360) là ĐO TỪ MODEL - đúng khi F5 tự nghỉ và ta chỉ trả lại
+# phần `trim_silence` cắt mất. Nay ta chèn TOÀN BỘ quãng nghỉ nên phải nhỏ hơn.
+NGHI_PHAY_MS = 100.0
+NGHI_CHAM_MS = 200.0
 
 DAU_KET_CAU = (".", "!", "?", "…")
 DAU_NGAT_Y = (",", ";", ":")
@@ -176,6 +189,23 @@ def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
 
     # Đệm kết thúc bằng khoảng trắng/dấu câu thì mẩu cuối cũng đã trọn.
     co_the = len(tu) if _tu_cuoi_da_tron(buffer) else len(tu) - 1
+
+    # Cắt Ở DẤU CÂU nếu dấu tới trước mốc `n` từ.
+    #
+    # Vì sao cần: từ 2026-08-09 dấu câu bị bỏ khỏi chữ đưa vào F5
+    # (`bo_dau_cau_cho_f5`) để nhịp đọc đều. Nhưng thế thì dấu nằm GIỮA mảnh
+    # mất luôn quãng nghỉ - F5 không nghỉ nữa, mà code cũng không chèn vì chỗ đó
+    # không phải ranh giới mảnh. Câu nọ dính câu kia.
+    #
+    # Cắt ở dấu thì dấu luôn rơi vào ranh giới mảnh, và `nhip_nghi_sau` chèn
+    # đúng lượng lặng cố định. Không tốn thêm lượt gọi F5 nào - vẫn là cắt, chỉ
+    # là cắt sớm hơn vài từ.
+    if co_the >= TOI_THIEU_TU_KHI_CAT_O_DAU:
+        for k in range(TOI_THIEU_TU_KHI_CAT_O_DAU, min(co_the, n) + 1):
+            manh = " ".join(tu[:k])
+            if manh.endswith(tuple(FLUSH_PUNCTUATION)) and not _dang_giua_con_so(manh):
+                return manh, " ".join(tu[k:])
+
     if co_the < n:
         return None, buffer
 
