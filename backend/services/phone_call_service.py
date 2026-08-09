@@ -499,6 +499,12 @@ class PhoneCallBridge:
         # Đệm mồi giữ trước ở máy, giây. Càng dày càng ít hụt tiếng nhưng cắt
         # lời càng chậm: thứ đã rời khỏi hàng đợi này thì không lấy lại được.
         self.dem_mo_s = settings.phone_dem_mo_ms / 1000.0
+        # ĐÓI KHUNG: hàng đợi rỗng đúng lúc tới nhịp phát -> khách nghe
+        # đứt quãng GIỮA CÂU. Trước đây `_write_loop` chỉ đứng chờ im
+        # lặng, không log gì, nên lỗi này không đo được. Đếm ở đây.
+        self._doi_lan = 0
+        self._doi_tong_ms = 0.0
+        self._doi_lau_nhat_ms = 0.0
 
         # Chưa nối máy thì đường xuống chỉ có nhạc chờ / hồi âm chuông. Để
         # pipeline nghe cái đó thì STT phiên âm ra rác và AI trả lời vào hư
@@ -640,6 +646,16 @@ class PhoneCallBridge:
                 await self.writer.wait_closed()
             except Exception:
                 pass
+        if self._doi_lan:
+            logger.warning(
+                "%s ĐÓI KHUNG %d lần, tổng %.0fms, lâu nhất %.0fms - "
+                "đây là những chỗ khách nghe đứt giữa câu. Đệm mồi đang %.0fms "
+                "(settings.phone_dem_mo_ms).",
+                self.tag, self._doi_lan, self._doi_tong_ms,
+                self._doi_lau_nhat_ms, self.dem_mo_s * 1000)
+        else:
+            logger.info("%s không đói khung lần nào - đường tiếng xuống máy sạch",
+                        self.tag)
         logger.info(f"{self.tag} đã đóng cầu tiếng ({self.turns} lượt)")
 
     # --- chiều ra: tiếng AI xuống điện thoại -------------------------------
@@ -797,8 +813,23 @@ class PhoneCallBridge:
         next_at: float | None = None
         try:
             while self.running:
+                # Đo THỜI GIAN CHỜ hàng đợi. Chờ lâu trong lúc đang giữa câu
+                # nghĩa là TTS không kịp đẻ ra tiếng - đó chính là chỗ khách
+                # nghe đứt quãng. Không đo thì nó là hộp đen.
+                _t_cho = time.perf_counter()
+                dang_giua_cau = next_at is not None and _t_cho <= next_at + RESET_GAP
                 frame = await self._out.get()
                 now = time.perf_counter()
+                _cho_ms = (now - _t_cho) * 1000.0
+                if dang_giua_cau and _cho_ms > FRAME_MS:
+                    self._doi_lan += 1
+                    self._doi_tong_ms += _cho_ms
+                    self._doi_lau_nhat_ms = max(self._doi_lau_nhat_ms, _cho_ms)
+                    if _cho_ms > 200:
+                        logger.warning(
+                            "%s ĐÓI KHUNG %.0fms giữa câu - khách nghe đứt quãng. "
+                            "Đệm mồi %.0fms không đủ che, TTS đẻ không kịp.",
+                            self.tag, _cho_ms, self.dem_mo_s * 1000)
 
                 if next_at is None or now > next_at + RESET_GAP:
                     # TRỪ, không phải CỘNG. Đặt lịch lùi về quá khứ thì những
