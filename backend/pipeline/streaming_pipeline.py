@@ -12,7 +12,7 @@ from backend.pipeline.session_manager import CallSession
 from backend.pipeline import cong_cu_llm
 from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
-from backend.pipeline.text_chunker import nhip_nghi_sau, should_flush
+from backend.pipeline.text_chunker import nhip_nghi_sau, tach_manh
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_so_sai,
                                               chan_tien_sai, sua_xung_ho)
@@ -955,9 +955,13 @@ class StreamingPipeline:
                 full_response += token
                 await self._send_event(ws, "token", {"text": token})
 
-                if should_flush(text_buffer, first_chunk=(chunks_enqueued == 0)):
-                    chunk_text = text_buffer.strip()
-                    text_buffer = ""
+                # tach_manh chứ không phải should_flush: nó cắt ĐÚNG 5 từ đầu và
+                # TRẢ LẠI phần đệm còn dư, nên mẩu token dở dang ("ng" của
+                # "ngay") ở lại chờ token sau thay vì bị giao cho TTS.
+                manh, text_buffer = tach_manh(
+                    text_buffer, first_chunk=(chunks_enqueued == 0))
+                if manh is not None:
+                    chunk_text = manh.strip()
                     if chunk_text:
                         if chunks_enqueued == 0:
                             # LLM phải sinh đủ chữ cho câu đầu thì TTS mới có việc.

@@ -74,7 +74,34 @@ lấp chỗ thừa bằng **quãng dừng bịa giữa câu**.
 **Một nguyên nhân, hai triệu chứng** — vừa "giọng không giống người thật", vừa
 "dừng giữa câu". Chỉnh đúng tốc là chữa cả hai.
 
-### Đo nhịp thật thì phải đo trên CẢ bản thu, và phải lấy nhịp RÒNG
+#### Nhưng chỉnh tốc CHƯA đủ — mảnh dài vẫn bịa
+
+Sau khi đặt `speed` 1.20, bản ghi hội thoại thật 111 giây vẫn còn **19 quãng lặng
+300–1600 ms nằm SÂU TRONG LÒNG một mảnh** (không phải chỗ nối mảnh). Mảnh dài
+nhất lúc đó là **11,5 giây tiếng**.
+
+Đã đuổi qua bốn giả thuyết và **sai cả bốn**: `nfe` thấp, checkpoint fine-tune,
+dấu `/` và `-` trong `CMND/CCCD`, và độ dài văn bản (F5 thuần sạch 0/8 tới 52 âm
+tiết). Cách chữa thật đơn giản hơn nhiều: **đừng đưa cho F5 đoạn dài**.
+
+Đo cùng một đoạn văn, cùng lúc Ollama đang sinh token
+(`scripts/thu_manh_5_tu.py`):
+
+| Cách cắt | Mảnh | Tiếng đầu | Tổng sinh | Quãng lặng > 250 ms |
+|---|---|---|---|---|
+| Dấu câu (cũ) | 6 | 467 ms | 5,14s | 1 (580 ms) |
+| 8 từ | 11 | 574 ms | 8,27s | **0** |
+| **5 từ** | 18 | 724 ms | 12,82s | **0** |
+| 3 từ | 29 | 648 ms | 19,36s | 3, kèm **21 lần sinh không kịp phát** |
+
+Có cả ngưỡng trên lẫn ngưỡng dưới. Mảnh dài thì F5 bịa; mảnh quá ngắn thì sinh
+không kịp phát. Đã chốt **5 từ** (người dùng nghe cả bốn bản rồi chọn), giá phải
+trả là 2,5 lần thời gian GPU.
+
+Cài ở `backend/pipeline/text_chunker.py`, hàm `tach_manh()`. Xem
+`tests/test_cat_manh_5_tu.py`.
+
+## Đo nhịp thật thì phải đo trên CẢ bản thu, và phải lấy nhịp RÒNG
 
 Hai cái bẫy, đã mắc cả hai:
 

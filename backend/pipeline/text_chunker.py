@@ -18,8 +18,9 @@ gần như miễn phí. Nên mảnh đầu cắt gắt cho nhanh, mảnh sau c�
 
 import re
 
+# Chỉ còn dùng để nhận ra "cụm số đã đóng" trong `_dang_giua_cum_so`. Từ
+# 2026-08-09 dấu câu KHÔNG còn là chỗ cắt mảnh nữa - xem `GIOI_HAN_TU_MANH`.
 FLUSH_PUNCTUATION = {".", "!", "?", ",", ":", ";", "..."}
-VI_SENTENCE_ENDERS = {"ạ", "ạ.", "ạ,", "nhé", "nhé.", "nhỉ", "ạ?"}
 
 # Từ mà sau nó gần như chắc chắn còn phần nữa của cùng một cụm số/đơn vị. Cắt
 # ngay sau những từ này là bẻ đôi con số - "năm mươi" | "triệu", "sáu phẩy năm" |
@@ -36,28 +37,43 @@ SO_DEM = {
     "khoảng", "gần", "hơn", "trên", "dưới", "tầm", "chừng", "từ", "đến", "tới",
 }
 
-# Mảnh sau: ngưỡng an toàn thôi, KHÔNG phải chỗ cắt mong muốn. Chỗ cắt mong muốn
-# luôn là dấu câu. Để 8 như trước là cắt giữa mệnh đề ở gần như mọi câu dài.
-GIOI_HAN_AN_TOAN = 24
+# Cắt CỐ ĐỊNH mỗi 5 từ - đổi từ "cắt ở dấu câu" ngày 2026-08-09.
+#
+# Vì sao đổi hẳn triết lý: cắt ở dấu câu cho ra mảnh dài tới 11,5 giây tiếng, mà
+# F5 sinh đoạn dài thì TỰ BỊA quãng dừng giữa câu. Đo trên bản ghi hội thoại
+# thật 111 giây: 19 quãng lặng 300-1600ms nằm SÂU TRONG LÒNG một mảnh, không
+# phải chỗ nối mảnh. Khách nghe thành "đang nói tự nhiên dừng rồi bật lên".
+#
+# Đã đuổi nguyên nhân qua bốn giả thuyết và SAI cả bốn: nfe thấp, checkpoint
+# fine-tune, dấu "/" và "-" trong "CMND/CCCD", và độ dài văn bản (F5 thuần sạch
+# 0/8 tới 52 âm tiết). Hoá ra chỉ cần đừng đưa cho nó đoạn 11 giây.
+#
+# Đo đối chứng cùng một đoạn văn, cùng lúc Ollama đang sinh token
+# (scripts/thu_manh_5_tu.py):
+#
+#   cách cắt        mảnh   tiếng đầu   tổng sinh   quãng lặng > 250ms
+#   dấu câu (cũ)       6      467ms       5.14s    1  (580ms)
+#   8 từ              11      574ms       8.27s    0
+#   5 từ              18      724ms      12.82s    0   <- đang dùng, người dùng chọn
+#   3 từ              29      648ms      19.36s    3  (940ms) + 21 chỗ đói khung
+#
+# Mảnh ngắn thì F5 không còn chỗ để bịa. 3 từ thì ngược lại - sinh không kịp
+# phát, đói khung 21 lần. Có cả ngưỡng trên lẫn ngưỡng dưới, 5 nằm giữa.
+#
+# Giá phải trả: 2,5 lần thời gian GPU và tiếng đầu chậm hơn ~250ms. Người dùng
+# nghe cả bốn bản rồi chọn 5 từ ("ổn hơn nhiều mấy cái kia").
+GIOI_HAN_TU_MANH = 5
 
-# Mảnh đầu: chỗ DUY NHẤT đánh đổi ngữ điệu lấy thời gian khách chờ tiếng đầu.
-# Để 6 như trước thì bẻ cả từ ghép ("... thì trả" | "góp 36 tháng") và chỉ 1/6
-# mảnh đầu kết thúc ở dấu câu. Đo trên 6 câu tổng đài thật:
-#     6 từ -> 1/6 mảnh đầu kết ở dấu câu
-#     9 từ -> 2/6,  tốn thêm  +55ms
-#    12 từ -> 4/6,  tốn thêm +107ms   <- đang dùng
-# Giá đo bằng scripts/do_gia_manh_dau.py (16 mẫu/mức, xen kẽ, bỏ lượt khởi động),
-# gồm cả phần LLM phải sinh thêm chữ. TTFA trước đó 739-825ms, trần 1000ms.
-GIOI_HAN_MANH_DAU = 12
+# Giữ tên cũ cho chỗ nào còn gọi tới; nay chỉ là trần chặn cụm số kéo dài.
+GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
 
 # Trần cho phép chặn-vì-đang-giữa-cụm-số kéo dài. Không có trần thì một chuỗi
-# toàn từ số ("một hai ba bốn...") giữ buffer mãi không giao - mảnh đầu mà kẹt
-# thế thì khách chờ tiếng đầu lâu hẳn ra.
+# toàn từ số ("một hai ba bốn...") giữ buffer mãi không giao.
 # PHẢI CAO HƠN ngưỡng cắt, không phải bằng: để bằng thì guard hết hiệu lực đúng
 # lúc ngưỡng cắt kích hoạt, và cụm số vẫn bị bẻ ("... là sáu" | "phẩy năm ...").
 # Chênh 4 từ là đủ cho cụm số dài nhất thường gặp ("sáu phẩy năm phần trăm").
-TRAN_CHO_CUM_SO_DAU = GIOI_HAN_MANH_DAU + 4
-TRAN_CHO_CUM_SO_SAU = GIOI_HAN_AN_TOAN + 12
+TRAN_CHO_CUM_SO_DAU = GIOI_HAN_TU_MANH + 4
+TRAN_CHO_CUM_SO_SAU = TRAN_CHO_CUM_SO_DAU
 
 
 # Nhịp nghỉ cần trả lại sau mỗi mảnh, tính bằng ms. ĐO TỪ CHÍNH MODEL chứ không
@@ -136,48 +152,59 @@ def _tu_cuoi_da_tron(buffer: str) -> bool:
 _KY_TU_DONG_TU = ".,!?:;…)\"'"
 
 
-def should_flush(buffer: str, word_threshold: int = GIOI_HAN_AN_TOAN,
-                 first_chunk: bool = False) -> bool:
-    """Đã đủ chữ để giao mảnh này cho TTS chưa?
+def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
+              first_chunk: bool = False) -> tuple[str | None, str]:
+    """Tách `n` từ đầu ra khỏi đệm. Trả `(mảnh, phần còn lại)`.
 
-    first_chunk=True: cắt sớm để rút thời gian chờ tiếng đầu - từ 2 từ nếu gặp
-    dấu câu, hoặc GIOI_HAN_MANH_DAU từ bất kể. Đây là chỗ DUY NHẤT đánh đổi ngữ
-    điệu lấy tốc độ.
-    Mảnh sau: chỉ cắt ở dấu câu; ngưỡng từ chỉ là van an toàn cho câu dài không
-    có dấu, và vẫn không cắt giữa cụm số.
+    Trả `(None, buffer)` nếu chưa đủ chữ - lúc đó cứ dồn thêm token rồi hỏi lại.
+
+    VÌ SAO phải tách chứ không chỉ trả lời có/không như `should_flush` cũ: LLM
+    đẩy ra TOKEN chứ không phải từ, "ngay" tới nơi thành "ng" rồi "ay". Giao cả
+    đệm đúng lúc đó là cắt giữa từ, khách nghe "ng" rồi "ay" (đã bắt được trên
+    máy thật). Bản `should_flush` cũ chống bằng cách đòi đệm kết thúc bằng
+    khoảng trắng hoặc dấu câu - nhưng token của Ollama mang dấu cách ở ĐẦU
+    (" ngay"), nên điều kiện đó gần như không bao giờ đúng giữa câu, và luật cắt
+    theo số từ trên thực tế chỉ chạy được ở chỗ có dấu câu.
+
+    Cách chắc chắn: chỉ coi một từ là đã trọn khi có token MỚI bắt đầu sau nó.
+    Nên khi đệm có `n+1` mẩu thì `n` mẩu đầu chắc chắn trọn - giao đúng `n` đó,
+    giữ mẩu cuối lại cho lượt sau.
     """
-    stripped = buffer.strip()
-    if not stripped:
-        return False
+    tu = buffer.split()
+    if not tu:
+        return None, buffer
 
-    words = stripped.split()
+    # Đệm kết thúc bằng khoảng trắng/dấu câu thì mẩu cuối cũng đã trọn.
+    co_the = len(tu) if _tu_cuoi_da_tron(buffer) else len(tu) - 1
+    if co_the < n:
+        return None, buffer
 
-    if first_chunk:
-        # Ngưỡng giữ nguyên như cũ: đây là cần gạt cho TTFA, không phải cho ngữ
-        # điệu. Nhưng chặn cụm số thì áp cả ở đây - bẻ đôi con số là hỏng hẳn
-        # nghĩa, không đáng đánh đổi lấy vài chục mili giây.
-        if _dang_giua_cum_so(stripped, words, TRAN_CHO_CUM_SO_DAU):
-            return False
-        if len(words) >= GIOI_HAN_MANH_DAU:
-            # Cắt theo ĐẾM TỪ mới cần canh: mảnh kết thúc bằng dấu câu ở dưới thì
-            # tự nó đã đảm bảo từ cuối trọn vẹn.
-            return _tu_cuoi_da_tron(buffer)
-        if stripped.endswith(tuple(FLUSH_PUNCTUATION)):
-            # "142." là dấu phân cách nghìn, không phải hết câu.
-            return len(words) >= 2 and not _dang_giua_con_so(stripped)
-        if words[-1].rstrip(".,!?") in VI_SENTENCE_ENDERS:
-            return len(words) >= 2
-        return False
+    tran = TRAN_CHO_CUM_SO_DAU if first_chunk else TRAN_CHO_CUM_SO_SAU
+    k = n
+    while True:
+        manh = " ".join(tu[:k])
+        # Hai chỗ TUYỆT ĐỐI không được cắt vào:
+        #   - giữa một cụm số: "năm mươi" | "triệu"
+        #   - ngay sau dấu phân cách nghìn: "142." | "500.000"  (lỗi 2026-08-06)
+        # Vướng thì lùi chỗ cắt sang phải một từ rồi thử lại.
+        if not (_dang_giua_cum_so(manh, tu[:k], tran) or _dang_giua_con_so(manh)):
+            break
+        k += 1
+        # Lùi hết chữ đang có mà vẫn vướng thì CHƯA cắt - đợi thêm token. Kiểm
+        # điều kiện này SAU khi tăng k, và kiểm cả khi k mới bằng n: vòng lặp
+        # bản đầu viết `while k < co_the` nên khi đệm có đúng n từ thì thân vòng
+        # không chạy lần nào, hai chốt chặn trên bị bỏ qua sạch.
+        if k > co_the:
+            return None, buffer
 
-    # Không bao giờ bẻ đôi một con số - kể cả khi đã quá ngưỡng an toàn. Thà mảnh
-    # dài hơn vài từ còn hơn để khách nghe "năm mươi" rồi mới tới "triệu".
-    if _dang_giua_cum_so(stripped, words, TRAN_CHO_CUM_SO_SAU):
-        return False
+    return " ".join(tu[:k]), " ".join(tu[k:])
 
-    if stripped.endswith(tuple(FLUSH_PUNCTUATION)):
-        return len(words) >= 3 and not _dang_giua_con_so(stripped)
 
-    if words[-1].rstrip(".,!?") in VI_SENTENCE_ENDERS:
-        return len(words) >= 2
+def should_flush(buffer: str, word_threshold: int = GIOI_HAN_TU_MANH,
+                 first_chunk: bool = False) -> bool:
+    """Đã đủ chữ để tách được một mảnh chưa?
 
-    return len(words) >= word_threshold and _tu_cuoi_da_tron(buffer)
+    Chỉ là vị từ đi kèm `tach_manh` - đường chạy thật dùng `tach_manh` vì nó còn
+    trả về phần đệm còn lại. Giữ hàm này cho các script đo đang gọi tới.
+    """
+    return tach_manh(buffer, word_threshold, first_chunk)[0] is not None
