@@ -50,16 +50,74 @@ bình theo thời gian nên mù hoàn toàn với nhịp — nó "đạt" trong 
 Clip cũ nói 297; ép `speed=0.64` để về 180 cho hợp telesales tức bắt F5 chạy ở
 **61% nhịp thật**. Cùng chất giọng, sai nhịp 39% → nghe ra người khác.
 
+## Ép chậm hơn nhịp thật thì F5 TỰ CHÈN QUÃNG DỪNG
+
+Đây là mắt xích quan trọng nhất, tìm ra 2026-08-09 sau khi người dùng kêu *"tự
+nhiên một câu nó dừng xong nó mới bật lên và tự nhiên đọc bị chậm"*.
+
+Công thức thời lượng của F5 cấp khung theo `speed`. Đặt `speed` thấp hơn nhịp
+thật của người trong đoạn mẫu là bắt F5 **kéo giãn** tiếng cho đầy khung — và nó
+lấp chỗ thừa bằng **quãng dừng bịa giữa câu**.
+
+Đo trên câu 34 âm tiết **không có dấu nào ở giữa** (nên mọi quãng lặng > 250ms
+đều là bịa), 10 lượt mỗi mức, `scripts/chon_toc_theo_ban_goc.py`:
+
+| speed | nhịp ròng | lệch so với người thật (287) | lượt có dừng bịa |
+|---|---|---|---|
+| 0.90 | 222 | −65 | **4/10**, dài nhất 580ms |
+| 1.10 | 252 | −35 | 1/10 |
+| 1.20 | 269 | −18 | **0/10** |
+| 1.30 | 295 | +8 | **0/10** |
+
+Đơn điệu: càng ép chậm xa nhịp thật, càng nhiều quãng dừng bịa.
+
+**Một nguyên nhân, hai triệu chứng** — vừa "giọng không giống người thật", vừa
+"dừng giữa câu". Chỉnh đúng tốc là chữa cả hai.
+
+### Đo nhịp thật thì phải đo trên CẢ bản thu, và phải lấy nhịp RÒNG
+
+Hai cái bẫy, đã mắc cả hai:
+
+**Bẫy 1 — đo trên một đoạn 5 giây.** Một lát cắt có thể rơi vào chỗ người ta nói
+nhanh hoặc chậm bất thường. Chính vì thế clip cũ đo ra 297 âm tiết/phút trong khi
+các clip khác cắt từ **cùng bản thu** lại cho 211–289. Đo trên toàn bộ 20,2 phút
+bằng `scripts/do_nhip_ban_goc.py` mới ra con số thật.
+
+**Bẫy 2 — lấy nhầm nhịp thô.** Hai con số khác nhau rất xa:
+
+| | Trung vị | Khoảng |
+|---|---|---|
+| nhịp **thô** (âm tiết / tổng thời gian) | 220 | 201–255 |
+| nhịp **ròng** (âm tiết / thời gian CÓ TIẾNG) | **287** | 259–329 |
+
+Phải so với **nhịp ròng**: F5 chỉ sinh phần có tiếng, còn quãng nghỉ giữa câu đã
+được chèn riêng bằng code (`nhip_nghi_sau` trong `streaming_pipeline`). Lấy nhịp
+thô thì AI nói chậm hơn người thật rồi lại bị chèn thêm nghỉ — đúng chỗ sai cũ.
+
+### Bẫy khi ĐO quãng dừng: đừng dùng câu có dấu phẩy
+
+Bản đo đầu tiên dùng câu có dấu phẩy rồi đếm quãng lặng > 250ms và gọi đó là
+"trôi giọng". **Sai**: F5 nghỉ ở dấu câu là ĐÚNG, đo được 140–310ms mỗi chỗ.
+Đếm lại thì số quãng nghỉ bám sát số dấu phẩy (22 âm tiết có 1 phẩy ra 1,2 nghỉ;
+32 âm tiết có 2 phẩy ra 2,2 nghỉ) — tức là đang đo dấu câu chứ không đo lỗi.
+
+Câu thử phải **không có dấu nào ở giữa**. Và phải lặp **ít nhất 10 lượt**: F5 lấy
+mẫu ngẫu nhiên, 4 lượt cho ra 1/4 và 4/4 ở cùng một cấu hình.
+
 ## Cấu hình đang chạy
 
-`giong_heu` = clip `heu_c` (5.40s, nhịp gốc 211), `giong_heu.speed` = **0.90**.
+`giong_heu` = clip `heu_c` (5.40s), `giong_heu.speed` = **1.20**.
 
-| | Clip cũ 2.21s @ 0.64 | Clip `heu_c` @ 0.90 |
-|---|---|---|
-| Nhịp ra | 180 âm tiết/phút | **206** |
-| % nhịp thật của người đó | 61% | **98%** |
-| Âm rác (STT nghe lại) | **3/3 lượt** | **0/3** |
-| Vượt trần biên độ | **2/3** | **0/3** |
+| | Clip cũ 2.21s @ 0.64 | `heu_c` @ 0.90 | `heu_c` @ **1.20** |
+|---|---|---|---|
+| Nhịp ròng | – | 222 | **269** |
+| Lệch so với người thật (287) | – | −65 | **−18** |
+| Dừng bịa giữa câu (34 âm tiết) | – | 4/10 | **0/10** |
+| Âm rác đầu câu | **3/3 lượt** | 0/3 | **0/5** |
+| Vượt trần biên độ | **2/3** | 0/3 | **0/5** |
+
+Chọn 1.20 chứ không 1.30 dù 1.30 khớp người thật hơn: 1.30 cho 283 âm tiết/phút
+nghe được, hơi nhanh cho telesales. 1.20 vẫn sạch 0/10 mà dễ nghe hơn.
 
 Bản cũ giữ ở `models/tts/ref_voices/giong_heu.wav.bak-20260809` (và `.txt.bak-…`).
 Hoàn lại thì chép đè ngược rồi xoá `giong_heu.speed`.

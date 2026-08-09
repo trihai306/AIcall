@@ -808,9 +808,13 @@ class F5TTSService:
         if not loi:
             logger.warning("Tệp %s rỗng - lấy lời từ .env", tep.name)
             return settings.f5tts_ref_text
+        # Chỉ kêu khi người ta THẬT SỰ đặt F5TTS_REF_TEXT, đừng kêu khi nó chỉ
+        # đang mang giá trị mặc định trong config.py - lúc đó lệch là đương nhiên
+        # và cảnh báo thành tiếng ồn, kêu mỗi lần khởi động.
         moi = " ".join(loi.split())
         cu = " ".join((settings.f5tts_ref_text or "").split())
-        if cu and cu.casefold() != moi.casefold():
+        mac_dinh = " ".join(type(settings).model_fields["f5tts_ref_text"].default.split())
+        if cu and cu != mac_dinh and cu.casefold() != moi.casefold():
             logger.warning(
                 "F5TTS_REF_TEXT trong .env KHÔNG khớp %s - đang dùng tệp .txt. "
                 ".env: %r | .txt: %r. Nên xoá F5TTS_REF_TEXT khỏi .env cho khỏi lẫn.",

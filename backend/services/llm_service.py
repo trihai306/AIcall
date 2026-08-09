@@ -7,6 +7,32 @@ from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
 
+# Chuỗi bắt model DỪNG sinh.
+#
+# Trước 08-09 chỉ có ["Khách:", "\n\n"] và nó KHÔNG đủ. Bắt được lượt này trong
+# bản ghi hội thoại thật:
+#
+#     AI: ...Anh có nhu cầu vay bao nhiêu tiền và thời gian thế nào
+#         user
+#         Alo em chào anh, anh đang cần vay tín chấp thì lãi suất bao nhiêu?
+#
+# Model tuột về khuôn ChatML thô, tự viết nhãn vai trò rồi ĐỌC LẠI CÂU HỎI CỦA
+# KHÁCH. Khách nghe thành "AI lặp lại ở cuối câu". Hai chuỗi cũ đều trượt:
+# "Khách:" là tiếng Việt còn model nhả nhãn tiếng Anh "user"; "\n\n" cần HAI
+# dòng trống trong khi model chỉ xuống MỘT dòng.
+#
+# Nên chặn cả ba họ: nhãn vai trò tiếng Anh, nhãn tiếng Việt, và token đặc biệt
+# của khuôn mẫu. Đặt sau "\n" để không cắt nhầm chữ "user" hay "khách" nằm giữa
+# câu (vd "khách hàng của bên em").
+CHUOI_DUNG = [
+    "\n\n",
+    "\nuser", "\nUser", "\nUSER",
+    "\nassistant", "\nAssistant",
+    "\nsystem", "\nSystem",
+    "Khách:", "\nKhách", "\nKhach", "\nNhân viên:", "\nTư vấn viên:",
+    "<|im_end|>", "<|im_start|>", "<|endoftext|>",
+]
+
 # ĐỪNG ĐẶT CON SỐ DẠNG PHẦN TRĂM VÀO BẤT KỲ VÍ DỤ NÀO TRONG PROMPT DƯỚI ĐÂY.
 #
 # Đã mắc một lần và mất khá lâu mới tìm ra: hai chỗ trong prompt có ví dụ
@@ -276,7 +302,7 @@ class LLMService:
                     "num_predict": settings.llm_max_tokens,
                     "temperature": settings.llm_temperature,
                     "num_ctx": settings.llm_num_ctx,
-                    "stop": ["Khách:", "\n\n"],
+                    "stop": CHUOI_DUNG,
                 },
                 **kw,
             )
@@ -303,7 +329,9 @@ class LLMService:
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             think=False,
-            options={"num_predict": 100, "temperature": 0.3},
+            # Dùng chung CHUOI_DUNG với đường chính: đây cũng đi qua model ấy nên
+            # rò nhãn vai trò được y hệt, chỉ là chưa ai bắt gặp.
+            options={"num_predict": 100, "temperature": 0.3, "stop": CHUOI_DUNG},
         )
         msg = response.get("message", {}) if isinstance(response, dict) else getattr(response, "message", None)
         return self._extract_content(msg)
