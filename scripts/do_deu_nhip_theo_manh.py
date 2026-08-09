@@ -28,6 +28,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.stdout.reconfigure(encoding="utf-8")
 
+import io                       # noqa: E402
+
 import numpy as np              # noqa: E402
 import soundfile as sf          # noqa: E402
 import torch                    # noqa: E402
@@ -94,12 +96,12 @@ def main():
         manh = [" ".join(tu[i:i+n]) for i in range(0, len(tu), n)]
         nhips = []
         for c in manh:
-            with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
-                y, sr, _ = next(infer_batch_process(
-                    (rw, rs), rt, [c], svc._model, svc._vocoder,
-                    mel_spec_type="vocos", progress=None, nfe_step=nfe, speed=sp,
-                    device=svc._model.device))
-            y = trim_silence(np.asarray(y), sr)
+            # PHAI di qua synthesize(): fix_duration duoc tinh trong do. Goi
+            # thang infer_batch_process la do nham BAN CU va tuong khong an gi.
+            b = asyncio.run(svc.synthesize(c, voice=ten))
+            y, sr = sf.read(io.BytesIO(b), dtype="float32")
+            if y.ndim > 1:
+                y = y.mean(axis=1)
             at = am_tiet(nghe_lai(y, sr))
             ct = giay_co_tieng(y, sr)
             if at >= 2 and ct > 0.2:
