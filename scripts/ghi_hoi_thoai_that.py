@@ -49,7 +49,7 @@ LUOT = [
 async def mot_luot(ws, text: str, so: int, moc0: float):
     """Gui mot cau, thu ve moi manh tieng kem moc thoi gian."""
     await ws.send(json.dumps({"type": "text", "text": text, "turn_id": so}))
-    manh = []
+    manh, chu = [], {}
     while True:
         try:
             tho = await asyncio.wait_for(ws.recv(), timeout=90)
@@ -95,12 +95,22 @@ async def mot_luot(ws, text: str, so: int, moc0: float):
                 "id": g.get("chunk_id", 0),
                 "dem": bool(g.get("is_filler")),
             })
+        elif t == "response_chunk":
+            # Chu cua manh, den SAU su kien audio cung so hieu. Ghep lai o duoi
+            # theo chunk_id - khong ghep duoc thi bang tra vo dung.
+            chu[g.get("chunk_id", -1)] = g.get("text", "")
         elif t == "turn_complete":
+            for m in manh:
+                m["chu"] = chu.get(m["id"], "")
             return manh, g.get("full_response", ""), g.get("metrics", {})
         elif t == "error":
             print(f"    loi: {g.get('message')}")
             return manh, "", {}
     return manh, "", {}
+
+
+def mmss(giay: float) -> str:
+    return f"{int(giay)//60:d}:{giay - 60*(int(giay)//60):05.2f}"
 
 
 async def chay(luot, ra: Path):
@@ -184,33 +194,43 @@ def dung_wav(lich, ra: Path):
 
 
 def viet_bao_cao(bao, ra: Path, tong: float):
+    """Bang tra THOI GIAN -> CHU, de nghe thay cho la thi tra ra ngay manh nao.
+
+    Vi sao can: nguoi dung nghe thay loi o mot cho cu the ("doan 24 gio sau khi
+    phe duyet ho so"), con toi thi do thong ke tren ca doan. Trung binh che dung
+    loai loi chi xay ra mot cho. Co moc thoi gian thi soi thang duoc.
+    """
     d = []
-    d.append("BAN GHI HOI THOAI - giu nguyen moc thoi gian that")
-    d.append("=" * 66)
-    d.append(f"tong dai: {tong:.1f}s")
+    d.append("BANG TRA THOI GIAN -> CHU")
+    d.append("=" * 78)
+    d.append(f"tong dai {mmss(tong)}   (nghe thay cho la thi doc giay thu may o cot 'phat')")
     d.append("")
-    d.append("Cot 'lang truoc' = khoang im lang ngay TRUOC manh do.")
-    d.append("Duoi 150ms la nhip nghi binh thuong. Tren 300ms la nghe ra DUT.")
+    d.append("cot 'im'  = im lang ngay TRUOC manh do, do sinh khong kip phat")
+    d.append("cot 'BIA' = quang lang > 300ms nam BEN TRONG tieng cua manh")
     d.append("")
     tong_dut = 0
     for i, cau, t_gui, manh, tra_loi, mt in bao:
-        d.append("-" * 66)
-        d.append(f"[{i}] {t_gui:6.2f}s  KHACH: {cau}")
-        d.append(f"          AI   : {tra_loi}")
-        d.append(f"          TTFA {mt.get('ttfa_ms','?')}ms")
+        d.append("-" * 78)
+        d.append(f"[{i}]  {mmss(t_gui)}  KHACH: {cau}")
+        d.append(f"      TTFA {mt.get('ttfa_ms','?')}ms")
+        d.append("")
         for m in len_lich(manh):
             co = ""
             if m["dut"] * 1000 > 300:
-                co = "   <== DUT"
+                co = "  <== DUT"
                 tong_dut += 1
-            nhan = "dem " if m["dem"] else f"#{m['id']:<3}"
-            d.append(f"            {nhan} toi {m['moc']:6.2f}s  phat {m['phat']:6.2f}s"
-                     f"  dai {m['dai']:5.2f}s  lang dau {m.get('lang_dau',0):4.0f}ms"
-                     f"  im {m['dut']*1000:6.0f}ms"
-                     f"{'  BIA ' + str(m.get('im_giua')) if m.get('im_giua') else ''}{co}")
-    d.append("=" * 66)
-    d.append(f"TONG SO CHO DUT (lang > 300ms giua cac manh): {tong_dut}")
-    (ra / "bao_cao.txt").write_text("\n".join(d), encoding="utf-8")
+            if m.get("im_giua"):
+                co += "  <== BIA " + str(m["im_giua"])
+            nhan = "dem" if m["dem"] else f"#{m['id']}"
+            # Cau dem cung mang chunk_id=0 nen dung chung khoa voi manh #0 -
+            # tra theo chunk_id se ra chu cua manh #0. Chan trong truoc.
+            chu = "[cau dem]" if m["dem"] else (m.get("chu") or "").strip()
+            d.append(f"  {mmss(m['phat'])} - {mmss(m['phat'] + m['dai'])}"
+                     f"  {nhan:<5} {chu[:46]:<46}{co}")
+    d.append("=" * 78)
+    d.append(f"TONG: {sum(len(x[3]) for x in bao)} manh, {tong_dut} cho dut, "
+             f"{sum(1 for x in bao for m in x[3] if m.get('im_giua'))} manh co quang bia")
+    (ra / "bang_tra.txt").write_text("\n".join(d), encoding="utf-8")
     return tong_dut
 
 
@@ -231,7 +251,7 @@ def main():
     dut = viet_bao_cao(bao, ra, tong)
     print(f"\n  tong {tong:.1f}s, {len(manh)} mảnh, {dut} chỗ đứt (lặng > 300ms)")
     print(f"  {ra / 'hoi_thoai.wav'}")
-    print(f"  {ra / 'bao_cao.txt'}")
+    print(f"  {ra / 'bang_tra.txt'}")
 
 
 if __name__ == "__main__":
