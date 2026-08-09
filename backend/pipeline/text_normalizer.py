@@ -388,13 +388,60 @@ def _giu_hoa(goc: str, moi: str) -> str:
     return moi[:1].upper() + moi[1:] if goc[:1].isupper() else moi
 
 
-# Chữ Hán, Kana, Hangul. KHÔNG đụng tiếng Việt: chữ Việt có dấu nằm ở dải Latin
-# mở rộng, không dính dải nào dưới đây.
+# Chữ Hán, Kana, Hangul, VÀ dấu câu toàn rộng của chúng (，。！？、「」).
+# KHÔNG đụng tiếng Việt: chữ Việt có dấu nằm ở dải Latin mở rộng.
+#
+# Dải dấu câu (U+3000-303F, U+FF00-FFEF) PHẢI có: thiếu nó thì cắt chữ Hán xong
+# còn sót "，。" giữa câu - đã đo được đúng lỗi này khi thử trên câu thật.
 _CHU_NGOAI_RE = re.compile(
-    r"[぀-ヿ㐀-䶿一-鿿가-힯豈-﫿]+")
+    r"[\u3000-\u303f\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff"
+    r"\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]+")
 # Khoảng trắng thừa còn lại sau khi cắt, và khoảng trắng trước dấu câu.
 _TRANG_THUA_RE = re.compile(r"\s{2,}")
 _TRANG_TRUOC_DAU_RE = re.compile(r"\s+([.,!?;:])")
+
+
+# Từ chức năng tiếng Anh - không từ nào là từ tiếng Việt. Dùng CHÚNG để nhận
+# tiếng Anh, KHÔNG dùng "chữ không dấu": mã giấy tờ (CMND, CCCD, KT3, CIC) và
+# tên riêng (ABC) cũng không dấu, cắt theo dấu là cắt nhầm cả câu hợp lệ.
+_TU_ANH = {
+    "the", "your", "you", "and", "with", "for", "are", "is", "was", "will",
+    "can", "may", "other", "actual", "amount", "income", "depend", "dependent",
+    "factors", "vary", "please", "that", "this", "from", "have", "has", "based",
+    "of", "to", "in", "or", "on", "we", "our", "it", "be", "as", "at", "by",
+}
+_TU_RE = re.compile(r"[A-Za-z]+")
+# Bao nhiêu từ chức năng LIỀN NHAU thì coi là đã trượt sang tiếng Anh. 3 là mức
+# an toàn: "combo", "OK", "CIC" đứng lẻ không bao giờ đủ chuỗi.
+_NGUONG_TU_ANH = 3
+
+
+def _cat_duoi_tieng_anh(text: str) -> tuple[str, str | None]:
+    """Cắt từ chỗ câu trượt sang tiếng Anh tới hết chuỗi.
+
+    Dạng lọt đo được (qwen2.5:7b, 2/36 lượt = 5,6%): câu tiếng Việt trọn vẹn,
+    rồi CHẤM, rồi cả đoạn tiếng Anh chạy tới hết -
+        "...lên đến 500 triệu đồng. Dependent on your income and other factors,
+         the actual amount may vary."
+    Nên cắt tới hết chuỗi là đúng dạng, không phải cắt từng từ.
+    """
+    dem = 0
+    for m in _TU_RE.finditer(text):
+        if m.group(0).lower() in _TU_ANH:
+            dem += 1
+            if dem >= _NGUONG_TU_ANH:
+                # Lùi về đầu cụm: bỏ luôn cả những từ tiếng Anh đứng trước nó.
+                dau = m.start()
+                for m2 in _TU_RE.finditer(text):
+                    if m2.start() > dau:
+                        break
+                    if m2.group(0).lower() in _TU_ANH:
+                        dau = min(dau, m2.start())
+                        break
+                return text[:dau].rstrip(" ,;:-").rstrip(), text[dau:].strip()
+        else:
+            dem = 0
+    return text, None
 
 
 def chan_chu_ngoai(text: str) -> tuple[str, str | None]:
@@ -413,13 +460,23 @@ def chan_chu_ngoai(text: str) -> tuple[str, str | None]:
     """
     if not text:
         return text, None
+
+    dinh = None
     tim = _CHU_NGOAI_RE.search(text)
-    if not tim:
-        return text, None
-    ra = _CHU_NGOAI_RE.sub("", text)
-    ra = _TRANG_THUA_RE.sub(" ", ra)
-    ra = _TRANG_TRUOC_DAU_RE.sub(r"\1", ra)
-    return ra.strip(), tim.group(0)
+    if tim:
+        dinh = tim.group(0)
+        text = _CHU_NGOAI_RE.sub("", text)
+        text = _TRANG_THUA_RE.sub(" ", text)
+        text = _TRANG_TRUOC_DAU_RE.sub(r"\1", text).strip()
+
+    # Tiếng Anh xét SAU khi đã bỏ chữ Hán: câu có thể lọt cả hai.
+    text, duoi = _cat_duoi_tieng_anh(text)
+    if duoi and not dinh:
+        dinh = duoi
+
+    text = _TRANG_THUA_RE.sub(" ", text)
+    text = _TRANG_TRUOC_DAU_RE.sub(r"\1", text)
+    return text.strip(), dinh
 
 
 def sua_xung_ho(text: str, goi_khach: str = "anh chị") -> str:

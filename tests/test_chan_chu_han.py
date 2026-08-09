@@ -37,3 +37,38 @@ def test_khong_de_lai_khoang_trang_doi():
     ra, _ = chan_chu_ngoai("giấy tờ 复印件 kèm theo")
     assert "  " not in ra
     assert ra == "giấy tờ kèm theo"
+
+
+# --- Lọt tiếng ANH: 7B mắc nhiều hơn 3B mắc tiếng Trung -------------------
+
+def test_cat_duoi_tieng_anh():
+    # Đo thật 08-08, qwen2.5:7b, 2/36 lượt (5.6%) - dày hơn ca chữ Trung của 3B.
+    ra, dinh = chan_chu_ngoai(
+        "Hạn mức vay tín chấp lên đến 500 triệu đồng. "
+        "Dependent on your income and other factors, the actual amount may vary.")
+    assert ra == "Hạn mức vay tín chấp lên đến 500 triệu đồng."
+    assert dinh and dinh.startswith("Dependent")
+
+
+def test_giu_ma_giay_to_va_ten_rieng():
+    # CMND/CCCD/KT3/CIC/ABC la chu ASCII hop le trong cau tieng Viet.
+    cau = "Anh chuẩn bị CMND hoặc CCCD, hộ khẩu hoặc KT3, và tra CIC nhé"
+    assert chan_chu_ngoai(cau)[0] == cau
+
+
+def test_giu_cau_tieng_viet_co_vai_tu_anh_le():
+    cau = "Bên em có gói combo ưu đãi cho anh chị ạ"
+    assert chan_chu_ngoai(cau)[0] == cau
+
+
+def test_cat_ca_chu_han_lan_tieng_anh_trong_mot_cau():
+    ra, _ = chan_chu_ngoai("Dạ vâng ạ. 复印件 and your income are needed for this")
+    assert "复印件" not in ra and "income" not in ra
+    assert ra.startswith("Dạ vâng ạ")
+
+
+def test_bo_ca_dau_cau_toan_rong():
+    # Thiếu dải U+3000-303F thì cắt chữ Hán xong còn sót "，。" giữa câu.
+    ra, _ = chan_chu_ngoai("Dạ vâng ạ.关于汽车贷款，我们暂时没有提供。")
+    assert "，" not in ra and "。" not in ra
+    assert ra == "Dạ vâng ạ."
