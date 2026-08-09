@@ -24,6 +24,71 @@ SILENCE_PEAK = 1e-3
 # tay: đổi nfe/speed/giọng là vân tay lệch -> dựng lại đúng câu đó.
 THU_MUC_FILLER = Path("data/fillers_wav")
 
+# Bóp quãng lặng GIỮA mảnh. Ngưỡng KHÔNG chọn cho đẹp mà lấy từ hai phép đo:
+#
+#   nghỉ THẬT của F5 ở dấu câu (scripts/do_nghi_dau_phay.py, do_nghi_dau_cham.py,
+#   10 lượt mỗi bản, ở đúng cấu hình đang chạy):
+#       không dấu giữa  0ms      1 dấu phẩy  tối đa 160ms
+#       1 dấu chấm      tối đa 320ms         2 dấu chấm  tối đa 260ms
+#
+#   quãng BỊA, đo trên bản ghi hội thoại thật: 380 - 1600ms
+#
+# Nên 360ms là chỗ tách: dưới nó là nhịp nghỉ thật của dấu câu, trên nó thì F5
+# đang bịa. Từng thử 260ms - sai, vì nghỉ thật ở dấu chấm chạm tới 320ms và
+# ngưỡng đó cắt nhầm ranh giới câu, làm hai câu dính vào nhau.
+NGUONG_LANG_BIA_MS = 360.0
+# Bóp về 200ms chứ không xoá hẳn: xoá hẳn thì hai từ dính sát, nghe hụt hơi.
+# 200ms nằm đúng giữa dải nghỉ thật đo được ở trên.
+GIU_LANG_MS = 200.0
+_KHUNG_LANG_MS = 20.0
+
+
+def cat_lang_bia(audio: np.ndarray, sr: int,
+                 nguong_ms: float = NGUONG_LANG_BIA_MS,
+                 giu_ms: float = GIU_LANG_MS,
+                 nguong_bien: float = 0.015) -> np.ndarray:
+    """Bóp mọi quãng lặng GIỮA mảnh dài quá `nguong_ms` xuống còn `giu_ms`.
+
+    Vì sao cần: F5 tự chèn quãng dừng vào giữa câu - đo được 19 quãng
+    300-1600ms trong một bản ghi hội thoại 111 giây, khách nghe thành "đang nói
+    tự nhiên dừng rồi bật lên". Đã đuổi nguyên nhân qua năm giả thuyết và sai cả
+    năm (nfe, checkpoint, dấu "/" và "-", độ dài văn bản, kích thước mảnh). Cắt
+    mảnh 5 từ hạ được 19 xuống 9 nhưng không hết.
+
+    Nên chữa ở đầu ra: không cần biết vì sao F5 bịa, chỉ cần bỏ cái nó bịa. Đo
+    đối chứng bằng cách cho STT nghe lại cả hai bản - 0/16 lượt rụng chữ.
+
+    Chỉ đụng quãng nằm GIỮA. Hai đầu là việc của `trim_silence`, còn nhịp nghỉ
+    nối mảnh do `chen_lang_dau_wav` chèn sau.
+    """
+    if audio is None or len(audio) == 0:
+        return audio
+    n = max(1, int(sr * _KHUNG_LANG_MS / 1000))
+    k = len(audio) // n
+    if k < 3:
+        return audio
+    to = np.abs(audio[: k * n].reshape(k, n)).max(axis=1)
+    im = to < nguong_bien
+    giu_khung = max(1, int(giu_ms / _KHUNG_LANG_MS))
+
+    doan, i, co_sua = [], 0, False
+    while i < k:
+        j = i
+        while j < k and im[j] == im[i]:
+            j += 1
+        # Quãng lặng, không phải ở hai đầu, và dài quá ngưỡng -> bóp ngắn.
+        if im[i] and i > 0 and j < k and (j - i) * _KHUNG_LANG_MS > nguong_ms:
+            doan.append(audio[i * n:(i + giu_khung) * n])
+            co_sua = True
+        else:
+            doan.append(audio[i * n:j * n])
+        i = j
+    if not co_sua:
+        return audio
+    doan.append(audio[k * n:])          # phần lẻ chưa đủ một khung
+    return np.concatenate(doan)
+
+
 def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
                  keep_ms: int = 25) -> np.ndarray:
     """Cắt khoảng lặng đầu/cuối của một mảnh TTS.
@@ -488,6 +553,10 @@ class F5TTSService:
         # Lặng đầu của mảnh ĐẦU TIÊN còn cộng thẳng vào thời gian khách chờ:
         # TTFA 816ms nhưng phải 1150ms mới thực sự nghe thấy tiếng.
         audio = trim_silence(audio, sr)
+        # F5 còn tự chèn quãng dừng vào GIỮA mảnh, thứ mà trim_silence không
+        # đụng tới. Bóp trước khi đổi tần số: đổi tần rồi mới bóp thì phải đo
+        # lại theo tần số đích, dễ lệch ngưỡng mà không ai thấy.
+        audio = cat_lang_bia(audio, sr)
 
         # Resample if needed
         if sr != target_sr:
