@@ -101,6 +101,33 @@ trả là 2,5 lần thời gian GPU.
 Cài ở `backend/pipeline/text_chunker.py`, hàm `tach_manh()`. Xem
 `tests/test_cat_manh_5_tu.py`.
 
+### Và cuối cùng: bỏ hẳn cái nó bịa, thay vì tìm cách ngăn
+
+Cắt 5 từ hạ 19 xuống 9 quãng, nhưng không hết. Sau **năm** giả thuyết sai liên
+tiếp về nguyên nhân, cách hiệu quả nhất hoá ra là không cần biết nguyên nhân:
+soi tiếng sau khi sinh rồi **bóp mọi quãng lặng giữa mảnh dài quá ngưỡng**.
+
+Ngưỡng lấy từ đo thật, không chọn cho đẹp (10 lượt mỗi bản, đúng cấu hình đang
+chạy — `scripts/do_nghi_dau_phay.py`, `scripts/do_nghi_dau_cham.py`):
+
+| | Quãng dài nhất |
+|---|---|
+| Không dấu nào ở giữa | 0 ms |
+| 1 dấu phẩy | 160 ms |
+| **1 dấu chấm** | **320 ms** |
+| 2 dấu chấm | 260 ms |
+| **Quãng BỊA** (đo trên bản ghi thật) | **380 – 1600 ms** |
+
+Nên **360 ms** là chỗ tách, bóp về **200 ms**.
+
+**Đã thử 260 ms và SAI**: nghỉ thật ở dấu chấm chạm 320 ms nên ngưỡng đó cắt
+nhầm ranh giới câu, hai câu dính vào nhau. Chỉ đo dấu phẩy (tối đa 160 ms) thì
+không lộ ra điều này — **phải đo riêng dấu chấm**.
+
+Đo đối chứng an toàn: cho STT nghe lại **cả hai bản** rồi so bản chép —
+**0/16 lượt rụng chữ**. Cài ở `cat_lang_bia()` trong `tts_service.py`, đặt sau
+`trim_silence` và **trước** khi đổi tần số. Xem `tests/test_cat_lang_bia.py`.
+
 ## Đo nhịp thật thì phải đo trên CẢ bản thu, và phải lấy nhịp RÒNG
 
 Hai cái bẫy, đã mắc cả hai:
