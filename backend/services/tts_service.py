@@ -151,7 +151,8 @@ class F5TTSService:
             ref_audio_path = settings.f5tts_ref_audio
             if Path(ref_audio_path).exists():
                 self._register_voice_sync(
-                    self._default_voice, ref_audio_path, settings.f5tts_ref_text
+                    self._default_voice, ref_audio_path,
+                    self._loi_doan_mau(ref_audio_path),
                 )
                 logger.info(f"Reference voice loaded: {ref_audio_path}")
             else:
@@ -654,6 +655,28 @@ class F5TTSService:
     # Chênh 1.5 lần giữa nhanh nhất và chậm nhất. Đặt tốc chung 0.64 cho vừa
     # giọng nữ thì giọng nam thành lê thê - đúng thứ người dùng kêu "đọc chậm".
     #
+    # ĐẶT TỐC BAO NHIÊU: giữ speed càng SÁT 1.0 càng tốt, và chọn clip mẫu có
+    # nhịp gốc sẵn gần nhịp mình muốn. Lý do (đo 08-09, xem
+    # scripts/chon_doan_mau.py):
+    #
+    #   F5 chép ĐÚNG âm sắc - MFCC 0.992 giữa đoạn mẫu và tiếng nó sinh ra từ
+    #   chính đoạn đó, trong khi giữa hai người khác nhau chỉ 0.73. Không hề có
+    #   chuyện "F5 clone không giống".
+    #
+    #   Nhưng tai người nhận ra một người qua NHỊP nhiều hơn qua âm sắc, mà ép
+    #   speed là bóp thẳng vào nhịp. Clip cũ của giong_heu nói 297 âm tiết/phút
+    #   (nhanh nhất trong 15 giọng), ép 0.64 để về 180 tức chạy ở 61% nhịp thật
+    #   -> đúng chất giọng nhưng nghe ra người khác. Thay bằng clip mà chính
+    #   người đó đã nói chậm sẵn (211 âm tiết/phút) rồi để 0.90 thì ra 206 âm
+    #   tiết/phút mà chạy ở 98% nhịp thật - vừa sạch vừa giống, và còn nhanh
+    #   hơn bản cũ. Đây là cấu hình đang chạy.
+    #
+    # CẢNH BÁO khi tính speed: nhịp ra KHÔNG tỉ lệ thẳng với speed. Công thức
+    # thời lượng của F5 chia theo `len(ref_text.encode())` - tức số BYTE, mà
+    # tiếng Việt có dấu là 2-3 byte/chữ. Hai clip cùng số âm tiết nhưng khác số
+    # dấu sẽ ra hai nhịp khác nhau ở cùng speed. Đừng suy ra, hãy đo bằng
+    # scripts/do_nhip_doan_mau.py.
+    #
     # Lưu vào tệp `<giọng>.speed` nằm cạnh `<giọng>.wav`: giọng là một bộ ba
     # (wav + txt + speed) đi liền nhau, chép sang máy khác là còn nguyên. Nhét
     # vào .env thì mỗi lần thêm giọng phải sửa cấu hình rồi khởi động lại.
@@ -751,6 +774,50 @@ class F5TTSService:
         logger.info("Đặt hệ số tốc đường thoại = %.2f", he_so)
         return he_so
 
+    def _loi_doan_mau(self, duong_dan_wav: str) -> str:
+        """Lời của đoạn mẫu, LẤY TỪ tệp `<giọng>.txt` nằm cạnh tệp wav.
+
+        Vì sao không lấy thẳng `settings.f5tts_ref_text`: giọng mặc định từng là
+        giọng DUY NHẤT lấy lời từ `.env`, mọi giọng khác đọc tệp `.txt` qua
+        `list_voices()`. Thay tệp wav mà quên sửa `F5TTS_REF_TEXT` là hai thứ
+        lệch nhau ngay, và lệch một cách rất khó thấy.
+
+        Hỏng ra sao khi lệch (đo 08-09): đã thay wav sang clip mới nhưng `.env`
+        còn câu cũ "…xây dựng được thương hiệu cá nhân". F5 được bảo đoạn mẫu
+        nói câu đó trong khi nó nói câu khác, nên nó ĐỌC RA chính mấy chữ trong
+        câu sai, chen vào đầu mỗi lượt - khách nghe "hiếu… cá nhân…" trước mỗi
+        câu, 5/5 lượt, ở MỌI mức nfe (16/20/24/32).
+
+        Vì sao khó thấy: mọi script đo gọi giọng THEO TÊN (`ensure_voice("heu_c")`)
+        thì đi qua `list_voices()` nên đọc đúng `.txt` và báo SẠCH; chỉ đường
+        chạy thật, dùng giọng mặc định, mới dính. Hai phép đo cùng một clip cho
+        hai kết quả ngược nhau, suýt dẫn tới kết luận sai là do `nfe`.
+
+        Tệp `.txt` đi liền tệp `.wav` nên không thể lệch. `.env` chỉ còn là
+        đường lui khi thiếu `.txt`, và có cảnh báo khi hai bên khác nhau.
+        """
+        tep = Path(duong_dan_wav).with_suffix(".txt")
+        if not tep.exists():
+            logger.warning(
+                "Giọng mặc định %s thiếu tệp .txt - phải lấy lời từ F5TTS_REF_TEXT "
+                "trong .env. Tạo tệp .txt chép đúng câu đã đọc, an toàn hơn nhiều.",
+                tep.name,
+            )
+            return settings.f5tts_ref_text
+        loi = tep.read_text(encoding="utf-8", errors="replace").strip()
+        if not loi:
+            logger.warning("Tệp %s rỗng - lấy lời từ .env", tep.name)
+            return settings.f5tts_ref_text
+        moi = " ".join(loi.split())
+        cu = " ".join((settings.f5tts_ref_text or "").split())
+        if cu and cu.casefold() != moi.casefold():
+            logger.warning(
+                "F5TTS_REF_TEXT trong .env KHÔNG khớp %s - đang dùng tệp .txt. "
+                ".env: %r | .txt: %r. Nên xoá F5TTS_REF_TEXT khỏi .env cho khỏi lẫn.",
+                tep.name, cu[:60], moi[:60],
+            )
+        return loi
+
     def list_voices(self) -> list[dict]:
         """List available reference voices."""
         voices_dir = Path(settings.f5tts_ref_audio).parent
@@ -759,9 +826,10 @@ class F5TTSService:
             txt_file = wav_file.with_suffix(".txt")
             # encoding="utf-8" BẮT BUỘC: mặc định của Windows là cp1252, gặp chữ
             # có dấu là ném UnicodeDecodeError và kéo sập cả danh sách giọng -
-            # tức là hỏng luôn ô chọn giọng và `ensure_voice` cho mọi giọng
-            # không phải giọng mặc định (giọng mặc định lấy lời từ .env nên
-            # không đi qua đây, vì thế lỗi náu được rất lâu).
+            # tức là hỏng luôn ô chọn giọng và `ensure_voice` cho mọi giọng.
+            # (Trước 08-09 giọng mặc định lấy lời từ .env nên không đi qua đây,
+            # và lỗi náu được rất lâu. Nay nó dùng `_loi_doan_mau()`, cũng đọc
+            # tệp .txt này, nên mọi giọng đi chung một đường.)
             ref_text = (txt_file.read_text(encoding="utf-8", errors="replace").strip()
                         if txt_file.exists() else "")
             voices.append({

@@ -196,6 +196,14 @@ async def dat_toc_giong(voice_name: str, req: DatToc):
     đoạn mẫu. Đo trên chính các đoạn đang có - giong_heu 3.44 âm tiết/giây,
     nam_moi2 chỉ 2.30, chênh 1.5 lần. Đặt tốc chung 0.64 cho vừa giọng nữ thì
     giọng nam thành lê thê.
+
+    ĐẶT BAO NHIÊU: giữ càng SÁT 1.0 càng tốt. Tốc không chỉ là nhanh chậm - nó
+    quyết định giọng có NGHE RA đúng người hay không. F5 chép âm sắc rất chuẩn
+    (MFCC 0.992 với chính đoạn mẫu, 0.73 với người khác), nhưng tai người nhận
+    ra một người chủ yếu qua NHỊP. Ép tốc là bóp thẳng vào nhịp: clip cũ của
+    giong_heu bị ép xuống 61% nhịp thật thì đúng chất giọng mà nghe ra người
+    khác. Phải hạ dưới ~0.8 nghĩa là clip mẫu nói quá nhanh so với nhu cầu -
+    tìm đoạn khác trong bản thu, đừng bóp tiếp. Xem docs/doan-mau-va-nhip-noi.md
     """
     from backend.main import app_state
     tts = app_state.tts

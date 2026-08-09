@@ -57,6 +57,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--giong", default=None, help="tên giọng, mặc định lấy giọng đang dùng")
     ap.add_argument("--lan", type=int, default=5, help="thử mấy lần (F5 lấy mẫu ngẫu nhiên)")
+    # nfe cũng sinh âm rác chứ không chỉ đoạn mẫu ngắn - đo 08-09, cùng clip
+    # heu_c 5.45s: nfe32 sạch 0/3, nfe16 rác 5/5. Nên phải đo được từng mức.
+    ap.add_argument("--nfe", type=int, default=None,
+                    help="số bước nfe, mặc định lấy từ .env (cấu hình đang chạy)")
     a = ap.parse_args()
 
     svc = F5TTSService()
@@ -70,6 +74,8 @@ def main():
 
     print(f"giọng     : {ten}")
     print(f"đoạn mẫu  : {dai_ref:.2f}s" + ("   <-- NGẮN QUÁ, dưới 3s" if dai_ref < 3 else ""))
+    print(f"nfe       : {a.nfe or settings.f5tts_nfe_step}"
+          f"{'   (từ .env - cấu hình đang chạy)' if not a.nfe else ''}")
     print(f"chữ gốc   : {CAU}\n")
 
     rac = tran = 0
@@ -78,7 +84,7 @@ def main():
             x, sr, _ = next(infer_batch_process(
                 (rw, rs), rt, [CAU], svc._model, svc._vocoder,
                 mel_spec_type="vocos", progress=None,
-                nfe_step=settings.f5tts_nfe_step,
+                nfe_step=a.nfe or settings.f5tts_nfe_step,
                 speed=svc.toc_do_cua(ten), device=svc._model.device))
         x = np.asarray(x)
         dinh = float(np.abs(x).max())
@@ -92,7 +98,7 @@ def main():
     print(f"\n  âm rác      : {rac}/{a.lan}")
     print(f"  vượt trần   : {tran}/{a.lan}")
     print("\n  ĐẠT" if rac == 0 and tran == 0 else
-          "\n  CHƯA ĐẠT - xem docs/thu-lai-giong-mau.md")
+          "\n  CHƯA ĐẠT - xem docs/doan-mau-va-nhip-noi.md")
 
 
 if __name__ == "__main__":
