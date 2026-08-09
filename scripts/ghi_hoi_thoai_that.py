@@ -63,9 +63,34 @@ async def mot_luot(ws, text: str, so: int, moc0: float):
             x, sr = sf.read(io.BytesIO(b), dtype="float32")
             if x.ndim > 1:
                 x = x.mean(axis=1)
+            # Lang o DAU manh = do code chen (chen_lang_dau_wav). Do thang o
+            # day thay vi suy tu ban ghi da ghep: suy tu ngoai da doan sai hai
+            # lan (goi nham lang chen thanh "F5 bia").
+            n = max(1, int(sr * 0.02))
+            k = len(x) // n
+            dau = 0
+            for i in range(k):
+                if abs(x[i*n:(i+1)*n]).max() >= 0.015:
+                    break
+                dau += 20
+            # Quang lang nam GIUA tieng cua chinh manh nay - neu co thi la F5
+            # bia that, khong the do dau khac duoc nua.
+            im_giua, i2 = [], 0
+            while i2 < k:
+                if abs(x[i2*n:(i2+1)*n]).max() < 0.015:
+                    j2 = i2
+                    while j2 < k and abs(x[j2*n:(j2+1)*n]).max() < 0.015:
+                        j2 += 1
+                    if i2 > 0 and j2 < k and (j2-i2)*20 >= 300:
+                        im_giua.append((j2-i2)*20)
+                    i2 = j2
+                else:
+                    i2 += 1
             manh.append({
                 "moc": time.perf_counter() - moc0,
                 "wav": x, "sr": sr,
+                "lang_dau": dau,
+                "im_giua": im_giua,
                 "dai": len(x) / sr,
                 "id": g.get("chunk_id", 0),
                 "dem": bool(g.get("is_filler")),
@@ -180,7 +205,9 @@ def viet_bao_cao(bao, ra: Path, tong: float):
                 tong_dut += 1
             nhan = "dem " if m["dem"] else f"#{m['id']:<3}"
             d.append(f"            {nhan} toi {m['moc']:6.2f}s  phat {m['phat']:6.2f}s"
-                     f"  dai {m['dai']:5.2f}s  im {m['dut']*1000:6.0f}ms{co}")
+                     f"  dai {m['dai']:5.2f}s  lang dau {m.get('lang_dau',0):4.0f}ms"
+                     f"  im {m['dut']*1000:6.0f}ms"
+                     f"{'  BIA ' + str(m.get('im_giua')) if m.get('im_giua') else ''}{co}")
     d.append("=" * 66)
     d.append(f"TONG SO CHO DUT (lang > 300ms giua cac manh): {tong_dut}")
     (ra / "bao_cao.txt").write_text("\n".join(d), encoding="utf-8")
