@@ -62,6 +62,38 @@ TOI_THIEU_AM_TIET_DE_EP = 3
 
 _CHU_SO_RE = re.compile(r"\d")
 
+# Dấu câu bỏ khỏi chữ ĐƯA VÀO F5. Không bỏ khỏi chữ dùng ở nơi khác - nhịp nghỉ
+# giữa các mảnh vẫn tính từ dấu câu gốc (`nhip_nghi_sau` ở text_chunker), bản
+# ghi lưu lại cũng vẫn có dấu.
+_DAU_CAU_BO_RE = re.compile(r"[,.;:!?…]")
+
+
+def bo_dau_cau_cho_f5(text: str) -> str:
+    """Bỏ dấu chấm/phẩy khỏi chữ đưa vào F5.
+
+    Vì sao, và vì sao chỉ đúng từ khi cắt mảnh 5 từ:
+
+    F5 nghỉ ở dấu câu. Khi mảnh là CẢ CÂU thì dấu nằm đúng chỗ và nghỉ là đúng.
+    Nhưng cắt cứng 5 từ một thì dấu rơi vào chỗ tuỳ tiện - mảnh này kết bằng dấu
+    phẩy, mảnh kia không - nên hai mảnh cạnh nhau ra hai nhịp khác hẳn. Đó chính
+    là thứ người dùng nghe thành "lúc nhanh lúc chậm".
+
+    Đo trên 16 mảnh 5 từ (scripts/thu_bo_dau_cau_tren_manh.py):
+        giữ nguyên dấu  : lệch nhịp 44%,  chữ đọc đúng 95%
+        bỏ dấu chấm/phẩy: lệch nhịp 20%,  chữ đọc đúng 98%
+    Vừa đều nhịp hơn gấp đôi, vừa đọc ĐÚNG HƠN.
+
+    Chỗ ngắt câu KHÔNG mất: nhịp nghỉ giữa các mảnh do code chèn
+    (`nhip_nghi_sau` + `chen_lang_dau_wav`), tính từ chữ gốc còn nguyên dấu.
+
+    Cảnh báo nếu sau này quay lại cắt mảnh DÀI: lúc đó bỏ dấu là sai, vì F5 lại
+    cần dấu để ngắt nhịp trong lòng mảnh. Đo trên cả câu thì bỏ dấu không được
+    gì (lệch 7% -> 8%).
+    """
+    if not text:
+        return text
+    return re.sub(r"\s+", " ", _DAU_CAU_BO_RE.sub(" ", text)).strip()
+
 
 def so_am_tiet(text: str) -> int:
     """Ước số âm tiết khi ĐỌC RA, không phải số từ viết.
@@ -540,6 +572,8 @@ class F5TTSService:
             raise RuntimeError(f"No reference audio loaded for voice '{voice}'")
         ref_wave, ref_sr, ref_text = entry
         toc = speed if speed is not None else self.toc_do_cua(voice)
+        # Bỏ dấu chấm/phẩy CHỈ ở chữ đưa vào F5 - xem `bo_dau_cau_cho_f5`.
+        text = bo_dau_cau_cho_f5(text)
 
         # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
         # của autograd. Suy luận thuần nên không mất gì.

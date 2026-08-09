@@ -108,3 +108,41 @@ def test_cung_so_am_tiet_thi_cung_thoi_luong_du_khac_dau():
 
 def test_nguong_toi_thieu_dung_nhu_khai_bao():
     assert TOI_THIEU_AM_TIET_DE_EP == 3
+
+
+# --- bỏ dấu câu khỏi chữ đưa vào F5 --------------------------------------
+
+from backend.services.tts_service import bo_dau_cau_cho_f5  # noqa: E402
+
+
+def test_bo_dau_cham_phay():
+    assert bo_dau_cau_cho_f5("Dạ vâng ạ, em nghe.") == "Dạ vâng ạ em nghe"
+
+
+@pytest.mark.parametrize("dau", [",", ".", ";", ":", "!", "?", "…"])
+def test_bo_moi_loai_dau_gay_nghi(dau):
+    assert dau not in bo_dau_cau_cho_f5(f"anh chị{dau} cho em xin")
+
+
+def test_giu_nguyen_chu_va_dau_thanh():
+    """Chỉ bỏ dấu CÂU. Dấu thanh mà mất là sai 1/3 số chữ - đã đo."""
+    ra = bo_dau_cau_cho_f5("Lãi suất bảy phẩy chín phần trăm.")
+    assert "Lãi suất bảy phẩy chín phần trăm" == ra
+
+
+def test_khong_de_lai_khoang_trang_thua():
+    assert bo_dau_cau_cho_f5("anh  chị ,  cho em") == "anh chị cho em"
+
+
+def test_khong_dung_toi_dau_gach_va_so():
+    """Số và dấu gạch phải nguyên: "22-60" bỏ đi là đọc sai khoảng tuổi."""
+    assert bo_dau_cau_cho_f5("từ 22-60 tuổi") == "từ 22-60 tuổi"
+
+
+def test_chuoi_rong():
+    assert bo_dau_cau_cho_f5("") == ""
+    assert bo_dau_cau_cho_f5("   ") == ""
+
+
+def test_manh_chi_co_dau_thi_thanh_rong():
+    assert bo_dau_cau_cho_f5(" . ") == ""
