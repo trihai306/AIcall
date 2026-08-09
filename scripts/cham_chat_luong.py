@@ -118,12 +118,28 @@ BO_CAU = [
 ]
 
 
-def cham_mot(cau: dict, tra_loi: str) -> list[str]:
-    """Trả về danh sách lỗi. Rỗng = đạt."""
+# Chữ Hán, Kana, Hangul. Chữ Việt có dấu nằm ở dải Latin mở rộng, không dính.
+CHU_NGOAI_RE = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+")
+
+
+def cham_mot(cau: dict, tra_loi: str, tho: str = "") -> list[str]:
+    """Trả về danh sách lỗi. Rỗng = đạt.
+
+    `tho` là văn bản THÔ của mô hình, TRƯỚC chuỗi dọn. Cần nó để soi chữ nước
+    ngoài: pipeline thật đã có `chan_chu_ngoai` cắt sạch, nên nếu chỉ chấm bản
+    đã dọn thì loại lỗi này VÔ HÌNH - đúng thứ đã xảy ra.
+
+    Đo 08-08 trên chính bộ câu này: qwen2.5:3b lọt chữ Trung ở 2/144 mẫu và
+    bộ chấm cũ vẫn cho cả hai nhãn "đạt", trong đó một câu có 3/4 nội dung là
+    tiếng Trung. qwen2.5:7b: 0/144.
+    """
     loi = []
     t = tra_loi.strip()
     if not t:
         return ["rỗng"]
+
+    if CHU_NGOAI_RE.search(tho or tra_loi):
+        loi.append("lọt chữ nước ngoài")
 
     if cau["phai"] and not re.search(cau["phai"], t, re.I):
         loi.append("không trả lời thẳng")
@@ -212,8 +228,9 @@ async def main() -> int:
                     t += tok
             except Exception as e:
                 t = f"[LỖI {e}]"
+            tho = t
             t = don(t, ngu_canh)
-            loi = cham_mot(cau, t)
+            loi = cham_mot(cau, t, tho)
             ket.append((t.strip(), loi))
             tong += 1
             if not loi:
