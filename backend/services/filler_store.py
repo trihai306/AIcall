@@ -38,6 +38,11 @@ class Kho:
     cau: tuple[CauDem, ...]
 
 
+# Tăng khi CÁCH sinh tiếng đổi mà tham số trong vân tay thì không đổi.
+#   1 -> 2 : ép thời lượng theo âm tiết (2026-08-09)
+PHIEN_BAN = 2
+
+
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
     """Vân tay của MỘT bản tiếng câu đệm.
 
@@ -47,8 +52,14 @@ def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str
     lỗi, log vẫn sạch.
 
     `speed` ép về chuỗi 3 số lẻ để 1.0 và 1.000 ra cùng một vân tay.
+
+    `PHIEN_BAN` để buộc dựng lại khi CÁCH sinh tiếng đổi mà tham số thì không:
+    2026-08-09 thêm ép thời lượng theo âm tiết (`thoi_luong_ep`), cùng text +
+    giọng + nfe + speed + ref_text nhưng tiếng ra khác hẳn. Không tăng số này
+    thì câu đệm cũ nằm nguyên trên đĩa và khách nghe hai nhịp đọc khác nhau nối
+    liền nhau ngay đầu mỗi lượt - đúng cái bẫy im lặng mô tả ở trên.
     """
-    mau = json.dumps([text, giong, nfe, f"{speed:.3f}", ref_text],
+    mau = json.dumps([PHIEN_BAN, text, giong, nfe, f"{speed:.3f}", ref_text],
                      ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(mau.encode("utf-8")).hexdigest()[:12]
 

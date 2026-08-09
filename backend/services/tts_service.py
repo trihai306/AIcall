@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import concurrent.futures
 from collections import OrderedDict
 from contextlib import nullcontext
@@ -23,6 +24,71 @@ SILENCE_PEAK = 1e-3
 # Tiếng câu đệm cất ở đây để khởi động không phải gọi F5 lại. Tên file mang vân
 # tay: đổi nfe/speed/giọng là vân tay lệch -> dựng lại đúng câu đó.
 THU_MUC_FILLER = Path("data/fillers_wav")
+
+# --- Ép thời lượng theo ÂM TIẾT ------------------------------------------
+#
+# Người dùng: "nó đọc kiểu không đồng bộ tốc độ, lúc nhanh lúc chậm". Đo được
+# các câu ra từ 194 đến 500 âm tiết/phút - chênh hơn 2,5 lần, cùng một cấu hình.
+#
+# Gốc nằm ngay trong công thức của F5:
+#     duration = ref_len + int(ref_len / ref_text_BYTES * gen_text_BYTES / speed)
+# F5 cấp thời lượng theo số BYTE của chữ, nhưng tai nghe nhịp theo ÂM TIẾT. Chữ
+# tiếng Việt có dấu tốn 3 byte ("ạ") trong khi chữ không dấu tốn 1. Nên hai câu
+# CÙNG số âm tiết nhưng khác mật độ dấu được cấp thời lượng khác hẳn.
+#
+# Đo đối chứng (scripts/do_nhip_theo_byte.py, 8 câu chọn theo mật độ dấu):
+#     tương quan byte/âm tiết với nhịp đọc ra: -0.74
+#     "Anh cho em xin so tai khoan ngan hang nhe"  (4.10 byte/âm tiết) -> 366
+#     "Hạn mức tối đa năm trăm triệu, thời hạn..." (6.08 byte/âm tiết) -> 259
+#
+# Chữa: tự tính thời lượng theo ÂM TIẾT rồi ép bằng `fix_duration`.
+#     lệch nhịp giữa các câu: 38% -> 6%
+#
+# ĐÃ LOẠI trước khi đi tới đây: kích thước mảnh (lệch 31-42% ở MỌI mức, 5 từ
+# còn đều nhất) và câu đệm dựng sẵn ở tốc cũ (khớp -11%).
+#
+# Nhịp chuẩn đo trên 20,2 phút bản thu gốc của chính người đó, phần CÓ TIẾNG.
+NHIP_CHUAN_AM_TIET_PHUT = 294.0
+# `speed` bao nhiêu thì cho ra nhịp chuẩn ở trên. Giữ mốc này để `speed` không
+# mất ý nghĩa: đặt tốc riêng cho giọng, hay hệ số tốc cho đường thoại, vẫn ăn.
+SPEED_CHUAN = 1.20
+# Ép đúng thời lượng tính ra thì nhịp đo được vẫn nhanh hơn mốc ~11%, vì
+# `fix_duration` cấp cho CẢ mảnh còn nhịp thì đo trên phần đã cắt lặng hai đầu.
+# Hệ số này bù đúng chỗ đó - đo được, không chọn bừa.
+HE_SO_BU_LANG = 1.11
+# Dưới ngưỡng này thì để F5 tự lo: mảnh 1 âm tiết mà ép thời lượng thì sai số
+# một âm tiết đã là 100%.
+TOI_THIEU_AM_TIET_DE_EP = 3
+
+_CHU_SO_RE = re.compile(r"\d")
+
+
+def so_am_tiet(text: str) -> int:
+    """Ước số âm tiết khi ĐỌC RA, không phải số từ viết.
+
+    Chữ số phải quy đổi chứ không đếm là một: "2.000.000.000" viết một từ nhưng
+    đọc thành "hai tỷ đồng" - đếm là 1 thì thời lượng ép ra quá ngắn và tiếng bị
+    cụt. Ước 1,5 âm tiết cho mỗi chữ số là sát: "142500000" chín chữ số đọc
+    thành "một trăm bốn mươi hai triệu năm trăm nghìn" - 13 âm tiết, ước 13,5.
+    """
+    n = 0
+    for t in text.split():
+        cs = len(_CHU_SO_RE.findall(t))
+        n += max(1, round(cs * 1.5)) if cs else 1
+    return n
+
+
+def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float) -> float | None:
+    """Thời lượng nên ép cho mảnh này, hoặc None nếu để F5 tự tính.
+
+    Trả về TỔNG thời lượng (đoạn mẫu + phần sinh), đúng thứ `fix_duration` cần.
+    """
+    n = so_am_tiet(text)
+    if n < TOI_THIEU_AM_TIET_DE_EP or dai_ref_giay <= 0 or speed <= 0:
+        return None
+    nhip = NHIP_CHUAN_AM_TIET_PHUT * (speed / SPEED_CHUAN)
+    return dai_ref_giay + n / (nhip / 60.0) * HE_SO_BU_LANG
+
 
 # Bóp quãng lặng GIỮA mảnh. Ngưỡng KHÔNG chọn cho đẹp mà lấy từ hai phép đo:
 #
@@ -473,6 +539,7 @@ class F5TTSService:
         if entry is None:
             raise RuntimeError(f"No reference audio loaded for voice '{voice}'")
         ref_wave, ref_sr, ref_text = entry
+        toc = speed if speed is not None else self.toc_do_cua(voice)
 
         # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
         # của autograd. Suy luận thuần nên không mất gì.
@@ -488,7 +555,11 @@ class F5TTSService:
                     mel_spec_type="vocos",
                     progress=None,
                     nfe_step=nfe_step or settings.f5tts_nfe_step,
-                    speed=speed if speed is not None else self.toc_do_cua(voice),
+                    speed=toc,
+                    # Ép thời lượng theo ÂM TIẾT thay vì để F5 chia theo BYTE -
+                    # xem khối chú thích ở `thoi_luong_ep`. None thì F5 tự tính
+                    # như cũ (mảnh quá ngắn, hoặc tính ra không hợp lệ).
+                    fix_duration=thoi_luong_ep(text, ref_wave.shape[-1] / ref_sr, toc),
                     device=DEVICE,
                 )
             )
