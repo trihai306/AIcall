@@ -788,7 +788,19 @@ class StreamingPipeline:
                 # đầu mảnh mà `BotLichSu` vừa bỏ, lúc đó mảnh trước không còn
                 # dấu câu nào để `nhip_nghi_sau` nhìn ra.
                 chunk_text, nghi_them = goi
-                nghi_ms += nghi_them
+                # LẤY LỚN HƠN, không cộng dồn. Hai con số này là HAI CÁCH NHÌN
+                # cùng MỘT chỗ ngắt: `nghi_ms` là nhịp nghỉ suy từ dấu câu cuối
+                # mảnh trước, `nghi_them` là nhịp nghỉ suy từ dấu câu đầu mảnh
+                # này (chữ "ạ." mà BotLichSu vừa bỏ). Cộng lại là nghỉ hai lần
+                # cho một chỗ.
+                #
+                # Đo được sau khi đổi sang cắt 5 từ: 360 + 360 = 720ms, xuất
+                # hiện lặp đi lặp lại trong bản ghi hội thoại thật và nghe y
+                # như F5 bịa quãng dừng. Lỗi vốn có từ trước nhưng cắt ở dấu
+                # câu thì hiếm khi hai vế cùng khác 0; mảnh 5 từ làm nó lộ ra.
+                #
+                # Dòng ngay dưới, xử lý mảnh rỗng, đã dùng đúng `max` từ đầu.
+                nghi_ms = max(nghi_ms, nghi_them)
 
                 # Mảnh không có chữ nào (thường là đúng một dấu chấm, sinh ra khi
                 # luật "ạ/nhé" cắt trước rồi dấu câu mới tới) - đừng gọi TTS cho
