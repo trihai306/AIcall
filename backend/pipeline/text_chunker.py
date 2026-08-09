@@ -1,19 +1,17 @@
 """Quyết định khi nào dồn đủ chữ để giao cho TTS.
 
-Vì sao chỗ cắt quan trọng hơn vẻ ngoài của nó: F5-TTS mỗi lần gọi sinh ra MỘT
-PHÁT NGÔN TRỌN VẸN - có đường lên mở đầu và đường xuống kết thúc. Cắt giữa mệnh
-đề thì nửa đầu được đọc như đã nói xong, nửa sau mở ra như câu mới. Đo được
-(2026-08-03) trên câu 43 từ bị cắt thành 7 mảnh: mảnh GIỮA CÂU kết thúc với độ
-dốc F0 -4.14 nửa cung/100ms, gần như không phân biệt được với mảnh kết câu thật
-(-4.31). Và tệ nhất là cắt vỡ cụm số:
+Luật hiện tại (2026-08-09): cắt cứ **5 từ** một, hoặc sớm hơn nếu gặp dấu câu
+(sàn 3 từ). Xem `GIOI_HAN_TU_MANH` để biết vì sao bỏ lối cắt-ở-dấu-câu cũ.
 
-    "bên em hiện tại là sáu phẩy năm" | "phần trăm một năm,"
-    "áp dụng cho khoản vay từ năm mươi" | "triệu trở lên,"
+Ba ràng buộc, cả ba đều từ lỗi thật đo được, đừng gỡ mà không đo lại:
 
-NGÂN SÁCH THỜI GIAN: chỉ MẢNH ĐẦU ảnh hưởng tới thời gian khách chờ tiếng đầu
-tiên. Các mảnh sau được sinh trong lúc mảnh trước đang phát, mà TTS chạy ~15 lần
-thời gian thực (mảnh 20 từ ~ 5s tiếng, sinh mất ~330ms) - tức mảnh sau to lên
-gần như miễn phí. Nên mảnh đầu cắt gắt cho nhanh, mảnh sau cắt thưa cho tự nhiên.
+1. KHÔNG bẻ đôi cụm số - "năm mươi" | "triệu" là hỏng nghĩa.
+2. KHÔNG cắt ngay sau dấu phân cách nghìn - "142." | "500.000".
+3. KHÔNG cắt vào token dở dang - LLM đẩy "ngay" thành "ng" rồi "ay".
+
+Đuôi lượt ngắn hơn `TOI_THIEU_TU_MANH_CUOI` được `streaming_pipeline` gộp vào
+mảnh trước, không gửi riêng: F5 sinh mỗi mảnh như một câu trọn vẹn, nên mảnh
+"nhé." một từ nghe tách hẳn khỏi câu nó vốn thuộc về.
 """
 
 import re
@@ -72,6 +70,12 @@ GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
 # để sinh 0,3 giây tiếng, và mảnh quá ngắn thì sinh không kịp phát - đo được 3
 # từ/mảnh gây 21 lần đói khung khi Ollama đang chạy.
 TOI_THIEU_TU_KHI_CAT_O_DAU = 3
+
+# Đuôi lượt ngắn hơn bấy nhiêu từ thì GỘP vào mảnh trước thay vì gửi riêng.
+# Cắt cứ 5 từ một nên phần dư cuối lượt là bao nhiêu còn lại - thường 1-2 từ.
+# Đo trên bản ghi 10 lượt: 3 lượt kết bằng mảnh 1-2 từ ("nhé.", "nhé ạ."), F5
+# sinh chúng như MỘT CÂU HOÀN CHỈNH nên nghe tách hẳn khỏi câu trước.
+TOI_THIEU_TU_MANH_CUOI = 3
 
 # Trần cho phép chặn-vì-đang-giữa-cụm-số kéo dài. Không có trần thì một chuỗi
 # toàn từ số ("một hai ba bốn...") giữ buffer mãi không giao.

@@ -12,7 +12,8 @@ from backend.pipeline.session_manager import CallSession
 from backend.pipeline import cong_cu_llm
 from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
-from backend.pipeline.text_chunker import nhip_nghi_sau, tach_manh
+from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, nhip_nghi_sau,
+                                            tach_manh)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_so_sai,
                                               chan_tien_sai, sua_xung_ho)
@@ -767,6 +768,25 @@ class StreamingPipeline:
         chunks_enqueued = 0
         tts_queue: asyncio.Queue[str | None] = asyncio.Queue()
 
+        # Mảnh đang GIỮ LẠI, chưa gửi, chờ xem còn mảnh nào sau nó không.
+        #
+        # Vì sao phải giữ: cắt cứ 5 từ một thì phần dư ở cuối lượt là bao nhiêu
+        # còn lại, thường 1-2 từ. Đo trên bản ghi thật: câu "…anh cứ yên tâm
+        # nhé." ra mảnh "nhé." dài 0,33 giây đứng một mình, và F5 sinh nó như
+        # MỘT CÂU HOÀN CHỈNH - đủ cả mở đầu lẫn kết thúc - nên nghe tách hẳn ra.
+        # Ba lượt trong bản ghi 10 lượt bị thế.
+        #
+        # Giữ lại một mảnh thì lúc hết lượt còn kịp gộp đuôi ngắn vào nó.
+        # Mảnh ĐẦU không giữ: giữ nó là đội thẳng vào thời gian khách chờ tiếng
+        # đầu. Từ mảnh thứ hai trở đi thì giữ không tốn gì, vì lúc đó TTS vẫn
+        # đang bận mảnh trước - hàng đợi mới là chỗ nghẽn, không phải chỗ này.
+        cho_gui: str | None = None
+
+        def _gui_manh(t: str) -> None:
+            nonlocal cau_da_loc
+            tts_queue.put_nowait((t, bot_lich_su.nghi_truoc_ms))
+            cau_da_loc = _noi_manh(cau_da_loc, t)
+
         # Ollama và F5-TTS dùng chung một GPU, và đây là nút thắt lớn nhất:
         # đo đối chứng cho thấy TTS mất 510-515ms khi GPU rảnh nhưng 1258-1434ms
         # khi Ollama đang sinh token.
@@ -981,18 +1001,31 @@ class StreamingPipeline:
                             # hai nguyên nhân chậm khác nhau, cách xử lý cũng khác.
                             metrics["llm_chunk1_ms"] = round((time.perf_counter() - t_llm) * 1000)
                         chunk_text = _don_loi(chunk_text)
-                        tts_queue.put_nowait((chunk_text, bot_lich_su.nghi_truoc_ms))
-                        cau_da_loc = _noi_manh(cau_da_loc, chunk_text)
+                        # Mảnh ĐẦU đi ngay để không đội thời gian chờ tiếng đầu.
+                        # Từ mảnh thứ hai thì GIỮ LẠI MỘT MẢNH, chỉ gửi khi đã có
+                        # mảnh kế - xem `_gui_manh` để biết vì sao.
+                        if chunks_enqueued == 0:
+                            _gui_manh(chunk_text)
+                        else:
+                            if cho_gui is not None:
+                                _gui_manh(cho_gui)
+                            cho_gui = chunk_text
                         chunks_enqueued += 1
         except Exception as e:
             logger.error(f"LLM error: {e}")
             await self._send_event(ws, "error", {"message": f"LLM error: {e}"})
 
-        # Flush remaining text, then wait for the consumer to drain the queue
-        if text_buffer.strip():
-            du = _don_loi(text_buffer.strip())
-            tts_queue.put_nowait((du, bot_lich_su.nghi_truoc_ms))
-            cau_da_loc = _noi_manh(cau_da_loc, du)
+        # Xả nốt phần còn trong đệm. ĐUÔI NGẮN thì gộp vào mảnh đang giữ chứ
+        # không gửi riêng - xem `_gui_manh`.
+        du = _don_loi(text_buffer.strip()) if text_buffer.strip() else ""
+        if du and cho_gui is not None and len(du.split()) < TOI_THIEU_TU_MANH_CUOI:
+            cho_gui = f"{cho_gui} {du}".strip()
+            du = ""
+        if cho_gui is not None:
+            _gui_manh(cho_gui)
+            cho_gui = None
+        if du:
+            _gui_manh(du)
         tts_queue.put_nowait(None)
         try:
             await consumer_task
