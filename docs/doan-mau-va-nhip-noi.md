@@ -128,6 +128,56 @@ không lộ ra điều này — **phải đo riêng dấu chấm**.
 **0/16 lượt rụng chữ**. Cài ở `cat_lang_bia()` trong `tts_service.py`, đặt sau
 `trim_silence` và **trước** khi đổi tần số. Xem `tests/test_cat_lang_bia.py`.
 
+### "Lúc nhanh lúc chậm": hai nguyên nhân, cả hai đều đo được
+
+Sau khi hết đứt quãng, người dùng kêu tiếp *"nó đọc kiểu không đồng bộ tốc độ,
+lúc nhanh lúc chậm"*. Đo được các câu ra từ **194 đến 500 âm tiết/phút** — chênh
+hơn 2,5 lần ở cùng một cấu hình.
+
+**Nguyên nhân 1 — F5 cấp thời lượng theo BYTE, tai nghe nhịp theo ÂM TIẾT.**
+
+Chữ có dấu thanh tốn 3 byte, chữ không dấu tốn 1. Hai câu **cùng số âm tiết**
+nhưng khác mật độ dấu được cấp thời lượng khác hẳn. Tương quan byte/âm tiết với
+nhịp đọc ra: **−0,74**.
+
+| Câu | byte/âm tiết | Nhịp ra |
+|---|---|---|
+| "Anh cho em xin so tai khoan ngan hang nhe" | 4,10 | 366 |
+| "Hạn mức tối đa năm trăm triệu, thời hạn…" | 6,08 | 259 |
+
+Chữa: tự tính thời lượng theo **âm tiết** rồi ép bằng `fix_duration`
+(`thoi_luong_ep()` trong `tts_service.py`). Lệch nhịp **38% → 6%** trên cả câu.
+
+Chốt an toàn bắt buộc: **chữ số phải quy đổi theo lời đọc**. `"2.000.000.000"`
+viết một từ nhưng đọc thành "hai tỷ" — đếm là 1 thì thời lượng ép ra quá ngắn và
+**tiếng bị cụt**. Ước 1,5 âm tiết mỗi chữ số.
+
+**Nguyên nhân 2 — dấu chấm/phẩy rơi tuỳ tiện khi cắt cứng 5 từ.**
+
+F5 nghỉ ở dấu câu. Mảnh là cả câu thì dấu nằm đúng chỗ; cắt cứng 5 từ thì mảnh
+này kết bằng dấu phẩy, mảnh kia không, nên hai mảnh cạnh nhau ra hai nhịp khác
+hẳn. Đo trên 16 mảnh 5 từ:
+
+| | Lệch nhịp | Chữ đọc đúng |
+|---|---|---|
+| Giữ nguyên dấu | 44% | 95% |
+| **Bỏ dấu chấm/phẩy** | **20%** | **98%** |
+
+Chữa: `bo_dau_cau_cho_f5()`, bỏ dấu **chỉ ở chữ đưa vào F5**. Chỗ ngắt câu không
+mất vì nhịp nghỉ giữa các mảnh do code chèn, tính từ chữ gốc còn nguyên dấu.
+
+> **Nếu sau này quay lại cắt mảnh DÀI thì phải bỏ thay đổi này** — lúc đó F5 lại
+> cần dấu để ngắt nhịp trong lòng mảnh. Đo trên cả câu, bỏ dấu không được gì
+> (7% → 8%).
+
+**Đã thử và LOẠI**: bỏ **dấu thanh** (chữ không dấu). Làm sai **1/3 số chữ**
+(chữ đọc đúng chỉ 66%) mà **không** làm nhịp đều hơn — vì `fix_duration` đã tính
+theo âm tiết nên số byte hết ảnh hưởng.
+
+**Cỡ mảnh vẫn còn ảnh hưởng** (đo qua đúng `synthesize()`):
+5 từ lệch 31%, 8 từ lệch 15%, 20 từ lệch 9%, cả câu 7%. Mảnh ~1 giây thì 50 ms
+lặng mà `trim_silence` chừa lại đã là 5% sai số.
+
 ## Đo nhịp thật thì phải đo trên CẢ bản thu, và phải lấy nhịp RÒNG
 
 Hai cái bẫy, đã mắc cả hai:
