@@ -73,7 +73,29 @@ SO_DEM = {
 #
 # Mảnh to hơn còn giữ được nhiều ngữ điệu TRONG LÒNG mảnh - F5 sinh mỗi mảnh
 # như một phát ngôn trọn vẹn, nên càng ít mảnh càng ít chỗ bị bẻ ngữ điệu.
-GIOI_HAN_TU_MANH = 16
+#
+# 16 -> 5 TỪ (2026-08-10), người dùng chốt: "bỏ hết logic tách đi, giờ dùng mỗi
+# F5 tạo rồi nối 5 từ 1". Xem `CAT_DON_GIAN`.
+GIOI_HAN_TU_MANH = 5
+
+# Cắt MÁY MÓC hay cắt thông minh.
+#
+# Bật (mặc định, người dùng chốt 2026-08-10): cứ đủ `GIOI_HAN_TU_MANH` từ là
+# giao, KHÔNG cắt sớm ở dấu câu, KHÔNG né cụm số, và KHÔNG chèn nhịp nghỉ nào
+# giữa các mảnh - F5 sinh xong thì nối thẳng.
+#
+# Tắt: quay lại lối cắt thông minh mô tả ở khối chú thích trên.
+#
+# Một thứ được giữ lại ở CẢ HAI chế độ: chốt chặn cắt-giữa-token
+# (`_tu_cuoi_da_tron`). Nó không phải luật cắt mà là chống hỏng chữ - LLM đẩy
+# "ngay" thành "ng" rồi "ay", bỏ nó ra thì khách nghe đọc rời "ng" rồi "ay"
+# (đã xảy ra trên máy thật, không phải giả định).
+#
+# Cái MẤT khi bật: cụm số bị bẻ đôi ("hai mươi" | "hai", "142." | "500.000").
+# Đây là lỗi đã từng bắt được ngoài đời chứ không phải rủi ro lý thuyết. Muốn
+# giữ riêng chốt chặn số mà vẫn cắt máy móc thì đặt CHAN_CUM_SO = True.
+CAT_DON_GIAN = True
+CHAN_CUM_SO = False
 
 # Giữ tên cũ cho chỗ nào còn gọi tới; nay chỉ là trần chặn cụm số kéo dài.
 GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
@@ -134,6 +156,8 @@ DAU_NGAT_Y = (",", ";", ":")
 
 def nhip_nghi_sau(chunk_text: str) -> float:
     """Sau mảnh này thì cần nghỉ bao lâu (ms) trước khi vào mảnh kế?"""
+    if CAT_DON_GIAN:
+        return 0.0          # nối thẳng, không chèn gì
     t = chunk_text.rstrip()
     if t.endswith(DAU_KET_CAU):
         return NGHI_CHAM_MS
@@ -221,6 +245,19 @@ def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
 
     # Đệm kết thúc bằng khoảng trắng/dấu câu thì mẩu cuối cũng đã trọn.
     co_the = len(tu) if _tu_cuoi_da_tron(buffer) else len(tu) - 1
+
+    if CAT_DON_GIAN:
+        if co_the < n:
+            return None, buffer
+        if not CHAN_CUM_SO:
+            return " ".join(tu[:n]), " ".join(tu[n:])
+        k = n
+        while _dang_giua_cum_so(" ".join(tu[:k]), tu[:k], TRAN_CHO_CUM_SO_SAU) \
+                or _dang_giua_con_so(" ".join(tu[:k])):
+            k += 1
+            if k > co_the:
+                return None, buffer
+        return " ".join(tu[:k]), " ".join(tu[k:])
 
     # Cắt Ở DẤU CÂU nếu dấu tới trước mốc `n` từ.
     #

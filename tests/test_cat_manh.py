@@ -17,9 +17,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pytest
 
+from backend.pipeline import text_chunker
 from backend.pipeline.text_chunker import (
     GIOI_HAN_TU_MANH, TRAN_CHO_CUM_SO_SAU, nhip_nghi_sau, tach_manh,
 )
+
+
+@pytest.fixture(autouse=True)
+def cat_thong_minh(monkeypatch):
+    """Tệp này khoá lối cắt THÔNG MINH, không phải lối máy móc đang bật.
+
+    Đường chạy thật từ 2026-08-10 dùng `CAT_DON_GIAN = True` (xem
+    `tests/test_cat_don_gian.py`). Giữ nguyên các test này vì lối thông minh vẫn
+    còn nguyên trong mã và bật lại chỉ bằng một dòng - mỗi ràng buộc ở đây đều
+    từ một lỗi thật, mất chúng là mất luôn lý do chúng tồn tại.
+    """
+    monkeypatch.setattr(text_chunker, "CAT_DON_GIAN", False)
 
 
 def cat(van: str, first: bool = True) -> list[str]:
