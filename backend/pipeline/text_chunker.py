@@ -97,6 +97,40 @@ GIOI_HAN_TU_MANH = 5
 CAT_DON_GIAN = True
 CHAN_CUM_SO = False
 
+# Cỡ mảnh TĂNG DẦN theo thứ tự, thay vì cố định. Mảnh thứ i lấy cỡ thứ i, hết
+# bảng thì giữ nguyên cỡ cuối.
+#
+# Vì sao: người dùng nghe thấy ở chỗ nối hai mảnh "có 1 điểm chậm và vẫn có dấu
+# chấm". Đúng - F5 sinh MỖI MẢNH như một câu trọn vẹn nên cuối mảnh nó hạ giọng
+# kết câu rồi kéo dài âm cuối, giữa lúc câu chưa hết. Càng nhiều mảnh càng nhiều
+# chỗ như thế.
+#
+# CHỈ MẢNH ĐẦU cần nhỏ. Khi nó đã phát rồi thì máy còn cả giây tiếng trong tay,
+# mà TTS sinh nhanh gấp 3,5 lần thời gian phát - nên mảnh sau tha hồ to.
+#
+# Đo trên đoạn 65 từ, 2 lượt mỗi cách (scripts/so_cach_tao_voice.py):
+#
+#   cách            mảnh  chỗ nối    TTFA  tổng sinh  âm cuối tệ nhất
+#   đều 5 từ          13      12    298ms     3961ms      2,33x
+#   đều 16 từ          5       4    439ms     1939ms      1,79x
+#   TĂNG DẦN           4       3    296ms     1652ms      1,00x   <- chọn
+#   cả câu một lần     1       0   1019ms     1020ms      1,05x
+#
+# "âm cuối" = âm tiết cuối mảnh dài gấp mấy lần âm tiết thường; to nghĩa là đang
+# hạ giọng kết câu giữa chừng. Tăng dần ăn cả ba trục: tiếng đầu ra nhanh y hệt
+# cắt 5 từ, ít hơn bốn lần chỗ nối, và hết sạch chỗ hạ giọng giả.
+#
+# Không để cỡ cuối là "hết phần còn lại": thế thì mảnh cuối phải đợi LLM sinh
+# xong cả lượt mới giao được, tức đổi ngữ điệu lấy độ trễ ở đúng chỗ không nên.
+CO_MANH_TANG_DAN = (5, 10, 20)
+
+
+def co_manh(thu_tu: int) -> int:
+    """Cỡ mảnh (số từ) cho mảnh thứ `thu_tu`, đếm từ 0."""
+    if not CO_MANH_TANG_DAN:
+        return GIOI_HAN_TU_MANH
+    return CO_MANH_TANG_DAN[min(max(thu_tu, 0), len(CO_MANH_TANG_DAN) - 1)]
+
 # Giữ tên cũ cho chỗ nào còn gọi tới; nay chỉ là trần chặn cụm số kéo dài.
 GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
 

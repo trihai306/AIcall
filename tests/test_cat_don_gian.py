@@ -118,3 +118,52 @@ def test_dem_rong_va_thieu_chu():
 def test_khong_mat_chu_nao():
     van = "Dạ em xin phép kiểm tra lại hồ sơ và báo anh chị ngay trong hôm nay ạ"
     assert " ".join(cat(van)).split() == van.split()
+
+
+# --- cỡ mảnh tăng dần ---------------------------------------------------
+
+def test_co_manh_tang_dan_theo_thu_tu():
+    """Mảnh đầu nhỏ cho tiếng ra sớm, mảnh sau to dần cho ngữ điệu liền."""
+    assert [text_chunker.co_manh(i) for i in range(6)] == [5, 10, 20, 20, 20, 20]
+
+
+def test_co_manh_chan_chi_so_am():
+    assert text_chunker.co_manh(-3) == text_chunker.co_manh(0)
+
+
+def test_tat_tang_dan_thi_ve_co_co_dinh(monkeypatch):
+    monkeypatch.setattr(text_chunker, "CO_MANH_TANG_DAN", ())
+    assert text_chunker.co_manh(0) == text_chunker.GIOI_HAN_TU_MANH
+
+
+def cat_tang_dan(van: str) -> list[str]:
+    """Cắt y hệt pipeline: cỡ mảnh lấy theo SỐ MẢNH ĐÃ GIAO."""
+    ra, dem = [], ""
+    for tu in van.split():
+        dem = f"{dem} {tu}" if dem else tu
+        while True:
+            m, dem = tach_manh(dem, n=text_chunker.co_manh(len(ra)))
+            if m is None:
+                break
+            ra.append(m)
+    if dem.strip():
+        ra.append(dem.strip())
+    return ra
+
+
+def test_cat_theo_dung_bac_thang():
+    van = " ".join(f"t{i}" for i in range(1, 41))
+    manh = cat_tang_dan(van)
+    assert [len(m.split()) for m in manh[:3]] == [5, 10, 20]
+
+
+def test_tang_dan_khong_mat_chu():
+    van = ("Dạ em xin phép kiểm tra lại hồ sơ của anh và báo lại ngay trong "
+           "hôm nay ạ em cảm ơn anh nhiều nhé")
+    assert " ".join(cat_tang_dan(van)).split() == van.split()
+
+
+def test_tang_dan_it_manh_hon_han_cat_deu():
+    """Ít mảnh = ít chỗ nối = ít chỗ F5 hạ giọng kết câu giữa chừng."""
+    van = " ".join(f"t{i}" for i in range(1, 66))
+    assert len(cat_tang_dan(van)) < len(cat(van)) / 2
