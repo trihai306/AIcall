@@ -13,6 +13,11 @@ Ket qua:
     <ra>/hoi_thoai.wav        toan bo cuoc noi chuyen, gap giu nguyen
     <ra>/bao_cao.txt          tung manh: moc toi, do dai, khoang lang truoc no
 
+BO LUOT CHAY DAU TIEN SAU KHI KHOI DONG LAI BACKEND. Da mac hai lan: lan chay
+dau cho 2-3 "cho dut" o luot 1 roi bien mat han o lan hai. Do la ham nong
+(torch.compile bien dich, cache chua am), khong phai hoi quy. Chi bao cao tu lan
+chay thu hai tro di.
+
 Chay TREN MAY WIN (backend phai dang chay):
     .venv\\python.exe scripts\\ghi_hoi_thoai_that.py
     .venv\\python.exe scripts\\ghi_hoi_thoai_that.py --tep kich_ban.txt
