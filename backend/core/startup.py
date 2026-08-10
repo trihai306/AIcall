@@ -30,6 +30,16 @@ class AppState:
         self.pipeline: StreamingPipeline | None = None
 
 
+async def _ham_hinh_dang_tts(state: AppState):
+    """Hâm các hình dạng tensor của TTS. Chạy nền, hỏng cũng không sao."""
+    try:
+        ket = await state.tts.ham_nong_hinh_dang()
+        logger.info("  TTS: đã hâm %d hình dạng (%dms) - lượt đầu khỏi biên dịch",
+                    ket["hinh_dang"], ket["ms"])
+    except Exception as e:
+        logger.warning("  TTS: hâm hình dạng không được (%s) - lượt đầu sẽ chậm hơn", e)
+
+
 async def startup(state: AppState):
     """Initialize all services at app startup."""
     logger.info("=" * 50)
@@ -82,6 +92,17 @@ async def startup(state: AppState):
         state.tts.load()
         await state.tts.dung_fillers(lay_kho().cau)
         logger.info("  TTS: OK")
+
+        # HÂM HÌNH DẠNG TTS. Cùng lý lẽ với phần hâm LLM ngay dưới đây.
+        #
+        # torch.compile lưu đồ thị theo hình dạng tensor, mà `fix_duration` cấp
+        # thời lượng theo số âm tiết nên mỗi độ dài là một hình dạng riêng. Đo
+        # được: lần đầu gặp một độ dài mất 610ms, các lần sau 315ms. Trên 12 câu
+        # độ dài khác nhau thì lượt một tốn hơn lượt hai 30%.
+        #
+        # Không hâm thì cái giá đó rơi vào những lượt đầu của cuộc gọi đầu -
+        # đúng lúc khách vừa bắt máy. Chạy NỀN để web mở được ngay.
+        asyncio.create_task(_ham_hinh_dang_tts(state))
     except Exception as e:
         # exc_info: không có stack trace thì chỉ biết "nạp hỏng" chứ không biết
         # hỏng ở đâu, mà đây là lỗi làm toàn bộ sản phẩm câm tiếng.

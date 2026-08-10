@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+import time
 import concurrent.futures
 from collections import OrderedDict
 from contextlib import nullcontext
@@ -164,6 +165,34 @@ TI_LE_DAY_LANG = 0.07      # ngưỡng chặt: phải chạm đáy này mới c�
 # đầu chỉ cần bỏ nhiễu nền (đo được 1,5-3% năng lượng tiếng), còn phụ âm bật
 # hơi đầu câu vào rất nhẹ nên phải chừa khoảng an toàn rộng.
 TI_LE_DAU_CUOI = 0.04
+
+# GỘP LÔ: ĐANG TẮT. Đã thi công, đo, và bác bỏ ngày 2026-08-10.
+#
+# Ý tưởng: `infer_batch_process` nhận danh sách nhưng chỉ LẶP qua từng câu, còn
+# `CFM.sample` bên dưới nhận lô thật. Gộp lô đo được nhanh hơn thật:
+#   tuần tự 300ms/mảnh | lô 2  249ms | lô 4  217ms | lô 8  217ms   (−28%)
+# Trên cuộc gọi thật cũng đúng 28%: 80 mảnh hết 28,6s thay vì 39,7s.
+#
+# NHƯNG NÓ LÀM HỎNG TIẾNG. `CFM.sample` đệm mọi phần tử tới độ dài LỚN NHẤT
+# trong lô, và mảnh ngắn không sống nổi. Cho STT nghe lại, so với sinh lẻ:
+#
+#   chênh độ dài trong lô   1,0x   2,0x   3,0x   4,4x
+#   mảnh ngắn giống          80%    75%    33%     0%
+#   mảnh dài giống          100%   100%   100%   100%
+#
+# Kể cả lô ĐỒNG ĐỀU cũng đã tụt (80% so với 100%). Trên bản ghi cuộc gọi đầy đủ:
+# giống trung bình 92,9% -> 84,8%, số mảnh dưới 70% tăng 10% -> 21%.
+# Chú thích trong chính mã F5 cũng thừa nhận: "still some difference maybe due
+# to convolutional layers".
+#
+# Và cái giá đó mua về thứ KHÔNG THIẾU: TTS vốn đã sinh nhanh gấp 3,5 lần thời
+# gian phát, khe hở giữa các mảnh đo trên bản ghi thật có trung vị 0ms. Tiết
+# kiệm GPU chỉ đáng khi chạy nhiều cuộc song song - lúc đó hãy bật lại và chấp
+# nhận đánh đổi, hoặc gom mảnh theo độ dài cho thật khít.
+#
+# Giữ nguyên mã lại để khỏi phải đo lại từ đầu. Bật bằng cách cho GOP_LO = True.
+GOP_LO = False
+LO_TOI_DA = 4
 # Sàn tuyệt đối cho mảnh gần như im hoàn toàn: thiếu nó thì tỉ lệ của một mảnh
 # rất nhỏ tụt xuống mức nhiễu số, và tiếng nhỏ bị coi là lặng.
 SAN_LANG = 0.0015
@@ -663,6 +692,168 @@ class F5TTSService:
                 )
             )
         return audio, sr
+
+    def _synthesize_lo_sync(
+        self, texts: list[str], voice: str, nfe_step: int | None = None,
+        speed: float | None = None,
+    ) -> tuple[list[np.ndarray], int]:
+        """Sinh NHIỀU mảnh trong MỘT lần gọi model. Trả đúng thứ tự đưa vào.
+
+        Vì sao phải viết tay thay vì gọi `infer_batch_process` với danh sách:
+        hàm đó nhận danh sách nhưng chỉ LẶP qua từng câu, mỗi câu một lần gọi
+        model. Còn `CFM.sample` bên dưới thì nhận lô thật - `cond` hình (b, nw),
+        `text` danh sách b phần tử, `duration` cho phép mỗi phần tử một độ dài.
+
+        Đo được (8 mảnh, RTX 5070): tuần tự 300ms/mảnh, gộp lô 4 còn 217ms -
+        giảm 28%. Bão hoà ở lô 4, lô 8 không hơn.
+
+        Lợi KHÔNG đến từ việc chia sẻ đoạn mẫu: F5 nối đoạn mẫu vào từng phần tử
+        nên nó vẫn được tính b lần. Lợi đến từ lấp đầy GPU - một mảnh 5 từ quá
+        nhỏ để dùng hết card.
+
+        GIÁ PHẢI TRẢ: hàm này dựa vào nội bộ F5 (`CFM.sample`, `hop_length`,
+        `target_rms`, cách cắt đoạn mẫu ra khỏi mel). F5 nâng cấp là có thể vỡ.
+        `_synthesize_sync` một mảnh vẫn giữ nguyên đường cũ, nên hỏng cái này
+        thì chỉ cần tắt gộp lô ở pipeline là chạy lại như trước.
+        """
+        import torch as _t
+        import torchaudio
+        from f5_tts.infer.utils_infer import (hop_length, target_rms,
+                                              target_sample_rate)
+        from f5_tts.model.utils import convert_char_to_pinyin
+
+        entry = self._voices.get(voice)
+        if entry is None:
+            raise RuntimeError(f"No reference audio loaded for voice '{voice}'")
+        ref_wave, ref_sr, ref_text = entry
+        toc = speed if speed is not None else self.toc_do_cua(voice)
+        dai_ref = ref_wave.shape[-1] / ref_sr
+        chu = [bo_dau_cau_cho_f5(t) for t in texts]
+
+        # Chuẩn hoá đoạn mẫu Y HỆT infer_batch_process - lệch một bước là tiếng
+        # ra khác hẳn bản một mảnh, mà lệch kiểu đó rất khó nhìn ra.
+        a = ref_wave
+        if a.shape[0] > 1:
+            a = _t.mean(a, dim=0, keepdim=True)
+        rms = _t.sqrt(_t.mean(_t.square(a)))
+        if rms < target_rms:
+            a = a * target_rms / rms
+        if ref_sr != target_sample_rate:
+            a = torchaudio.transforms.Resample(ref_sr, target_sample_rate)(a)
+        a = a.to(DEVICE)
+        rt = ref_text + " " if len(ref_text[-1].encode("utf-8")) == 1 else ref_text
+        ref_len = a.shape[-1] // hop_length
+
+        khung = []
+        for c in chu:
+            ep = thoi_luong_ep(c, dai_ref, toc)
+            if ep is not None:
+                khung.append(int(ep * target_sample_rate / hop_length))
+                continue
+            # Mảnh quá ngắn để ép: dùng đúng công thức của F5, kể cả mẹo hạ tốc
+            # còn 0.3 cho mảnh dưới 10 byte (nếu bỏ, mảnh "dạ" ra cụt lủn).
+            toc_cuc_bo = 0.3 if len(c.encode("utf-8")) < 10 else toc
+            khung.append(ref_len + int(ref_len / len(rt.encode("utf-8"))
+                                       * len(c.encode("utf-8")) / toc_cuc_bo))
+
+        with _t.inference_mode(), self._autocast_ctx():
+            gen, _ = self._model.sample(
+                cond=a.repeat(len(chu), 1),
+                text=convert_char_to_pinyin([rt + c for c in chu]),
+                duration=_t.tensor(khung, device=DEVICE, dtype=_t.long),
+                steps=nfe_step or settings.f5tts_nfe_step,
+                cfg_strength=2.0,
+                sway_sampling_coef=-1,
+            )
+            del _
+            gen = gen.to(_t.float32)[:, ref_len:, :].permute(0, 2, 1)
+            song = self._vocoder.decode(gen)
+            if rms < target_rms:
+                song = song * rms / target_rms
+            song = song.cpu().numpy()
+
+        # Lô được đệm tới độ dài LỚN NHẤT, nên phải cắt từng phần tử về đúng
+        # phần của nó - không cắt thì mảnh ngắn kéo theo một đuôi im lặng dài.
+        ra = []
+        for i, k in enumerate(khung):
+            ra.append(np.asarray(song[i][: (k - ref_len) * hop_length]))
+        return ra, target_sample_rate
+
+    async def synthesize_nhieu(
+        self,
+        texts: list[str],
+        target_sr: int = 24000,
+        voice: str | None = None,
+        nfe_step: int | None = None,
+        speed: float | None = None,
+    ) -> list[bytes]:
+        """Bản nhiều-mảnh của `synthesize`. Trả WAV theo đúng thứ tự đưa vào.
+
+        Không dùng bộ nhớ đệm: gộp lô chỉ đáng khi các mảnh đều mới, mà mảnh
+        trùng thì `synthesize` một mảnh đã trả tức thì rồi.
+        """
+        if not texts:
+            return []
+        if not self._is_loaded:
+            self.load()
+        voice = await self.ensure_voice(voice or self._default_voice)
+        chu = [normalize_for_tts(t) for t in texts]
+
+        loop = asyncio.get_event_loop()
+        with Timer("TTS lô", logger) as t:
+            song, sr = await loop.run_in_executor(
+                self._executor, self._synthesize_lo_sync, chu, voice, nfe_step, speed
+            )
+        ra = []
+        for x in song:
+            x = cat_lang_bia(trim_silence(x, sr), sr)
+            if sr != target_sr:
+                x = resample_audio(x, sr, target_sr)
+            ra.append(pcm_to_wav(float32_to_int16(x), sample_rate=target_sr))
+        logger.info("TTS lô [%s]: %d mảnh -> %.0fms (%.0fms/mảnh)",
+                    voice, len(chu), t.elapsed_ms, t.elapsed_ms / len(chu))
+        return ra
+
+    async def ham_nong_hinh_dang(self, voice: str | None = None,
+                                 am_tiet=range(4, 15), co_lo=None) -> dict:
+        """Sinh sẵn mỗi HÌNH DẠNG một lần để lượt gọi đầu khỏi phải biên dịch.
+
+        `torch.compile` lưu đồ thị theo hình dạng tensor. `fix_duration` cấp thời
+        lượng theo SỐ ÂM TIẾT nên mỗi số âm tiết là một hình dạng riêng, và lần
+        đầu gặp phải biên dịch lại.
+
+        Đo được: cùng một câu lặp 9 lần thì lần đầu 610ms, các lần sau phẳng lì
+        312-318ms. Với 12 câu độ dài khác nhau: lần một 5280ms, lần hai (đã có
+        hình dạng) 3688ms - chênh 30%.
+
+        Không hâm thì cái giá đó rơi vào những lượt đầu của cuộc gọi đầu. Hâm ở
+        đây thì nó rơi vào lúc khởi động, không ai nghe thấy. Cùng lý lẽ với
+        phần hâm LLM trong `core/startup.py`.
+
+        Hình dạng của lô là (cỡ lô, thời lượng dài nhất) - `CFM.sample` đệm mọi
+        phần tử tới cái dài nhất. Nên phải hâm riêng từng cỡ lô sẽ dùng.
+        """
+        if not self._is_loaded:
+            self.load()
+        voice = await self.ensure_voice(voice or self._default_voice)
+        co_lo = co_lo if co_lo is not None else ((1, LO_TOI_DA) if GOP_LO else (1,))
+        t0 = time.perf_counter()
+        xong, hong = 0, 0
+        for n in am_tiet:
+            chu = " ".join(["ta"] * n)          # chữ vô nghĩa, chỉ cần ĐỦ ÂM TIẾT
+            for co in co_lo:
+                try:
+                    if co == 1:
+                        await self.synthesize(chu, voice=voice, use_cache=False)
+                    else:
+                        await self.synthesize_nhieu([chu] * co, voice=voice)
+                    xong += 1
+                except Exception as e:
+                    hong += 1
+                    logger.debug("hâm hình dạng %d âm tiết lô %d hỏng: %s", n, co, e)
+        ms = (time.perf_counter() - t0) * 1000
+        logger.info("TTS: hâm %d hình dạng trong %.0fms (%d hỏng)", xong, ms, hong)
+        return {"hinh_dang": xong, "hong": hong, "ms": round(ms)}
 
     async def synthesize(
         self,

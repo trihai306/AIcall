@@ -20,7 +20,7 @@ from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
 from backend.services.audio_utils import chen_lang_dau_wav
 from backend.services.stt_service import STTService
 from backend.services.llm_service import LLMService
-from backend.services.tts_service import F5TTSService
+from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
@@ -133,6 +133,23 @@ class StreamingPipeline:
         except Exception as e:
             logger.warning(f"TTS failed: {e}")
             return None
+
+    async def _try_synthesize_lo(self, texts: list[str], voice: str | None = None,
+                                 session=None) -> list[bytes | None]:
+        """Sinh cả lô trong một lần gọi model. Hỏng thì lùi về sinh từng mảnh.
+
+        Có đường lùi vì bản gộp lô dựa vào nội bộ F5 (`CFM.sample`) - nếu thư
+        viện đổi thì cuộc gọi vẫn phải ra tiếng, chỉ chậm hơn.
+        """
+        if not self._tts_available:
+            return [None] * len(texts)
+        try:
+            toc = self._toc_cho_phien(self.tts, session, voice) if session is not None else None
+            return await self.tts.synthesize_nhieu(texts, voice=voice, speed=toc)
+        except Exception as e:
+            logger.warning("TTS gộp lô hỏng (%s) - lùi về sinh từng mảnh", e)
+            return [await self._try_synthesize(t, voice=voice, session=session)
+                    for t in texts]
 
     # --- Đoán trước trong lúc khách còn đang nói ------------------------------
     # Đặt theo THỜI GIAN, không theo số byte. Đệm của phiên mang tần số riêng
@@ -835,40 +852,74 @@ class StreamingPipeline:
                     nghi_ms = max(nghi_ms, nhip_nghi_sau(chunk_text))
                     continue
 
-                # First chunk: fewer diffusion steps -> lower TTFA
+                # GỘP LÔ các mảnh đang xếp hàng - xem `_synthesize_lo_sync`.
+                #
+                # Vét CƠ HỘI chứ không chờ cho đủ lô: chỉ gom những mảnh ĐÃ có
+                # sẵn trong hàng đợi. Chờ cho đủ 4 thì mảnh thứ 2 phải đợi mảnh
+                # thứ 5 của LLM, tức đổi thời gian GPU lấy độ trễ - sai hướng.
+                #
+                # KHÔNG gộp mảnh đầu: nó nằm trên đường găng của TTFA, phải đi
+                # ngay khi có chữ. Các mảnh sau thì TTS đã chạy trước tiếng phát
+                # ~3,5 lần nên gom lại không ai nghe ra.
+                # `nghi_them` của mảnh đầu đã gộp vào `nghi_ms` ở trên rồi; ở đây
+                # giữ nguyên số THÔ của từng mảnh, việc cộng dồn để vòng phát ở
+                # dưới lo - đúng y hệt thứ tự của đường một mảnh.
+                dan = [(chunk_text, 0.0)]
+                if GOP_LO and idx > 0:
+                    while len(dan) < LO_TOI_DA:
+                        try:
+                            them = tts_queue.get_nowait()
+                        except asyncio.QueueEmpty:
+                            break
+                        if them is None:              # tín hiệu hết lượt
+                            tts_queue.put_nowait(None)
+                            break
+                        t_chu, t_nghi = them
+                        if not t_chu or not any(c.isalnum() for c in t_chu):
+                            # Mảnh rỗng vẫn phải nhả nhịp nghỉ của nó, không thì
+                            # mảnh sau mất chỗ ngắt - giống nhánh xử lý ở trên.
+                            dan[-1] = (dan[-1][0], max(dan[-1][1], t_nghi))
+                            continue
+                        dan.append((t_chu, t_nghi))
+
                 t_synth = time.perf_counter()
-                audio_chunk = await self._try_synthesize(
-                    chunk_text, fast=(idx == 0), voice=session.voice_name,
-                    session=session,
-                )
+                if len(dan) > 1:
+                    song = await self._try_synthesize_lo(
+                        [d[0] for d in dan], voice=session.voice_name, session=session)
+                else:
+                    song = [await self._try_synthesize(
+                        chunk_text, fast=(idx == 0), voice=session.voice_name,
+                        session=session)]
                 synth_ms = round((time.perf_counter() - t_synth) * 1000)
 
-                # Trả lại nhịp nghỉ mà trim_silence đã cắt mất ở ranh giới mảnh.
-                # Chèn vào ĐẦU mảnh này chứ không nối vào cuối mảnh trước: mảnh
-                # đầu tiên vì thế không bao giờ bị chèn (TTFA không đổi), và mảnh
-                # cuối cùng không bị thêm đuôi lặng thừa.
-                if audio_chunk and nghi_ms > 0:
-                    audio_chunk = chen_lang_dau_wav(audio_chunk, nghi_ms)
-                nghi_ms = nhip_nghi_sau(chunk_text)
+                for (t_chu, t_nghi), tieng in zip(dan, song):
+                    # Nợ nhịp nghỉ của mảnh trước, gộp với nhịp mà chính mảnh
+                    # này mang theo (chỗ ngắt nằm ở chữ "ạ" mà BotLichSu vừa bỏ).
+                    # LẤY LỚN HƠN chứ không cộng - hai cách nhìn cùng một chỗ.
+                    nghi_ms = max(nghi_ms, t_nghi)
+                    # Trả lại nhịp nghỉ mà trim_silence đã cắt mất ở ranh giới
+                    # mảnh. Chèn vào ĐẦU mảnh này chứ không nối vào cuối mảnh
+                    # trước: mảnh đầu tiên vì thế không bao giờ bị chèn (TTFA
+                    # không đổi), và mảnh cuối không bị thêm đuôi lặng thừa.
+                    if tieng and nghi_ms > 0:
+                        tieng = chen_lang_dau_wav(tieng, nghi_ms)
+                    nghi_ms = nhip_nghi_sau(t_chu)
 
-                if audio_chunk and not first_audio_sent:
-                    metrics["ttfa_ms"] = round((time.perf_counter() - t_start) * 1000)
-                    # Bóc tách TTFA: nếu không đo riêng thì đoạn giữa RAG và audio
-                    # đầu tiên là hộp đen, không biết LLM hay TTS mới là chỗ chậm.
-                    metrics["tts_first_ms"] = synth_ms
-                    metrics["tts_first_chars"] = len(chunk_text)
-                    first_audio_sent = True
-                    first_audio_done.set()   # trả GPU lại cho LLM
+                    if tieng and not first_audio_sent:
+                        metrics["ttfa_ms"] = round((time.perf_counter() - t_start) * 1000)
+                        # Bóc tách TTFA: không đo riêng thì đoạn giữa RAG và
+                        # audio đầu là hộp đen, không biết LLM hay TTS mới chậm.
+                        metrics["tts_first_ms"] = synth_ms
+                        metrics["tts_first_chars"] = len(t_chu)
+                        first_audio_sent = True
+                        first_audio_done.set()   # trả GPU lại cho LLM
 
-                if audio_chunk:
-                    await self._send_audio(ws, audio_chunk, chunk_id=idx,
-                                           turn_id=session.turn_id)
-
-                await self._send_event(ws, "response_chunk", {
-                    "text": chunk_text,
-                    "chunk_id": idx,
-                })
-                idx += 1
+                    if tieng:
+                        await self._send_audio(ws, tieng, chunk_id=idx,
+                                               turn_id=session.turn_id)
+                    await self._send_event(ws, "response_chunk",
+                                           {"text": t_chu, "chunk_id": idx})
+                    idx += 1
 
         consumer_task = asyncio.create_task(tts_consumer())
 
