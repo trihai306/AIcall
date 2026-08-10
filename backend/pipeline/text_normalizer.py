@@ -37,10 +37,24 @@ ACRONYM_OVERRIDES = {
     "USD": "đô la mỹ",
     "CCCD": "căn cước công dân",
     "CMND": "chứng minh nhân dân",
+    # Mã giấy tờ / tổ chức hay gặp trong tư vấn vay. Thiếu chúng thì F5 đọc ra
+    # thứ không ai hiểu - đo được STT nghe "KT3" thành "kiev ba".
+    "KT3": "ca tê ba",
+    "CIC": "xê i xê",
+    "BHXH": "bảo hiểm xã hội",
+    "HĐLĐ": "hợp đồng lao động",
 }
 
-# 2 chữ hoa liên tiếp trở lên. Không đụng tới chữ hoa đầu câu ("Dạ", "Anh").
-_ACRONYM_RE = re.compile(r"\b[A-Z]{2,}\b")
+# "22-60", "12 - 60" - hai chữ số nối bằng gạch là một KHOẢNG, đọc là "đến".
+_KHOANG_GACH_RE = re.compile(r"(\d)\s*[-–—]\s*(\d)")
+
+# Phải kể cả "Đ": `[A-Z]` là bảng chữ cái ASCII nên bỏ sót "HĐLĐ", "TĐ" - đúng
+# loại viết tắt hay gặp nhất trong hồ sơ vay.
+# 2 chữ hoa liên tiếp trở lên, cho phép chữ số dính đuôi ("KT3").
+# `\b[A-Z]{2,}\b` KHÔNG khớp "KT3": sau "T" là "3" - vẫn là ký tự từ - nên
+# không có ranh giới từ ở đó, cả cụm trượt luôn. Đúng lỗi làm "KT3" lọt xuống
+# F5 nguyên dạng và bị đọc thành "kiev ba".
+_ACRONYM_RE = re.compile(r"\b[A-ZĐ]{2,}\d*\b")
 
 _VOWELS = set("aeiouy")
 # Âm tiết tiếng Việt chỉ kết thúc bằng nguyên âm hoặc một trong các phụ âm cuối này.
@@ -256,6 +270,22 @@ def _chu_thanh_so(cum: str) -> int | None:
     return (tong + hien) or None
 
 
+# Tiền viết TOÀN chữ số, không có chữ đơn vị: "2.000.000.000 đồng".
+# Đây từng là LỖ HỔNG của lưới chặn: `_TIEN_SO_RE` đòi phải có "triệu"/"tỷ" đi
+# kèm, nên "2 tỷ đồng" thì chặn được mà "2.000.000.000 đồng" thì lọt thẳng.
+# Mô hình hay viết dạng chữ số này khi trả lời về hạn mức, và đó đúng là cách
+# con số 2 tỷ (sai, tài liệu ghi 500 triệu) tới được tai khách.
+# Đòi ÍT NHẤT hai nhóm nghìn để khỏi nuốt nhầm năm ("2024 đồng" không tồn tại,
+# nhưng "12.000" thì đúng là tiền).
+# CHỈ khớp phần chữ số, KHÔNG nuốt chữ đứng sau. Bản đầu nuốt cả "đồng" và cả
+# khoảng trắng, nên "300.000.000 được không" ra "năm trăm triệuđược không" -
+# dính chữ. Để nguyên "đồng" thì câu thay ra cũng tự nhiên hơn.
+# Chặn khi có "triệu"/"tỷ" đứng ngay sau: chỗ đó là việc của `_TIEN_SO_RE`.
+_TIEN_CHU_SO_RE = re.compile(
+    r"(?<![\w/])(\d{1,3}(?:[.,]\d{3}){2,})\b(?!\s*(?:triệu|tỷ|tỉ))",
+    re.IGNORECASE)
+
+
 def _tien_trong(van_ban: str) -> set[float]:
     """Mọi số tiền (quy về đồng) xuất hiện trong văn bản."""
     ra = set()
@@ -265,6 +295,8 @@ def _tien_trong(van_ban: str) -> set[float]:
         n = _chu_thanh_so(cum)
         if n:
             ra.add(n * _HE_SO[dv.lower()])
+    for so in _TIEN_CHU_SO_RE.findall(van_ban or ""):
+        ra.add(float(re.sub(r"[.,]", "", so)))
     return ra
 
 
@@ -315,8 +347,18 @@ def chan_tien_sai(text: str, tai_lieu: str,
             return m.group(0)
         return _xu_ly(n * _HE_SO[m.group(2).lower()], m.group(0), m.group(2))
 
+    def _t_chu_so(m):
+        # Tiền viết TOÀN chữ số: "2.000.000.000 đồng". Trước đây lọt hẳn - lưới
+        # chỉ biết dạng có chữ đơn vị đi kèm ("2 tỷ"), mà mô hình lại hay viết
+        # dạng chữ số khi trả lời về hạn mức. Đó đúng là đường con số 2 tỷ (sai,
+        # tài liệu ghi 500 triệu) tới được tai khách.
+        return _xu_ly(float(re.sub(r"[.,]", "", m.group(1))), m.group(0), "")
+
     text = _TIEN_SO_RE.sub(_t_so, text)
     text = _TIEN_CHU_RE.sub(_t_chu, text)
+    # Chạy SAU hai cái trên: "500 triệu" đã được xử ở `_TIEN_SO_RE`, chạy trước
+    # thì regex chữ-số thuần nuốt mất phần "500" và bỏ lại "triệu" chơ vơ.
+    text = _TIEN_CHU_SO_RE.sub(_t_chu_so, text)
     return text, sua
 
 
@@ -634,6 +676,11 @@ def normalize_for_tts(text: str) -> str:
     # rồi thì chuỗi "24/7" không còn để mà nhận ra.
     for _cu, _moi in _XIEN_THANH_NGU.items():
         text = text.replace(_cu, _moi)
+    # Khoảng viết bằng dấu gạch. PHẢI làm trước `doc_so_trong_cau`, không thì
+    # "22" đã thành chữ và không còn hai chữ số cạnh gạch để nhận ra nữa.
+    # Không bỏ hẳn dấu gạch: "hai mươi hai-sáu mươi tuổi" đọc lên nghe dính,
+    # phải thành "từ hai mươi hai ĐẾN sáu mươi tuổi".
+    text = _KHOANG_GACH_RE.sub(r"\1 đến \2", text)
     text = doc_so_trong_cau(text)
     # Xử "/" TRƯỚC khi bung viết tắt: "CMND/CCCD" phải còn nguyên dạng viết tắt
     # thì luật liệt kê mới nhận ra hai vế.
