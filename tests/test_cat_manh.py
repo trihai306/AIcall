@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pytest
 
 from backend.pipeline.text_chunker import (
-    GIOI_HAN_TU_MANH, nhip_nghi_sau, tach_manh,
+    GIOI_HAN_TU_MANH, TRAN_CHO_CUM_SO_SAU, nhip_nghi_sau, tach_manh,
 )
 
 
@@ -46,15 +46,21 @@ def du(dem: str) -> bool:
 
 # --- cắt đúng 5 từ -------------------------------------------------------
 
-def test_cat_dung_moc_5_tu():
-    assert GIOI_HAN_TU_MANH == 5
-    m = cat("anh chị vui lòng chờ em chút xíu nhé ạ")
-    assert m == ["anh chị vui lòng chờ", "em chút xíu nhé ạ"]
+def test_cat_dung_moc_n_tu():
+    """Cắt đúng ở mốc, không sớm không muộn. Dùng từ THƯỜNG, không dùng từ số -
+    từ số bị `_dang_giua_cum_so` giữ lại nên mảnh dài ra."""
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp", "mình", "một", "tẹo", "rồi", "báo"]
+    van = " ".join(tu[:GIOI_HAN_TU_MANH + 3])
+    m = cat(van)
+    assert len(m[0].split()) == GIOI_HAN_TU_MANH
 
 
-def test_chua_du_5_tu_thi_chua_cat():
-    assert du("anh chị cho em") is False
-    assert du("anh chị cho em xin") is True
+def test_chua_du_moc_thi_chua_cat():
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp", "mình", "một", "tẹo", "rồi", "báo"]
+    assert du(" ".join(tu[:GIOI_HAN_TU_MANH - 1])) is False
+    assert du(" ".join(tu[:GIOI_HAN_TU_MANH])) is True
 
 
 def test_manh_dau_khong_con_luat_rieng():
@@ -64,9 +70,11 @@ def test_manh_dau_khong_con_luat_rieng():
 
 
 def test_du_thi_gom_vao_manh_cuoi():
-    m = cat("anh chị cho em xin ít phút")
-    assert m[0] == "anh chị cho em xin"
-    assert " ".join(m) == "anh chị cho em xin ít phút"
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp", "mình", "một", "tẹo"]
+    van = " ".join(tu[:GIOI_HAN_TU_MANH + 2])
+    m = cat(van)
+    assert " ".join(m) == van, "không được mất chữ nào"
 
 
 # --- không bẻ đôi cụm số -------------------------------------------------
@@ -89,9 +97,10 @@ def test_cum_so_dong_thi_cat_duoc():
 
 def test_cum_so_khong_giu_buffer_mai():
     """Chuỗi toàn từ số phải được giao khi quá trần, không kẹt vô hạn."""
-    m = cat("một hai ba bốn năm sáu bảy tám chín mười mười một mười hai")
+    van = " ".join(["một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám"] * 6)
+    m = cat(van)
     assert len(m) >= 2
-    assert all(len(x.split()) <= 12 for x in m)
+    assert all(len(x.split()) <= TRAN_CHO_CUM_SO_SAU + 2 for x in m)
 
 
 # --- không xé số phân cách nghìn ----------------------------------------
@@ -105,13 +114,17 @@ def test_khong_xe_so_phan_cach_nghin():
     assert du("anh ơi dư nợ 142.") is False
 
 
-def test_moc_5_tu_khong_cham_vao_so_thi_cat_binh_thuong():
-    """Số nằm ở từ thứ 6 thì mốc 5 từ không đụng tới nó - cứ cắt."""
-    assert du("dư nợ của anh là 142.") is True
+def test_moc_khong_cham_vao_so_thi_cat_binh_thuong():
+    """Số nằm SAU mốc thì mốc không đụng tới nó - cứ cắt."""
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp", "mình"]
+    assert du(" ".join(tu[:GIOI_HAN_TU_MANH]) + " 142.") is True
 
 
 def test_so_da_tron_thi_cat_duoc():
-    assert du("dư nợ của anh 142.500.000") is True
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp"]
+    assert du(" ".join(tu[:GIOI_HAN_TU_MANH - 1]) + " 142.500.000") is True
 
 
 # --- nhịp nghỉ vẫn hoạt động --------------------------------------------
@@ -162,9 +175,11 @@ def test_khong_cat_o_dau_khi_chua_du_toi_thieu():
     assert len(m[0].split()) >= TOI_THIEU_TU_KHI_CAT_O_DAU
 
 
-def test_van_cat_o_5_tu_khi_khong_co_dau():
-    m = cat("anh chị vui lòng chờ em chút xíu nhé ạ")
-    assert m[0] == "anh chị vui lòng chờ"
+def test_van_cat_o_moc_khi_khong_co_dau():
+    tu = ["anh", "chị", "vui", "lòng", "chờ", "em", "chút", "xíu", "nhé", "thôi",
+          "để", "bên", "kia", "xem", "giúp", "mình", "một", "tẹo"]
+    m = cat(" ".join(tu[:GIOI_HAN_TU_MANH + 2]))
+    assert len(m[0].split()) == GIOI_HAN_TU_MANH
 
 
 def test_khong_cat_o_dau_phan_cach_nghin():

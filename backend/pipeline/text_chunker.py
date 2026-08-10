@@ -58,9 +58,22 @@ SO_DEM = {
 # Mảnh ngắn thì F5 không còn chỗ để bịa. 3 từ thì ngược lại - sinh không kịp
 # phát, đói khung 21 lần. Có cả ngưỡng trên lẫn ngưỡng dưới, 5 nằm giữa.
 #
-# Giá phải trả: 2,5 lần thời gian GPU và tiếng đầu chậm hơn ~250ms. Người dùng
-# nghe cả bốn bản rồi chọn 5 từ ("ổn hơn nhiều mấy cái kia").
-GIOI_HAN_TU_MANH = 5
+# 5 -> 16 TỪ (2026-08-10). Lý do bắt phải cắt nhỏ đã HẾT HIỆU LỰC: khi chọn 5 từ
+# thì chưa có `cat_lang_bia` (bộ cắt quãng dừng F5 bịa). Đo lại sau khi có nó,
+# trên đoạn 32 giây, cả ba mức đều 0 quãng bịa:
+#
+#   cắt      mảnh   mối nối   quãng bịa   chỗ ngắt nghe được   cứ ? giây
+#   5 từ       29        28           0                   28       1,13s
+#   10 từ      17        16           0                   18       1,78s
+#   16 từ      15        14           0                   16       2,04s
+#
+# Người dùng: "khi nói 5 từ thì nó tự nhiên ngắt 1 tí rồi mới nói tiếp" - đúng,
+# vì mỗi ranh giới mảnh được chèn NGHI_GIUA_CUM_MS. Mảnh 5 từ nghe 2 phút là
+# hơn 100 lần ngắt, thành nhịp máy móc. Nghe ngắn thì không lộ.
+#
+# Mảnh to hơn còn giữ được nhiều ngữ điệu TRONG LÒNG mảnh - F5 sinh mỗi mảnh
+# như một phát ngôn trọn vẹn, nên càng ít mảnh càng ít chỗ bị bẻ ngữ điệu.
+GIOI_HAN_TU_MANH = 16
 
 # Giữ tên cũ cho chỗ nào còn gọi tới; nay chỉ là trần chặn cụm số kéo dài.
 GIOI_HAN_AN_TOAN = GIOI_HAN_TU_MANH
