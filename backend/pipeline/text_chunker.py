@@ -102,6 +102,19 @@ TRAN_CHO_CUM_SO_SAU = TRAN_CHO_CUM_SO_DAU
 NGHI_PHAY_MS = 100.0
 NGHI_CHAM_MS = 200.0
 
+# Nghỉ ở ranh giới mảnh KHÔNG có dấu câu. Trước để 0 - và đó là chỗ hở.
+#
+# Đo F5 sinh cả câu một lần (19,32s, scripts/xem_nghi_tu_nhien.py): nó tự nghỉ ở
+# 12 chỗ, dài nhất chỉ 120ms, và phần lớn nằm GIỮA CỤM TỪ chứ không ở dấu câu -
+# đó là chỗ lấy hơi tự nhiên. Bản ghép mảnh chỉ nghỉ ở 4-6 chỗ có dấu, còn
+# `trim_silence` thì cắt sạch lặng ở mọi mép mảnh. Kết quả: tiếng chạy liền một
+# hơi, tổng ngắn hơn bản sinh một lần 1,6 giây trên cùng chữ.
+#
+# Người dùng nghe 0/40/60/90ms và thấy 40 lẫn 60 đều ổn. Chọn 50 - giữa hai
+# mức đó, nhích về phía 40 vì đo ở 60ms cho ra 15 chỗ nghỉ trong khi bản sinh
+# một lần chỉ có 8, tức hơi quá đà. Dải nghỉ tự nhiên đo được là 20-120ms.
+NGHI_GIUA_CUM_MS = 50.0
+
 DAU_KET_CAU = (".", "!", "?", "…")
 DAU_NGAT_Y = (",", ";", ":")
 
@@ -113,7 +126,9 @@ def nhip_nghi_sau(chunk_text: str) -> float:
         return NGHI_CHAM_MS
     if t.endswith(DAU_NGAT_Y):
         return NGHI_PHAY_MS
-    return 0.0          # cắt giữa chừng vì hết ngưỡng - không có nhịp nghỉ nào cả
+    # Cắt giữa chừng vì hết ngưỡng từ. VẪN phải nghỉ một chút: F5 sinh cả câu
+    # cũng tự nghỉ ở giữa cụm từ, mà trim_silence đã cắt mất chỗ đó.
+    return NGHI_GIUA_CUM_MS
 
 
 def _dang_giua_cum_so(stripped: str, words: list[str], tran: int) -> bool:

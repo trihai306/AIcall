@@ -117,8 +117,16 @@ def test_so_da_tron_thi_cat_duoc():
 # --- nhịp nghỉ vẫn hoạt động --------------------------------------------
 
 def test_nhip_nghi_theo_dau_cuoi_manh():
-    assert nhip_nghi_sau("em xin phép hỏi ạ.") > nhip_nghi_sau("em xin phép hỏi ạ,")
-    assert nhip_nghi_sau("cắt giữa chừng không dấu") == 0.0
+    """Dấu chấm nghỉ lâu nhất, rồi tới dấu phẩy, rồi tới cắt giữa chừng.
+
+    Cắt giữa chừng KHÔNG còn là 0: F5 sinh cả câu cũng tự nghỉ ở giữa cụm từ,
+    mà trim_silence đã cắt mất chỗ đó ở mọi mép mảnh.
+    """
+    from backend.pipeline.text_chunker import NGHI_GIUA_CUM_MS
+    assert (nhip_nghi_sau("em xin phép hỏi ạ.")
+            > nhip_nghi_sau("em xin phép hỏi ạ,")
+            > nhip_nghi_sau("cắt giữa chừng không dấu")
+            == NGHI_GIUA_CUM_MS > 0)
 
 
 def test_dem_rong_khong_cat():
@@ -170,3 +178,14 @@ def test_nhip_nghi_dat_cung_theo_yeu_cau():
     assert NGHI_PHAY_MS == 100.0
     assert nhip_nghi_sau("em hiểu rồi ạ.") == NGHI_CHAM_MS
     assert nhip_nghi_sau("em hiểu rồi ạ,") == NGHI_PHAY_MS
+
+
+def test_nghi_o_ranh_gioi_khong_co_dau():
+    """Cắt giữa chừng vẫn phải nghỉ chút - F5 sinh cả câu cũng nghỉ ở đó.
+
+    Trước để 0ms và đó là chỗ hở: F5 tự nghỉ 12 chỗ khi sinh cả câu, ta chỉ nghỉ
+    ở 4-6 chỗ có dấu, còn trim_silence cắt sạch lặng ở mọi mép mảnh.
+    """
+    from backend.pipeline.text_chunker import NGHI_GIUA_CUM_MS
+    assert nhip_nghi_sau("anh chị vui lòng chờ") == NGHI_GIUA_CUM_MS
+    assert 0 < NGHI_GIUA_CUM_MS < NGHI_PHAY_MS
