@@ -6,6 +6,12 @@ import random
 NOI_RONG_MS = 800.0
 
 
+# Nhân vào độ trễ quá khứ trước khi chọn câu đệm. KHÔNG có biên thì hụt ngay khi
+# lượt này chậm hơn mấy lượt trước - mà TTFA dao động rất rộng, đo được 678-1978ms
+# trên cùng một kịch bản.
+BIEN_AN_TOAN = 1.25
+
+
 def can_che_ms(lich_su: list[dict], la_thoai: bool, mac_dinh: float) -> float:
     """Câu đệm phải dài ít nhất bằng độ trễ gần đây của CHÍNH đường này.
 
@@ -17,6 +23,17 @@ def can_che_ms(lich_su: list[dict], la_thoai: bool, mac_dinh: float) -> float:
     đoán trượt. Đo thật 08-08: hai lượt câu sẵn 450/458ms làm hệ thống tưởng
     đường đang nhanh nên BỎ câu đệm, rồi lượt 3 phải gọi LLM mất 3399ms - khách
     nghe im lặng 3,4 giây, đúng thứ câu đệm sinh ra để chặn.
+
+    `mac_dinh` là SÀN, không phải chỉ là giá trị lùi khi thiếu lịch sử. Vài lượt
+    nhanh liên tiếp kéo ước lượng xuống thấp, rồi một lượt chậm đột ngột là hụt -
+    đo được đúng thế: lịch sử toàn 678ms, lượt sau 1056ms, hụt 378ms.
+
+    Chọn số bằng cách mô phỏng trên 25 lượt thật của ba lần chạy:
+        sàn 1200ms, biên 1.25 -> hụt 2/25
+        sàn 1800ms, biên 1.25 -> hụt 1/25
+        sàn 2000ms, biên 1.25 -> hụt 0/25,  câu đệm dài hơn cần TB 996ms
+    Nghiêng hẳn về phía dài: dài quá thì khách nghe CÂU ĐỆM, ngắn quá thì khách
+    nghe IM LẶNG. Hai thứ đó không cùng hạng.
 
     Tách thoại/chat vì hai đường chênh nhau đúng phần STT. Ưu tiên khoá
     `la_thoai` ghi thẳng; bản ghi cũ không có khoá đó thì suy từ `stt_ms` như
@@ -30,7 +47,9 @@ def can_che_ms(lich_su: list[dict], la_thoai: bool, mac_dinh: float) -> float:
 
     qua = [m["ttfa_ms"] for m in lich_su[-6:]
            if m.get("ttfa_ms") and not m.get("luot_thuong_gap") and dung_duong(m)]
-    return float(max(qua[-3:])) if qua else mac_dinh
+    if not qua:
+        return mac_dinh
+    return max(float(max(qua[-6:])) * BIEN_AN_TOAN, mac_dinh)
 
 
 def chon(ung_vien: list[tuple[str, float]], min_ms: float,

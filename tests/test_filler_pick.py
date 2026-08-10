@@ -1,6 +1,8 @@
 import random
 
-from backend.services.filler_pick import chon
+import pytest
+
+from backend.services.filler_pick import BIEN_AN_TOAN, chon
 
 RNG = lambda: random.Random(0)   # noqa: E731 - cố định để test lặp lại được
 
@@ -57,7 +59,7 @@ def test_it_dung_nhat_duoc_uu_tien_hon_ca_do_vua_khit():
 
 # --- can_che_ms: cần che bao nhiêu mili giây ------------------------------
 
-from backend.services.filler_pick import can_che_ms  # noqa: E402
+from backend.services.filler_pick import BIEN_AN_TOAN, can_che_ms  # noqa: E402
 
 
 def _luot(ttfa, la_thoai=True, cau_san=False):
@@ -82,26 +84,42 @@ def test_bo_qua_luot_tra_loi_bang_cau_san():
 
 def test_chi_tinh_luot_that_khi_co_ca_hai_loai():
     su = [_luot(450, cau_san=True), _luot(2000), _luot(1500)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 2000.0
+    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(2000.0 * BIEN_AN_TOAN)
 
 
 def test_loc_dung_duong_thoai_hay_chat():
     su = [_luot(3000, la_thoai=False), _luot(1200, la_thoai=True)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1200.0
-    assert can_che_ms(su, la_thoai=False, mac_dinh=900.0) == 3000.0
+    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1200.0 * BIEN_AN_TOAN)
+    assert can_che_ms(su, la_thoai=False, mac_dinh=0.0) == pytest.approx(3000.0 * BIEN_AN_TOAN)
 
 
-def test_lay_max_cua_ba_luot_gan_nhat():
+def test_lay_max_cua_sau_luot_gan_nhat():
+    """Cửa sổ 3 -> 6 lượt (08-10).
+
+    Với cửa sổ 3, vài lượt nhanh liên tiếp kéo ước lượng xuống thấp rồi một lượt
+    chậm đột ngột là hụt. Đo được: lịch sử toàn 678ms, lượt sau 1056ms.
+    """
     su = [_luot(5000), _luot(1000), _luot(1100), _luot(1200)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1200.0
+    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(5000.0 * BIEN_AN_TOAN)
+
+
+def test_mac_dinh_la_SAN_chu_khong_chi_la_gia_tri_lui():
+    """Lịch sử thấp cũng không được xuống dưới sàn."""
+    su = [_luot(400), _luot(500)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=2000.0) == 2000.0
+
+
+def test_lich_su_cao_thi_vuot_san():
+    su = [_luot(3000)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=2000.0) == pytest.approx(3000.0 * BIEN_AN_TOAN)
 
 
 def test_bo_qua_luot_thieu_ttfa():
     su = [_luot(None), _luot(0), _luot(1300)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1300.0
+    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1300.0 * BIEN_AN_TOAN)
 
 
 def test_suy_ra_duong_tu_stt_ms_khi_ban_ghi_cu_khong_co_la_thoai():
     # Bản ghi cũ trong DB không có khoá `la_thoai`. Suy từ stt_ms như bản trước.
     cu = [{"ttfa_ms": 1400, "stt_ms": 300}]
-    assert can_che_ms(cu, la_thoai=True, mac_dinh=1800.0) == 1400.0
+    assert can_che_ms(cu, la_thoai=True, mac_dinh=0.0) == pytest.approx(1400.0 * BIEN_AN_TOAN)

@@ -411,7 +411,12 @@ class StreamingPipeline:
     # chính cuộc gọi đó để dùng. Và đặt cao thì cùng lắm chọn câu đệm dài hơn cần
     # thiết — câu trả lời thật vẫn phát ngay sau đó, không mất gì.
     _FILLER_MIN_THOAI_MS = 1800.0
-    _FILLER_MIN_CHAT_MS = 900.0
+    # 900 -> 2000 (08-10). Đo trên 3 lần chạy hội thoại 10 lượt: TTFA đường chat
+    # là 678-1978ms, trung vị ~1280. Để 900 thì lượt ĐẦU luôn chọn câu đệm quá
+    # ngắn - đo được câu đệm 1,20s cho TTFA 1674ms, khách nghe hụt 474ms im lặng
+    # ngay câu đầu tiên. Nay `mac_dinh` còn là SÀN cho mọi lượt, không chỉ lượt
+    # đầu - xem `filler_pick.can_che_ms`.
+    _FILLER_MIN_CHAT_MS = 2000.0
 
     # Dưới mức trễ này thì ĐỪNG phát câu đệm - khoảng lặng ngắn nghe tự nhiên
     # hơn hẳn một câu "Dạ vâng ạ" chèn vào.
