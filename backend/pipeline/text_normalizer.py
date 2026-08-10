@@ -45,8 +45,14 @@ ACRONYM_OVERRIDES = {
     "HĐLĐ": "hợp đồng lao động",
 }
 
-# "22-60", "12 - 60" - hai chữ số nối bằng gạch là một KHOẢNG, đọc là "đến".
-_KHOANG_GACH_RE = re.compile(r"(\d)\s*[-–—]\s*(\d)")
+# "22-60", "12 - 60" - hai số NGẮN nối bằng gạch là một KHOẢNG, đọc là "đến".
+#
+# Cả hai vế phải ≤ 3 chữ số và KHÔNG dính chữ cái ở trước. Bản đầu chỉ đòi
+# "chữ số - chữ số" nên nuốt luôn mã hợp đồng: "MN-2023-11204" thành "em en
+# hai nghìn không trăm hai ba ĐẾN mười một nghìn hai trăm linh tư". Mã giấy tờ
+# và mã hợp đồng đầy dấu gạch, không cái nào là khoảng.
+_KHOANG_GACH_RE = re.compile(
+    r"(?<![A-Za-zĐđ-])\b(\d{1,3})\s*[-–—]\s*(\d{1,3})\b(?![-\d])")
 
 # Phải kể cả "Đ": `[A-Z]` là bảng chữ cái ASCII nên bỏ sót "HĐLĐ", "TĐ" - đúng
 # loại viết tắt hay gặp nhất trong hồ sơ vay.
@@ -186,8 +192,30 @@ def _doc_khop(m: re.Match) -> str:
     return ra
 
 
+# Số điện thoại Việt Nam: 9-11 chữ số, bắt đầu bằng 0, có thể có dấu ngăn.
+# ĐỌC TỪNG CHỮ SỐ, không đọc như số lượng.
+#
+# Lỗi thật bắt được 2026-08-10 trên cuộc gọi thử: "0912345678" bị đọc thành
+# "chín trăm mười hai TRIỆU ba trăm bốn mươi lăm nghìn sáu trăm bảy mươi tám" -
+# tức thành một SỐ TIỀN, và mất luôn số 0 đầu. Khách nghe xong không có cách nào
+# ghi lại được số.
+_SDT_RE = re.compile(r"(?<![\d.,])0\d{1,3}[.\s-]?\d{3}[.\s-]?\d{3,4}(?![\d.,])")
+_DOC_CHU_SO = {"0": "không", "1": "một", "2": "hai", "3": "ba", "4": "bốn",
+               "5": "năm", "6": "sáu", "7": "bảy", "8": "tám", "9": "chín"}
+
+
+def doc_tung_chu_so(s: str) -> str:
+    """Đọc rời từng chữ số: "0912" -> "không chín một hai"."""
+    return " ".join(_DOC_CHU_SO[c] for c in s if c.isdigit())
+
+
 def doc_so_trong_cau(text: str) -> str:
-    """Thay mọi con số trong câu bằng cách đọc thành chữ."""
+    """Thay mọi con số trong câu bằng cách đọc thành chữ.
+
+    Số điện thoại xử TRƯỚC: nó cũng là một dãy chữ số nên `_SO_RE` sẽ nuốt mất
+    nếu để sau, và đọc nó như số lượng là sai hẳn nghĩa.
+    """
+    text = _SDT_RE.sub(lambda m: doc_tung_chu_so(m.group(0)), text)
     return _SO_RE.sub(_doc_khop, text)
 
 
