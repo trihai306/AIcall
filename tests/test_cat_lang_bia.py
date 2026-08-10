@@ -32,6 +32,29 @@ def im(ms: float) -> np.ndarray:
     return np.zeros(int(SR * ms / 1000), dtype=np.float32)
 
 
+def im_co_hoi_tho(ms: float, ti_le: float = 0.12) -> np.ndarray:
+    """Quãng nghỉ THẬT của F5: tai nghe là im, nhưng KHÔNG bằng 0.
+
+    Đo trên bản ghi cuộc gọi thật, 23 quãng: năng lượng bằng 7,6% - 14,9% năng
+    lượng đỉnh của mảnh, đỉnh biên độ 0.023 - 0.078. Bản đầu của `cat_lang_bia`
+    xét biên độ đỉnh < 0.015 nên bỏ qua sạch 14/14 - hàm nằm im suốt từ ngày
+    viết mà không ai biết, vì mọi test đều dùng lặng số học.
+
+    Bao biên độ hình chữ V: hơi thở tắt dần về giữa quãng rồi nhen lên ở cuối.
+    Chi tiết này không phải trang trí - nó là thứ để phân biệt quãng nghỉ với
+    tiếng nhỏ đều đều, và là căn cứ của điều kiện "chạm đáy".
+    """
+    rng = np.random.default_rng(7)
+    n = int(SR * ms / 1000)
+    bao = np.abs(np.linspace(-1.0, 1.0, n))
+    return (rng.standard_normal(n) * 0.5 * ti_le * bao).astype(np.float32)
+
+
+def tieng_nho(ms: float, bien: float = 0.08) -> np.ndarray:
+    """Tiếng NHỎ nhưng đều - phải giữ, không được coi là quãng nghỉ."""
+    return np.full(int(SR * ms / 1000), bien, dtype=np.float32)
+
+
 def do_lang_giua(x: np.ndarray, nguong_bien=0.015) -> list[float]:
     n = int(SR * 0.02)
     k = len(x) // n
@@ -59,6 +82,36 @@ def test_bop_quang_bia(dai_ms):
     z = cat_lang_bia(x, SR)
     con = do_lang_giua(z)
     assert con and con[0] == pytest.approx(GIU_LANG_MS, abs=25)
+
+
+@pytest.mark.parametrize("ti_le", [0.076, 0.12, 0.149])
+def test_bop_quang_co_hoi_tho(ti_le):
+    """Ca đã làm hàm chết: quãng nghỉ không im tuyệt đối vẫn phải bóp.
+
+    7,6% / 12% / 14,9% là dải đo được trên bản ghi cuộc gọi thật.
+    """
+    x = np.concatenate([tieng(500), im_co_hoi_tho(700, ti_le), tieng(500)])
+    z = cat_lang_bia(x, SR)
+    # 700ms bóp còn 200ms -> ngắn đi 500ms, trừ sai số một khung ở mỗi mép.
+    assert (len(x) - len(z)) / SR * 1000 == pytest.approx(500, abs=45)
+
+
+def test_nguong_bam_theo_do_to_cua_manh():
+    """Ngưỡng tính theo TỈ LỆ nên mảnh to nhỏ đều xử lý như nhau."""
+    for he in (0.2, 1.0, 4.0):
+        x = np.concatenate([tieng(500), im_co_hoi_tho(700), tieng(500)]) * he
+        assert len(cat_lang_bia(x, SR)) < len(x), f"hệ số {he}"
+
+
+def test_khong_bop_tieng_nho_deu():
+    """Tiếng nhỏ nhưng ĐỀU thì giữ - đây là việc của điều kiện 'chạm đáy'.
+
+    Biên độ 0.08 nằm dưới ngưỡng rộng (20% của 0.5 = 0.10) nên bị đánh dấu là
+    lặng, nhưng nó không bao giờ tụt xuống đáy 7% nên không được công nhận.
+    Thiếu điều kiện này thì mọi đoạn nói nhỏ dài quá 360ms đều bị xén.
+    """
+    x = np.concatenate([tieng(500), tieng_nho(700), tieng(500)])
+    assert cat_lang_bia(x, SR) is x
 
 
 def test_giu_nguyen_nhip_nghi_that_cua_dau_cham():

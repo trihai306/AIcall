@@ -140,21 +140,57 @@ NGUONG_LANG_BIA_MS = 360.0
 GIU_LANG_MS = 200.0
 _KHUNG_LANG_MS = 20.0
 
+# Thế nào là "lặng". Bản đầu dùng BIÊN ĐỘ ĐỈNH < 0.015 tuyệt đối, và hàm đã
+# KHÔNG chạy lần nào: đo 14 quãng nghỉ trên bản ghi cuộc gọi thật, đỉnh của
+# chúng nằm trong 0.023 - 0.078, tức cao gấp 1,5 - 5 lần ngưỡng, nên hàm coi
+# là "đang có tiếng" và bỏ qua sạch. Quãng nghỉ của F5 không im tuyệt đối - nó
+# có hơi thở rất nhỏ, tai nghe là im nhưng đỉnh thì không.
+#
+# Nên đo bằng NĂNG LƯỢNG (RMS) và so với chính mảnh đó, đúng cách tai phân biệt
+# to/nhỏ. Đo trên 23 quãng nghỉ của bản ghi thật: năng lượng của chúng nằm
+# trong 7,6% - 14,9% năng lượng đỉnh của mảnh.
+#
+# Dùng HAI ngưỡng chứ không một:
+#   - một ngưỡng rộng thì lấy trọn chiều dài quãng, nhưng cũng nuốt cả tiếng nhỏ
+#     thật (quét thử: từ 12% trở lên là 2/18 mảnh bị STT nghe khác đi);
+#   - một ngưỡng chặt thì an toàn nhưng chỉ chạm được đáy quãng, đo ra ngắn hơn
+#     thực tế nên nhiều quãng không đủ 360ms và thoát.
+# Nên: NGƯỠNG RỘNG kéo dài quãng, còn NGƯỠNG CHẶT là điều kiện công nhận - quãng
+# phải có ít nhất một khung tụt xuống dưới nó mới tính là nghỉ. Tiếng nhỏ thật
+# giữ đều năng lượng nên không bao giờ chạm đáy đó.
+TI_LE_LANG = 0.20          # ngưỡng rộng: kéo dài quãng
+TI_LE_DAY_LANG = 0.07      # ngưỡng chặt: phải chạm đáy này mới công nhận
+# Ngưỡng cắt lặng HAI ĐẦU (`trim_silence`). Để thấp hơn hẳn ngưỡng ở giữa: hai
+# đầu chỉ cần bỏ nhiễu nền (đo được 1,5-3% năng lượng tiếng), còn phụ âm bật
+# hơi đầu câu vào rất nhẹ nên phải chừa khoảng an toàn rộng.
+TI_LE_DAU_CUOI = 0.04
+# Sàn tuyệt đối cho mảnh gần như im hoàn toàn: thiếu nó thì tỉ lệ của một mảnh
+# rất nhỏ tụt xuống mức nhiễu số, và tiếng nhỏ bị coi là lặng.
+SAN_LANG = 0.0015
+
 
 def cat_lang_bia(audio: np.ndarray, sr: int,
                  nguong_ms: float = NGUONG_LANG_BIA_MS,
                  giu_ms: float = GIU_LANG_MS,
-                 nguong_bien: float = 0.015) -> np.ndarray:
+                 ti_le_lang: float = TI_LE_LANG,
+                 ti_le_day: float = TI_LE_DAY_LANG,
+                 san_lang: float = SAN_LANG) -> np.ndarray:
     """Bóp mọi quãng lặng GIỮA mảnh dài quá `nguong_ms` xuống còn `giu_ms`.
 
     Vì sao cần: F5 tự chèn quãng dừng vào giữa câu - đo được 19 quãng
     300-1600ms trong một bản ghi hội thoại 111 giây, khách nghe thành "đang nói
-    tự nhiên dừng rồi bật lên". Đã đuổi nguyên nhân qua năm giả thuyết và sai cả
-    năm (nfe, checkpoint, dấu "/" và "-", độ dài văn bản, kích thước mảnh). Cắt
-    mảnh 5 từ hạ được 19 xuống 9 nhưng không hết.
+    tự nhiên dừng rồi bật lên". Đã đuổi nguyên nhân qua BẢY giả thuyết và sai cả
+    bảy (nfe, checkpoint, dấu "/" và "-", độ dài văn bản, kích thước mảnh, tiểu
+    từ cuối câu "nha/nhé", dấu gạch chéo còn sót). Cắt mảnh 5 từ hạ được 19
+    xuống 9 nhưng không hết.
 
-    Nên chữa ở đầu ra: không cần biết vì sao F5 bịa, chỉ cần bỏ cái nó bịa. Đo
-    đối chứng bằng cách cho STT nghe lại cả hai bản - 0/16 lượt rụng chữ.
+    Biết chắc MỘT điều về nguyên nhân: cấp càng nhiều thời lượng thì F5 chèn
+    càng nhiều nghỉ - đo liều-lượng thấy 0% ở hệ số 0.85, 2% ở 1.11, 5% ở 1.25.
+    Nó lấy im lặng để tiêu thời gian thừa. Nhưng chỉnh hệ số chỉ bớt được phần
+    thừa, không xoá hết, nên vẫn phải chữa ở đầu ra.
+
+    Không cần biết vì sao F5 bịa, chỉ cần bỏ cái nó bịa. Đo đối chứng bằng cách
+    cho STT nghe lại cả hai bản - 0/16 lượt rụng chữ.
 
     Chỉ đụng quãng nằm GIỮA. Hai đầu là việc của `trim_silence`, còn nhịp nghỉ
     nối mảnh do `chen_lang_dau_wav` chèn sau.
@@ -165,8 +201,19 @@ def cat_lang_bia(audio: np.ndarray, sr: int,
     k = len(audio) // n
     if k < 3:
         return audio
-    to = np.abs(audio[: k * n].reshape(k, n)).max(axis=1)
-    im = to < nguong_bien
+    # RMS chứ không phải đỉnh, và so với chính mảnh chứ không phải số tuyệt đối
+    # - xem khối chú thích ở TI_LE_LANG.
+    #
+    # KHÔNG làm mượt qua nhiều khung: làm mượt thì hai khung ở mép quãng lặng bị
+    # tiếng bên cạnh kéo lên, quãng đo ra ngắn đi 40ms và một quãng 400ms tụt
+    # xuống dưới ngưỡng 360ms nên thoát. Không cần mượt vì đã có ràng buộc phải
+    # dài quá 360ms mới đụng - chỗ trũng giữa hai âm tiết chỉ 20-60ms, không thể
+    # chạm tới.
+    khung = audio[: k * n].reshape(k, n).astype(np.float64)
+    rms = np.sqrt((khung * khung).mean(axis=1))
+    dinh = float(rms.max())
+    im = rms < max(dinh * ti_le_lang, san_lang)
+    day = max(dinh * ti_le_day, san_lang * 0.5)
     giu_khung = max(1, int(giu_ms / _KHUNG_LANG_MS))
 
     doan, i, co_sua = [], 0, False
@@ -174,8 +221,11 @@ def cat_lang_bia(audio: np.ndarray, sr: int,
         j = i
         while j < k and im[j] == im[i]:
             j += 1
-        # Quãng lặng, không phải ở hai đầu, và dài quá ngưỡng -> bóp ngắn.
-        if im[i] and i > 0 and j < k and (j - i) * _KHUNG_LANG_MS > nguong_ms:
+        # Quãng lặng, không phải ở hai đầu, dài quá ngưỡng, VÀ có chạm đáy -
+        # xem khối chú thích ở TI_LE_LANG về vì sao phải có điều kiện chạm đáy.
+        if (im[i] and i > 0 and j < k
+                and (j - i) * _KHUNG_LANG_MS > nguong_ms
+                and float(rms[i:j].min()) < day):
             doan.append(audio[i * n:(i + giu_khung) * n])
             co_sua = True
         else:
@@ -188,21 +238,36 @@ def cat_lang_bia(audio: np.ndarray, sr: int,
 
 
 def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
-                 keep_ms: int = 25) -> np.ndarray:
+                 keep_ms: int = 25,
+                 ti_le: float = TI_LE_DAU_CUOI) -> np.ndarray:
     """Cắt khoảng lặng đầu/cuối của một mảnh TTS.
 
-    Ngưỡng để thấp (0.005) và chừa lại 25ms hai đầu: phụ âm bật hơi đầu câu
-    ("kh", "th", "ph") vào rất nhẹ, cắt sát quá là mất luôn tiếng đầu.
+    Chừa lại 25ms hai đầu: phụ âm bật hơi đầu câu ("kh", "th", "ph") vào rất
+    nhẹ, cắt sát quá là mất luôn tiếng đầu.
+
+    Bản đầu neo vào MỘT MẪU vượt biên độ 0.005, và thế là quá mong manh: đo trên
+    bản ghi cuộc gọi thật, đầu mảnh có một dải nhiễu nền RMS 0.003-0.007 (tức
+    -45dB so với tiếng nói, tai không nghe thấy gì) nhưng đỉnh của nó chạm
+    0.041. Một gai nhiễu duy nhất là hàm dừng cắt, để lại tới 1,2 GIÂY trống
+    trước khi ra chữ - khách nghe thành "sao nó lâu nói thế".
+
+    Nên xét NĂNG LƯỢNG từng khung và so với chính mảnh, giống `cat_lang_bia`.
+    `thresh` vẫn giữ vai trò sàn tuyệt đối cho mảnh nói nhỏ đều.
     """
     if audio is None or len(audio) == 0:
         return audio
-    amp = np.abs(audio)
-    nz = np.nonzero(amp > thresh)[0]
-    if len(nz) == 0:
+    n = max(1, int(sr * _KHUNG_LANG_MS / 1000))
+    k = len(audio) // n
+    if k < 2:
+        return audio
+    khung = audio[: k * n].reshape(k, n).astype(np.float64)
+    rms = np.sqrt((khung * khung).mean(axis=1))
+    co = np.nonzero(rms > max(float(rms.max()) * ti_le, thresh))[0]
+    if len(co) == 0:
         return audio            # cả mảnh im lặng - trả nguyên, đừng cắt thành rỗng
     keep = int(sr * keep_ms / 1000)
-    start = max(0, int(nz[0]) - keep)
-    end = min(len(audio), int(nz[-1]) + keep)
+    start = max(0, int(co[0]) * n - keep)
+    end = min(len(audio), (int(co[-1]) + 1) * n + keep)
     return audio[start:end]
 
 
