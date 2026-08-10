@@ -923,13 +923,39 @@ class F5TTSService:
     _TRAN_SPEED = (0.3, 2.5)
 
     def _tep_speed(self, voice: str | None) -> Path:
+        """Tệp tốc của giọng, QUY TÊN LẠ về giọng thật trước khi tra.
+
+        Không quy tên thì đây là một cái bẫy câm: phiên mới mặc định
+        `voice_name="default"`, mà `default.speed` không bao giờ tồn tại, nên
+        `toc_do_cua` rơi về `settings.f5tts_speed` - và đó là 0.64 trong .env,
+        một giá trị sót lại của lần thử cũ.
+
+        Hậu quả đã đo ngày 2026-08-10: xuất tiếng bằng script (gọi thẳng tên
+        `giong_heu`) nghe đúng nhịp 1.20, còn cuộc gọi thật đọc ở 0.64 - chậm
+        gấp rưỡi. Người dùng báo "sao 120 thì ổn khi xuất mà khi AI nói chuyện
+        lại khác". Mọi phép đo trước đó đều đo nhầm đường xuất nên không thấy.
+
+        `synthesize` có `ensure_voice` giải tên ngay đầu hàm, nên bản thân nó
+        không dính. Chỗ dính là những nơi tra tốc TRƯỚC rồi mới truyền vào
+        (`_toc_cho_phien` của pipeline, `test-tts` của trang giọng). Quy tên
+        ngay tại đây thì mọi nơi gọi đều đúng, khỏi phải nhớ giải tên.
+
+        CHỈ quy đúng bí danh "default" (và None), KHÔNG quy mọi tên lạ: hàm này
+        dùng cho cả đường GHI (`dat_toc_do`). Quy tên lạ về giọng mặc định thì
+        đặt tốc cho một giọng chưa nạp sẽ ghi đè lên tệp của giọng đang chạy.
+        Tên lạ được xử lý ở `toc_do_cua`, nơi chỉ đọc nên an toàn.
+        """
         goc = Path(settings.f5tts_ref_audio)
-        ten = voice or goc.stem
+        ten = (self._default_voice or goc.stem) if (not voice or voice == "default") else voice
         return goc.parent / f"{ten}.speed"
 
     def toc_do_cua(self, voice: str | None = None) -> float:
         """Tốc của giọng này; chưa đặt riêng thì lấy tốc chung trong .env."""
         p = self._tep_speed(voice)
+        # Tên không ứng với giọng nào đang nạp (phiên cũ giữ tên đã xoá) thì hỏi
+        # tệp của giọng thật, đừng rơi thẳng về tốc chung - xem `_tep_speed`.
+        if not p.exists() and voice and voice not in self._voices:
+            p = self._tep_speed(self._giong_thuc(voice))
         if p.exists():
             try:
                 v = float(p.read_text(encoding="utf-8").strip())
