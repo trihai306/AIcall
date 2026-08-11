@@ -28,6 +28,7 @@ class AppState:
         self.vad = VADService()
         self.sessions = SessionStore()
         self.pipeline: StreamingPipeline | None = None
+        self.kho_vector: dict = {}
 
 
 async def _ham_hinh_dang_tts(state: AppState):
@@ -69,6 +70,25 @@ async def startup(state: AppState):
     logger.info("[3/6] Loading RAG + Knowledge base...")
     state.rag.load()
     state.rag.ingest_directory("./knowledge")
+
+    # Nhúng sẵn ví dụ của mọi tình huống. Làm một lần ở đây chứ không mỗi lượt:
+    # lúc khách đang nói ta chỉ được nhúng ĐÚNG MỘT chuỗi (phiên âm dở), so với
+    # ma trận đã có sẵn.
+    from backend.services.filler_situation import chuan_hoa
+    from backend.services.filler_store import lay_kho
+    try:
+        kho = lay_kho()
+        state.kho_vector = {
+            t.id: chuan_hoa(state.rag.embed(list(t.vi_du)))
+            for t in kho.tinh_huong if t.vi_du
+        }
+        logger.info("Đã nhúng ví dụ của %d tình huống", len(state.kho_vector))
+    except Exception as e:
+        # Không có phân loại thì câu đệm rơi về rổ chung, tức đúng hành vi cũ.
+        # Đây KHÔNG phải lỗi chặn khởi động.
+        state.kho_vector = {}
+        logger.warning("Không nhúng được ví dụ tình huống, câu đệm sẽ dùng rổ "
+                       "chung: %s", e)
 
     # 4. Check STT server
     logger.info("[4/6] Checking Whisper STT server...")
