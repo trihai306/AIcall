@@ -36,11 +36,20 @@ def main() -> int:
     conn, now = mo_db(), time.time()
     n = 0
     for t in raw["tinh_huong"]:
+        # Guard 1: mọi mẩu mở đầu phải kết bằng dấu phẩy.
+        # Vi phạm → nap_tu_db sẽ không lỗi ngay, nhưng ghep() tạo câu thiếu
+        # dấu câu → nghe rời rạc.
         for m in t.get("mo_dau", []):
             if not m.rstrip().endswith(","):
                 print(f"BO {t['id']}: mau mo dau khong ket bang phay: {m!r}")
                 break
         else:
+            # Guard 2: tối thiểu 2 ví dụ — spec đòi hỏi, và nap_tu_db ném
+            # LoiKho khi khởi động nếu vi phạm (lỗi lộ ra muộn, sau khi đã
+            # ghi vào DB). Phát hiện sớm ở đây, bỏ qua thay vì ném.
+            if len(t.get("vi_du", [])) < 2:
+                print(f"BO {t['id']}: vi_du can it nhat 2 muc (co {len(t.get('vi_du', []))})")
+                continue
             conn.execute(
                 "INSERT INTO tinh_huong "
                 "(id,ten,vi_du,tu_khoa,mo_dau,speed,bat,created_at,updated_at) "
