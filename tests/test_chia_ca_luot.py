@@ -16,6 +16,13 @@ from backend.pipeline.text_chunker import (CO_MANH_TANG_DAN,
                                            TOI_THIEU_TU_MANH_CUOI, chia_ca_luot,
                                            co_manh, nhip_nghi_sau, tach_manh)
 
+try:
+    from backend.pipeline.text_chunker import CAT_THEO_CAU
+except ImportError:
+    # Lối cắt theo câu là việc đang làm dở, chưa có trên mọi bản. Thiếu cờ thì
+    # coi như tắt - đừng để test vỡ chỉ vì nhánh này chưa có nó.
+    CAT_THEO_CAU = False
+
 
 def nhu_pipeline(text: str, buoc_token=None) -> list[str]:
     """Bản sao vòng cắt mảnh của `streaming_pipeline`, viết độc lập để đối chứng.
@@ -75,13 +82,29 @@ def test_khong_mat_chu():
         assert " ".join(chia_ca_luot(cau)).split() == cau.split()
 
 
+@pytest.mark.skipif(CAT_THEO_CAU,
+                    reason="cắt theo câu thì cỡ mảnh do dấu câu quyết, không do CO_MANH_TANG_DAN")
 def test_co_manh_tang_dan():
-    """Mảnh đầu phải nhỏ (tiếng ra sớm), mảnh sau to dần."""
+    """Mảnh đầu phải nhỏ (tiếng ra sớm), mảnh sau to dần.
+
+    CHỈ đúng ở lối cắt theo SỐ TỪ. Khi `CAT_THEO_CAU` bật thì cỡ mảnh do dấu kết
+    câu quyết định - đó là lý do test này có skipif chứ không phải hằng số cứng:
+    đã có lúc máy chạy `CAT_THEO_CAU=True` trong khi nhánh git còn ở lối cắt 5 từ.
+    """
     cau = " ".join(f"tu{i}" for i in range(60))
     manh = chia_ca_luot(cau)
     assert len(manh[0].split()) == CO_MANH_TANG_DAN[0]
     assert len(manh[1].split()) == CO_MANH_TANG_DAN[1]
     assert len(manh[2].split()) == CO_MANH_TANG_DAN[2]
+
+
+@pytest.mark.skipif(not CAT_THEO_CAU, reason="chỉ áp dụng cho lối cắt theo câu")
+def test_cat_theo_cau_moi_manh_la_mot_cau():
+    """Lối cắt theo câu: mỗi dấu kết câu là một ranh giới mảnh."""
+    manh = chia_ca_luot("Dạ em chào anh. Lãi suất bảy phẩy chín ạ. "
+                        "Anh có muốn nghe thêm không?")
+    assert len(manh) == 3
+    assert all(m.rstrip().endswith((".", "!", "?", "…")) for m in manh)
 
 
 def test_duoi_ngan_gop_vao_manh_truoc():

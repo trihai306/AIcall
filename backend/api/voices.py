@@ -279,16 +279,19 @@ async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
     Trả `(wav, số mảnh)`.
 
     Vì sao trang nghe thử cần chế độ này: `synthesize()` một phát đưa NGUYÊN cả
-    câu cho F5, còn cuộc gọi cắt mảnh tăng dần rồi nối. Hai thứ ra khác nhau thật,
-    đo trên chính câu demo 13 từ (giọng heu_a, cùng tốc):
-    một phát 3110ms tiếng, cắt như cuộc gọi 1149+2294 = 3443ms - lệch 10,7%. Và
-    khác cả ngữ điệu: F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên mỗi ranh
-    giới mảnh là một chỗ nó hạ giọng kết câu giữa chừng. Chỉnh tốc/chọn giọng trên
-    bản một phát rồi suy ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
+    câu cho F5, còn cuộc gọi cắt mảnh rồi nối. Hai thứ ra khác nhau thật - đo ở
+    cấu hình cắt-tăng-dần, câu demo 13 từ (giọng heu_a, cùng tốc): một phát 3110ms
+    tiếng, cắt như cuộc gọi 1149+2294 = 3443ms, lệch 10,7%. Và khác cả ngữ điệu:
+    F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên mỗi ranh giới mảnh là một chỗ
+    nó hạ giọng kết câu giữa chừng. Chỉnh tốc/chọn giọng trên bản một phát rồi suy
+    ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
 
-    Ba thứ lấy nguyên từ đường gọi, KHÔNG đặt lại số ở đây:
-      - `chia_ca_luot`  : ranh giới mảnh (cỡ tăng dần 5→10→20)
-      - `nhip_nghi_sau` : nhịp nghỉ sau mỗi mảnh (nay là 0 vì CAT_DON_GIAN=True)
+    Ba thứ lấy nguyên từ đường gọi, KHÔNG đặt lại số ở đây - nhờ vậy đổi luật cắt
+    thì chế độ này đi theo, không phải sửa:
+      - `chia_ca_luot`  : ranh giới mảnh, theo luật đang bật (cắt theo số từ hay
+                          theo nguyên câu là do `text_chunker` quyết, không phải
+                          do đây)
+      - `nhip_nghi_sau` : nhịp nghỉ sau mỗi mảnh, cũng theo luật đang bật
       - `fast` cho mảnh ĐẦU: y như `fast=(idx == 0)` ở streaming_pipeline
 
     Khác đường gọi ĐÚNG một chỗ, và là chỗ cố ý: sinh lần lượt chứ không song

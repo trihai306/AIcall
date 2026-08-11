@@ -349,10 +349,17 @@ def chia_ca_luot(text: str) -> list[str]:
 
     Dùng cho trang nghe thử: đường gọi thật nhận token nhỏ giọt từ LLM nên nó cắt
     mảnh dần, còn trang test có sẵn cả câu. Không có hàm này thì trang test đưa
-    NGUYÊN cả câu cho F5 một phát - và đó không phải thứ khách nghe. Đo trên chính
-    câu demo 13 từ: một phát ra 3110ms tiếng, còn cắt như cuộc gọi (5 từ + 8 từ)
-    ra 1149+2294 = 3443ms, lệch 10,7%. Khác cả ngữ điệu, vì F5 sinh MỖI mảnh như
-    một phát ngôn trọn vẹn nên mỗi ranh giới mảnh là một chỗ nó hạ giọng kết câu.
+    NGUYÊN cả câu cho F5 một phát - và đó không phải thứ khách nghe. Đo ở cấu hình
+    cắt-tăng-dần (5/10/20 từ), câu demo 13 từ, giọng heu_a cùng tốc: một phát ra
+    3110ms tiếng, cắt như cuộc gọi (5 từ + 8 từ) ra 1149+2294 = 3443ms - lệch
+    10,7%. Khác cả ngữ điệu, vì F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên
+    mỗi ranh giới mảnh là một chỗ nó hạ giọng kết câu giữa chừng.
+
+    Độ lệch cụ thể PHỤ THUỘC luật cắt đang bật, đừng trích con số trên như thể nó
+    cố định: ở lối `CAT_THEO_CAU` thì một câu ngắn không có dấu kết ra đúng MỘT
+    mảnh, tức trang test và cuộc gọi trùng khớp; còn đoạn nhiều câu thì lệch trở
+    lại. Vì hàm này uỷ quyền cho `tach_manh`/`co_manh`/`nhip_nghi_sau` chứ không
+    tự đặt luật, nó đi theo luật đang bật mà không cần sửa gì.
 
     Lặp lại đúng vòng producer của `streaming_pipeline` (nạp thêm chữ -> hỏi
     `tach_manh` với cỡ `co_manh(số mảnh đã ra)` -> xả đệm, đuôi ngắn thì gộp vào
