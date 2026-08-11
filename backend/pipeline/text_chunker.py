@@ -349,17 +349,20 @@ def chia_ca_luot(text: str) -> list[str]:
 
     Dùng cho trang nghe thử: đường gọi thật nhận token nhỏ giọt từ LLM nên nó cắt
     mảnh dần, còn trang test có sẵn cả câu. Không có hàm này thì trang test đưa
-    NGUYÊN cả câu cho F5 một phát - và đó không phải thứ khách nghe. Đo ở cấu hình
-    cắt-tăng-dần (5/10/20 từ), câu demo 13 từ, giọng heu_a cùng tốc: một phát ra
-    3110ms tiếng, cắt như cuộc gọi (5 từ + 8 từ) ra 1149+2294 = 3443ms - lệch
-    10,7%. Khác cả ngữ điệu, vì F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên
-    mỗi ranh giới mảnh là một chỗ nó hạ giọng kết câu giữa chừng.
+    NGUYÊN cả câu cho F5 một phát - và đó không phải thứ khách nghe. F5 sinh MỖI
+    mảnh như một phát ngôn trọn vẹn, nên bản cắt mảnh có ngữ điệu kết câu ở từng
+    ranh giới còn bản một phát thì không, và mảnh đầu còn đọc bằng nfe thấp.
 
-    Độ lệch cụ thể PHỤ THUỘC luật cắt đang bật, đừng trích con số trên như thể nó
-    cố định: ở lối `CAT_THEO_CAU` thì một câu ngắn không có dấu kết ra đúng MỘT
-    mảnh, tức trang test và cuộc gọi trùng khớp; còn đoạn nhiều câu thì lệch trở
-    lại. Vì hàm này uỷ quyền cho `tach_manh`/`co_manh`/`nhip_nghi_sau` chứ không
-    tự đặt luật, nó đi theo luật đang bật mà không cần sửa gì.
+    ĐỪNG trích một con số "%" cho độ lệch: nó phụ thuộc luật cắt đang bật, và F5
+    sinh có dao động nên một lần đo không nói được gì - xem khối số đo ở
+    `_doc_nhu_cuoc_goi` trong `api/voices.py`. Vắn tắt: ở lối cắt theo SỐ TỪ thì
+    tổng thời lượng lệch thật (3110 so với 3443ms); ở lối `CAT_THEO_CAU` thì tổng
+    gần như bằng nhau, cái khác nằm ở nfe mảnh đầu, ngữ điệu từng câu, nhịp nghỉ
+    200ms, và dao động thời lượng thấp hơn hẳn.
+
+    Vì hàm này uỷ quyền cho `tach_manh`/`co_manh`/`nhip_nghi_sau` chứ không tự đặt
+    luật, nó đi theo luật đang bật mà không cần sửa gì - đã kiểm chứng trên cả hai
+    lối cắt.
 
     Lặp lại đúng vòng producer của `streaming_pipeline` (nạp thêm chữ -> hỏi
     `tach_manh` với cỡ `co_manh(số mảnh đã ra)` -> xả đệm, đuôi ngắn thì gộp vào

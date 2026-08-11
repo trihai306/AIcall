@@ -279,12 +279,28 @@ async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
     Trả `(wav, số mảnh)`.
 
     Vì sao trang nghe thử cần chế độ này: `synthesize()` một phát đưa NGUYÊN cả
-    câu cho F5, còn cuộc gọi cắt mảnh rồi nối. Hai thứ ra khác nhau thật - đo ở
-    cấu hình cắt-tăng-dần, câu demo 13 từ (giọng heu_a, cùng tốc): một phát 3110ms
-    tiếng, cắt như cuộc gọi 1149+2294 = 3443ms, lệch 10,7%. Và khác cả ngữ điệu:
-    F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên mỗi ranh giới mảnh là một chỗ
-    nó hạ giọng kết câu giữa chừng. Chỉnh tốc/chọn giọng trên bản một phát rồi suy
-    ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
+    câu cho F5, còn cuộc gọi cắt mảnh rồi nối. Chỉnh tốc/chọn giọng trên bản một
+    phát rồi suy ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
+
+    ĐỪNG trích một con số "lệch bao nhiêu phần trăm" - nó phụ thuộc luật cắt, và
+    F5 sinh có dao động nên một lần đo không nói được gì. Đo trên máy thật, đoạn 3
+    câu 24 từ, giọng heu_a, 3 lần mỗi chế độ (2026-08-11, CAT_THEO_CAU=True):
+
+        một phát      : 6450 / 6970 / 6550 ms   (tb 6657, dải 520)
+        như cuộc gọi  : 6670 / 6770 / 6630 ms   (tb 6690, dải 140)
+
+    Tức TỔNG thời lượng gần như bằng nhau ở lối cắt theo câu - chênh 33ms, nằm gọn
+    trong dao động của chính bản một phát. (Ở lối cắt theo SỐ TỪ thì có lệch thật:
+    đo được 3110 so với 3443ms trên câu 13 từ.)
+
+    Cái khác thật sự, và là lý do chế độ này đáng có:
+      - mảnh ĐẦU đọc bằng `fast` (nfe thấp) y như cuộc gọi. Đo trên câu 13 từ ra
+        cùng MỘT mảnh: một phát 2746ms, như cuộc gọi 3189ms - lệch 16% chỉ vì nfe.
+      - F5 sinh MỖI mảnh như một phát ngôn trọn vẹn, nên mỗi ranh giới mảnh là một
+        chỗ nó hạ giọng kết câu; bản một phát không có chỗ nào như thế.
+      - nhịp nghỉ 200ms ở ranh giới câu, thứ bản một phát không có.
+      - dao động thời lượng THẤP HƠN hẳn (dải 140 so với 520ms): đúng cái lý do
+        sinh ra lối cắt mảnh - đoạn dài thì F5 tự bịa quãng dừng, mỗi lần một kiểu.
 
     Ba thứ lấy nguyên từ đường gọi, KHÔNG đặt lại số ở đây - nhờ vậy đổi luật cắt
     thì chế độ này đi theo, không phải sửa:
