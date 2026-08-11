@@ -190,6 +190,82 @@ Embedding tốn ~10ms, dùng model RAG đã nạp, và phân loại được c�
 - **Ngưỡng điểm cosine** để nhận một tình huống. Tạm 0,55; chốt sau khi có bộ câu khách thật để đối chiếu. Chưa đo.
 - **Số đuôi cần thiết** để phủ liền mạch dải 700–2500ms. Tạm 6, kiểm bằng cách đo độ dài tiếng thật của từng đuôi sau khi dựng.
 
+## 20 tình huống, và gốc của từng nhóm
+
+Không bốc ra. Suy từ `knowledge/` (3 sản phẩm × các trục nội dung), FAQ, `examples` trong bảng `scenarios`, và chính lỗi đo được trên cuộc gọi 2026-08-11.
+
+**Hỏi thông tin** — trục nội dung có trong tài liệu sản phẩm, sản phẩm cụ thể để RAG suy:
+
+`hoi_lai_suat` · `hoi_han_muc` · `hoi_ho_so` · `hoi_dieu_kien` · `hoi_thoi_han` · `hoi_thoi_gian_duyet` · `hoi_tra_truoc_han` · `hoi_uu_dai` · `hoi_tinh_toan`
+
+**Thẻ tín dụng** — `faq_banking.md` có mục riêng nên tách riêng:
+
+`the_khac_ghi_no` · `the_quen_tra_no` · `the_tang_han_muc`
+
+**Phản đối và trạng thái khách** — từ `examples` trong kịch bản và FAQ nợ xấu:
+
+`tu_choi_dang_ban` · `tu_choi_khong_can` · `hen_goi_lai` · `nghi_ngo_lua_dao` · `buc_xuc_bi_goi_nhieu` · `no_xau_lo_khong_vay_duoc` · `xin_noi_chuyen_vien`
+
+**Nghe không rõ** — `khach_noi_khong_ro`. Gốc là log thật: khách nói "a lô", và `last_error` ghi `"Không nhận dạng được giọng nói"`. Tình huống này cần mẩu mở đầu riêng vì đệm "dạ về lãi suất thì" lúc chưa nghe rõ gì là sai hoàn toàn.
+
+Chín tình huống nhóm một dùng chung trục sản phẩm, nên `vi_du` của chúng sẽ **gần nhau về embedding**. Đây là rủi ro đã nêu ở mục Rủi ro; phải đo ma trận lẫn lộn trước khi thêm tình huống thứ 21.
+
+## Kho chuyển từ JSON sang SQLite
+
+Hiện `data/fillers.json`. Chuyển vào `app.db` — **không** chia theo khách, vì đây là **cấu hình dùng chung cho mọi cuộc gọi**, không phải dữ liệu của một khách.
+
+Hai bảng, thêm vào `_SCHEMA` theo đúng lối chỉ-thêm đang có:
+
+```sql
+CREATE TABLE IF NOT EXISTS tinh_huong (
+  id TEXT PRIMARY KEY, ten TEXT NOT NULL,
+  vi_du TEXT NOT NULL,        -- JSON array
+  tu_khoa TEXT,               -- JSON array
+  mo_dau TEXT,                -- JSON array
+  speed REAL,                 -- NULL = lấy tốc của giọng
+  bat INTEGER NOT NULL DEFAULT 1,
+  created_at REAL, updated_at REAL
+);
+CREATE TABLE IF NOT EXISTS cau_duoi (
+  id TEXT PRIMARY KEY, text TEXT NOT NULL,
+  hop_cau_hoi INTEGER NOT NULL DEFAULT 1,
+  bat INTEGER NOT NULL DEFAULT 1,
+  created_at REAL, updated_at REAL
+);
+```
+
+`vi_du`/`tu_khoa`/`mo_dau` để JSON trong một cột chứ không tách bảng con: chúng luôn được đọc và ghi **cả cụm** cùng tình huống, không bao giờ truy vấn riêng lẻ. Tách bảng chỉ thêm join mà không dùng để làm gì.
+
+`lay_kho()` đang là singleton đọc file một lần. Đổi thành đọc DB một lần, giữ nguyên `nap_lai()` để trang quản lý gọi sau khi sửa. Xác thực giữ nguyên chỗ cũ trong `filler_store.py` — nguồn dữ liệu đổi, luật không đổi.
+
+Nạp lần đầu: nếu hai bảng rỗng thì đổ từ `data/fillers.json` vào, để không mất 42 câu đang có.
+
+## Trang quản lý
+
+Thêm một mục vào thanh điều hướng `frontend/index.html`, cùng lối vanilla JS + Tailwind biên sẵn. **Không thêm framework** — dự án đang đóng gói thành exe, thêm chuỗi build là thêm chỗ hỏng.
+
+Ba khối:
+
+**Bảng tình huống** — tên, số mẩu mở đầu, số ví dụ, tốc đọc, **số lần đã dùng thật** (đếm từ `latency_metrics.filler_id`). Bật/tắt tại chỗ.
+
+**Soạn một tình huống** — ví dụ câu khách nói, mẩu mở đầu, tốc đọc. Kèm nút **nghe thử ngay**: gọi API sinh tiếng thật với đúng giọng và tốc đó, không phải chờ dựng nền. Đây là chỗ quyết định trang có dùng được hay không — soạn câu mà không nghe được thì chỉ là gõ chữ vào ô.
+
+**Rổ đuôi dùng chung** — mỗi câu kèm **độ dài tiếng đo được**, và **cảnh báo khi dải 700–2500ms bị hở**.
+
+Khối thứ ba là chỗ dễ bị bỏ nhất mà lại quan trọng nhất. Trục chọn câu đệm là độ dài; hở dải nghĩa là `chon()` rơi xuống tầng chót và khách nghe hụt im lặng. Trang quản lý phải **cho thấy lỗ hổng đó**, không chỉ liệt kê câu.
+
+API mới, dưới `/api/cau-dem`: `GET /tinh-huong`, `POST /tinh-huong`, `PATCH /tinh-huong/{id}`, `DELETE /tinh-huong/{id}`, cùng bộ tương tự cho `/duoi`, thêm `POST /nghe-thu` và `GET /do-phu` (trả dải độ dài đã có tiếng cùng các khoảng hở).
+
+## Ngoài phạm vi spec này: tách DB theo từng contact
+
+Người dùng chốt 2026-08-11 rằng lịch sử cuộc gọi sẽ tách thành một DB cho mỗi contact. **Đó là refactor tầng lưu trữ, độc lập hoàn toàn với câu đệm**, và sẽ có spec riêng. Ghi lại ở đây ba điều đã thống nhất để spec sau không phải bàn lại:
+
+- Chỉ tách phần **thuộc riêng một khách**: `conversation_turns`, `latency_metrics`, chi tiết `call_attempts`, hồ sơ tích luỹ. Đường dẫn `data/khach/<2 ký tự đầu>/<contact_id>.db`; chia thư mục theo tiền tố là bắt buộc vì Windows liệt kê 100 nghìn tệp một thư mục rất chậm.
+- `app.db` **giữ** mọi thứ bị truy vấn ngang qua nhiều khách: `contacts`, `campaigns`, dòng tóm tắt mỗi cuộc trong `call_sessions`, và toàn bộ cấu hình — gồm cả hai bảng câu đệm ở trên.
+- Ba cái giá đã biết: mất truy vấn toàn văn ngang qua phiên âm (muốn giữ thì phải lưu hai lần); thêm chi phí mở tệp trên đường gọi nên cần cache kết nối **có giới hạn**; và cần **migration thật có guard**, không phải kiểu chỉ-thêm tự động — vì phải chuyển dữ liệu đang có ra rồi mới xoá bảng cũ.
+
+Lý do chưa làm ngay: `app.db` hiện **0,47 MB**, chưa có phép đo nào cho thấy truy vấn chậm.
+
 ## Rủi ro
 
 - **Phân loại giữa câu bị lệch khi khách đổi ý giữa lượt** ("lãi suất bao nhiêu… à không, hồ sơ cần gì"). Giảm nhẹ bằng ngưỡng độ phủ; không loại bỏ được hoàn toàn. Chọn sai mẩu mở đầu tệ hơn không có mẩu nào, nên khi lưỡng lự phải nghiêng về rổ chung.
