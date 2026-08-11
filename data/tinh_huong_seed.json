@@ -251,13 +251,13 @@
       "id": "khach_noi_khong_ro",
       "ten": "Khách nói không rõ, hỏi lại",
       "vi_du": [
-        "a lô",
-        "gì cơ",
-        "em nói lại đi",
-        "nghe không rõ",
-        "không nghe thấy gì"
+        "a lô em nói to lên anh không nghe rõ",
+        "anh nghe không rõ em nói lại được không",
+        "em nói to hơn đi anh không nghe thấy gì",
+        "nghe không rõ lắm bị nhiễu máy",
+        "không nghe thấy gì cả"
       ],
-      "tu_khoa": ["a lô", "alo", "gì cơ", "nói lại"],
+      "tu_khoa": ["a lô", "alo", "gì cơ", "nói lại", "nghe không rõ"],
       "mo_dau": ["Dạ em xin phép nhắc lại,"],
       "speed": 1.0
     }

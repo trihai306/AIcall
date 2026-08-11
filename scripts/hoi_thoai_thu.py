@@ -175,6 +175,9 @@ async def main():
                 "cong_cu": mt.get("cong_cu"), "cong_cu_ms": mt.get("cong_cu_ms"),
                 "nghi_san": bool(mt.get("llm_nghi_san")),
                 "san_co": mt.get("luot_thuong_gap"),
+                "tinh_huong_id": mt.get("tinh_huong_id"),
+                "tinh_huong_cho_ms": mt.get("tinh_huong_cho_ms"),
+                "tinh_huong_diem": mt.get("tinh_huong_diem"),
             })
             print(f"--- Lượt {i} ---")
             print(f"  khách nói  : {cau}")
@@ -182,11 +185,17 @@ async def main():
             print(f"  câu đệm    : {mt.get('filler_text') or (dem_filler[0] if dem_filler else '(không có)')}")
             print(f"  AI đáp     : {tra_loi}")
             t_dau_str = f"{t_dau:.0f}ms" if t_dau is not None else "N/A"
+            th_str = ""
+            if mt.get("tinh_huong_id"):
+                th_str = f" · TH={mt.get('tinh_huong_id')}({mt.get('tinh_huong_diem',0):.2f})"
+                if mt.get("tinh_huong_cho_ms") is not None:
+                    th_str += f" cho={mt.get('tinh_huong_cho_ms')}ms"
             print(f"  tiếng đầu {t_dau_str} · TTFA {mt.get('ttfa_ms')}ms · "
                   f"STT {mt.get('stt_ms')}ms · công cụ {mt.get('cong_cu') or '-'} "
                   f"({mt.get('cong_cu_ms', '-')}ms)"
                   f"{' · NGHĨ SẴN' if mt.get('llm_nghi_san') else ''}"
-                  f"{' · câu sẵn' if mt.get('luot_thuong_gap') else ''}\n")
+                  f"{' · câu sẵn' if mt.get('luot_thuong_gap') else ''}"
+                  f"{th_str}\n")
             # Khoảng lặng giữa hai lượt cho giống người thật ngắt nhịp.
             await asyncio.sleep(0.6)
             im = np.zeros(int(0.6 * SR_GHI), dtype=np.int16)

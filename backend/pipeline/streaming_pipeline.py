@@ -483,6 +483,13 @@ class StreamingPipeline:
     # Chọn sai mẩu mở đầu tệ hơn không có mẩu nào -> lưỡng lự thì về rổ chung.
     _TINH_HUONG_DO_PHU_MIN = 0.5
 
+    # Chờ tối đa bao nhiêu ms để speculate._run() hoàn thành STT và phân loại
+    # tình huống. Câu đệm che ~1800ms; mất 150ms vẫn còn 1650ms — đánh đổi đã đo
+    # và đã chốt ngày 2026-08-11 (task-11d). Đặt 0 để tắt hoàn toàn.
+    # NGOẠI LỆ có chủ đích: ràng buộc "không thêm await vào _send_filler" tồn tại
+    # để bảo vệ TTFA; một lần chờ CÓ TRẦN CỨNG là đánh đổi đã đo, khác hẳn chờ vô hạn.
+    _CHO_TINH_HUONG_MS: int = 150
+
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
         return can_che_ms(session.latency_log, la_thoai, mac_dinh)
@@ -551,6 +558,31 @@ class StreamingPipeline:
             return
 
         kho = lay_kho()
+
+        # --- VIỆC 1 (task-11d): Chờ phiên âm tạm để có tình huống chính xác -----
+        # speculate(ngay=True) chạy trong task nền khi khách vừa ngừng tiếng.
+        # STT tốn 200-500ms — thường xong sau khi _send_filler được gọi, nên
+        # tinh_huong chưa được ghi. Chờ tối đa _CHO_TINH_HUONG_MS để task đó hoàn
+        # thành, sau đó thử _phan_loai_dong_bo lần nữa nếu vẫn thiếu.
+        #
+        # Dùng asyncio.wait() (KHÔNG phải wait_for()): wait() không huỷ task khi
+        # hết hạn, nên speculate._run() tiếp tục chạy để phục vụ RAG/LLM/answer_hit
+        # bên dưới. Đây là lý do chọn wait() thay vì shield()+wait_for().
+        # Ghi thời gian chờ thật vào metrics để đo cái giá thực tế.
+        if (self._CHO_TINH_HUONG_MS > 0
+                and n_audio > 0
+                and session.tinh_huong is None
+                and session.spec_task is not None
+                and not session.spec_task.done()):
+            _t_cho = time.perf_counter()
+            await asyncio.wait({session.spec_task},
+                               timeout=self._CHO_TINH_HUONG_MS / 1000)
+            metrics["tinh_huong_cho_ms"] = round(
+                (time.perf_counter() - _t_cho) * 1000)
+            # speculate._run() có thể đã ghi spec_stt nhưng phân loại chưa xong.
+            if session.tinh_huong is None:
+                self._phan_loai_dong_bo(session)
+
         # n_audio được truyền vào từ process_turn (len(audio_bytes)). Trước đây
         # đọc session.audio_len() tại đây nhưng take_audio() đã làm sạch đệm
         # trước khi _send_filler chạy, nên luôn trả về 0. Kết quả: do_phu = n_th / 1
