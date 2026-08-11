@@ -500,24 +500,31 @@ class StreamingPipeline:
         # câu gắn cờ không hợp câu hỏi. Chưa có phiên âm ở mốc này nên vẫn suy
         # từ lượt trước: đang tư vấn thì đa số lượt là câu hỏi. (Mốc 2 sẽ đọc
         # session.spec_stt để biết chắc thay vì đoán.)
-        kho = lay_kho().duoi
+        # `chi_duoi` lọc theo id đuôi thay vì duyệt CauDuoi: Task 8 sẽ dùng nó để
+        # lọc hop_cau_hoi. Hiện tại lọc toàn bộ khi turn_count=0, câu hỏi khi > 0.
+        kho_obj = lay_kho()
+        duoi_id_theo_id = {d.id: d for d in kho_obj.duoi}
         if session.turn_count > 0:
-            kho = [c for c in kho if c.hop_cau_hoi]
+            chi_duoi: set[str] | None = {d.id for d in kho_obj.duoi if d.hop_cau_hoi}
+        else:
+            chi_duoi = None
 
         dem = getattr(session, "dem_filler", None)
         if dem is None:
             dem = session.dem_filler = {}
 
-        filler_audio, cau = self.tts.pick_filler(
-            kho, session.voice_name, min_ms=can_che, dem=dem,
+        filler_audio, id_duoi, _id_th_used = self.tts.pick_filler(
+            kho_obj, session.voice_name, min_ms=can_che, dem=dem,
+            chi_duoi=chi_duoi,
         )
-        if not filler_audio:
+        if not filler_audio or id_duoi is None:
             return
-        dem[cau.id] = dem.get(cau.id, 0) + 1
+        dem[id_duoi] = dem.get(id_duoi, 0) + 1
         await self._send_audio(ws, filler_audio, is_filler=True, turn_id=session.turn_id)
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
-        metrics["filler_text"] = cau.text
-        metrics["filler_id"] = cau.id
+        d_obj = duoi_id_theo_id.get(id_duoi)
+        metrics["filler_text"] = d_obj.text if d_obj else id_duoi
+        metrics["filler_id"] = id_duoi
 
     async def process_turn(self, audio_bytes: bytes, session: CallSession, ws: WebSocket):
         """Full pipeline: Audio -> STT -> RAG -> LLM -> TTS -> Audio."""

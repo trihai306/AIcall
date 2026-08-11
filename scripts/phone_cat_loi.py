@@ -128,7 +128,7 @@ async def main() -> int:
     tts.load()
     # Backend thật làm bước này lúc khởi động. Bỏ qua thì filler rỗng và khách
     # phải nghe cả giây im lặng - lần đầu chạy test tôi tưởng đó là lỗi sản phẩm.
-    await tts.dung_fillers(lay_kho().duoi)
+    await tts.dung_fillers(lay_kho())
     rag.load()
     pipeline = StreamingPipeline(stt=stt, llm=llm, tts=tts, rag=rag)
 

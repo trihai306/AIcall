@@ -24,7 +24,7 @@ def main():
     tts.load()
     import asyncio
     giong = tts.default_voice_name()
-    asyncio.run(tts.dung_fillers(list(kho.duoi)))
+    asyncio.run(tts.dung_fillers(kho))
 
     print(f"=== do dai that, giong '{giong}' ===")
     ro = Counter()
