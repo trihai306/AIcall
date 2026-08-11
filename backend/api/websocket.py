@@ -265,27 +265,22 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                     muc = logger.warning if hut["hut_pct"] >= 10 else logger.info
                     muc("Tiếng nhận được %.2fs / khách nói %.2fs -> hụt %.1f%%",
                         hut["giay_nhan"], hut["giay_thuc"], hut["hut_pct"])
-                if not session.audio_len():
+                audio_bytes = session.take_audio()
+                if not audio_bytes:
                     await websocket.send_json({"type": "turn_complete", "full_response": "", "metrics": {}})
                 else:
                     # Khách vừa ngừng tiếng → đoán lại trên toàn câu, giống hệt
                     # phone_call_service dòng ~1129. Đường chat KHÔNG có luồng
                     # phát hiện im lặng, nên speculate(ngay=True) phải gọi thẳng
-                    # tại đây.
-                    #
-                    # THỨTỰ QUAN TRỌNG: speculate() TRƯỚC take_audio().
-                    # speculate() chụp audio = session.peek_audio() ĐỒNG BỘ
-                    # (streaming_pipeline.py dòng 245, trước khi tạo task), nên
-                    # nó thấy toàn bộ câu dù take_audio() xoá đệm ngay sau. Đặt
-                    # take_audio() trước khiến đệm trống khi speculate chạy:
-                    #   Nhánh A — spec cũ xong: audio_len()=0 → thoát sớm, vô tác
-                    #   Nhánh B — spec cũ đang chạy: ngay=True huỷ nó, peek trả
-                    #             b"", STT ra "", ghi đè spec_stt=(""), mất phân
-                    #             loại tình huống → độ phủ chỉ 5/9 lượt.
-                    # Cách giải: speculate() trước → thấy đủ audio → spec_stt và
-                    # tinh_huong được ghi đúng → _phan_loai_dong_bo dùng được.
+                    # tại đây. Gọi SAU take_audio() để đệm rỗng:
+                    #   - Nếu spec_running=False (task cũ đã xong): n=0 < 600ms
+                    #     → thoát sớm, task cũ không bị huỷ, tinh_huong được giữ.
+                    #   - Nếu spec_running=True (task cũ trong RAG/LLM): huỷ nó,
+                    #     nhưng STT + phân loại đã chạy xong (ghi trước khi vào
+                    #     RAG) → tinh_huong vẫn còn và _send_filler dùng được.
+                    # Đo thực tế (2026-08-11, commit 290b9af): 5/9 lượt có
+                    # tình huống với cách này.
                     await app_state.pipeline.speculate(session, ngay=True)
-                    audio_bytes = session.take_audio()  # xoá đệm SAU khi speculate đã chụp
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_turn(
                         audio_bytes=audio_bytes, session=session, ws=websocket,
                     ))
