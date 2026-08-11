@@ -269,6 +269,15 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 if not audio_bytes:
                     await websocket.send_json({"type": "turn_complete", "full_response": "", "metrics": {}})
                 else:
+                    # Khách vừa ngừng tiếng → đoán lại trên toàn câu, giống hệt
+                    # phone_call_service dòng ~1129. Đường chat KHÔNG có luồng
+                    # phát hiện im lặng, nên speculate(ngay=True) phải gọi thẳng
+                    # tại đây. Task này không bị huỷ bởi audio_chunk tiếp theo
+                    # (không còn chunk nào nữa), và kết quả spec_stt của nó được
+                    # dùng cho STT caching trong process_turn nếu kịp hoàn thành.
+                    # Phân loại tình huống sẽ được _phan_loai_dong_bo lấy từ
+                    # spec_stt của lần đoán trung gian cuối (đồng bộ, ~10ms).
+                    await app_state.pipeline.speculate(session, ngay=True)
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_turn(
                         audio_bytes=audio_bytes, session=session, ws=websocket,
                     ))

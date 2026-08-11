@@ -487,12 +487,42 @@ class StreamingPipeline:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
         return can_che_ms(session.latency_log, la_thoai, mac_dinh)
 
+    def _phan_loai_dong_bo(self, session: CallSession):
+        """Phân loại tình huống ĐỒNG BỘ từ spec_stt đã có, không await (~10ms).
+
+        Gọi trước _send_filler khi audio_end vừa kích hoạt speculate(ngay=True)
+        nhưng task đó chưa hoàn thành STT (200-500ms) trước khi _send_filler đọc
+        session.tinh_huong. Dùng spec_stt từ lần đoán trung gian cuối cùng đã
+        hoàn thành.
+
+        Không ghi đè nếu tinh_huong đã có: tôn trọng kết quả của speculate nền.
+        Không ném ngoại lệ: lỗi bất kỳ → rơi về rổ chung (đúng hành vi xuống cấp).
+        """
+        if session.tinh_huong or not session.spec_stt:
+            return
+        try:
+            from backend.main import app_state
+            kho_vec = getattr(app_state, "kho_vector", None)
+            n_stt, text_stt = session.spec_stt
+            if not (kho_vec and text_stt and len(text_stt) >= 4):
+                return
+            q = chuan_hoa(self.rag.embed([text_stt]))[0]
+            id_th, diem = chon_tinh_huong(q, kho_vec)
+            if id_th:
+                session.tinh_huong = (n_stt, id_th, diem)
+        except Exception as e:
+            logger.debug("phan loai tinh huong dong bo (bo qua): %s", e)
+
     async def _send_filler(self, ws: WebSocket, session: CallSession, t_start: float,
-                           metrics: dict, la_thoai: bool):
+                           metrics: dict, la_thoai: bool, n_audio: int = 0):
         """Phát câu đệm đã dựng sẵn NGAY - đây mới là lúc AI bắt đầu nói theo tai khách.
 
         Phải là await ĐẦU TIÊN của lượt: audio đã nằm sẵn trong cache từ lúc khởi
         động (dung_fillers) nên không tốn GPU, chỉ tốn thời gian gửi.
+
+        `n_audio` = tổng byte audio của lượt, dùng để tính độ phủ bản phân loại.
+        Truyền từ `process_turn` (len(audio_bytes)); mặc định 0 → đường chat gõ
+        chữ, không có audio → bỏ qua phân loại tình huống.
 
         ttfa_ms bên dưới đo tới mảnh THẬT đầu tiên và bỏ qua hoàn toàn filler,
         nên nhìn một mình ttfa_ms sẽ tưởng khách phải chờ im lặng lâu hơn thực tế.
@@ -521,9 +551,14 @@ class StreamingPipeline:
             return
 
         kho = lay_kho()
-        n_audio = session.audio_len() or 1
+        # n_audio được truyền vào từ process_turn (len(audio_bytes)). Trước đây
+        # đọc session.audio_len() tại đây nhưng take_audio() đã làm sạch đệm
+        # trước khi _send_filler chạy, nên luôn trả về 0. Kết quả: do_phu = n_th / 1
+        # (một số rất lớn), điều kiện >= ngưỡng LUÔN ĐÚNG, và luật độ phủ trở
+        # thành mã chết không chặn được gì. Nay dùng tham số truyền vào.
+        # n_audio = 0 trên đường chat (không audio) → bỏ qua phân loại hoàn toàn.
         id_th = None
-        if session.tinh_huong:
+        if n_audio > 0 and session.tinh_huong:
             n_th, th, diem = session.tinh_huong
             do_phu = n_th / n_audio
             metrics["tinh_huong_do_phu"] = round(do_phu, 3)
@@ -573,7 +608,15 @@ class StreamingPipeline:
         # "đường chat" và lịch sử thoại mất đúng những lượt nhanh nhất.
         metrics = {"la_thoai": True}
 
-        await self._send_filler(ws, session, t_start, metrics, la_thoai=True)
+        # Đường dự phòng phân loại tình huống cho đường chat-audio: speculate(ngay=True)
+        # được gọi ngay trước lượt (trong audio_end) nhưng task đó chưa hoàn thành
+        # STT khi _send_filler đọc session.tinh_huong. Nếu tinh_huong chưa có nhưng
+        # spec_stt đã có phiên âm từ lần đoán trung gian, phân loại ĐỒNG BỘ ~10ms
+        # (không await) để _send_filler có dữ liệu đọc. Xem _phan_loai_dong_bo.
+        self._phan_loai_dong_bo(session)
+
+        await self._send_filler(ws, session, t_start, metrics, la_thoai=True,
+                                n_audio=len(audio_bytes))
 
         # STT - dùng lại bản đã phiên âm lúc đoán trước, NHƯNG chỉ khi nó phủ
         # đúng chừng này byte. Bằng nhau nghĩa là bản đoán đã nghe trọn câu,
