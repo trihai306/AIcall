@@ -181,7 +181,8 @@ async def main():
             print(f"  nghe thành : {phien_am}")
             print(f"  câu đệm    : {mt.get('filler_text') or (dem_filler[0] if dem_filler else '(không có)')}")
             print(f"  AI đáp     : {tra_loi}")
-            print(f"  tiếng đầu {t_dau:.0f}ms · TTFA {mt.get('ttfa_ms')}ms · "
+            t_dau_str = f"{t_dau:.0f}ms" if t_dau is not None else "N/A"
+            print(f"  tiếng đầu {t_dau_str} · TTFA {mt.get('ttfa_ms')}ms · "
                   f"STT {mt.get('stt_ms')}ms · công cụ {mt.get('cong_cu') or '-'} "
                   f"({mt.get('cong_cu_ms', '-')}ms)"
                   f"{' · NGHĨ SẴN' if mt.get('llm_nghi_san') else ''}"
