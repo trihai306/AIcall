@@ -1,5 +1,6 @@
 """Luật chọn câu đệm. Thuần logic, KHÔNG import torch - xem filler_store."""
 import random
+import re
 
 # Câu dài hơn mức cần bao nhiêu thì vẫn coi là "vừa khít". Quá số này thì nó
 # đẩy câu trả lời thật lùi lại một cách vô ích.
@@ -84,6 +85,19 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
     return max(it_dung_nhat(ung_vien), key=lambda x: x[1])[0]
 
 
+# Tiểu từ lịch sự ở đầu câu đuôi cần bỏ khi đã có mẩu mở đầu.
+# Thứ tự: dài trước để tránh khớp chặng đầu của từ dài hơn
+# (vd "Vâng ạ" phải thắng "Vâng" khi đuôi là "Vâng ạ, ...").
+# Đo 08-11: 41/42 câu đuôi (bat=1) mở bằng Dạ hoặc Vâng;
+#           20/20 mẩu mở đầu cũng vậy → 820/840 tổ hợp (98%) bị lặp.
+# Sau tiểu từ: `[,\s]*` ăn dấu phẩy và/hoặc khoảng trắng tuỳ ý,
+# rồi phần còn lại gom vào group(2).
+_TIEU_TU_RE = re.compile(
+    r"^(Dạ vâng ạ|Dạ vâng|Vâng ạ|Dạ|Vâng)[,\s]*(.*)",
+    re.DOTALL,
+)
+
+
 def ghep(mo_dau: str, duoi: str) -> str:
     """Ghép mẩu mở đầu với câu đuôi thành MỘT chuỗi cho F5.
 
@@ -93,9 +107,30 @@ def ghep(mo_dau: str, duoi: str) -> str:
 
     Mở đầu rỗng trả về đuôi nguyên vẹn: đó là trường hợp suy biến, tức đúng
     hành vi trước khi có tình huống.
+
+    Khi có mẩu mở đầu, bỏ tiểu từ lịch sự ở đầu câu đuôi để tránh lặp.
+    Đo 08-11 trên 840 tổ hợp: 98% bị nói lắp trước khi có logic này.
+    STT nghe lại clip thật xác nhận: "dạ về lãi suất thì dạ em kiểm tra ngay."
+    Câu đuôi dùng trần (mở đầu rỗng) giữ nguyên tiểu từ — lúc đó đúng.
     """
     a, b = (mo_dau or "").strip(), (duoi or "").strip()
-    return f"{a} {b}".strip() if a else b
+    if not a:
+        return b  # suy biến: đúng hành vi khi không có tình huống
+
+    m = _TIEU_TU_RE.match(b)
+    if m:
+        b_tran = m.group(2).strip()
+        if not b_tran:
+            # Câu đuôi hoàn toàn là tiểu từ ("Dạ", "Vâng ạ", "Dạ vâng ạ").
+            # Chỉ phát mẩu mở đầu; không thêm âm trống sau dấu phẩy.
+            return a
+        # Chữ đầu phải viết thường: đứng giữa câu, không phải đầu câu mới.
+        # Dữ liệu thật đã thường sẵn; đây là lưới chặn cho câu đuôi tương lai.
+        b_tran = b_tran[0].lower() + b_tran[1:]
+    else:
+        b_tran = b  # không có tiểu từ → giữ nguyên
+
+    return f"{a} {b_tran}"
 
 
 # Dải độ dài câu đệm phải phủ. Dưới 700ms thì `_FILLER_BO_QUA_MS` đã bỏ đệm;
