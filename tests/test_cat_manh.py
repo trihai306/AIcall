@@ -32,6 +32,9 @@ def cat_thong_minh(monkeypatch):
     còn nguyên trong mã và bật lại chỉ bằng một dòng - mỗi ràng buộc ở đây đều
     từ một lỗi thật, mất chúng là mất luôn lý do chúng tồn tại.
     """
+
+    # `CAT_THEO_CAU` (2026-08-11) đè lên cả hai lối cũ - tắt để khoá lối thông minh.
+    monkeypatch.setattr(text_chunker, "CAT_THEO_CAU", False)
     monkeypatch.setattr(text_chunker, "CAT_DON_GIAN", False)
 
 

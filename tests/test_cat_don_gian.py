@@ -26,6 +26,11 @@ from backend.pipeline.text_chunker import (
 
 @pytest.fixture(autouse=True)
 def cat_may_moc(monkeypatch):
+    # Từ 2026-08-11 đường chạy thật là `CAT_THEO_CAU` (cắt theo nguyên câu), mà
+    # cờ đó ĐÈ LÊN cả hai cờ dưới. Phải tắt nó ở đây, không thì mọi test trong
+    # tệp này đi sang nhánh cắt theo câu và đỏ hết - lối máy móc vẫn còn nguyên
+    # trong mã nên vẫn phải được khoá.
+    monkeypatch.setattr(text_chunker, "CAT_THEO_CAU", False)
     monkeypatch.setattr(text_chunker, "CAT_DON_GIAN", True)
     monkeypatch.setattr(text_chunker, "CHAN_CUM_SO", False)
 

@@ -1,7 +1,13 @@
 """Quyết định khi nào dồn đủ chữ để giao cho TTS.
 
-Luật hiện tại (2026-08-09): cắt cứ **5 từ** một, hoặc sớm hơn nếu gặp dấu câu
-(sàn 3 từ). Xem `GIOI_HAN_TU_MANH` để biết vì sao bỏ lối cắt-ở-dấu-câu cũ.
+Luật hiện tại (2026-08-11): cắt theo **NGUYÊN CÂU** - giao khi thấy dấu kết câu
+(. ! ? …), trần chặn `TRAN_TU_MOT_CAU` từ nếu mãi không có dấu. Xem `CAT_THEO_CAU`
+để biết vì sao, và `BO_DAU_CAU` bên tts_service cho nửa còn lại của thay đổi.
+
+Ba lối cắt cùng tồn tại, cờ trên đè cờ dưới:
+    CAT_THEO_CAU = True   cắt theo nguyên câu        <- đang chạy
+    CAT_DON_GIAN = True   cắt cứng 5 từ, nối thẳng   (test_cat_don_gian.py)
+    cả hai False          cắt thông minh ở dấu câu   (test_cat_manh.py)
 
 Ba ràng buộc, cả ba đều từ lỗi thật đo được, đừng gỡ mà không đo lại:
 
@@ -97,6 +103,62 @@ GIOI_HAN_TU_MANH = 5
 CAT_DON_GIAN = True
 CHAN_CUM_SO = False
 
+# Cắt theo NGUYÊN CÂU. Người dùng chốt 2026-08-11. ĐÈ LÊN cả hai cờ trên.
+#
+# Vì sao đổi lần nữa: đo quãng lặng trên đoạn 60 từ có 4 dấu (2 phẩy, 2 chấm),
+# ngưỡng -40dB, tối thiểu 20ms:
+#
+#   bản đang chạy (tăng dần 5/10/20)   2 quãng   35ms, 38ms
+#   người thật, 16 giây                22 quãng  21…1068ms, đông nhất 30-220ms
+#
+# Máy gần như không nghỉ ở đâu. Ba cơ chế cùng triệt tiêu quãng nghỉ, mỗi cái tự
+# nó đã đủ: `bo_dau_cau_cho_f5` xoá sạch [,.;:!?…] nên F5 không còn dấu nào để
+# nghỉ; `CAT_DON_GIAN` khiến `nhip_nghi_sau` trả 0; `trim_silence` dọn nốt quãng
+# ở rìa mảnh. Cả ba đều thêm vào để chữa lỗi khác, đây là tác dụng phụ.
+#
+# Cắt theo câu chữa hai chỗ cùng lúc: dấu câu tới được F5 (xem `BO_DAU_CAU` bên
+# tts_service) nên nó tự nghỉ ở phẩy, và mọi chỗ nối rơi đúng ranh giới câu -
+# chỗ ĐÁNG hạ giọng - nên kiểu hỏng "hạ giọng kết câu giữa chừng" hết về mặt
+# cấu trúc, không cần đo cũng biết.
+#
+# CÁI GIÁ, cả hai đều đã biết trước chứ không phải rủi ro lý thuyết:
+#
+#   TTFA. Cắt 5 từ bảo đảm tiếng ra sau ~295ms bất kể câu chữ thế nào. Cắt theo
+#   câu thì phải đợi LLM nhả tới dấu chấm đầu tiên - câu đầu dài là khách chờ
+#   lâu hơn hẳn. Đo trước khi tin.
+#
+#   Mảnh dài thì F5 TỰ BỊA quãng dừng giữa câu - 19 quãng 300-1600ms trên bản
+#   ghi 111 giây (đo 2026-08-09). `cat_lang_bia` sinh ra để chặn đúng chỗ đó và
+#   hiện đang thất nghiệp: đo 2026-08-11 nó không đổi một con số nào (CER, HNR,
+#   độ dài đều y nguyên) vì đã không còn quãng lặng nào cho nó cắt. Cắt theo câu
+#   là trả việc lại cho nó.
+CAT_THEO_CAU = True
+
+# Dấu kết câu. KHÔNG gồm phẩy/chấm phẩy/hai chấm: những dấu đó nằm GIỮA câu và
+# phải ở lại trong mảnh để F5 tự nghỉ tại chỗ.
+DAU_KET_CAU_RE = re.compile(r"[.!?…]$")
+
+# Câu ngắn hơn ngần này thì GỘP vào câu sau thay vì giao riêng. "Dạ." một từ mà
+# giao riêng thì tốn trọn một lượt gọi F5 (~250ms chi phí cố định cho đoạn mẫu)
+# để sinh 0,3 giây tiếng, và F5 sinh mỗi mảnh như một phát ngôn trọn vẹn nên nó
+# nghe tách hẳn khỏi câu vốn thuộc về.
+TOI_THIEU_TU_MOT_CAU = 3
+
+# Trần cắt cưỡng bức khi mãi không thấy dấu kết câu. Không có trần thì LLM nói
+# lan man không chấm là giữ đệm mãi, khách nghe im.
+#
+# Vì sao 40: mảnh 11,5 giây tiếng là mức đo được F5 bắt đầu bịa quãng dừng
+# (2026-08-09). Ở nhịp chuẩn 294 âm tiết/phút thì 11,5 giây ≈ 56 âm tiết. Lấy 40
+# từ để còn khoảng dự trữ, vì từ tiếng Việt nhiều chữ là 2 âm tiết.
+# CHƯA ĐO LẠI SAU KHI ĐỔI SANG CẮT THEO CÂU - đây là suy ra, không phải đo được.
+TRAN_TU_MOT_CAU = 40
+
+# Trần cho chốt chặn cụm số ở mốc cắt CƯỠNG BỨC. Phải có riêng vì
+# `TRAN_CHO_CUM_SO_SAU` chỉ có 9 - nó tự TẮT khi mảnh quá 9 từ ("quá tran từ thì
+# thôi không giữ nữa"), mà mốc cưỡng bức nằm ở 40. Dùng trần cũ thì chốt chặn
+# vô hiệu hoàn toàn và "hai mươi | triệu" lại bị bẻ.
+TRAN_CUM_SO_KHI_CUONG_BUC = TRAN_TU_MOT_CAU + 4
+
 # Cỡ mảnh TĂNG DẦN theo thứ tự, thay vì cố định. Mảnh thứ i lấy cỡ thứ i, hết
 # bảng thì giữ nguyên cỡ cuối.
 #
@@ -190,6 +252,12 @@ DAU_NGAT_Y = (",", ";", ":")
 
 def nhip_nghi_sau(chunk_text: str) -> float:
     """Sau mảnh này thì cần nghỉ bao lâu (ms) trước khi vào mảnh kế?"""
+    if CAT_THEO_CAU:
+        # Mảnh là trọn một câu, nên ranh giới mảnh LÀ ranh giới câu - chỗ đáng
+        # nghỉ. Phải chèn chứ không nối thẳng: `trim_silence` vừa dọn sạch quãng
+        # lặng hai đầu mảnh, không trả lại thì hai câu dính vào nhau.
+        # Dấu phẩy GIỮA câu không đi qua đây - nó ở lại trong mảnh và F5 tự nghỉ.
+        return NGHI_CHAM_MS if chunk_text.rstrip().endswith(DAU_KET_CAU) else 0.0
     if CAT_DON_GIAN:
         return 0.0          # nối thẳng, không chèn gì
     t = chunk_text.rstrip()
@@ -255,6 +323,38 @@ def _tu_cuoi_da_tron(buffer: str) -> bool:
 _KY_TU_DONG_TU = ".,!?:;…)\"'"
 
 
+def _tach_theo_cau(tu: list[str], co_the: int,
+                   buffer: str) -> tuple[str | None, str]:
+    """Tách TRỌN MỘT CÂU ra khỏi đệm, hoặc `(None, buffer)` nếu chưa thấy hết câu.
+
+    `co_the` là số mẩu chắc chắn đã viết xong - mẩu cuối chỉ trọn khi đã có token
+    mới bắt đầu sau nó (xem `_tu_cuoi_da_tron`). Nhờ vậy dấu chấm vừa tới nơi
+    KHÔNG được tin ngay: "ạ." có thể còn là nửa của "ạ..." đang gõ dở.
+    """
+    for k in range(TOI_THIEU_TU_MOT_CAU, co_the + 1):
+        manh = " ".join(tu[:k])
+        if not DAU_KET_CAU_RE.search(manh):
+            continue
+        # "142." KHÔNG phải hết câu mà là dấu phân cách nghìn - lỗi thật
+        # 2026-08-06, bản ghi lưu thành "142. 500.000".
+        if _dang_giua_con_so(manh):
+            continue
+        return manh, " ".join(tu[k:])
+
+    # Chưa thấy dấu kết câu nào. Đợi thêm token, TRỪ KHI đã quá trần: LLM nói lan
+    # man không chấm thì đợi mãi là khách nghe im.
+    if co_the < TRAN_TU_MOT_CAU:
+        return None, buffer
+
+    k = TRAN_TU_MOT_CAU
+    while (_dang_giua_cum_so(" ".join(tu[:k]), tu[:k], TRAN_CUM_SO_KHI_CUONG_BUC)
+           or _dang_giua_con_so(" ".join(tu[:k]))):
+        k += 1
+        if k > co_the:
+            return None, buffer
+    return " ".join(tu[:k]), " ".join(tu[k:])
+
+
 def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
               first_chunk: bool = False) -> tuple[str | None, str]:
     """Tách `n` từ đầu ra khỏi đệm. Trả `(mảnh, phần còn lại)`.
@@ -279,6 +379,12 @@ def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
 
     # Đệm kết thúc bằng khoảng trắng/dấu câu thì mẩu cuối cũng đã trọn.
     co_the = len(tu) if _tu_cuoi_da_tron(buffer) else len(tu) - 1
+
+    # Cắt theo NGUYÊN CÂU đè lên mọi luật đếm từ. `n` bị bỏ qua ở chế độ này -
+    # bên gọi vẫn truyền `co_manh(idx)` nhưng cỡ mảnh giờ do dấu câu quyết định,
+    # chỉ còn `TRAN_TU_MOT_CAU` làm trần chặn.
+    if CAT_THEO_CAU:
+        return _tach_theo_cau(tu, co_the, buffer)
 
     if CAT_DON_GIAN:
         if co_the < n:
