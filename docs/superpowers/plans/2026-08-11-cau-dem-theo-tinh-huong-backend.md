@@ -826,10 +826,24 @@ def test_du_phu_khong_ho():
     assert du_phu([700, 1000, 1300, 1600, 1900, 2200, 2500]) == []
 
 
-def test_du_phu_bao_khoang_ho():
-    """Chỉ có câu rất ngắn và rất dài -> hở đúng phần giữa."""
-    ho = du_phu([700, 2500])
-    assert ho and ho[0][0] >= 700 and ho[-1][1] <= 2500
+def test_du_phu_bao_dung_khoang_ho():
+    """Chỉ có câu 700ms và 2400ms -> hở đúng dải 1000-2200, gộp thành MỘT khoảng.
+
+    Kiểm giá trị chính xác chứ không chỉ "có hở": bước 300ms nên các mốc là
+    700/1000/1300/1600/1900/2200/2500. 700 lấp mốc đầu, 2400 lấp mốc 2200,
+    còn lại hở liền một dải từ 1000 tới 2200.
+    """
+    assert du_phu([700, 2400]) == [(1000.0, 2200.0)]
+
+
+def test_du_phu_hai_khoang_ho_roi_nhau_giu_roi():
+    """Hai khoảng hở KHÔNG liền nhau thì phải giữ riêng, không gộp bừa.
+
+    700 lấp mốc đầu, 1300 lấp mốc giữa, 2400 lấp mốc cuối -> hở hai chỗ rời:
+    1000-1300 và 1600-2200. (Việc GỘP khoảng liền nhau đã do test trên khoá,
+    ở đó 1000-2200 là bốn mốc hở liên tiếp gộp lại.)
+    """
+    assert du_phu([700, 1300, 2400]) == [(1000.0, 1300.0), (1600.0, 2200.0)]
 
 
 def test_du_phu_ro_rong_thi_ho_toan_dai():
@@ -922,7 +936,7 @@ nhat' va khach nghe hut."
 **Interfaces:**
 - Consumes: `ghep` (Task 6), `Kho`/`TinhHuong`/`CauDuoi` (Task 3).
 - Produces:
-  - `pick_filler(kho, voice, min_ms, dem, id_tinh_huong=None) -> tuple[bytes | None, str | None, str | None]` — trả `(wav, id_đuôi, id_tình_huống_đã_dùng)`. `id_tình_huống` trả về `None` khi rơi về đuôi trần, để nơi gọi ghi log đúng sự thật.
+  - `pick_filler(kho, voice=None, min_ms=0.0, dem=None, id_tinh_huong=None, chi_duoi=None) -> tuple[bytes | None, str | None, str | None]` — trả `(wav, id_đuôi, id_tình_huống_đã_dùng)`. `id_tình_huống` trả về `None` khi rơi về đuôi trần, để nơi gọi ghi log đúng sự thật. `chi_duoi: set[str] | None` giới hạn tập id đuôi được chọn — Task 8 cần nó để lọc `hop_cau_hoi`; `None` là không giới hạn.
   - Khoá cache đổi từ `(giọng, id_câu)` sang `(giọng, id_tình_huống_hoặc_rỗng, id_đuôi)`.
 
 - [ ] **Step 1: Đổi khoá cache và dựng tổ hợp**
@@ -949,7 +963,8 @@ Trong `dung_fillers`: dựng **rổ đuôi trần trước** (bảo đảm luôn
 
 ```python
     def pick_filler(self, kho, voice=None, min_ms=0.0, dem=None,
-                    id_tinh_huong: str | None = None):
+                    id_tinh_huong: str | None = None,
+                    chi_duoi: set[str] | None = None):
         """Chọn clip câu đệm ĐÃ CÓ TIẾNG. Trả (wav, id_đuôi, id_tình_huống_dùng).
 
         Chỉ lấy từ cache, không bao giờ sinh: chờ sinh tiếng là phá đúng mục
@@ -965,7 +980,8 @@ Trong `dung_fillers`: dựng **rổ đuôi trần trước** (bảo đảm luôn
             if th is None:
                 continue
             ung_vien = [(k[2], self._filler_ms[k]) for k in self._filler_cache
-                        if k[0] == name and k[1] == (th or "")]
+                        if k[0] == name and k[1] == (th or "")
+                        and (chi_duoi is None or k[2] in chi_duoi)]
             if not ung_vien:
                 continue
             chon_id = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
@@ -1062,7 +1078,7 @@ Thay đoạn từ `kho = lay_kho().cau` tới hết hàm:
 
         filler_audio, id_duoi, th_dung = self.tts.pick_filler(
             kho, session.voice_name, min_ms=can_che, dem=dem,
-            id_tinh_huong=id_th,
+            id_tinh_huong=id_th, chi_duoi={d.id for d in duoi},
         )
         if not filler_audio:
             return
@@ -1074,7 +1090,7 @@ Thay đoạn từ `kho = lay_kho().cau` tới hết hàm:
         metrics["tinh_huong_id"] = th_dung
 ```
 
-Lưu ý: `kho.duoi` đã lọc `hop_cau_hoi` ở đây nhưng `pick_filler` chọn theo cache chứ không theo list — lọc này chỉ có tác dụng khi `pick_filler` nhận thêm danh sách id được phép. Truyền thêm tham số `chi_duoi: set[str] | None` vào `pick_filler` và lọc `ung_vien` theo nó.
+`chi_duoi` là chỗ lọc `hop_cau_hoi` thật sự có tác dụng: `pick_filler` chọn theo cache chứ không theo list, nên không truyền tập id được phép thì lọc ở trên là vô nghĩa. Chữ ký đã có tham số này từ Task 7.
 
 - [ ] **Step 3: Gọi thật, đọc metrics**
 
