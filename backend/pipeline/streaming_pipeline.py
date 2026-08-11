@@ -485,7 +485,7 @@ class StreamingPipeline:
         # câu gắn cờ không hợp câu hỏi. Chưa có phiên âm ở mốc này nên vẫn suy
         # từ lượt trước: đang tư vấn thì đa số lượt là câu hỏi. (Mốc 2 sẽ đọc
         # session.spec_stt để biết chắc thay vì đoán.)
-        kho = lay_kho().cau
+        kho = lay_kho().duoi
         if session.turn_count > 0:
             kho = [c for c in kho if c.hop_cau_hoi]
 

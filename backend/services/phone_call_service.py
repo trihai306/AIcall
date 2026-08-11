@@ -1414,7 +1414,7 @@ class PhoneCallManager:
                 if bridge.pipeline.tts.co_filler(session.voice_name):
                     return
                 await bridge.pipeline.tts.dung_fillers(
-                    lay_kho().cau, voice=session.voice_name)
+                    lay_kho().duoi, voice=session.voice_name)
                 logger.info(f"{bridge.tag} đã dựng câu đệm cho giọng "
                             f"'{session.voice_name}'")
             except Exception as e:

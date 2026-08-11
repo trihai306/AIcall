@@ -193,7 +193,7 @@ def main():
     if not teps:
         in_ra(f"    KHONG thay tep nao trong {thu_muc}")
     else:
-        theo_id = {c.id: c.text for c in lay_kho().cau}
+        theo_id = {c.id: c.text for c in lay_kho().duoi}
         ban, tong = [], 0
         for p in teps:
             cau_id = p.name.split("__")[0]

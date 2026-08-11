@@ -14,7 +14,7 @@ from backend.pipeline.text_normalizer import normalize_for_tts
 from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
-from backend.services.filler_store import CauDem, van_tay
+from backend.services.filler_store import CauDuoi, van_tay
 from backend.services.filler_pick import chon as _chon_filler
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,15 @@ _CHU_SO_RE = re.compile(r"\d")
 # ghi lưu lại cũng vẫn có dấu.
 _DAU_CAU_BO_RE = re.compile(r"[,.;:!?…]")
 
+# Có xoá dấu câu trước khi đưa vào F5 hay không. TẮT từ 2026-08-11 - xem
+# `bo_dau_cau_cho_f5`. Giữ cờ chứ không xoá hàm để còn đường lùi: bật lại True là
+# hành vi cũ quay về nguyên vẹn, không phải sửa mã.
+#
+# ĐỔI CÙNG LÚC với `CAT_THEO_CAU` bên text_chunker. Bật cờ này mà vẫn cắt cứng
+# theo số từ là quay về đúng lỗi cũ (nhịp đọc lệch 44% giữa các mảnh 5 từ, vì dấu
+# rơi vào chỗ tuỳ tiện - mảnh này kết bằng phẩy, mảnh kia không).
+BO_DAU_CAU = False
+
 
 def bo_dau_cau_cho_f5(text: str) -> str:
     """Bỏ dấu chấm/phẩy khỏi chữ đưa vào F5.
@@ -90,8 +99,17 @@ def bo_dau_cau_cho_f5(text: str) -> str:
     Cảnh báo nếu sau này quay lại cắt mảnh DÀI: lúc đó bỏ dấu là sai, vì F5 lại
     cần dấu để ngắt nhịp trong lòng mảnh. Đo trên cả câu thì bỏ dấu không được
     gì (lệch 7% -> 8%).
+    ĐÃ TẮT 2026-08-11, người dùng chốt "bỏ cơ chế bỏ dấu câu". Cùng lúc với
+    `CAT_THEO_CAU` bên text_chunker - hai nửa của một thay đổi, bật một nửa là vô
+    nghĩa. Lý do gỡ: xoá dấu thì F5 KHÔNG CÒN MỐC NÀO để nghỉ. Đo 2026-08-11 trên
+    đoạn 60 từ có 4 dấu, ngưỡng -40dB/20ms: bản đang chạy chỉ 2 quãng lặng (35ms,
+    38ms) trong 13,8 giây, còn người thật 22 quãng trong 16 giây.
+
+    Cảnh báo cũ vẫn còn giá trị và chính là lý do phải đổi CẢ HAI nửa: bỏ dấu
+    chỉ ĐÚNG khi mảnh bị cắt cứng theo số từ, vì lúc đó dấu rơi vào chỗ tuỳ tiện.
+    Cắt theo nguyên câu thì dấu lại nằm đúng chỗ của nó, nên giữ dấu là đúng.
     """
-    if not text:
+    if not text or not BO_DAU_CAU:
         return text
     return re.sub(r"\s+", " ", _DAU_CAU_BO_RE.sub(" ", text)).strip()
 
@@ -975,7 +993,7 @@ class F5TTSService:
         ref_text = entry[2] if entry is not None else settings.f5tts_ref_text
         return van_tay(text, voice, settings.f5tts_nfe_step, speed, ref_text)
 
-    async def dung_fillers(self, cau: list[CauDem], voice: str | None = None):
+    async def dung_fillers(self, cau: list[CauDuoi], voice: str | None = None):
         """Bảo đảm mọi câu đệm đều có tiếng sẵn sàng cho giọng này.
 
         Đọc từ đĩa trước, chỉ gọi F5 cho những câu còn thiếu hoặc lệch vân tay.
@@ -1042,11 +1060,11 @@ class F5TTSService:
         """Độ dài tiếng (ms) của một câu đệm, 0 nếu chưa dựng."""
         return self._filler_ms.get((self._giong_thuc(voice), cau_id), 0.0)
 
-    def pick_filler(self, cau: list[CauDem], voice: str | None = None,
+    def pick_filler(self, cau: list[CauDuoi], voice: str | None = None,
                     min_ms: float = 0.0,
                     dem: dict[str, int] | None = None
-                    ) -> tuple[bytes | None, CauDem | None]:
-        """Chọn câu đệm đã có tiếng cho giọng này. Trả (wav, CauDem).
+                    ) -> tuple[bytes | None, CauDuoi | None]:
+        """Chọn câu đệm đã có tiếng cho giọng này. Trả (wav, CauDuoi).
 
         Lớp mỏng: luật chọn nằm ở services/filler_pick.py để test được mà không
         cần GPU. Ở đây chỉ lo tra cache và quy giọng lạ về giọng mặc định.

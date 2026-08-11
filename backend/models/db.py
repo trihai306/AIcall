@@ -68,6 +68,30 @@ CREATE TABLE IF NOT EXISTS scenarios (
     created_at       REAL NOT NULL
 );
 
+-- Kho cau dem theo tinh huong. La CAU HINH dung chung cho moi cuoc goi, nen
+-- nam o app.db chu khong tach theo khach: tach ra la moi khach mot ban sao cua
+-- cung mot thu, va nhan len dung tai nguyen dat nhat (GPU dung tieng moi giong).
+CREATE TABLE IF NOT EXISTS tinh_huong (
+    id         TEXT PRIMARY KEY,
+    ten        TEXT NOT NULL,
+    vi_du      TEXT NOT NULL,      -- JSON array: cau khach noi mau, de nhung
+    tu_khoa    TEXT,               -- JSON array: loc tho / du phong
+    mo_dau     TEXT,               -- JSON array: mau mo dau rieng
+    speed      REAL,               -- NULL = lay toc cua giong
+    bat        INTEGER NOT NULL DEFAULT 1,
+    created_at REAL,
+    updated_at REAL
+);
+
+CREATE TABLE IF NOT EXISTS cau_duoi (
+    id          TEXT PRIMARY KEY,
+    text        TEXT NOT NULL,
+    hop_cau_hoi INTEGER NOT NULL DEFAULT 1,
+    bat         INTEGER NOT NULL DEFAULT 1,
+    created_at  REAL,
+    updated_at  REAL
+);
+
 -- Call outcome labels the operator sticks on a session by hand.
 CREATE TABLE IF NOT EXISTS labels (
     label_id   TEXT PRIMARY KEY,

@@ -90,7 +90,7 @@ async def startup(state: AppState):
     logger.info("[6/6] Loading F5-TTS Vietnamese...")
     try:
         state.tts.load()
-        await state.tts.dung_fillers(lay_kho().cau)
+        await state.tts.dung_fillers(lay_kho().duoi)
         logger.info("  TTS: OK")
 
         # HÂM HÌNH DẠNG TTS. Cùng lý lẽ với phần hâm LLM ngay dưới đây.

@@ -24,11 +24,11 @@ def main():
     tts.load()
     import asyncio
     giong = tts.default_voice_name()
-    asyncio.run(tts.dung_fillers(list(kho.cau)))
+    asyncio.run(tts.dung_fillers(list(kho.duoi)))
 
     print(f"=== do dai that, giong '{giong}' ===")
     ro = Counter()
-    for c in kho.cau:
+    for c in kho.duoi:
         ms = tts.do_dai_filler(c.id, giong)
         ten_ro = "ngan" if ms < 800 else ("vua" if ms < 1500 else "dai")
         ro[ten_ro] += 1
@@ -37,7 +37,7 @@ def main():
 
     print("\n=== mo phong 10 luot duong thoai (min_ms=1800) ===")
     ung_vien = [(c.id, tts.do_dai_filler(c.id, giong))
-                for c in kho.cau if c.hop_cau_hoi]
+                for c in kho.duoi if c.hop_cau_hoi]
     dem, ra = {}, []
     r = random.Random(0)
     for _ in range(10):

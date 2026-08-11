@@ -21,7 +21,7 @@ def _warm_fillers(tts, voice: str):
     """
     async def run():
         try:
-            await tts.dung_fillers(lay_kho().cau, voice=voice)
+            await tts.dung_fillers(lay_kho().duoi, voice=voice)
         except Exception as e:
             logger.warning(f"Filler warmup for '{voice}' failed: {e}")
 
