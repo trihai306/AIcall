@@ -24,6 +24,7 @@ from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
+from backend.services.filler_situation import chon_tinh_huong, chuan_hoa
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
@@ -236,6 +237,20 @@ class StreamingPipeline:
                 # lượt), (2) nếu RAG hay LLM bên dưới hỏng/bị huỷ thì phần phiên
                 # âm vẫn dùng được - cất ở cuối là mất trắng.
                 session.spec_stt = (n, text)
+                # Phân loại tình huống ngay tại đây, cùng chỗ và cùng lý do với
+                # `spec_stt`: đây là điểm sớm nhất đã có chữ. Không await gì ở
+                # đường găng - `_send_filler` đọc được thì dùng, không thì rơi
+                # về rổ chung. Cùng triết lý với chính hàm này: đoán trượt thì bỏ.
+                try:
+                    from backend.main import app_state
+                    kho_vec = getattr(app_state, "kho_vector", None)
+                    if kho_vec and len(text) >= 4:
+                        q = chuan_hoa(self.rag.embed([text]))[0]
+                        id_th, diem = chon_tinh_huong(q, kho_vec)
+                        if id_th:
+                            session.tinh_huong = (n, id_th, diem)
+                except Exception as e:
+                    logger.debug("phan loai tinh huong truot (bo qua): %s", e)
                 if len(text) < 4:
                     return
                 rag = ""

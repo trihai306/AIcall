@@ -104,6 +104,10 @@ class CallSession:
         # không thiếu chữ nào. Đây là thứ DUY NHẤT cắt được STT khỏi đường găng:
         # `process_turn` vốn luôn phiên âm lại từ đầu, tốn 212-502ms mỗi lượt.
         self.spec_stt: tuple[int, str] | None = None
+        # Tình huống đoán được từ phiên âm dở: (số byte đã thấy, id, điểm).
+        # `_send_filler` đọc ô này để chọn mẩu mở đầu. Số byte để biết đoán này
+        # phủ được bao nhiêu phần câu - đoán trên câu cụt thì dễ trượt.
+        self.tinh_huong: tuple[int, str, float] | None = None
         # Đếm số lần mỗi câu đệm đã dùng TRONG CUỘC GỌI NÀY, để chọn câu ít
         # dùng nhất. Thuộc về phiên: khách mới thì không việc gì phải tránh
         # câu đã dùng với khách trước.
@@ -179,6 +183,7 @@ class CallSession:
         self.spec_answer = ""
         self.spec_bytes = 0
         self.spec_stt = None
+        self.tinh_huong = None
 
     def add_turn(self, role: str, content: str):
         self.history.append({"role": role, "content": content})
