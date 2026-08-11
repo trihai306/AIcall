@@ -1476,6 +1476,17 @@ async function testTTS() {
   const voice = document.getElementById('ttsTestVoice').value;
   const btn = document.getElementById('ttsTestBtn');
   const result = document.getElementById('ttsTestResult');
+  const msg = document.getElementById('ttsTestMsg');
+
+  // Viết vào ô thông báo RIÊNG (#ttsTestMsg), tuyệt đối không đặt innerHTML lên
+  // #ttsTestResult: thẻ <audio> là con của nó, ghi đè là xoá mất thẻ đó và panel
+  // hỏng vĩnh viễn tới khi F5. Dùng textContent nên chữ của server không bao giờ
+  // bị hiểu thành HTML.
+  const bao = (t, mau) => {
+    result.classList.remove('hidden');
+    msg.textContent = t;
+    msg.className = mau;
+  };
 
   if (!text) return;
   btn.textContent = 'Đang tạo...';
@@ -1490,17 +1501,23 @@ async function testTTS() {
     const data = await res.json();
 
     if (data.error) {
-      result.classList.remove('hidden');
-      result.innerHTML = `<span class="text-amber-400">${data.error}</span>`;
+      bao(data.error, 'text-amber-400');
     } else if (data.audio) {
-      result.classList.remove('hidden');
+      bao('', '');  // xoá lỗi cũ, không thì chữ đỏ còn nằm đó khi tiếng đã ra
       const audioEl = document.getElementById('ttsTestAudio');
       audioEl.src = 'data:audio/wav;base64,' + data.audio;
       audioEl.play();
     }
   } catch (err) {
-    result.classList.remove('hidden');
-    result.innerHTML = `<span class="text-red-400">Lỗi: ${err.message}</span>`;
+    // `fetch` chỉ ném khi KHÔNG tới được server (backend tắt, còn đang nạp
+    // F5-TTS, hoặc đường hầm SSH rớt) - lỗi HTTP 4xx/5xx vẫn về nhánh trên.
+    // Chuỗi trần "Failed to fetch" của trình duyệt khiến người dùng tưởng giọng
+    // nói hỏng, trong khi TTS không hề được gọi tới.
+    const mangDut = err instanceof TypeError;
+    bao(mangDut
+      ? 'Không kết nối được server. Kiểm tra backend còn chạy (/api/health) '
+        + 'và tải lại trang — chưa gọi tới được TTS nên chưa biết giọng có lỗi hay không.'
+      : `Lỗi: ${err.message}`, 'text-red-400');
   }
   btn.textContent = 'Phát thử';
   btn.disabled = false;

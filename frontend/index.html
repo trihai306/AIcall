@@ -933,6 +933,11 @@
             <button onclick="testTTS()" id="ttsTestBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Phát thử</button>
           </div>
           <div id="ttsTestResult" class="mt-3 text-xs text-gray-500 hidden">
+            <!-- Thông báo phải có ô RIÊNG. Trước đây báo lỗi ghi thẳng innerHTML
+                 lên #ttsTestResult, tức xoá luôn thẻ <audio> nằm trong nó: sau
+                 một lỗi bất kỳ, mọi lần Phát thử sau đều chết vì audio đã biến
+                 mất, dù server hoàn toàn khoẻ. -->
+            <div id="ttsTestMsg" class="empty:hidden"></div>
             <audio id="ttsTestAudio" controls class="w-full h-8 mt-2"></audio>
           </div>
         </div>
