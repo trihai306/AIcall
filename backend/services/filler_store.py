@@ -41,7 +41,13 @@ class Kho:
 # Tăng khi CÁCH sinh tiếng đổi mà tham số trong vân tay thì không đổi.
 #   1 -> 2 : ép thời lượng theo âm tiết (2026-08-09)
 #   2 -> 3 : bỏ dấu chấm/phẩy khỏi chữ đưa vào F5 (2026-08-09)
-PHIEN_BAN = 3
+#   3 -> 4 : THÔI bỏ dấu câu, tức đảo lại đúng thay đổi 2->3 (2026-08-11).
+#            Cùng text + giọng + nfe + speed + ref_text nhưng F5 nay nhìn thấy
+#            dấu nên tiếng ra khác. Không tăng số này thì 42 tệp câu đệm cũ nằm
+#            nguyên trên đĩa (log: "42 đọc từ đĩa, 0 dựng mới") còn câu trả lời
+#            thật đọc theo cách mới - khách nghe hai nhịp nối liền nhau ngay đầu
+#            mỗi lượt, và không có gì báo lỗi.
+PHIEN_BAN = 4
 
 
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
