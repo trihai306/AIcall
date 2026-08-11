@@ -83,24 +83,28 @@ def test_bo_qua_luot_tra_loi_bang_cau_san():
 
 
 def test_chi_tinh_luot_that_khi_co_ca_hai_loai():
-    su = [_luot(450, cau_san=True), _luot(2000), _luot(1500)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(2000.0 * BIEN_AN_TOAN)
+    """Lượt trả bằng bảng câu sẵn bị BỎ. Còn lại max(2000, 1500) = 2000,
+    nhân biên 1.25 -> 2500."""
+    su = [
+        {"ttfa_ms": 450, "la_thoai": True, "luot_thuong_gap": "chào hỏi"},
+        {"ttfa_ms": 2000, "la_thoai": True},
+        {"ttfa_ms": 1500, "la_thoai": True},
+    ]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 2500.0
 
 
 def test_loc_dung_duong_thoai_hay_chat():
-    su = [_luot(3000, la_thoai=False), _luot(1200, la_thoai=True)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1200.0 * BIEN_AN_TOAN)
-    assert can_che_ms(su, la_thoai=False, mac_dinh=0.0) == pytest.approx(3000.0 * BIEN_AN_TOAN)
+    """Chỉ lượt thoại được tính: 1200 * 1.25 = 1500, nhưng `mac_dinh` là SÀN
+    nên kết quả là 1800."""
+    su = [{"ttfa_ms": 3000, "la_thoai": False}, {"ttfa_ms": 1200, "la_thoai": True}]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
 
 
 def test_lay_max_cua_sau_luot_gan_nhat():
-    """Cửa sổ 3 -> 6 lượt (08-10).
-
-    Với cửa sổ 3, vài lượt nhanh liên tiếp kéo ước lượng xuống thấp rồi một lượt
-    chậm đột ngột là hụt. Đo được: lịch sử toàn 678ms, lượt sau 1056ms.
-    """
-    su = [_luot(5000), _luot(1000), _luot(1100), _luot(1200)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(5000.0 * BIEN_AN_TOAN)
+    """Cửa sổ là SÁU lượt (`lich_su[-6:]`), không phải ba. Cả 4 lượt đều nằm
+    trong cửa sổ nên max là 5000, nhân biên -> 6250."""
+    su = [{"ttfa_ms": v, "la_thoai": True} for v in (5000, 1000, 1100, 1200)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 6250.0
 
 
 def test_mac_dinh_la_SAN_chu_khong_chi_la_gia_tri_lui():
@@ -115,11 +119,290 @@ def test_lich_su_cao_thi_vuot_san():
 
 
 def test_bo_qua_luot_thieu_ttfa():
-    su = [_luot(None), _luot(0), _luot(1300)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1300.0 * BIEN_AN_TOAN)
+    """None và 0 đều bị bỏ. Còn 1300 * 1.25 = 1625, dưới sàn -> 1800."""
+    su = [
+        {"ttfa_ms": None, "la_thoai": True},
+        {"ttfa_ms": 0, "la_thoai": True},
+        {"ttfa_ms": 1300, "la_thoai": True},
+    ]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
 
 
 def test_suy_ra_duong_tu_stt_ms_khi_ban_ghi_cu_khong_co_la_thoai():
-    # Bản ghi cũ trong DB không có khoá `la_thoai`. Suy từ stt_ms như bản trước.
+    """Bản ghi cũ thiếu khoá `la_thoai` thì suy từ `stt_ms`. 1400 * 1.25 = 1750,
+    dưới sàn -> 1800."""
     cu = [{"ttfa_ms": 1400, "stt_ms": 300}]
-    assert can_che_ms(cu, la_thoai=True, mac_dinh=0.0) == pytest.approx(1400.0 * BIEN_AN_TOAN)
+    assert can_che_ms(cu, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+def test_bien_an_toan_duoc_ap_dung():
+    """Biên 1.25 phải ăn khi kết quả vượt sàn."""
+    su = [{"ttfa_ms": 4000, "la_thoai": True}]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 5000.0
+
+
+def test_mac_dinh_la_san_khong_phai_chi_gia_tri_lui():
+    """Lịch sử toàn lượt nhanh vẫn không được xuống dưới sàn - vài lượt nhanh
+    liên tiếp rồi một lượt chậm đột ngột là khách nghe hụt."""
+    su = [{"ttfa_ms": 200, "la_thoai": True} for _ in range(6)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+# --- ghep + du_phu -----------------------------------------------------------
+
+from backend.services.filler_pick import du_phu, ghep  # noqa: E402
+
+
+def test_ghep_dung_mot_khoang_trang():
+    assert ghep("Dạ về lãi suất thì,", "anh chị chờ em ạ.") == \
+        "Dạ về lãi suất thì, anh chị chờ em ạ."
+
+
+def test_ghep_khong_mo_dau_thi_tra_duoi_nguyen_ven():
+    """Mở đầu rỗng là trường hợp suy biến - đúng hành vi hôm nay."""
+    assert ghep("", "anh chị chờ em ạ.") == "anh chị chờ em ạ."
+
+
+def test_ghep_khong_de_hai_dau_cach():
+    assert ghep("Dạ vâng,  ", "  em nghe ạ.") == "Dạ vâng, em nghe ạ."
+
+
+def test_du_phu_khong_ho():
+    """Cac moc rai deu 300ms mot thi khong ho khoang nao."""
+    assert du_phu([700, 1000, 1300, 1600, 1900, 2200, 2500]) == []
+
+
+def test_du_phu_bao_dung_khoang_ho():
+    """Chi co cau 700ms va 2400ms -> ho dung dai 1000-2200, gop thanh MOT khoang.
+
+    Kiem gia tri chinh xac chu khong chi 'co ho': buoc 300ms nen cac moc la
+    700/1000/1300/1600/1900/2200/2500. 700 lap moc dau, 2400 lap moc 2200,
+    con lai ho lien mot dai tu 1000 toi 2200.
+    """
+    assert du_phu([700, 2400]) == [(1000.0, 2200.0)]
+
+
+def test_du_phu_hai_khoang_ho_roi_nhau_giu_roi():
+    """Hai khoang ho KHONG lien nhau thi phai giu rieng, khong gop bua.
+
+    700 lap moc dau, 1300 lap moc giua, 2400 lap moc cuoi -> ho hai cho roi:
+    1000-1300 va 1600-2200.
+    """
+    assert du_phu([700, 1300, 2400]) == [(1000.0, 1300.0), (1600.0, 2200.0)]
+
+
+def test_du_phu_ro_rong_thi_ho_toan_dai():
+    assert du_phu([]) == [(700.0, 2500.0)]
+
+
+# --- ghep: bỏ tiểu từ khi có mẩu mở đầu ------------------------------------
+# 41/42 câu đuôi mở bằng Dạ hoặc Vâng; 20/20 mẩu mở đầu cũng vậy → 820/840
+# tổ hợp (98%) bị lặp. STT nghe lại xác nhận: "dạ về lãi suất thì dạ em kiểm
+# tra ngay." Cần bỏ tiểu từ của đuôi KHI có mẩu; đuôi trần giữ nguyên.
+
+import re  # noqa: E402
+
+# Các kiểu tiểu từ quan sát từ 42 câu đuôi thật (bat=1) trong DB:
+#   "Dạ vâng," "Dạ," "Vâng ạ," "Dạ vâng," "Vâng,"  — có dấu phẩy
+#   "Dạ"       (ngan_01 — toàn tiểu từ)
+#   "Vâng ạ"   (ngan_02 — toàn tiểu từ)
+#   "Dạ vâng ạ" (ngan_03 — toàn tiểu từ)
+#   không có tiểu từ: "Được rồi ạ" (ngan_04)
+#   "Dạ " không phẩy: "Dạ em nghe", "Dạ em rõ"
+#   "Vâng " không phẩy: "Vâng em nghe"
+
+# 42 câu đuôi thật (hardcode để test không cần DB — tránh bẫy db.init_db)
+_CAU_DUOI_THAT = [
+    # dai (10)
+    "Dạ vâng, anh chị chờ em một chút để em kiểm tra lại thông tin nhé",
+    "Vâng ạ, em đang tra lại thông tin cho anh chị, anh chị chờ em một lát nhé",
+    "Dạ, để em xem lại cho chính xác rồi em trả lời anh chị ngay đây ạ",
+    "Vâng, cái này em cần tra lại một chút, anh chị chờ em một lát nhé",
+    "Dạ vâng, em xem lại giúp anh chị rồi em báo lại ngay bây giờ ạ",
+    "Vâng ạ, anh chị giữ máy giúp em một lát, em tra lại rồi báo anh chị ngay",
+    "Dạ, phần này em phải xem lại cho kỹ, anh chị chờ em một chút nhé",
+    "Vâng, em kiểm tra lại thông tin rồi trả lời anh chị cho chính xác nhé",
+    "Dạ vâng, anh chị đợi em một lát, em tra xong là em báo lại ngay ạ",
+    "Vâng ạ, để em xem lại một chút rồi em nói rõ hơn cho anh chị nghe nhé",
+    # ngan (8)
+    "Dạ",
+    "Vâng ạ",
+    "Dạ vâng ạ",
+    "Được rồi ạ",
+    "Dạ em nghe",
+    "Vâng em nghe",
+    "Dạ em rõ",
+    "Vâng, em nghe đây",
+    # noi (8)
+    "Dạ vâng, anh chị chờ em một chút nhé",
+    "Vâng ạ, để em tra lại giúp anh chị",
+    "Dạ, em xem lại một chút rồi báo ạ",
+    "Vâng, anh chị đợi em một lát, em tra nhé",
+    "Dạ vâng, em kiểm tra lại thông tin đã ạ",
+    "Dạ, anh chị chờ em một chút để em xem lại cho kỹ nhé",
+    "Vâng ạ, em tra lại thông tin rồi báo lại anh chị ngay ạ",
+    "Dạ vâng, cái này em cần xem lại một chút, anh chị chờ em nhé",
+    # trung (6)
+    "Dạ, anh chị chờ em chút để em tra lại nhé",
+    "Vâng ạ, em kiểm tra lại rồi báo anh chị ngay",
+    "Dạ vâng, để em xem lại cho thật chính xác đã ạ",
+    "Vâng, cái này em phải tra lại một chút anh chị nhé",
+    "Dạ, anh chị giữ máy giúp em một lát nhé",
+    "Vâng ạ, em xem lại rồi trả lời anh chị ngay đây ạ",
+    # vua (10)
+    "Vâng, để em xem",
+    "Dạ, em kiểm tra ngay",
+    "Vâng, anh chị chờ em chút",
+    "Dạ, em xem lại chút nhé",
+    "Vâng, em tra giúp anh chị nhé",
+    "Dạ, cái này để em xem",
+    "Vâng, em nắm được rồi",
+    "Dạ, anh chị đợi em một chút",
+    "Vâng, em xem ngay đây ạ",
+    "Dạ, để em tra lại chút",
+]
+
+# 20 mẩu mở đầu thật từ tinh_huong (bat=1)
+_MO_DAU_THAT = [
+    "Dạ em rất xin lỗi vì điều này,",
+    "Dạ anh chị cho em xin lịch gọi lại,",
+    "Dạ về điều kiện vay thì,",
+    "Dạ về hạn mức vay thì,",
+    "Dạ về hồ sơ cần chuẩn bị thì,",
+    "Dạ về lãi suất thì,",
+    "Dạ về thời gian duyệt hồ sơ thì,",
+    "Dạ về thời hạn vay thì,",
+    "Dạ về phần tính toán thì,",
+    "Dạ về trả nợ trước hạn thì,",
+    "Dạ về ưu đãi hiện tại thì,",
+    "Dạ em xin phép nhắc lại,",
+    "Dạ để em xác nhận với anh chị,",
+    "Dạ về trường hợp có nợ xấu thì,",
+    "Dạ về thẻ tín dụng bên em thì,",
+    "Dạ nếu chậm thanh toán thẻ thì,",
+    "Dạ để tăng hạn mức thẻ thì,",
+    "Dạ em xin lỗi đã làm phiền,",
+    "Dạ em ghi nhận lại,",
+    "Dạ để em kết nối với chuyên viên,",
+]
+
+# Regex phát hiện lặp: sau dấu phẩy + khoảng trắng có Dạ/Vâng không
+# Ví dụ: "Dạ về lãi suất thì, Dạ em kiểm tra" → lặp
+_LAP_RE = re.compile(r",\s+(Dạ|Vâng)(?=[,\s]|$)")
+
+
+def test_ghep_bo_Da_vang_co_phay():
+    """'Dạ vâng,' + mẩu mở đầu → bỏ tiểu từ, giữ phần còn lại."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Dạ vâng, anh chị chờ em một chút nhé",
+    ) == "Dạ về lãi suất thì, anh chị chờ em một chút nhé"
+
+
+def test_ghep_bo_Vang_a_co_phay():
+    """'Vâng ạ,' + mẩu mở đầu → bỏ tiểu từ."""
+    assert ghep(
+        "Dạ về hạn mức vay thì,",
+        "Vâng ạ, để em tra lại giúp anh chị",
+    ) == "Dạ về hạn mức vay thì, để em tra lại giúp anh chị"
+
+
+def test_ghep_bo_Da_co_phay():
+    """'Dạ,' + mẩu mở đầu → bỏ tiểu từ."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Dạ, em kiểm tra ngay",
+    ) == "Dạ về lãi suất thì, em kiểm tra ngay"
+
+
+def test_ghep_bo_Vang_co_phay():
+    """'Vâng,' + mẩu mở đầu → bỏ tiểu từ."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Vâng, để em xem",
+    ) == "Dạ về lãi suất thì, để em xem"
+
+
+def test_ghep_bo_Da_khong_phay():
+    """'Dạ em nghe' (không dấu phẩy) + mẩu mở đầu → bỏ 'Dạ '."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Dạ em nghe",
+    ) == "Dạ về lãi suất thì, em nghe"
+
+
+def test_ghep_bo_Vang_khong_phay():
+    """'Vâng em nghe' (không dấu phẩy) + mẩu mở đầu → bỏ 'Vâng '."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Vâng em nghe",
+    ) == "Dạ về lãi suất thì, em nghe"
+
+
+def test_ghep_Da_don_thi_chi_mo_dau():
+    """'Dạ' (toàn tiểu từ) + mẩu mở đầu → chỉ trả mẩu, không phát âm trống."""
+    assert ghep("Dạ về lãi suất thì,", "Dạ") == "Dạ về lãi suất thì,"
+
+
+def test_ghep_Vang_a_don_thi_chi_mo_dau():
+    """'Vâng ạ' (toàn tiểu từ) + mẩu mở đầu → chỉ trả mẩu."""
+    assert ghep("Dạ về lãi suất thì,", "Vâng ạ") == "Dạ về lãi suất thì,"
+
+
+def test_ghep_Da_vang_a_don_thi_chi_mo_dau():
+    """'Dạ vâng ạ' (toàn tiểu từ) + mẩu mở đầu → chỉ trả mẩu."""
+    assert ghep("Dạ về lãi suất thì,", "Dạ vâng ạ") == "Dạ về lãi suất thì,"
+
+
+def test_ghep_khong_tieu_tu_giu_nguyen():
+    """Câu đuôi không có tiểu từ thì không mất chữ nào ('Được rồi ạ')."""
+    assert ghep(
+        "Dạ về lãi suất thì,",
+        "Được rồi ạ",
+    ) == "Dạ về lãi suất thì, Được rồi ạ"
+
+
+def test_ghep_chu_dau_viet_thuong_sau_cat():
+    """Chữ đầu phần còn lại phải viết thường (đứng giữa câu, không phải đầu câu).
+
+    'Dạ, Em kiểm tra ngay' → sau cắt 'Dạ, ' → 'Em' phải hạ thành 'em'.
+    Lưới chặn cho câu đuôi tương lai có chữ hoa sau tiểu từ.
+    """
+    ket = ghep("Dạ về lãi suất thì,", "Dạ, Em kiểm tra ngay")
+    phan_sau = ket.split(", ", 1)[1]
+    assert phan_sau[0].islower(), (
+        f"chữ đầu '{phan_sau[0]}' vẫn viết hoa sau khi cắt tiểu từ"
+    )
+
+
+def test_ghep_tran_khong_mo_dau_giu_tieu_tu():
+    """Đuôi dùng trần (mở đầu rỗng) thì tiểu từ còn nguyên.
+
+    Đây là ca dễ làm hỏng nhất: đường suy biến không có tình huống phải đi
+    đúng hành vi cũ — nghe lên phải tự nhiên, không bị cụt đầu.
+    """
+    assert ghep("", "Dạ vâng, anh chị chờ em một chút nhé") == \
+        "Dạ vâng, anh chị chờ em một chút nhé"
+    assert ghep("", "Dạ") == "Dạ"
+    assert ghep("", "Vâng ạ") == "Vâng ạ"
+
+
+def test_khoa_tinh_chat_khong_co_lap_tieu_tu():
+    """Mọi tổ hợp (mẩu mở đầu, câu đuôi) từ dữ liệu thật không được có hai
+    tiểu từ liên tiếp.
+
+    Test khoá lỗi: trước khi sửa 820/840 tổ hợp (98%) bị lặp — 20 mẩu mở
+    đầu × 41/42 câu đuôi có Dạ/Vâng. STT nghe lại clip thật xác nhận:
+    "dạ về lãi suất thì dạ em kiểm tra ngay."
+    """
+    lap = []
+    for md in _MO_DAU_THAT:
+        for duoi in _CAU_DUOI_THAT:
+            ket = ghep(md, duoi)
+            if _LAP_RE.search(ket):
+                lap.append(f"  {md!r} + {duoi!r}\n  -> {ket!r}")
+    tong = len(_MO_DAU_THAT) * len(_CAU_DUOI_THAT)
+    assert lap == [], (
+        f"{len(lap)}/{tong} tổ hợp vẫn còn lặp tiểu từ:\n"
+        + "\n".join(lap[:5])
+    )

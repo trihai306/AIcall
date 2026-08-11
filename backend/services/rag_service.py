@@ -46,6 +46,17 @@ class RAGService:
         count = self._collection.count()
         logger.info(f"RAG ready: {count} documents in knowledge base")
 
+    def embed(self, texts: list[str]) -> "np.ndarray":
+        """Nhúng danh sách chuỗi. Hình (n, d), CHƯA chuẩn hoá.
+
+        Công khai để phần chọn tình huống dùng lại đúng model này thay vì nạp
+        thêm một model nữa - VRAM 12GB đã phải chia cho STT, LLM và TTS.
+        """
+        import numpy as np
+        if not texts:
+            return np.zeros((0, 0), dtype=np.float32)
+        return np.asarray(self._embedder.encode(texts), dtype=np.float32)
+
     async def retrieve(self, query: str, top_k: int = 3, san_pham: str = "") -> str:
         """Retrieve relevant documents for the query.
 

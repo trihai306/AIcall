@@ -24,6 +24,7 @@ from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
+from backend.services.filler_situation import chon_tinh_huong, chuan_hoa
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
@@ -99,13 +100,30 @@ class StreamingPipeline:
 
     @staticmethod
     def _toc_cho_phien(tts, session, voice: str | None) -> float | None:
-        """Tốc đọc cho phiên này: tốc của giọng, nhân hệ số nếu là cuộc gọi.
+        """Tốc đọc cho phiên: tốc của tình huống nếu có, không thì tốc của giọng,
+        nhân hệ số nếu là cuộc gọi.
 
-        Phân biệt bằng `session.audio_rate` - 8000 là đường thoại, 16000 là
-        trình duyệt. Đó là mốc sẵn có và luôn đúng, không phải cờ tự đặt thêm.
+        Phân biệt thoại/chat bằng `session.audio_rate` - 8000 là đường thoại.
+        Đó là mốc sẵn có và luôn đúng, không phải cờ tự đặt thêm.
+
+        GIÁ PHẢI TRẢ, ghi lại cho rõ: tốc riêng theo tình huống làm khoá cache
+        câu bị CHIA theo tình huống, nên tỉ lệ trúng cache giảm. Phải đo lại.
+        Task 12 sẽ đo lại.
         """
         try:
-            goc = tts.toc_do_cua(voice)
+            goc = None
+            if session.tinh_huong:
+                # Import trong thân hàm: filler_store không kéo torch nhưng
+                # streaming_pipeline thì có - import ở tầng module làm mọi lượt
+                # gọi chịu chi phí, và tạo vòng phụ thuộc khi khởi động.
+                from backend.services.filler_store import lay_kho
+                th = session.tinh_huong[1]   # (số_byte, id, điểm) → lấy id
+                for t in lay_kho().tinh_huong:
+                    if t.id == th and t.speed is not None:
+                        goc = t.speed
+                        break
+            if goc is None:
+                goc = tts.toc_do_cua(voice)
             if getattr(session, "audio_rate", 16000) <= 8000:
                 return goc * tts.he_so_thoai()
             return goc
@@ -236,6 +254,20 @@ class StreamingPipeline:
                 # lượt), (2) nếu RAG hay LLM bên dưới hỏng/bị huỷ thì phần phiên
                 # âm vẫn dùng được - cất ở cuối là mất trắng.
                 session.spec_stt = (n, text)
+                # Phân loại tình huống ngay tại đây, cùng chỗ và cùng lý do với
+                # `spec_stt`: đây là điểm sớm nhất đã có chữ. Không await gì ở
+                # đường găng - `_send_filler` đọc được thì dùng, không thì rơi
+                # về rổ chung. Cùng triết lý với chính hàm này: đoán trượt thì bỏ.
+                try:
+                    from backend.main import app_state
+                    kho_vec = getattr(app_state, "kho_vector", None)
+                    if kho_vec and len(text) >= 4:
+                        q = chuan_hoa(self.rag.embed([text]))[0]
+                        id_th, diem = chon_tinh_huong(q, kho_vec)
+                        if id_th:
+                            session.tinh_huong = (n, id_th, diem)
+                except Exception as e:
+                    logger.debug("phan loai tinh huong truot (bo qua): %s", e)
                 if len(text) < 4:
                     return
                 rag = ""
@@ -444,16 +476,60 @@ class StreamingPipeline:
     # chỉ thành lời thừa - người nghe báo "dạ vâng ạ lặp lại quá nhiều".
     _FILLER_BO_QUA_MS = 700.0
 
+    # Phân loại đoán trên câu CỤT thì dễ trượt: khách có thể đổi ý giữa lượt
+    # ("lãi suất bao nhiêu... à không, hồ sơ cần gì"). Chỉ dùng khi bản đoán đã
+    # nghe được ít nhất bằng này phần audio cuối cùng.
+    # TẠM 0.5, CHƯA ĐO. `tinh_huong_do_phu` trong metrics để chốt bằng số thật.
+    # Chọn sai mẩu mở đầu tệ hơn không có mẩu nào -> lưỡng lự thì về rổ chung.
+    _TINH_HUONG_DO_PHU_MIN = 0.5
+
+    # Chờ tối đa bao nhiêu ms để speculate._run() hoàn thành STT và phân loại
+    # tình huống. Câu đệm che ~1800ms; mất 150ms vẫn còn 1650ms — đánh đổi đã đo
+    # và đã chốt ngày 2026-08-11 (task-11d). Đặt 0 để tắt hoàn toàn.
+    # NGOẠI LỆ có chủ đích: ràng buộc "không thêm await vào _send_filler" tồn tại
+    # để bảo vệ TTFA; một lần chờ CÓ TRẦN CỨNG là đánh đổi đã đo, khác hẳn chờ vô hạn.
+    _CHO_TINH_HUONG_MS: int = 150
+
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
         return can_che_ms(session.latency_log, la_thoai, mac_dinh)
 
+    def _phan_loai_dong_bo(self, session: CallSession):
+        """Phân loại tình huống ĐỒNG BỘ từ spec_stt đã có, không await (~10ms).
+
+        Gọi trước _send_filler khi audio_end vừa kích hoạt speculate(ngay=True)
+        nhưng task đó chưa hoàn thành STT (200-500ms) trước khi _send_filler đọc
+        session.tinh_huong. Dùng spec_stt từ lần đoán trung gian cuối cùng đã
+        hoàn thành.
+
+        Không ghi đè nếu tinh_huong đã có: tôn trọng kết quả của speculate nền.
+        Không ném ngoại lệ: lỗi bất kỳ → rơi về rổ chung (đúng hành vi xuống cấp).
+        """
+        if session.tinh_huong or not session.spec_stt:
+            return
+        try:
+            from backend.main import app_state
+            kho_vec = getattr(app_state, "kho_vector", None)
+            n_stt, text_stt = session.spec_stt
+            if not (kho_vec and text_stt and len(text_stt) >= 4):
+                return
+            q = chuan_hoa(self.rag.embed([text_stt]))[0]
+            id_th, diem = chon_tinh_huong(q, kho_vec)
+            if id_th:
+                session.tinh_huong = (n_stt, id_th, diem)
+        except Exception as e:
+            logger.debug("phan loai tinh huong dong bo (bo qua): %s", e)
+
     async def _send_filler(self, ws: WebSocket, session: CallSession, t_start: float,
-                           metrics: dict, la_thoai: bool):
+                           metrics: dict, la_thoai: bool, n_audio: int = 0):
         """Phát câu đệm đã dựng sẵn NGAY - đây mới là lúc AI bắt đầu nói theo tai khách.
 
         Phải là await ĐẦU TIÊN của lượt: audio đã nằm sẵn trong cache từ lúc khởi
         động (dung_fillers) nên không tốn GPU, chỉ tốn thời gian gửi.
+
+        `n_audio` = tổng byte audio của lượt, dùng để tính độ phủ bản phân loại.
+        Truyền từ `process_turn` (len(audio_bytes)); mặc định 0 → đường chat gõ
+        chữ, không có audio → bỏ qua phân loại tình huống.
 
         ttfa_ms bên dưới đo tới mảnh THẬT đầu tiên và bỏ qua hoàn toàn filler,
         nên nhìn một mình ttfa_ms sẽ tưởng khách phải chờ im lặng lâu hơn thực tế.
@@ -481,28 +557,80 @@ class StreamingPipeline:
             metrics["filler_bo_qua"] = f"nhanh sẵn ({can_che:.0f}ms)"
             return
 
-        # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi - lọc bỏ những
-        # câu gắn cờ không hợp câu hỏi. Chưa có phiên âm ở mốc này nên vẫn suy
-        # từ lượt trước: đang tư vấn thì đa số lượt là câu hỏi. (Mốc 2 sẽ đọc
-        # session.spec_stt để biết chắc thay vì đoán.)
-        kho = lay_kho().cau
-        if session.turn_count > 0:
-            kho = [c for c in kho if c.hop_cau_hoi]
+        kho = lay_kho()
+
+        # --- VIỆC 1 (task-11d): Chờ phiên âm tạm để có tình huống chính xác -----
+        # speculate(ngay=True) chạy trong task nền khi khách vừa ngừng tiếng.
+        # STT tốn 200-500ms — thường xong sau khi _send_filler được gọi, nên
+        # tinh_huong chưa được ghi. Chờ tối đa _CHO_TINH_HUONG_MS để task đó hoàn
+        # thành, sau đó thử _phan_loai_dong_bo lần nữa nếu vẫn thiếu.
+        #
+        # Dùng asyncio.wait() (KHÔNG phải wait_for()): wait() không huỷ task khi
+        # hết hạn, nên speculate._run() tiếp tục chạy để phục vụ RAG/LLM/answer_hit
+        # bên dưới. Đây là lý do chọn wait() thay vì shield()+wait_for().
+        # Ghi thời gian chờ thật vào metrics để đo cái giá thực tế.
+        if (self._CHO_TINH_HUONG_MS > 0
+                and n_audio > 0
+                and session.tinh_huong is None
+                and session.spec_task is not None
+                and not session.spec_task.done()):
+            _t_cho = time.perf_counter()
+            await asyncio.wait({session.spec_task},
+                               timeout=self._CHO_TINH_HUONG_MS / 1000)
+            metrics["tinh_huong_cho_ms"] = round(
+                (time.perf_counter() - _t_cho) * 1000)
+            # speculate._run() có thể đã ghi spec_stt nhưng phân loại chưa xong.
+            if session.tinh_huong is None:
+                self._phan_loai_dong_bo(session)
+
+        # n_audio được truyền vào từ process_turn (len(audio_bytes)). Trước đây
+        # đọc session.audio_len() tại đây nhưng take_audio() đã làm sạch đệm
+        # trước khi _send_filler chạy, nên luôn trả về 0. Kết quả: do_phu = n_th / 1
+        # (một số rất lớn), điều kiện >= ngưỡng LUÔN ĐÚNG, và luật độ phủ trở
+        # thành mã chết không chặn được gì. Nay dùng tham số truyền vào.
+        # n_audio = 0 trên đường chat (không audio) → bỏ qua phân loại hoàn toàn.
+        id_th = None
+        if n_audio > 0 and session.tinh_huong:
+            n_th, th, diem = session.tinh_huong
+            do_phu = n_th / n_audio
+            metrics["tinh_huong_do_phu"] = round(do_phu, 3)
+            metrics["tinh_huong_diem"] = round(diem, 3)
+            if do_phu >= self._TINH_HUONG_DO_PHU_MIN:
+                id_th = th
+            else:
+                # Bản đoán nghe trên đoạn quá ngắn → dễ trượt; về rổ chung an toàn hơn.
+                metrics["tinh_huong_bo"] = f"do phu {do_phu:.2f} qua thap"
+
+        # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi. Nay đọc CHÍNH
+        # phiên âm dở thay vì suy từ `session.turn_count` như trước: spec_stt có
+        # chữ thật, không phải suy đoán từ lượt trước.
+        duoi = list(kho.duoi)
+        chu = (session.spec_stt or (0, ""))[1].lower()
+        if "?" in chu or any(t in chu for t in
+                             ("bao nhiêu", "thế nào", "gì", "à", "không ạ")):
+            duoi = [d for d in duoi if d.hop_cau_hoi] or duoi
 
         dem = getattr(session, "dem_filler", None)
         if dem is None:
             dem = session.dem_filler = {}
 
-        filler_audio, cau = self.tts.pick_filler(
+        filler_audio, id_duoi, th_dung = self.tts.pick_filler(
             kho, session.voice_name, min_ms=can_che, dem=dem,
+            id_tinh_huong=id_th, chi_duoi={d.id for d in duoi},
         )
         if not filler_audio:
             return
-        dem[cau.id] = dem.get(cau.id, 0) + 1
-        await self._send_audio(ws, filler_audio, is_filler=True, turn_id=session.turn_id)
+        dem[id_duoi] = dem.get(id_duoi, 0) + 1
+        await self._send_audio(ws, filler_audio, is_filler=True,
+                               turn_id=session.turn_id)
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
-        metrics["filler_text"] = cau.text
-        metrics["filler_id"] = cau.id
+        duoi_id_theo_id = {d.id: d for d in kho.duoi}
+        d_obj = duoi_id_theo_id.get(id_duoi)
+        metrics["filler_text"] = d_obj.text if d_obj else id_duoi
+        metrics["filler_id"] = id_duoi
+        # th_dung là tình huống ĐÃ DÙNG THẬT (None khi rơi về đuôi trần), khác
+        # với id_th (tình huống ĐOÁN ĐƯỢC). Ghi đúng cái đã dùng để đối soát log.
+        metrics["tinh_huong_id"] = th_dung
 
     async def process_turn(self, audio_bytes: bytes, session: CallSession, ws: WebSocket):
         """Full pipeline: Audio -> STT -> RAG -> LLM -> TTS -> Audio."""
@@ -512,7 +640,15 @@ class StreamingPipeline:
         # "đường chat" và lịch sử thoại mất đúng những lượt nhanh nhất.
         metrics = {"la_thoai": True}
 
-        await self._send_filler(ws, session, t_start, metrics, la_thoai=True)
+        # Đường dự phòng phân loại tình huống cho đường chat-audio: speculate(ngay=True)
+        # được gọi ngay trước lượt (trong audio_end) nhưng task đó chưa hoàn thành
+        # STT khi _send_filler đọc session.tinh_huong. Nếu tinh_huong chưa có nhưng
+        # spec_stt đã có phiên âm từ lần đoán trung gian, phân loại ĐỒNG BỘ ~10ms
+        # (không await) để _send_filler có dữ liệu đọc. Xem _phan_loai_dong_bo.
+        self._phan_loai_dong_bo(session)
+
+        await self._send_filler(ws, session, t_start, metrics, la_thoai=True,
+                                n_audio=len(audio_bytes))
 
         # STT - dùng lại bản đã phiên âm lúc đoán trước, NHƯNG chỉ khi nó phủ
         # đúng chừng này byte. Bằng nhau nghĩa là bản đoán đã nghe trọn câu,

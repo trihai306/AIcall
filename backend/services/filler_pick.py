@@ -1,5 +1,6 @@
 """Luật chọn câu đệm. Thuần logic, KHÔNG import torch - xem filler_store."""
 import random
+import re
 
 # Câu dài hơn mức cần bao nhiêu thì vẫn coi là "vừa khít". Quá số này thì nó
 # đẩy câu trả lời thật lùi lại một cách vô ích.
@@ -82,3 +83,79 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
         return r.choice(it_dung_nhat(du_dai))[0]
 
     return max(it_dung_nhat(ung_vien), key=lambda x: x[1])[0]
+
+
+# Tiểu từ lịch sự ở đầu câu đuôi cần bỏ khi đã có mẩu mở đầu.
+# Thứ tự: dài trước để tránh khớp chặng đầu của từ dài hơn
+# (vd "Vâng ạ" phải thắng "Vâng" khi đuôi là "Vâng ạ, ...").
+# Đo 08-11: 41/42 câu đuôi (bat=1) mở bằng Dạ hoặc Vâng;
+#           20/20 mẩu mở đầu cũng vậy → 820/840 tổ hợp (98%) bị lặp.
+# Sau tiểu từ: `[,\s]*` ăn dấu phẩy và/hoặc khoảng trắng tuỳ ý,
+# rồi phần còn lại gom vào group(2).
+_TIEU_TU_RE = re.compile(
+    r"^(Dạ vâng ạ|Dạ vâng|Vâng ạ|Dạ|Vâng)[,\s]*(.*)",
+    re.DOTALL,
+)
+
+
+def ghep(mo_dau: str, duoi: str) -> str:
+    """Ghép mẩu mở đầu với câu đuôi thành MỘT chuỗi cho F5.
+
+    Một chuỗi chứ không nối hai đoạn TIẾNG: nối tiếng là tái tạo đúng lỗi chỗ
+    nối mảnh - F5 sinh mỗi phát ngôn với ngữ điệu kết câu riêng, hai lần "kết
+    câu" dính nhau nghe thành hai đoạn rời.
+
+    Mở đầu rỗng trả về đuôi nguyên vẹn: đó là trường hợp suy biến, tức đúng
+    hành vi trước khi có tình huống.
+
+    Khi có mẩu mở đầu, bỏ tiểu từ lịch sự ở đầu câu đuôi để tránh lặp.
+    Đo 08-11 trên 840 tổ hợp: 98% bị nói lắp trước khi có logic này.
+    STT nghe lại clip thật xác nhận: "dạ về lãi suất thì dạ em kiểm tra ngay."
+    Câu đuôi dùng trần (mở đầu rỗng) giữ nguyên tiểu từ — lúc đó đúng.
+    """
+    a, b = (mo_dau or "").strip(), (duoi or "").strip()
+    if not a:
+        return b  # suy biến: đúng hành vi khi không có tình huống
+
+    m = _TIEU_TU_RE.match(b)
+    if m:
+        b_tran = m.group(2).strip()
+        if not b_tran:
+            # Câu đuôi hoàn toàn là tiểu từ ("Dạ", "Vâng ạ", "Dạ vâng ạ").
+            # Chỉ phát mẩu mở đầu; không thêm âm trống sau dấu phẩy.
+            return a
+        # Chữ đầu phải viết thường: đứng giữa câu, không phải đầu câu mới.
+        # Dữ liệu thật đã thường sẵn; đây là lưới chặn cho câu đuôi tương lai.
+        b_tran = b_tran[0].lower() + b_tran[1:]
+    else:
+        b_tran = b  # không có tiểu từ → giữ nguyên
+
+    return f"{a} {b_tran}"
+
+
+# Dải độ dài câu đệm phải phủ. Dưới 700ms thì `_FILLER_BO_QUA_MS` đã bỏ đệm;
+# trên 2500ms là dài hơn mọi quãng trễ đo được (678-2084ms) cộng biên 1.25.
+DAI_THAP_MS, DAI_CAO_MS, BUOC_MS = 700.0, 2500.0, 300.0
+
+
+def du_phu(do_dai: list[float], thap: float = DAI_THAP_MS,
+           cao: float = DAI_CAO_MS, buoc: float = BUOC_MS
+           ) -> list[tuple[float, float]]:
+    """Các khoảng trong [thap, cao] KHÔNG có câu nào dài xấp xỉ. Trả list khoảng hở.
+
+    Vì sao cần: trục chọn câu đệm là ĐỘ DÀI. Hở một khoảng nghĩa là mọi lượt có
+    quãng trễ rơi vào khoảng đó sẽ làm `chon()` tụt xuống tầng chót "lấy câu dài
+    nhất", và khách nghe hụt đúng phần thiếu. Trang quản lý dùng hàm này để
+    CHỈ RA lỗ hổng thay vì chỉ liệt kê câu.
+    """
+    ho: list[tuple[float, float]] = []
+    moc = thap
+    while moc < cao:
+        het = min(moc + buoc, cao)
+        if not any(moc <= d < het for d in do_dai):
+            if ho and ho[-1][1] == moc:
+                ho[-1] = (ho[-1][0], het)      # gộp khoảng hở liền nhau
+            else:
+                ho.append((moc, het))
+        moc = het
+    return ho

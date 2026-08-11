@@ -1,4 +1,4 @@
-"""Kho câu đệm: đọc, xác thực, và tính vân tay.
+"""Kho câu đệm: đọc từ SQLite, xác thực, và tính vân tay.
 
 KHÔNG import torch (dù gián tiếp). Module này phải chạy được trên máy không
 GPU để test - `backend.core.device` import torch ở tầng module, nên mọi thứ
@@ -7,6 +7,7 @@ chạm `tts_service` đều kéo theo nó.
 import hashlib
 import json
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,34 +15,44 @@ logger = logging.getLogger(__name__)
 
 
 class LoiKho(ValueError):
-    """Dữ liệu kho câu đệm sai. Nêu rõ câu nào sai để còn sửa được file."""
+    """Dữ liệu kho câu đệm sai. Nêu rõ câu nào sai để còn sửa được."""
 
 
 @dataclass(frozen=True)
-class ChuDe:
+class TinhHuong:
     id: str
     ten: str
+    vi_du: tuple[str, ...]
     tu_khoa: tuple[str, ...]
+    mo_dau: tuple[str, ...]
+    speed: float | None
+    bat: bool
 
 
 @dataclass(frozen=True)
-class CauDem:
+class CauDuoi:
     id: str
     text: str
-    chu_de: str
     hop_cau_hoi: bool
+    bat: bool
 
 
 @dataclass(frozen=True)
 class Kho:
-    chu_de: tuple[ChuDe, ...]
-    cau: tuple[CauDem, ...]
+    tinh_huong: tuple[TinhHuong, ...]
+    duoi: tuple[CauDuoi, ...]
 
 
 # Tăng khi CÁCH sinh tiếng đổi mà tham số trong vân tay thì không đổi.
 #   1 -> 2 : ép thời lượng theo âm tiết (2026-08-09)
 #   2 -> 3 : bỏ dấu chấm/phẩy khỏi chữ đưa vào F5 (2026-08-09)
-PHIEN_BAN = 3
+#   3 -> 4 : THÔI bỏ dấu câu, tức đảo lại đúng thay đổi 2->3 (2026-08-11).
+#            Cùng text + giọng + nfe + speed + ref_text nhưng F5 nay nhìn thấy
+#            dấu nên tiếng ra khác. Không tăng số này thì 42 tệp câu đệm cũ nằm
+#            nguyên trên đĩa (log: "42 đọc từ đĩa, 0 dựng mới") còn câu trả lời
+#            thật đọc theo cách mới - khách nghe hai nhịp nối liền nhau ngay đầu
+#            mỗi lượt, và không có gì báo lỗi.
+PHIEN_BAN = 4
 
 
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
@@ -65,36 +76,79 @@ def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str
     return hashlib.sha256(mau.encode("utf-8")).hexdigest()[:12]
 
 
-def nap(duong_dan: Path) -> Kho:
-    """Đọc và xác thực `fillers.json`. Ném `LoiKho` nếu dữ liệu sai."""
+def _mang(s: str | None) -> tuple[str, ...]:
+    if not s:
+        return ()
     try:
-        raw = json.loads(Path(duong_dan).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as e:
-        raise LoiKho(f"không đọc được kho câu đệm {duong_dan}: {e}") from e
+        return tuple(str(x).strip() for x in json.loads(s) if str(x).strip())
+    except json.JSONDecodeError as e:
+        raise LoiKho(f"cột JSON không đọc được: {s[:60]!r}: {e}") from e
 
-    chu_de = tuple(
-        ChuDe(id=c["id"], ten=c.get("ten", c["id"]),
-              tu_khoa=tuple(c.get("tu_khoa", [])))
-        for c in raw.get("chu_de", [])
-    )
-    ten_chu_de = {c.id for c in chu_de}
 
-    cau: list[CauDem] = []
-    da_thay: set[str] = set()
-    for c in raw.get("cau", []):
-        cid = c["id"]
-        if cid in da_thay:
-            raise LoiKho(f"id câu đệm trùng: {cid!r}")
-        da_thay.add(cid)
-        text = (c.get("text") or "").strip()
-        if not text:
-            raise LoiKho(f"câu đệm {cid!r} có text rỗng")
-        if c["chu_de"] not in ten_chu_de:
-            raise LoiKho(f"câu đệm {cid!r} không có chủ đề {c['chu_de']!r}")
-        cau.append(CauDem(id=cid, text=text, chu_de=c["chu_de"],
-                          hop_cau_hoi=bool(c.get("hop_cau_hoi", True))))
+def nap_tu_db(conn) -> Kho:
+    """Đọc và xác thực kho từ SQLite. Ném `LoiKho` nêu rõ mục sai.
 
-    return Kho(chu_de=chu_de, cau=tuple(cau))
+    Chỉ lấy mục `bat = 1`: trang quản lý tắt một tình huống thì nó phải biến mất
+    khỏi đường chạy ngay, không cần xoá dữ liệu.
+    """
+    ths: list[TinhHuong] = []
+    for r in conn.execute(
+            "SELECT id, ten, vi_du, tu_khoa, mo_dau, speed, bat "
+            "FROM tinh_huong WHERE bat = 1 ORDER BY id"):
+        id_th, ten, vi_du, tu_khoa, mo_dau, speed, bat = r
+        vd = _mang(vi_du)
+        if len(vd) < 2:
+            raise LoiKho(
+                f"tình huống {id_th!r} chỉ có {len(vd)} ví dụ, cần ít nhất 2 - "
+                "một ví dụ thì điểm cosine dựa vào đúng một cách nói")
+        md = _mang(mo_dau)
+        for m in md:
+            if not m.rstrip().endswith(","):
+                raise LoiKho(
+                    f"mẩu mở đầu của {id_th!r} không kết bằng dấu phẩy: {m!r} - "
+                    "thiếu phẩy thì F5 hạ giọng kết câu ngay giữa lượt")
+        ths.append(TinhHuong(id=id_th, ten=ten or id_th, vi_du=vd,
+                             tu_khoa=_mang(tu_khoa), mo_dau=md,
+                             speed=float(speed) if speed is not None else None,
+                             bat=bool(bat)))
+
+    duoi: list[CauDuoi] = []
+    for r in conn.execute("SELECT id, text, hop_cau_hoi, bat FROM cau_duoi "
+                          "WHERE bat = 1 ORDER BY id"):
+        id_d, text, hop, bat = r
+        if not (text or "").strip():
+            raise LoiKho(f"câu đuôi {id_d!r} có text rỗng")
+        duoi.append(CauDuoi(id=id_d, text=text.strip(),
+                            hop_cau_hoi=bool(hop), bat=bool(bat)))
+
+    if not duoi:
+        # Raise cả khi bảng có dòng nhưng tất cả bat=0: tắt hết câu đuôi thì
+        # khách nghe im lặng trọn quãng chờ, hỏng y hệt như bảng rỗng. Phải nổ
+        # to lúc khởi động thay vì để lọt ra cuộc gọi thật mới biết.
+        raise LoiKho(
+            "không có câu đuôi nào đang bật - rổ đuôi là đường xuống cấp cuối "
+            "cùng, rỗng nó là khách nghe im lặng trọn quãng chờ")
+    return Kho(tinh_huong=tuple(ths), duoi=tuple(duoi))
+
+
+def do_json_vao_db(conn, duong_dan: Path) -> int:
+    """Đổ `fillers.json` vào bảng `cau_duoi` NẾU bảng đang rỗng. Trả số câu đã đổ.
+
+    Chỉ chạy khi rỗng: gọi lại nhiều lần không được ghi đè thứ người dùng đã
+    sửa trên trang quản lý. 42 câu cũ đều là câu đứng một mình nên vào rổ đuôi.
+    """
+    if conn.execute("SELECT 1 FROM cau_duoi LIMIT 1").fetchone():
+        return 0
+    raw = json.loads(Path(duong_dan).read_text(encoding="utf-8"))
+    now = time.time()
+    rows = [(c["id"], (c.get("text") or "").strip(),
+             int(bool(c.get("hop_cau_hoi", True))), 1, now, now)
+            for c in raw.get("cau", []) if (c.get("text") or "").strip()]
+    conn.executemany(
+        "INSERT INTO cau_duoi (id,text,hop_cau_hoi,bat,created_at,updated_at) "
+        "VALUES (?,?,?,?,?,?)", rows)
+    conn.commit()
+    return len(rows)
 
 
 DUONG_DAN_MAC_DINH = Path("data/fillers.json")
@@ -103,21 +157,27 @@ _kho: Kho | None = None
 
 
 def lay_kho() -> Kho:
-    """Kho câu đệm dùng chung, nạp một lần.
+    """Kho dùng chung, nạp một lần. Singleton như `settings`.
 
-    Singleton như `settings`: nạp file ở mỗi lượt gọi là đọc đĩa trên đường
-    găng của cuộc gọi, mà nội dung thì chỉ đổi khi người dùng sửa file.
+    Đổ từ `fillers.json` ở lần đầu để không mất 42 câu đang có trên đĩa.
     """
     global _kho
     if _kho is None:
-        _kho = nap(DUONG_DAN_MAC_DINH)
-        logger.info("Đã nạp kho câu đệm: %d câu, %d chủ đề",
-                    len(_kho.cau), len(_kho.chu_de))
+        from backend.models.db import connection
+        conn = connection()
+        if conn is None:
+            raise LoiKho("DB chưa mở - `init_db()` phải chạy trước `lay_kho()`")
+        n = do_json_vao_db(conn, DUONG_DAN_MAC_DINH)
+        if n:
+            logger.info("Đã đổ %d câu đuôi từ %s vào DB", n, DUONG_DAN_MAC_DINH)
+        _kho = nap_tu_db(conn)
+        logger.info("Đã nạp kho câu đệm: %d tình huống, %d câu đuôi",
+                    len(_kho.tinh_huong), len(_kho.duoi))
     return _kho
 
 
 def nap_lai() -> Kho:
-    """Quên bản đang nhớ và đọc lại từ đĩa (dùng sau khi sửa file)."""
+    """Quên bản đang nhớ và đọc lại từ DB (dùng sau khi sửa dữ liệu)."""
     global _kho
     _kho = None
     return lay_kho()

@@ -68,6 +68,30 @@ CREATE TABLE IF NOT EXISTS scenarios (
     created_at       REAL NOT NULL
 );
 
+-- Kho cau dem theo tinh huong. La CAU HINH dung chung cho moi cuoc goi, nen
+-- nam o app.db chu khong tach theo khach: tach ra la moi khach mot ban sao cua
+-- cung mot thu, va nhan len dung tai nguyen dat nhat (GPU dung tieng moi giong).
+CREATE TABLE IF NOT EXISTS tinh_huong (
+    id         TEXT PRIMARY KEY,
+    ten        TEXT NOT NULL,
+    vi_du      TEXT NOT NULL,      -- JSON array: cau khach noi mau, de nhung
+    tu_khoa    TEXT,               -- JSON array: loc tho / du phong
+    mo_dau     TEXT,               -- JSON array: mau mo dau rieng
+    speed      REAL,               -- NULL = lay toc cua giong
+    bat        INTEGER NOT NULL DEFAULT 1,
+    created_at REAL,
+    updated_at REAL
+);
+
+CREATE TABLE IF NOT EXISTS cau_duoi (
+    id          TEXT PRIMARY KEY,
+    text        TEXT NOT NULL,
+    hop_cau_hoi INTEGER NOT NULL DEFAULT 1,
+    bat         INTEGER NOT NULL DEFAULT 1,
+    created_at  REAL,
+    updated_at  REAL
+);
+
 -- Call outcome labels the operator sticks on a session by hand.
 CREATE TABLE IF NOT EXISTS labels (
     label_id   TEXT PRIMARY KEY,
@@ -267,6 +291,14 @@ _ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "inbound_enabled":     "INTEGER NOT NULL DEFAULT 0",
         "inbound_scenario_id": "TEXT NOT NULL DEFAULT ''",
         "inbound_delay_s":     "REAL NOT NULL DEFAULT 2.0",
+    },
+    # latency_metrics: ghi lại câu đệm và tình huống đã dùng để sau này đo
+    # xem phân loại đúng hay sai — điều kiện tiên quyết trước khi chốt ngưỡng
+    # (Task 12). NULL là hợp lệ: filler_id NULL khi lượt không phát câu đệm,
+    # tinh_huong_id NULL khi rơi về rổ đuôi trần (chưa có tình huống trong kho).
+    "latency_metrics": {
+        "filler_id":     "TEXT",   # uuid câu đệm đã phát, NULL nếu không dùng
+        "tinh_huong_id": "TEXT",   # uuid tình huống đã chọn, NULL nếu rổ đuôi trần
     },
 }
 
@@ -472,8 +504,9 @@ def _save_session_sync(
 
         _conn.executemany(
             "INSERT OR IGNORE INTO latency_metrics "
-            "(session_id, turn_number, timestamp, stt_ms, rag_ms, ttfa_ms, total_ms) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(session_id, turn_number, timestamp, stt_ms, rag_ms, ttfa_ms, "
+            " total_ms, filler_id, tinh_huong_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     session_id,
@@ -483,6 +516,8 @@ def _save_session_sync(
                     m.get("rag_ms"),
                     m.get("ttfa_ms"),
                     m.get("total_ms"),
+                    m.get("filler_id"),        # từ _send_filler (Task 8); None nếu không dùng câu đệm
+                    m.get("tinh_huong_id"),    # None khi rơi về rổ đuôi trần — giá trị có nghĩa, không đổi thành ''
                 )
                 for i, m in enumerate(latency_log)
             ],

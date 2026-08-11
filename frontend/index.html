@@ -181,7 +181,7 @@
           </div>
           <div class="flex items-center gap-2">
             <input type="text" id="customerName" value="Anh Minh" onchange="sendSessionConfig()" class="bg-deep border border-slate-750 rounded-md px-2.5 py-1 text-xs text-gray-300 w-28 outline-none focus:border-cyan-500/50 transition-colors">
-            <select id="voiceSelect" class="bg-deep border border-slate-750 rounded-md px-2 py-1 text-xs text-gray-400 outline-none">
+            <select id="voiceSelect" onchange="sendVoiceConfig(this)" class="bg-deep border border-slate-750 rounded-md px-2 py-1 text-xs text-gray-400 outline-none">
               <option value="default">Giọng mặc định</option>
             </select>
             <button onclick="clearChat()" class="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Xóa hội thoại">
@@ -289,6 +289,7 @@
             <button onclick="toggleContactPanel('import')" class="btn btn-ghost">Nhập danh sách</button>
             <button onclick="exportContacts()" class="btn btn-ghost">Xuất CSV</button>
             <button onclick="toggleContactPanel('add')" class="btn btn-soft">+ Thêm số</button>
+            <select id="contactVoiceSelect" onchange="sendVoiceConfig(this)" class="bg-deep border border-slate-750 rounded-md px-2 py-1 text-xs text-gray-400 outline-none"></select>
             <button onclick="callNext()" class="btn btn-primary">Gọi số tiếp theo</button>
           </div>
         </div>
@@ -1784,7 +1785,7 @@
 
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=20260810c"></script>
   <script src="/static/trang_moi.js"></script>
 </body>
 </html>
