@@ -25,6 +25,7 @@ function connectWS() {
     setStatus('connected', 'Đã kết nối');
     resetPlayback();   // phiên mới: bỏ lịch phát còn tồn của phiên trước
     sendSessionConfig();
+    sendVoiceConfig();
     // Đo mạng vài nhịp đầu để lượt hỏi đầu tiên đã có số RTT mà trừ ra.
     pingRtt();
     setTimeout(pingRtt, 400);
@@ -132,6 +133,29 @@ function sendSessionConfig() {
     customer_name: document.getElementById('customerName').value,
     product: document.getElementById('product').value,
   }));
+}
+
+function sendVoiceConfig(changedEl) {
+  const chatSel = document.getElementById('voiceSelect');
+  const contactSel = document.getElementById('contactVoiceSelect');
+  // Lấy giọng từ đúng selector vừa thay đổi, không đoán qua activeElement.
+  const voice = changedEl?.value || contactSel?.value || chatSel?.value || 'default';
+  if (chatSel && chatSel.value !== voice) chatSel.value = voice;
+  if (contactSel && contactSel.value !== voice) contactSel.value = voice;
+  // Lưu lựa chọn để lần sau mở lại vẫn giữ nguyên - NHƯNG chỉ khi chính người
+  // dùng vừa đổi ô chọn (`changedEl` là phần tử DOM của sự kiện onchange).
+  //
+  // Vì sao phải phân biệt: `loadVoices()` và lúc mở WebSocket cũng gọi hàm này
+  // mà KHÔNG có `changedEl`. Trước đây chúng cũng ghi localStorage, nên bất kỳ
+  // lần nạp nào lỡ chọn nhầm là cái nhầm đó được đóng dấu VĨNH VIỄN - khởi động
+  // lại không hết, vì lần sau `savedVoice` lại được ưu tiên hơn giọng mặc định.
+  //
+  // Đã xảy ra thật (11-08): app kẹt ở `fosd_1` rồi `heu_a` trong khi .env để
+  // `giong_heu`, nên cuộc gọi từ app dùng giọng khác hẳn cuộc gọi bằng script -
+  // người dùng nghe ra ngay mà log không hề nhắc tới giọng.
+  if (changedEl) localStorage.setItem('selectedVoice', voice);
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'set_voice', voice_name: voice }));
 }
 
 // ---- Chat ----
@@ -1258,26 +1282,44 @@ async function loadVoices() {
   try {
     const res = await fetch('/api/voices');
     const data = await res.json();
-    const sel = document.getElementById('voiceSelect');
-    sel.innerHTML = '';
+    const selectors = ['voiceSelect', 'contactVoiceSelect'].map(id => document.getElementById(id)).filter(Boolean);
+    selectors.forEach(sel => { sel.innerHTML = ''; });
+    // Ưu tiên: 1) giọng đã lưu trong localStorage, 2) giọng mặc định từ server.
+    const savedVoice = localStorage.getItem('selectedVoice');
+    let resolvedVoice = data.mac_dinh || null;
+    const coTen = [];
     (data.voices || []).forEach(v => {
-      const o = document.createElement('option');
-      o.value = v.name;
-      o.textContent = v.name + (v.mac_dinh ? ' (mặc định)' : '');
-      // PHẢI chọn đúng giọng mặc định, đừng để trình duyệt lấy phần tử đầu.
-      // Câu đệm chỉ được dựng sẵn cho giọng mặc định lúc khởi động, nên đứng
-      // nhầm giọng là khách nghe im lặng trọn TTFA (đo được 1.0-1.8s mỗi lượt,
-      // log: "KHÔNG có filler cho giọng 'fosd_1'"). Đây là đường mặc định của
-      // nút Gọi nên lỗi này dính ngay lần mở app đầu tiên.
-      if (v.mac_dinh) o.selected = true;
-      sel.appendChild(o);
+      coTen.push(v.name);
+      selectors.forEach(sel => {
+        const o = document.createElement('option');
+        o.value = v.name;
+        o.textContent = v.name + (v.mac_dinh ? ' (mặc định)' : '');
+        sel.appendChild(o);
+      });
+      if (v.mac_dinh && !resolvedVoice) resolvedVoice = v.name;
     });
-    if (!sel.options.length) {
-      const o = document.createElement('option');
-      o.value = 'default';
-      o.textContent = 'Giọng mặc định';
-      sel.appendChild(o);
+
+    // CHỈ nhận giọng đã lưu khi nó CÒN trong danh sách. Giọng bị xoá/đổi tên mà
+    // vẫn nhận thì đoạn dưới không khớp option nào, và ô lặng lẽ giữ nguyên
+    // option ĐẦU danh sách - tức chạy bằng một giọng chẳng ai chọn.
+    const pickVoice = (savedVoice && coTen.includes(savedVoice)) ? savedVoice
+                    : (resolvedVoice && coTen.includes(resolvedVoice)) ? resolvedVoice
+                    : null;
+
+    if (pickVoice === null) {
+      // Không xác định được giọng nào (server chưa kịp trả `mac_dinh`, hoặc
+      // danh sách rỗng). ĐỪNG đoán đại và ĐỪNG báo server: cứ im lặng thì
+      // server dùng giọng mặc định của chính nó, còn đoán đại là vừa sai vừa
+      // bị ghi nhớ lại. Thử lại khi TTS nạp xong.
+      console.warn('Chưa xác định được giọng mặc định - giữ nguyên giọng của server.');
+      setTimeout(loadVoices, 3000);
+      return;
     }
+    selectors.forEach(sel => { sel.value = pickVoice; });
+    // Báo server dùng đúng giọng vừa chọn. KHÔNG truyền phần tử DOM nào ->
+    // `sendVoiceConfig` sẽ không ghi localStorage, vì đây không phải người dùng
+    // chọn mà chỉ là khôi phục trạng thái.
+    sendVoiceConfig();
   } catch {}
 }
 
@@ -2326,11 +2368,16 @@ function exportContacts() {
   window.open(`/api/phones/contacts/export?${params}`, '_blank');
 }
 
+function getSelectedVoice() {
+  return document.getElementById('contactVoiceSelect')?.value ||
+         document.getElementById('voiceSelect')?.value || 'default';
+}
+
 async function callContact(id) {
   const res = await fetch(`/api/phones/contacts/${id}/call`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ voice_name: document.getElementById('voiceSelect').value || 'default' }),
+    body: JSON.stringify({ voice_name: getSelectedVoice() }),
   });
   handleCallResponse(await res.json());
 }
@@ -2339,7 +2386,7 @@ async function callNext() {
   const res = await fetch(`/api/phones/call-next?campaign_id=${encodeURIComponent(selectedCampaign)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ voice_name: document.getElementById('voiceSelect').value || 'default' }),
+    body: JSON.stringify({ voice_name: getSelectedVoice() }),
   });
   handleCallResponse(await res.json());
 }
