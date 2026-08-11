@@ -122,13 +122,12 @@ def nap_tu_db(conn) -> Kho:
                             hop_cau_hoi=bool(hop), bat=bool(bat)))
 
     if not duoi:
-        # Chỉ báo lỗi khi bảng HOÀN TOÀN rỗng — chưa seed lần nào. Nếu có hàng
-        # nhưng tất cả bat=0 thì người vận hành chủ ý tắt; tôn trọng ý đó và trả
-        # về rổ rỗng thay vì ném lỗi.
-        if not conn.execute("SELECT 1 FROM cau_duoi LIMIT 1").fetchone():
-            raise LoiKho(
-                "không có câu đuôi nào đang bật - rổ đuôi là đường xuống cấp cuối "
-                "cùng, rỗng nó là khách nghe im lặng trọn quãng chờ")
+        # Raise cả khi bảng có dòng nhưng tất cả bat=0: tắt hết câu đuôi thì
+        # khách nghe im lặng trọn quãng chờ, hỏng y hệt như bảng rỗng. Phải nổ
+        # to lúc khởi động thay vì để lọt ra cuộc gọi thật mới biết.
+        raise LoiKho(
+            "không có câu đuôi nào đang bật - rổ đuôi là đường xuống cấp cuối "
+            "cùng, rỗng nó là khách nghe im lặng trọn quãng chờ")
     return Kho(tinh_huong=tuple(ths), duoi=tuple(duoi))
 
 

@@ -51,10 +51,19 @@ def test_nap_binh_thuong(conn):
     assert kho.duoi[0].text == "anh chị chờ em một chút ạ."
 
 
-def test_bo_qua_muc_da_tat(conn):
-    them_th(conn, bat=0); them_duoi(conn, bat=0)
+def test_bo_qua_tinh_huong_da_tat(conn):
+    them_th(conn, bat=0)  # tình huống tắt
+    them_duoi(conn)       # câu đuôi vẫn bật
     kho = nap_tu_db(conn)
-    assert kho.tinh_huong == () and kho.duoi == ()
+    assert kho.tinh_huong == ()
+    assert len(kho.duoi) == 1
+
+
+def test_cau_duoi_tat_het_thi_loi(conn):
+    them_th(conn)
+    them_duoi(conn, bat=0)
+    with pytest.raises(LoiKho, match="đuôi"):
+        nap_tu_db(conn)
 
 
 def test_vi_du_duoi_hai_cau_thi_loi(conn):
@@ -102,3 +111,41 @@ def test_do_json_khong_ghi_de_khi_da_co_du_lieu(conn, tmp_path):
         ensure_ascii=False), encoding="utf-8")
     assert do_json_vao_db(conn, p) == 0
     assert [d.id for d in nap_tu_db(conn).duoi] == ["san_co"]
+
+
+# ---------------------------------------------------------------------------
+# van_tay — khôi phục nguyên văn từ 6a19b57 (không đổi logic, chỉ thêm import)
+# ---------------------------------------------------------------------------
+
+from backend.services.filler_store import van_tay  # noqa: E402
+
+_GOC = dict(text="Dạ", giong="fosd_1", nfe=16, speed=1.0, ref_text="xin chào")
+
+
+def test_van_tay_on_dinh_giua_hai_lan_goi():
+    assert van_tay(**_GOC) == van_tay(**_GOC)
+
+
+def test_van_tay_an_toan_lam_ten_file():
+    vt = van_tay(**_GOC)
+    assert len(vt) == 12
+    assert all(k in "0123456789abcdef" for k in vt)
+
+
+@pytest.mark.parametrize("truong,gia_tri_moi", [
+    ("text", "Vâng ạ"),
+    ("giong", "giong_khac"),
+    ("nfe", 12),
+    ("speed", 1.2),
+    ("ref_text", "câu mẫu khác"),
+])
+def test_van_tay_doi_khi_bat_ky_tham_so_nao_doi(truong, gia_tri_moi):
+    khac = {**_GOC, truong: gia_tri_moi}
+    assert van_tay(**khac) != van_tay(**_GOC)
+
+
+def test_van_tay_khong_nham_ranh_gioi_truong():
+    # "A\x00B" + "C" va "A" + "B\x00C" tao ra cung chuoi neu dung \x00 lam ngan
+    vt1 = van_tay(text="A\x00B", giong="C", nfe=16, speed=1.0, ref_text="ref")
+    vt2 = van_tay(text="A", giong="B\x00C", nfe=16, speed=1.0, ref_text="ref")
+    assert vt1 != vt2
