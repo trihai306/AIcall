@@ -341,3 +341,53 @@ def should_flush(buffer: str, word_threshold: int = GIOI_HAN_TU_MANH,
     trả về phần đệm còn lại. Giữ hàm này cho các script đo đang gọi tới.
     """
     return tach_manh(buffer, word_threshold, first_chunk)[0] is not None
+
+
+def chia_ca_luot(text: str) -> list[str]:
+    """Chia một lượt trả lời ĐÃ HOÀN CHỈNH thành đúng dãy mảnh mà
+    `streaming_pipeline` sẽ giao cho TTS.
+
+    Dùng cho trang nghe thử: đường gọi thật nhận token nhỏ giọt từ LLM nên nó cắt
+    mảnh dần, còn trang test có sẵn cả câu. Không có hàm này thì trang test đưa
+    NGUYÊN cả câu cho F5 một phát - và đó không phải thứ khách nghe. Đo trên chính
+    câu demo 13 từ: một phát ra 3110ms tiếng, còn cắt như cuộc gọi (5 từ + 8 từ)
+    ra 1149+2294 = 3443ms, lệch 10,7%. Khác cả ngữ điệu, vì F5 sinh MỖI mảnh như
+    một phát ngôn trọn vẹn nên mỗi ranh giới mảnh là một chỗ nó hạ giọng kết câu.
+
+    Lặp lại đúng vòng producer của `streaming_pipeline` (nạp thêm chữ -> hỏi
+    `tach_manh` với cỡ `co_manh(số mảnh đã ra)` -> xả đệm, đuôi ngắn thì gộp vào
+    mảnh trước). `tests/test_chia_ca_luot.py` đối chứng với một bản mô phỏng viết
+    độc lập, nên hai bên lệch nhau là test đỏ ngay.
+
+    CỐ Ý không chạy `_don_loi` của pipeline ở đây. `_don_loi` dọn rác của LLM
+    (chặn chữ Hán, ép xưng hô "bạn" -> "anh/chị", chặn số bịa) - đúng cho chữ máy
+    sinh, nhưng trang test là chữ NGƯỜI TỰ GÕ. Áp vào thì người dùng gõ một câu
+    mà nghe ra câu khác, không còn thử được giọng nữa.
+
+    Nạp từng TỪ một, không nạp cả câu: `tach_manh` chỉ coi từ cuối là đã trọn khi
+    có chữ mới bắt đầu sau nó (chống cắt giữa token "ng" | "ay"). Nạp cả câu thì
+    lần hỏi đầu đã có sẵn mọi từ, ra cùng ranh giới - nhưng nạp từng từ mới phản
+    ánh đúng dòng token thật, và test khẳng định cỡ token không đổi chỗ cắt.
+    """
+    ra: list[str] = []
+    dem = ""
+    for tu in text.split():
+        dem += tu if not dem else " " + tu
+        # `while` chứ không `if`: một lần nạp có thể mở ra nhiều mảnh khi cỡ mảnh
+        # đang nhỏ (mảnh đầu 5 từ) mà đệm đã dồn nhiều hơn thế.
+        while True:
+            manh, dem = tach_manh(dem, n=co_manh(len(ra)),
+                                  first_chunk=(len(ra) == 0))
+            if manh is None or not manh.strip():
+                break
+            ra.append(manh.strip())
+
+    # Xả nốt đệm. Đuôi ngắn GỘP vào mảnh trước chứ không gửi riêng: F5 sinh mảnh
+    # "nhé." một từ như một câu trọn vẹn nên nghe tách hẳn khỏi câu nó thuộc về.
+    du = dem.strip()
+    if du and ra and len(du.split()) < TOI_THIEU_TU_MANH_CUOI:
+        ra[-1] = f"{ra[-1]} {du}".strip()
+        du = ""
+    if du:
+        ra.append(du)
+    return ra

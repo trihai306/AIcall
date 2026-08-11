@@ -86,11 +86,16 @@ async def test_tts(
     voice_name: str = Form("default"),
     fast: bool = Form(False),
     qua_dien_thoai: bool = Form(False),
+    cat_manh: bool = Form(False),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
     fast=True uses the reduced diffusion steps the pipeline applies to the
     first chunk of a reply, so the quality/TTFA trade-off can be heard.
+
+    cat_manh=True đọc y như CUỘC GỌI: cắt mảnh tăng dần 5→10→20 từ, mảnh đầu
+    dùng nfe thấp, chèn nhịp nghỉ ở ranh giới mảnh, rồi ghép lại. Mặc định tắt để
+    giữ bản một-phát làm mốc đối chứng - xem khối chú thích ở nhánh xử lý dưới.
     """
     from backend.main import app_state
 
@@ -123,9 +128,14 @@ async def test_tts(
     try:
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
-        wav_bytes = await app_state.tts.synthesize(
-            text, fast=fast, voice=voice_name, use_cache=False, speed=toc
-        )
+        if cat_manh:
+            wav_bytes, so_manh = await _doc_nhu_cuoc_goi(
+                app_state.tts, text, voice_name, toc)
+        else:
+            so_manh = 1
+            wav_bytes = await app_state.tts.synthesize(
+                text, fast=fast, voice=voice_name, use_cache=False, speed=toc
+            )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
         return {"error": f"Tổng hợp thất bại: {e}"}
@@ -154,6 +164,8 @@ async def test_tts(
         "text": text,
         "voice": voice_name,
         "fast": fast,
+        "cat_manh": cat_manh,
+        "so_manh": so_manh,
         "elapsed_ms": elapsed_ms,
         "duration_ms": duration_ms,
         "rtf": round(elapsed_ms / duration_ms, 3) if duration_ms else None,
@@ -258,6 +270,54 @@ async def dat_toc_thoai(req: HeSoThoai):
     if tts is None:
         return {"error": "TTS chưa sẵn sàng"}
     return {"ok": True, "he_so": tts.dat_he_so_thoai(req.he_so)}
+
+
+async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
+                            toc: float) -> tuple[bytes, int]:
+    """Đọc `text` theo ĐÚNG cách đường gọi đọc nó, rồi ghép thành một wav.
+
+    Trả `(wav, số mảnh)`.
+
+    Vì sao trang nghe thử cần chế độ này: `synthesize()` một phát đưa NGUYÊN cả
+    câu cho F5, còn cuộc gọi cắt mảnh tăng dần rồi nối. Hai thứ ra khác nhau thật,
+    đo trên chính câu demo 13 từ (giọng heu_a, cùng tốc):
+    một phát 3110ms tiếng, cắt như cuộc gọi 1149+2294 = 3443ms - lệch 10,7%. Và
+    khác cả ngữ điệu: F5 sinh MỖI mảnh như một phát ngôn trọn vẹn nên mỗi ranh
+    giới mảnh là một chỗ nó hạ giọng kết câu giữa chừng. Chỉnh tốc/chọn giọng trên
+    bản một phát rồi suy ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
+
+    Ba thứ lấy nguyên từ đường gọi, KHÔNG đặt lại số ở đây:
+      - `chia_ca_luot`  : ranh giới mảnh (cỡ tăng dần 5→10→20)
+      - `nhip_nghi_sau` : nhịp nghỉ sau mỗi mảnh (nay là 0 vì CAT_DON_GIAN=True)
+      - `fast` cho mảnh ĐẦU: y như `fast=(idx == 0)` ở streaming_pipeline
+
+    Khác đường gọi ĐÚNG một chỗ, và là chỗ cố ý: sinh lần lượt chứ không song
+    song. Cuộc gọi vừa sinh vừa phát nên mảnh sau chạy trong lúc mảnh trước đang
+    phát; ở đây phải có đủ cả bài mới ghép được. Nên `elapsed_ms` của chế độ này
+    là TỔNG thời gian sinh, không phải thời gian khách chờ - muốn xem thời gian
+    chờ tiếng đầu thì đọc `tts_first_ms` trên bảng số của cuộc gọi thật.
+    """
+    from backend.pipeline.text_chunker import chia_ca_luot, nhip_nghi_sau
+    from backend.services.audio_utils import chen_lang_dau_wav, noi_wav
+
+    manh = chia_ca_luot(text)
+    if not manh:
+        return b"", 0
+
+    cac_wav: list[bytes] = []
+    nghi_ms = 0.0
+    for i, m in enumerate(manh):
+        w = await tts.synthesize(m, fast=(i == 0), voice=voice_name,
+                                 use_cache=False, speed=toc)
+        # Chèn nhịp nghỉ vào ĐẦU mảnh này (nợ từ mảnh trước), không nối vào cuối
+        # mảnh trước - y hệt vòng phát của streaming_pipeline, nhờ vậy mảnh đầu
+        # không bao giờ bị chèn và mảnh cuối không có đuôi lặng thừa.
+        if w and nghi_ms > 0:
+            w = chen_lang_dau_wav(w, nghi_ms)
+        nghi_ms = nhip_nghi_sau(m)
+        cac_wav.append(w)
+
+    return noi_wav(cac_wav), len(manh)
 
 
 def _mo_phong_kenh_thoai(wav: bytes) -> bytes:

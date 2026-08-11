@@ -1538,6 +1538,10 @@ async function testTTS() {
     const formData = new FormData();
     formData.append('text', text);
     formData.append('voice_name', voice);
+    // Cắt mảnh giống cuộc gọi. Không bật thì F5 nhận NGUYÊN cả câu một phát -
+    // nhịp và thời lượng lệch ~10% so với thứ khách thật sự nghe.
+    const catManh = (document.getElementById('ttsTestCatManh') || {}).checked;
+    formData.append('cat_manh', catManh ? 'true' : 'false');
 
     const res = await fetch('/api/voices/test-tts', { method: 'POST', body: formData });
     const data = await res.json();
@@ -1545,7 +1549,12 @@ async function testTTS() {
     if (data.error) {
       bao(data.error, 'text-amber-400');
     } else if (data.audio) {
-      bao('', '');  // xoá lỗi cũ, không thì chữ đỏ còn nằm đó khi tiếng đã ra
+      // Hiện số đo thay vì để trống: chỉ nghe tai thì không biết bản cắt mảnh
+      // dài hơn bản một phát bao nhiêu, mà đó chính là thứ cần so.
+      const manh = data.so_manh > 1 ? `${data.so_manh} mảnh` : 'một phát';
+      bao(`${manh} · ${(data.duration_ms / 1000).toFixed(2)}s tiếng · `
+          + `sinh ${data.elapsed_ms}ms${data.rtf != null ? ` · RTF ${data.rtf}` : ''}`,
+          'text-gray-500');
       const audioEl = document.getElementById('ttsTestAudio');
       audioEl.src = 'data:audio/wav;base64,' + data.audio;
       audioEl.play();
