@@ -82,3 +82,45 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
         return r.choice(it_dung_nhat(du_dai))[0]
 
     return max(it_dung_nhat(ung_vien), key=lambda x: x[1])[0]
+
+
+def ghep(mo_dau: str, duoi: str) -> str:
+    """Ghép mẩu mở đầu với câu đuôi thành MỘT chuỗi cho F5.
+
+    Một chuỗi chứ không nối hai đoạn TIẾNG: nối tiếng là tái tạo đúng lỗi chỗ
+    nối mảnh - F5 sinh mỗi phát ngôn với ngữ điệu kết câu riêng, hai lần "kết
+    câu" dính nhau nghe thành hai đoạn rời.
+
+    Mở đầu rỗng trả về đuôi nguyên vẹn: đó là trường hợp suy biến, tức đúng
+    hành vi trước khi có tình huống.
+    """
+    a, b = (mo_dau or "").strip(), (duoi or "").strip()
+    return f"{a} {b}".strip() if a else b
+
+
+# Dải độ dài câu đệm phải phủ. Dưới 700ms thì `_FILLER_BO_QUA_MS` đã bỏ đệm;
+# trên 2500ms là dài hơn mọi quãng trễ đo được (678-2084ms) cộng biên 1.25.
+DAI_THAP_MS, DAI_CAO_MS, BUOC_MS = 700.0, 2500.0, 300.0
+
+
+def du_phu(do_dai: list[float], thap: float = DAI_THAP_MS,
+           cao: float = DAI_CAO_MS, buoc: float = BUOC_MS
+           ) -> list[tuple[float, float]]:
+    """Các khoảng trong [thap, cao] KHÔNG có câu nào dài xấp xỉ. Trả list khoảng hở.
+
+    Vì sao cần: trục chọn câu đệm là ĐỘ DÀI. Hở một khoảng nghĩa là mọi lượt có
+    quãng trễ rơi vào khoảng đó sẽ làm `chon()` tụt xuống tầng chót "lấy câu dài
+    nhất", và khách nghe hụt đúng phần thiếu. Trang quản lý dùng hàm này để
+    CHỈ RA lỗ hổng thay vì chỉ liệt kê câu.
+    """
+    ho: list[tuple[float, float]] = []
+    moc = thap
+    while moc < cao:
+        het = min(moc + buoc, cao)
+        if not any(moc <= d < het for d in do_dai):
+            if ho and ho[-1][1] == moc:
+                ho[-1] = (ho[-1][0], het)      # gộp khoảng hở liền nhau
+            else:
+                ho.append((moc, het))
+        moc = het
+    return ho

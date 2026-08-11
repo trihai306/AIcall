@@ -146,3 +146,50 @@ def test_mac_dinh_la_san_khong_phai_chi_gia_tri_lui():
     liên tiếp rồi một lượt chậm đột ngột là khách nghe hụt."""
     su = [{"ttfa_ms": 200, "la_thoai": True} for _ in range(6)]
     assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+# --- ghep + du_phu -----------------------------------------------------------
+
+from backend.services.filler_pick import du_phu, ghep  # noqa: E402
+
+
+def test_ghep_dung_mot_khoang_trang():
+    assert ghep("Dạ về lãi suất thì,", "anh chị chờ em ạ.") == \
+        "Dạ về lãi suất thì, anh chị chờ em ạ."
+
+
+def test_ghep_khong_mo_dau_thi_tra_duoi_nguyen_ven():
+    """Mở đầu rỗng là trường hợp suy biến - đúng hành vi hôm nay."""
+    assert ghep("", "anh chị chờ em ạ.") == "anh chị chờ em ạ."
+
+
+def test_ghep_khong_de_hai_dau_cach():
+    assert ghep("Dạ vâng,  ", "  em nghe ạ.") == "Dạ vâng, em nghe ạ."
+
+
+def test_du_phu_khong_ho():
+    """Cac moc rai deu 300ms mot thi khong ho khoang nao."""
+    assert du_phu([700, 1000, 1300, 1600, 1900, 2200, 2500]) == []
+
+
+def test_du_phu_bao_dung_khoang_ho():
+    """Chi co cau 700ms va 2400ms -> ho dung dai 1000-2200, gop thanh MOT khoang.
+
+    Kiem gia tri chinh xac chu khong chi 'co ho': buoc 300ms nen cac moc la
+    700/1000/1300/1600/1900/2200/2500. 700 lap moc dau, 2400 lap moc 2200,
+    con lai ho lien mot dai tu 1000 toi 2200.
+    """
+    assert du_phu([700, 2400]) == [(1000.0, 2200.0)]
+
+
+def test_du_phu_hai_khoang_ho_roi_nhau_giu_roi():
+    """Hai khoang ho KHONG lien nhau thi phai giu rieng, khong gop bua.
+
+    700 lap moc dau, 1300 lap moc giua, 2400 lap moc cuoi -> ho hai cho roi:
+    1000-1300 va 1600-2200.
+    """
+    assert du_phu([700, 1300, 2400]) == [(1000.0, 1300.0), (1600.0, 2200.0)]
+
+
+def test_du_phu_ro_rong_thi_ho_toan_dai():
+    assert du_phu([]) == [(700.0, 2500.0)]
