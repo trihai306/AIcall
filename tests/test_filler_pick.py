@@ -83,24 +83,28 @@ def test_bo_qua_luot_tra_loi_bang_cau_san():
 
 
 def test_chi_tinh_luot_that_khi_co_ca_hai_loai():
-    su = [_luot(450, cau_san=True), _luot(2000), _luot(1500)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(2000.0 * BIEN_AN_TOAN)
+    """Lượt trả bằng bảng câu sẵn bị BỎ. Còn lại max(2000, 1500) = 2000,
+    nhân biên 1.25 -> 2500."""
+    su = [
+        {"ttfa_ms": 450, "la_thoai": True, "luot_thuong_gap": "chào hỏi"},
+        {"ttfa_ms": 2000, "la_thoai": True},
+        {"ttfa_ms": 1500, "la_thoai": True},
+    ]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 2500.0
 
 
 def test_loc_dung_duong_thoai_hay_chat():
-    su = [_luot(3000, la_thoai=False), _luot(1200, la_thoai=True)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1200.0 * BIEN_AN_TOAN)
-    assert can_che_ms(su, la_thoai=False, mac_dinh=0.0) == pytest.approx(3000.0 * BIEN_AN_TOAN)
+    """Chỉ lượt thoại được tính: 1200 * 1.25 = 1500, nhưng `mac_dinh` là SÀN
+    nên kết quả là 1800."""
+    su = [{"ttfa_ms": 3000, "la_thoai": False}, {"ttfa_ms": 1200, "la_thoai": True}]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
 
 
 def test_lay_max_cua_sau_luot_gan_nhat():
-    """Cửa sổ 3 -> 6 lượt (08-10).
-
-    Với cửa sổ 3, vài lượt nhanh liên tiếp kéo ước lượng xuống thấp rồi một lượt
-    chậm đột ngột là hụt. Đo được: lịch sử toàn 678ms, lượt sau 1056ms.
-    """
-    su = [_luot(5000), _luot(1000), _luot(1100), _luot(1200)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(5000.0 * BIEN_AN_TOAN)
+    """Cửa sổ là SÁU lượt (`lich_su[-6:]`), không phải ba. Cả 4 lượt đều nằm
+    trong cửa sổ nên max là 5000, nhân biên -> 6250."""
+    su = [{"ttfa_ms": v, "la_thoai": True} for v in (5000, 1000, 1100, 1200)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 6250.0
 
 
 def test_mac_dinh_la_SAN_chu_khong_chi_la_gia_tri_lui():
@@ -115,11 +119,30 @@ def test_lich_su_cao_thi_vuot_san():
 
 
 def test_bo_qua_luot_thieu_ttfa():
-    su = [_luot(None), _luot(0), _luot(1300)]
-    assert can_che_ms(su, la_thoai=True, mac_dinh=0.0) == pytest.approx(1300.0 * BIEN_AN_TOAN)
+    """None và 0 đều bị bỏ. Còn 1300 * 1.25 = 1625, dưới sàn -> 1800."""
+    su = [
+        {"ttfa_ms": None, "la_thoai": True},
+        {"ttfa_ms": 0, "la_thoai": True},
+        {"ttfa_ms": 1300, "la_thoai": True},
+    ]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
 
 
 def test_suy_ra_duong_tu_stt_ms_khi_ban_ghi_cu_khong_co_la_thoai():
-    # Bản ghi cũ trong DB không có khoá `la_thoai`. Suy từ stt_ms như bản trước.
+    """Bản ghi cũ thiếu khoá `la_thoai` thì suy từ `stt_ms`. 1400 * 1.25 = 1750,
+    dưới sàn -> 1800."""
     cu = [{"ttfa_ms": 1400, "stt_ms": 300}]
-    assert can_che_ms(cu, la_thoai=True, mac_dinh=0.0) == pytest.approx(1400.0 * BIEN_AN_TOAN)
+    assert can_che_ms(cu, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+def test_bien_an_toan_duoc_ap_dung():
+    """Biên 1.25 phải ăn khi kết quả vượt sàn."""
+    su = [{"ttfa_ms": 4000, "la_thoai": True}]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 5000.0
+
+
+def test_mac_dinh_la_san_khong_phai_chi_gia_tri_lui():
+    """Lịch sử toàn lượt nhanh vẫn không được xuống dưới sàn - vài lượt nhanh
+    liên tiếp rồi một lượt chậm đột ngột là khách nghe hụt."""
+    su = [{"ttfa_ms": 200, "la_thoai": True} for _ in range(6)]
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
