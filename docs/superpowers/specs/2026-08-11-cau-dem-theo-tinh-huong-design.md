@@ -246,7 +246,9 @@ Thêm một mục vào thanh điều hướng `frontend/index.html`, cùng lối
 
 Ba khối:
 
-**Bảng tình huống** — tên, số mẩu mở đầu, số ví dụ, tốc đọc, **số lần đã dùng thật** (đếm từ `latency_metrics.filler_id`). Bật/tắt tại chỗ.
+**Bảng tình huống** — tên, số mẩu mở đầu, số ví dụ, tốc đọc, **số lần đã dùng thật**. Bật/tắt tại chỗ.
+
+Số lần dùng **chưa lưu được ở đâu cả**: pipeline có ghi `filler_id` và `filler_text` vào dict `metrics`, nhưng `save_session` chỉ lưu 4 cột `stt_ms/rag_ms/ttfa_ms/total_ms` — `latency_metrics` không có cột nào cho câu đệm. Phải thêm `filler_id` và `tinh_huong_id` qua `_ADDED_COLUMNS` (cơ chế chỉ-thêm đã có, không cần migration). Việc này cũng là điều kiện để **đo** được phân loại có đúng không, nên phải làm trước trang quản lý chứ không phải cùng lúc.
 
 **Soạn một tình huống** — ví dụ câu khách nói, mẩu mở đầu, tốc đọc. Kèm nút **nghe thử ngay**: gọi API sinh tiếng thật với đúng giọng và tốc đó, không phải chờ dựng nền. Đây là chỗ quyết định trang có dùng được hay không — soạn câu mà không nghe được thì chỉ là gõ chữ vào ô.
 
