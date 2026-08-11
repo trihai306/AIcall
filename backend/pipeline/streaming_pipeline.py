@@ -100,13 +100,30 @@ class StreamingPipeline:
 
     @staticmethod
     def _toc_cho_phien(tts, session, voice: str | None) -> float | None:
-        """Tốc đọc cho phiên này: tốc của giọng, nhân hệ số nếu là cuộc gọi.
+        """Tốc đọc cho phiên: tốc của tình huống nếu có, không thì tốc của giọng,
+        nhân hệ số nếu là cuộc gọi.
 
-        Phân biệt bằng `session.audio_rate` - 8000 là đường thoại, 16000 là
-        trình duyệt. Đó là mốc sẵn có và luôn đúng, không phải cờ tự đặt thêm.
+        Phân biệt thoại/chat bằng `session.audio_rate` - 8000 là đường thoại.
+        Đó là mốc sẵn có và luôn đúng, không phải cờ tự đặt thêm.
+
+        GIÁ PHẢI TRẢ, ghi lại cho rõ: tốc riêng theo tình huống làm khoá cache
+        câu bị CHIA theo tình huống, nên tỉ lệ trúng cache giảm. Phải đo lại.
+        Task 12 sẽ đo lại.
         """
         try:
-            goc = tts.toc_do_cua(voice)
+            goc = None
+            if session.tinh_huong:
+                # Import trong thân hàm: filler_store không kéo torch nhưng
+                # streaming_pipeline thì có - import ở tầng module làm mọi lượt
+                # gọi chịu chi phí, và tạo vòng phụ thuộc khi khởi động.
+                from backend.services.filler_store import lay_kho
+                th = session.tinh_huong[1]   # (số_byte, id, điểm) → lấy id
+                for t in lay_kho().tinh_huong:
+                    if t.id == th and t.speed is not None:
+                        goc = t.speed
+                        break
+            if goc is None:
+                goc = tts.toc_do_cua(voice)
             if getattr(session, "audio_rate", 16000) <= 8000:
                 return goc * tts.he_so_thoai()
             return goc
