@@ -292,6 +292,14 @@ _ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "inbound_scenario_id": "TEXT NOT NULL DEFAULT ''",
         "inbound_delay_s":     "REAL NOT NULL DEFAULT 2.0",
     },
+    # latency_metrics: ghi lại câu đệm và tình huống đã dùng để sau này đo
+    # xem phân loại đúng hay sai — điều kiện tiên quyết trước khi chốt ngưỡng
+    # (Task 12). NULL là hợp lệ: filler_id NULL khi lượt không phát câu đệm,
+    # tinh_huong_id NULL khi rơi về rổ đuôi trần (chưa có tình huống trong kho).
+    "latency_metrics": {
+        "filler_id":     "TEXT",   # uuid câu đệm đã phát, NULL nếu không dùng
+        "tinh_huong_id": "TEXT",   # uuid tình huống đã chọn, NULL nếu rổ đuôi trần
+    },
 }
 
 # Rows that need rewriting, not just new columns. Each entry is
@@ -496,8 +504,9 @@ def _save_session_sync(
 
         _conn.executemany(
             "INSERT OR IGNORE INTO latency_metrics "
-            "(session_id, turn_number, timestamp, stt_ms, rag_ms, ttfa_ms, total_ms) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(session_id, turn_number, timestamp, stt_ms, rag_ms, ttfa_ms, "
+            " total_ms, filler_id, tinh_huong_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     session_id,
@@ -507,6 +516,8 @@ def _save_session_sync(
                     m.get("rag_ms"),
                     m.get("ttfa_ms"),
                     m.get("total_ms"),
+                    m.get("filler_id"),        # từ _send_filler (Task 8); None nếu không dùng câu đệm
+                    m.get("tinh_huong_id"),    # None khi rơi về rổ đuôi trần — giá trị có nghĩa, không đổi thành ''
                 )
                 for i, m in enumerate(latency_log)
             ],
