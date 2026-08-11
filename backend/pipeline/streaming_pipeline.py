@@ -459,6 +459,13 @@ class StreamingPipeline:
     # chỉ thành lời thừa - người nghe báo "dạ vâng ạ lặp lại quá nhiều".
     _FILLER_BO_QUA_MS = 700.0
 
+    # Phân loại đoán trên câu CỤT thì dễ trượt: khách có thể đổi ý giữa lượt
+    # ("lãi suất bao nhiêu... à không, hồ sơ cần gì"). Chỉ dùng khi bản đoán đã
+    # nghe được ít nhất bằng này phần audio cuối cùng.
+    # TẠM 0.5, CHƯA ĐO. `tinh_huong_do_phu` trong metrics để chốt bằng số thật.
+    # Chọn sai mẩu mở đầu tệ hơn không có mẩu nào -> lưỡng lự thì về rổ chung.
+    _TINH_HUONG_DO_PHU_MIN = 0.5
+
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
         return can_che_ms(session.latency_log, la_thoai, mac_dinh)
@@ -496,35 +503,50 @@ class StreamingPipeline:
             metrics["filler_bo_qua"] = f"nhanh sẵn ({can_che:.0f}ms)"
             return
 
-        # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi - lọc bỏ những
-        # câu gắn cờ không hợp câu hỏi. Chưa có phiên âm ở mốc này nên vẫn suy
-        # từ lượt trước: đang tư vấn thì đa số lượt là câu hỏi. (Mốc 2 sẽ đọc
-        # session.spec_stt để biết chắc thay vì đoán.)
-        # `chi_duoi` lọc theo id đuôi thay vì duyệt CauDuoi: Task 8 sẽ dùng nó để
-        # lọc hop_cau_hoi. Hiện tại lọc toàn bộ khi turn_count=0, câu hỏi khi > 0.
-        kho_obj = lay_kho()
-        duoi_id_theo_id = {d.id: d for d in kho_obj.duoi}
-        if session.turn_count > 0:
-            chi_duoi: set[str] | None = {d.id for d in kho_obj.duoi if d.hop_cau_hoi}
-        else:
-            chi_duoi = None
+        kho = lay_kho()
+        n_audio = session.audio_len() or 1
+        id_th = None
+        if session.tinh_huong:
+            n_th, th, diem = session.tinh_huong
+            do_phu = n_th / n_audio
+            metrics["tinh_huong_do_phu"] = round(do_phu, 3)
+            metrics["tinh_huong_diem"] = round(diem, 3)
+            if do_phu >= self._TINH_HUONG_DO_PHU_MIN:
+                id_th = th
+            else:
+                # Bản đoán nghe trên đoạn quá ngắn → dễ trượt; về rổ chung an toàn hơn.
+                metrics["tinh_huong_bo"] = f"do phu {do_phu:.2f} qua thap"
+
+        # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi. Nay đọc CHÍNH
+        # phiên âm dở thay vì suy từ `session.turn_count` như trước: spec_stt có
+        # chữ thật, không phải suy đoán từ lượt trước.
+        duoi = list(kho.duoi)
+        chu = (session.spec_stt or (0, ""))[1].lower()
+        if "?" in chu or any(t in chu for t in
+                             ("bao nhiêu", "thế nào", "gì", "à", "không ạ")):
+            duoi = [d for d in duoi if d.hop_cau_hoi] or duoi
 
         dem = getattr(session, "dem_filler", None)
         if dem is None:
             dem = session.dem_filler = {}
 
-        filler_audio, id_duoi, _id_th_used = self.tts.pick_filler(
-            kho_obj, session.voice_name, min_ms=can_che, dem=dem,
-            chi_duoi=chi_duoi,
+        filler_audio, id_duoi, th_dung = self.tts.pick_filler(
+            kho, session.voice_name, min_ms=can_che, dem=dem,
+            id_tinh_huong=id_th, chi_duoi={d.id for d in duoi},
         )
-        if not filler_audio or id_duoi is None:
+        if not filler_audio:
             return
         dem[id_duoi] = dem.get(id_duoi, 0) + 1
-        await self._send_audio(ws, filler_audio, is_filler=True, turn_id=session.turn_id)
+        await self._send_audio(ws, filler_audio, is_filler=True,
+                               turn_id=session.turn_id)
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
+        duoi_id_theo_id = {d.id: d for d in kho.duoi}
         d_obj = duoi_id_theo_id.get(id_duoi)
         metrics["filler_text"] = d_obj.text if d_obj else id_duoi
         metrics["filler_id"] = id_duoi
+        # th_dung là tình huống ĐÃ DÙNG THẬT (None khi rơi về đuôi trần), khác
+        # với id_th (tình huống ĐOÁN ĐƯỢC). Ghi đúng cái đã dùng để đối soát log.
+        metrics["tinh_huong_id"] = th_dung
 
     async def process_turn(self, audio_bytes: bytes, session: CallSession, ws: WebSocket):
         """Full pipeline: Audio -> STT -> RAG -> LLM -> TTS -> Audio."""
