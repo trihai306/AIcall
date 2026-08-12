@@ -520,6 +520,52 @@ async def delete_campaign(campaign_id: str):
 
 # --- helpers -----------------------------------------------------------------
 
+async def _theo_doi_cuoc_goi_tay(contact: dict, device: dict, session,
+                                 campaign: dict | None):
+    """Trông một cuộc gọi TAY tới lúc máy về rảnh, rồi dọn và chốt trạng thái.
+
+    Làm đúng ba việc mà nút kết quả tay vẫn làm, theo đúng thứ tự bắt buộc ghi
+    ở `set_call_result`: dừng cầu tiếng (để bộ ghi âm chốt file rồi gán đường
+    dẫn vào phiên) -> chốt phiên cho vào Báo cáo -> cập nhật trạng thái số.
+    `dong_duong_tieng` gộp hai việc đầu.
+
+    Cúp máy trước khi dọn: bình thường khách đã tắt nên lệnh này thừa, nhưng khi
+    thoát vòng vì CHẠM TRẦN THỜI GIAN thì cuộc gọi vẫn đang nối và không cúp là
+    giữ máy đó vô hạn.
+
+    Người bấm nút kết quả trước thì task này phải im: kiểm lại trạng thái số
+    ngay trước khi ghi, khác "calling" nghĩa là đã có người chốt rồi - chốt đè
+    lên là ghi hai lần vào Báo cáo và xoá mất kết quả người ta vừa chọn.
+    """
+    from backend.main import app_state
+    from backend.services import call_session_service as css
+    from backend.services.campaign_runner import cho_ket_qua
+
+    contact_id = contact["contact_id"]
+    try:
+        ket_qua = await cho_ket_qua(device, session, campaign, asyncio.Event())
+    except Exception as e:
+        # Không đọc được trạng thái thì vẫn phải dọn - bỏ ngang ở đây là để lại
+        # đúng cái rò rỉ mà hàm này sinh ra để chữa.
+        logger.warning(f"[{contact.get('phone')}] lỗi khi theo dõi cuộc gọi: {e}")
+        ket_qua = "no_answer"
+
+    moi = await contacts_db.get_contact(contact_id)
+    if moi is not None and moi.get("status") != "calling":
+        logger.info(f"[{contact.get('phone')}] đã có người chốt kết quả "
+                    f"({moi.get('status')}) — bỏ qua phần tự chốt")
+        return
+
+    try:
+        await dialer_service.hangup(device)
+    except Exception as e:
+        logger.warning(f"[{contact.get('phone')}] không cúp được máy: {e}")
+
+    await css.dong_duong_tieng(device, app_state, session, ket_qua)
+    await contacts_db.finish_attempt(contact_id, ket_qua, campaign)
+    logger.info(f"[{contact.get('phone')}] cuộc gọi tay kết thúc: {ket_qua}")
+
+
 async def _dial_contact(contact: dict, device: dict, voice_name: str) -> dict:
     """Gọi một số bằng tay (nút "Gọi" ở trang Danh bạ).
 
@@ -574,6 +620,20 @@ async def _dial_contact(contact: dict, device: dict, voice_name: str) -> dict:
                 phone_calls.chao_khi_bat_may(device["address"]))
         if not tieng:
             logger.warning(f"[{contact['phone']}] không nối được đường tiếng: {canh_bao}")
+
+        # TRÔNG CUỘC GỌI TỚI LÚC NÓ KẾT THÚC.
+        #
+        # Thiếu task này thì khách tắt máy xong không có gì xảy ra: trạng thái
+        # số đứng ở "calling", phiên không được chốt nên cuộc gọi không vào Báo
+        # cáo, và cầu tiếng cùng đường tiêm uplink vẫn mở - máy đó không gọi
+        # được số tiếp theo. Bộ quay số tự động đã có vòng này từ đầu
+        # (`campaign_runner.cho_ket_qua`), đường gọi tay thì không.
+        #
+        # Chỉ trông máy ADB: thiết bị khác không đọc được trạng thái cuộc gọi,
+        # đoán mò rồi tự chốt "done" sau 60 giây là ghi đè lên một cuộc tư vấn
+        # đang diễn ra. Với chúng, nút kết quả tay vẫn là đường duy nhất.
+        asyncio.create_task(_theo_doi_cuoc_goi_tay(
+            contact, device, session, campaign))
 
     return {
         "contact": updated,

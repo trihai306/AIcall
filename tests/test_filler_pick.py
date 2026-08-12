@@ -288,7 +288,10 @@ _MO_DAU_THAT = [
 
 # Regex phát hiện lặp: sau dấu phẩy + khoảng trắng có Dạ/Vâng không
 # Ví dụ: "Dạ về lãi suất thì, Dạ em kiểm tra" → lặp
-_LAP_RE = re.compile(r",\s+(Dạ|Vâng)(?=[,\s]|$)")
+_LAP_RE = re.compile(r",\s+(Dạ|Vâng)(?=[,\s]|$)", re.IGNORECASE)
+# IGNORECASE: dữ liệu hiện tại đều viết hoa ("Dạ", "Vâng") nên test xanh
+# với hoặc không có cờ này, nhưng câu đuôi thêm sau viết "dạ"/"vâng" thường
+# sẽ lọt qua nếu thiếu cờ. Thêm IGNORECASE để khoá lỗi ở cả hai dạng.
 
 
 def test_ghep_bo_Da_vang_co_phay():

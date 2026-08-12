@@ -80,22 +80,70 @@ async def upload_voice(
     return {"name": safe_name, "path": str(wav_path), "size_kb": round(len(content) / 1024, 1)}
 
 
+def _cat_manh_nhu_pipeline(text: str) -> list[str]:
+    """Cắt chữ y hệt vòng stream của `streaming_pipeline`.
+
+    Nạp token từng từ một chứ không đưa cả chuỗi vào `tach_manh`: cỡ mảnh lấy
+    theo SỐ MẢNH ĐÃ GIAO (`co_manh`), nên đưa cả chuỗi sẽ ra kết quả khác với
+    lúc LLM nhả token dần - tức lại lệch khỏi đường thật, đúng thứ đang chữa.
+    """
+    from backend.pipeline.text_chunker import co_manh, tach_manh
+
+    ra: list[str] = []
+    dem = ""
+    for tu in text.split():
+        dem = f"{dem} {tu}" if dem else tu
+        while True:
+            m, dem = tach_manh(dem, n=co_manh(len(ra)))
+            if m is None:
+                break
+            ra.append(m)
+    if dem.strip():
+        ra.append(dem.strip())
+    return ra or [text]
+
+
+async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
+                             toc: float, fast: bool) -> bytes:
+    """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
+
+    Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
+    `streaming_pipeline`, nhờ vậy mảnh đầu không bị thêm gì và mảnh cuối không
+    có đuôi lặng thừa.
+
+    `fast` chỉ áp cho mảnh ĐẦU, vì `f5tts_nfe_step_first` trong đường thật cũng
+    chỉ dùng cho mảnh đầu. Áp cho mọi mảnh là nghe ra một thứ không tồn tại.
+    """
+    import numpy as np
+
+    from backend.pipeline.text_chunker import nhip_nghi_sau
+    from backend.services.audio_utils import pcm_to_wav
+
+    SR = 24000
+    khuc: list[np.ndarray] = []
+    nghi_ms = 0.0
+    for i, m in enumerate(manh):
+        b = await tts.synthesize(m, voice=voice_name, use_cache=False,
+                                 speed=toc, fast=(fast and i == 0))
+        pcm = np.frombuffer(b[44:], dtype=np.int16)
+        if nghi_ms > 0:
+            khuc.append(np.zeros(int(SR * nghi_ms / 1000), dtype=np.int16))
+        khuc.append(pcm)
+        nghi_ms = nhip_nghi_sau(m)
+    return pcm_to_wav(np.concatenate(khuc).tobytes(), sample_rate=SR)
+
+
 @router.post("/test-tts")
 async def test_tts(
     text: str = Form(...),
     voice_name: str = Form("default"),
     fast: bool = Form(False),
     qua_dien_thoai: bool = Form(False),
-    cat_manh: bool = Form(False),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
     fast=True uses the reduced diffusion steps the pipeline applies to the
     first chunk of a reply, so the quality/TTFA trade-off can be heard.
-
-    cat_manh=True đọc y như CUỘC GỌI: cắt mảnh tăng dần 5→10→20 từ, mảnh đầu
-    dùng nfe thấp, chèn nhịp nghỉ ở ranh giới mảnh, rồi ghép lại. Mặc định tắt để
-    giữ bản một-phát làm mốc đối chứng - xem khối chú thích ở nhánh xử lý dưới.
     """
     from backend.main import app_state
 
@@ -124,18 +172,26 @@ async def test_tts(
     if qua_dien_thoai:
         toc *= app_state.tts.he_so_thoai()
 
+    # ĐI ĐÚNG ĐƯỜNG CUỘC GỌI THẬT: cắt mảnh rồi ghép có chèn nhịp nghỉ.
+    #
+    # Trước 2026-08-12 chỗ này gọi thẳng `synthesize` cho CẢ đoạn, nên toàn bộ
+    # phần chèn nhịp nghỉ của `streaming_pipeline` không áp dụng - trang nghe thử
+    # cho ra tiếng TỆ HƠN thứ khách thật sự nghe. Đo trên đoạn 3 câu:
+    #
+    #     gọi thẳng cả đoạn : 2 quãng lặng, dài 20ms và 40ms   (tai không nghe ra)
+    #     đúng đường thật   : 3 quãng lặng, 20ms + 210ms + 200ms
+    #
+    # Hậu quả thật: người dùng nghe trang này rồi báo "giọng bị nhảy chữ", trong
+    # khi cuộc gọi thật không bị. Một trang thử không phản ánh đúng đầu ra thì
+    # tệ hơn không có, vì nó dẫn tới quyết định sai.
+    manh = _cat_manh_nhu_pipeline(text)
     t0 = time.perf_counter()
     try:
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
-        if cat_manh:
-            wav_bytes, manh = await _doc_nhu_cuoc_goi(
-                app_state.tts, text, voice_name, toc)
-        else:
-            manh = [text]
-            wav_bytes = await app_state.tts.synthesize(
-                text, fast=fast, voice=voice_name, use_cache=False, speed=toc
-            )
+        wav_bytes = await _ghep_nhu_pipeline(
+            app_state.tts, manh, voice_name, toc, fast
+        )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
         return {"error": f"Tổng hợp thất bại: {e}"}
@@ -164,14 +220,14 @@ async def test_tts(
         "text": text,
         "voice": voice_name,
         "fast": fast,
-        "cat_manh": cat_manh,
-        "so_manh": len(manh),
-        # Trả cả chữ từng mảnh: nghe thấy chỗ ngắt lạ thì phải nhìn được nó cắt
-        # ở đâu mới lần ra được nguyên nhân.
-        "manh": manh,
         "elapsed_ms": elapsed_ms,
         "duration_ms": duration_ms,
         "rtf": round(elapsed_ms / duration_ms, 3) if duration_ms else None,
+        # Để nhìn ra chữ đã bị cắt thế nào. Chữ dán từ nơi khác hay thiếu khoảng
+        # trắng sau dấu chấm ("nghìn ạ.Dạ lãi suất") làm cả đoạn thành MỘT mảnh,
+        # và đó là lúc khách nghe chữ dính vào nhau.
+        "so_manh": len(manh),
+        "manh": manh,
     }
 
 
@@ -273,75 +329,6 @@ async def dat_toc_thoai(req: HeSoThoai):
     if tts is None:
         return {"error": "TTS chưa sẵn sàng"}
     return {"ok": True, "he_so": tts.dat_he_so_thoai(req.he_so)}
-
-
-async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
-                            toc: float) -> tuple[bytes, list[str]]:
-    """Đọc `text` theo ĐÚNG cách đường gọi đọc nó, rồi ghép thành một wav.
-
-    Trả `(wav, danh sách chữ từng mảnh)`. Trả cả chữ chứ không chỉ đếm số mảnh:
-    nghe thấy chỗ ngắt lạ thì phải nhìn được nó cắt Ở ĐÂU mới lần ra được, mà
-    đoán từ tiếng thì không ai đoán nổi.
-
-    Vì sao trang nghe thử cần chế độ này: `synthesize()` một phát đưa NGUYÊN cả
-    câu cho F5, còn cuộc gọi cắt mảnh rồi nối. Chỉnh tốc/chọn giọng trên bản một
-    phát rồi suy ra cuộc gọi là đúng cái bẫy đã mắc với tốc 0.64/1.20.
-
-    ĐỪNG trích một con số "lệch bao nhiêu phần trăm" - nó phụ thuộc luật cắt, và
-    F5 sinh có dao động nên một lần đo không nói được gì. Đo trên máy thật, đoạn 3
-    câu 24 từ, giọng heu_a, 3 lần mỗi chế độ (2026-08-11, CAT_THEO_CAU=True):
-
-        một phát      : 6450 / 6970 / 6550 ms   (tb 6657, dải 520)
-        như cuộc gọi  : 6670 / 6770 / 6630 ms   (tb 6690, dải 140)
-
-    Tức TỔNG thời lượng gần như bằng nhau ở lối cắt theo câu - chênh 33ms, nằm gọn
-    trong dao động của chính bản một phát. (Ở lối cắt theo SỐ TỪ thì có lệch thật:
-    đo được 3110 so với 3443ms trên câu 13 từ.)
-
-    Cái khác thật sự, và là lý do chế độ này đáng có:
-      - mảnh ĐẦU đọc bằng `fast` (nfe thấp) y như cuộc gọi. Đo trên câu 13 từ ra
-        cùng MỘT mảnh: một phát 2746ms, như cuộc gọi 3189ms - lệch 16% chỉ vì nfe.
-      - F5 sinh MỖI mảnh như một phát ngôn trọn vẹn, nên mỗi ranh giới mảnh là một
-        chỗ nó hạ giọng kết câu; bản một phát không có chỗ nào như thế.
-      - nhịp nghỉ 200ms ở ranh giới câu, thứ bản một phát không có.
-      - dao động thời lượng THẤP HƠN hẳn (dải 140 so với 520ms): đúng cái lý do
-        sinh ra lối cắt mảnh - đoạn dài thì F5 tự bịa quãng dừng, mỗi lần một kiểu.
-
-    Ba thứ lấy nguyên từ đường gọi, KHÔNG đặt lại số ở đây - nhờ vậy đổi luật cắt
-    thì chế độ này đi theo, không phải sửa:
-      - `chia_ca_luot`  : ranh giới mảnh, theo luật đang bật (cắt theo số từ hay
-                          theo nguyên câu là do `text_chunker` quyết, không phải
-                          do đây)
-      - `nhip_nghi_sau` : nhịp nghỉ sau mỗi mảnh, cũng theo luật đang bật
-      - `fast` cho mảnh ĐẦU: y như `fast=(idx == 0)` ở streaming_pipeline
-
-    Khác đường gọi ĐÚNG một chỗ, và là chỗ cố ý: sinh lần lượt chứ không song
-    song. Cuộc gọi vừa sinh vừa phát nên mảnh sau chạy trong lúc mảnh trước đang
-    phát; ở đây phải có đủ cả bài mới ghép được. Nên `elapsed_ms` của chế độ này
-    là TỔNG thời gian sinh, không phải thời gian khách chờ - muốn xem thời gian
-    chờ tiếng đầu thì đọc `tts_first_ms` trên bảng số của cuộc gọi thật.
-    """
-    from backend.pipeline.text_chunker import chia_ca_luot, nhip_nghi_sau
-    from backend.services.audio_utils import chen_lang_dau_wav, noi_wav
-
-    manh = chia_ca_luot(text)
-    if not manh:
-        return b"", 0
-
-    cac_wav: list[bytes] = []
-    nghi_ms = 0.0
-    for i, m in enumerate(manh):
-        w = await tts.synthesize(m, fast=(i == 0), voice=voice_name,
-                                 use_cache=False, speed=toc)
-        # Chèn nhịp nghỉ vào ĐẦU mảnh này (nợ từ mảnh trước), không nối vào cuối
-        # mảnh trước - y hệt vòng phát của streaming_pipeline, nhờ vậy mảnh đầu
-        # không bao giờ bị chèn và mảnh cuối không có đuôi lặng thừa.
-        if w and nghi_ms > 0:
-            w = chen_lang_dau_wav(w, nghi_ms)
-        nghi_ms = nhip_nghi_sau(m)
-        cac_wav.append(w)
-
-    return noi_wav(cac_wav), manh
 
 
 def _mo_phong_kenh_thoai(wav: bytes) -> bytes:

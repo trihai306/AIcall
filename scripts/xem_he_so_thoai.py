@@ -1,0 +1,10 @@
+import sys; sys.path.insert(0, r"C:/duan/chat-ai"); sys.stdout.reconfigure(encoding="utf-8")
+from backend.services.tts_service import F5TTSService
+s = F5TTSService(); ten = s.default_voice_name()
+p = s._tep_he_so()
+print(f"  tep he so   : {p}   ton tai: {p.exists()}")
+if p.exists(): print(f"  noi dung    : {p.read_text(encoding='utf-8').strip()!r}")
+print(f"  he_so_thoai : {s.he_so_thoai()}")
+print(f"  toc giong   : {s.toc_do_cua(ten)}")
+print(f"  -> toc duong THOAI  = {s.toc_do_cua(ten) * s.he_so_thoai():.4f}")
+print(f"  -> toc duong TRINH DUYET = {s.toc_do_cua(ten):.4f}")

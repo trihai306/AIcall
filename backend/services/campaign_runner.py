@@ -326,75 +326,8 @@ class CampaignRunner:
         await self._day_tien_do()
 
     async def _cho_ket_qua(self, device: dict, session, campaign: dict) -> str:
-        """Theo dõi cuộc gọi tới lúc kết thúc. Trả về done|no_answer|busy|voicemail.
-
-        Máy ADB đọc được trạng thái chi tiết nên phân biệt được đổ chuông với đã
-        nhấc máy. Thiết bị khác không đọc được gì, nên chỉ chờ hết thời gian rồi
-        báo 'done' — người dùng sửa lại kết quả bằng tay ở trang Danh bạ.
-        """
-        from backend.services import adb_service
-
-        if device.get("kind") != "adb":
-            await self._doi(min(_TRAN_CUOC_GOI_S, 60.0))
-            return "done"
-
-        serial = device["address"]
-        t0 = time.time()
-        da_nghe = False
-
-        while not self._dung.is_set():
-            ma, mo_ta = await adb_service.precise_call_state(serial)
-
-            if ma == 1:                       # đang nói chuyện
-                if not da_nghe:
-                    da_nghe = True
-                    logger.info(f"[{session.phone}] khách đã bắt máy")
-            elif ma in (0, 7, 8):             # rảnh / vừa ngắt / đang ngắt
-                if da_nghe:
-                    break
-                # Ngắt mà chưa từng đổ chuông và chưa tới 8 giây: gần như luôn là
-                # máy bận hoặc thuê bao không liên lạc được. Đổ chuông rồi mới
-                # ngắt thì là khách chủ động không nghe.
-                if time.time() - t0 < 8.0:
-                    return "busy"
-                return "no_answer"
-            elif ma == -1:
-                # Không đọc được trạng thái (ROM cũ, rút cáp). Không đoán bừa:
-                # chờ hết giờ rồi báo no_answer còn hơn báo 'done' cho một cuộc
-                # chưa chắc đã kết nối.
-                logger.debug(f"[{session.phone}] không đọc được trạng thái: {mo_ta}")
-
-            if da_nghe:
-                # Bot bí / khách đòi gặp người thật -> nối máy cho chuyên viên.
-                # Kiểm ở đây vì chỉ vòng này mới cầm được thiết bị.
-                ly_do = transfer_service.can_chuyen_tiep(session)
-                if ly_do:
-                    from backend.services.phone_call_service import phone_calls
-                    ok_ct, chi_tiet = await transfer_service.chuyen_tiep(
-                        session, device, phone_calls.get(serial), ly_do
-                    )
-                    if ok_ct:
-                        return "done"     # cuộc gọi giờ thuộc về chuyên viên
-                    logger.info(f"[{session.phone}] không nối máy được: {chi_tiet}")
-
-                # Hộp thư thoại: bộ dò đặt cờ này từ trong đường tiếng (F7).
-                if session.la_hop_thu_thoai:
-                    if (campaign.get("on_voicemail") or "hangup") == "hangup":
-                        logger.info(f"[{session.phone}] vào hộp thư thoại — cúp máy")
-                        return "voicemail"
-                if time.time() - t0 > _TRAN_CUOC_GOI_S:
-                    logger.warning(f"[{session.phone}] quá {_TRAN_CUOC_GOI_S:.0f}s — cúp máy")
-                    break
-            elif time.time() - t0 > _CHO_BAT_MAY_S:
-                return "no_answer"
-
-            await asyncio.sleep(_NHIP_THAM)
-
-        if not da_nghe:
-            return "no_answer"
-        # Khách bắt máy nhưng không nói câu nào: vẫn là cuộc gọi có kết nối, để
-        # phần chất lượng (F14) phân loại tiếp chứ đừng gộp vào 'không nghe máy'.
-        return "voicemail" if session.la_hop_thu_thoai else "done"
+        """Bản của bộ quay số tự động - chỉ nối lệnh dừng của chiến dịch vào."""
+        return await cho_ket_qua(device, session, campaign, self._dung)
 
     async def _dong_phien(self, session, ket_qua: str):
         await call_session_service.chot_phien(self.app_state, session, ket_qua)
@@ -523,3 +456,96 @@ class CampaignManager:
 
 
 campaigns = CampaignManager()
+
+
+async def _doi_hoac_dung(dung: asyncio.Event, giay: float):
+    """Ngủ, nhưng tỉnh ngay khi có lệnh dừng."""
+    try:
+        await asyncio.wait_for(dung.wait(), timeout=max(0.1, giay))
+    except asyncio.TimeoutError:
+        pass
+
+
+async def cho_ket_qua(device: dict, session, campaign: dict | None,
+                      dung: asyncio.Event) -> str:
+    """Theo dõi cuộc gọi tới lúc kết thúc. Trả về done|no_answer|busy|voicemail.
+
+    Máy ADB đọc được trạng thái chi tiết nên phân biệt được đổ chuông với đã
+    nhấc máy. Thiết bị khác không đọc được gì, nên chỉ chờ hết thời gian rồi
+    báo 'done' — người dùng sửa lại kết quả bằng tay ở trang Danh bạ.
+
+    HÀM DÙNG CHUNG cho cả hai đường gọi, và phải như thế.
+
+    Tới 2026-08-12 đây còn là phương thức riêng của bộ quay số tự động, còn nút
+    "Gọi" ở trang Danh bạ (`phones._dial_contact`) thì quay số xong là trả về
+    luôn, không ai trông cuộc gọi nữa. Khách tắt máy thì ba thứ cùng kẹt:
+    trạng thái số đứng mãi ở "đang gọi"; phiên không được chốt nên cuộc gọi
+    không có dòng nào trong Báo cáo; và nặng nhất là CẦU TIẾNG cùng đường tiêm
+    uplink vẫn mở - máy đó không gọi được số tiếp theo.
+
+    `campaign` được phép là None: gọi tay ngoài chiến dịch thì không có chính
+    sách hộp thư thoại nào để áp.
+    """
+    from backend.services import adb_service
+
+    if device.get("kind") != "adb":
+        await _doi_hoac_dung(dung, min(_TRAN_CUOC_GOI_S, 60.0))
+        return "done"
+
+    serial = device["address"]
+    t0 = time.time()
+    da_nghe = False
+
+    while not dung.is_set():
+        ma, mo_ta = await adb_service.precise_call_state(serial)
+
+        if ma == 1:                       # đang nói chuyện
+            if not da_nghe:
+                da_nghe = True
+                logger.info(f"[{session.phone}] khách đã bắt máy")
+        elif ma in (0, 7, 8):             # rảnh / vừa ngắt / đang ngắt
+            if da_nghe:
+                break
+            # Ngắt mà chưa từng đổ chuông và chưa tới 8 giây: gần như luôn là
+            # máy bận hoặc thuê bao không liên lạc được. Đổ chuông rồi mới
+            # ngắt thì là khách chủ động không nghe.
+            if time.time() - t0 < 8.0:
+                return "busy"
+            return "no_answer"
+        elif ma == -1:
+            # Không đọc được trạng thái (ROM cũ, rút cáp). Không đoán bừa:
+            # chờ hết giờ rồi báo no_answer còn hơn báo 'done' cho một cuộc
+            # chưa chắc đã kết nối.
+            logger.debug(f"[{session.phone}] không đọc được trạng thái: {mo_ta}")
+
+        if da_nghe:
+            # Bot bí / khách đòi gặp người thật -> nối máy cho chuyên viên.
+            # Kiểm ở đây vì chỉ vòng này mới cầm được thiết bị.
+            ly_do = transfer_service.can_chuyen_tiep(session)
+            if ly_do:
+                from backend.services.phone_call_service import phone_calls
+                ok_ct, chi_tiet = await transfer_service.chuyen_tiep(
+                    session, device, phone_calls.get(serial), ly_do
+                )
+                if ok_ct:
+                    return "done"     # cuộc gọi giờ thuộc về chuyên viên
+                logger.info(f"[{session.phone}] không nối máy được: {chi_tiet}")
+
+            # Hộp thư thoại: bộ dò đặt cờ này từ trong đường tiếng (F7).
+            if session.la_hop_thu_thoai:
+                if ((campaign or {}).get("on_voicemail") or "hangup") == "hangup":
+                    logger.info(f"[{session.phone}] vào hộp thư thoại — cúp máy")
+                    return "voicemail"
+            if time.time() - t0 > _TRAN_CUOC_GOI_S:
+                logger.warning(f"[{session.phone}] quá {_TRAN_CUOC_GOI_S:.0f}s — cúp máy")
+                break
+        elif time.time() - t0 > _CHO_BAT_MAY_S:
+            return "no_answer"
+
+        await asyncio.sleep(_NHIP_THAM)
+
+    if not da_nghe:
+        return "no_answer"
+    # Khách bắt máy nhưng không nói câu nào: vẫn là cuộc gọi có kết nối, để
+    # phần chất lượng (F14) phân loại tiếp chứ đừng gộp vào 'không nghe máy'.
+    return "voicemail" if session.la_hop_thu_thoai else "done"

@@ -30,7 +30,8 @@ param(
     [int]$SaveUpdates   = 2000,
     [int]$LastUpdates   = 1000,
     [int]$Epochs        = 100,       # đo được ~21s/update, 36 update/epoch
-    [switch]$StopServices            # tắt backend để nhường VRAM
+    [switch]$StopServices,           # tắt backend để nhường VRAM
+    [switch]$Fresh                   # xoá checkpoint cũ, train lại từ model gốc
 )
 $ErrorActionPreference = "Stop"
 
@@ -97,6 +98,36 @@ if (-not (Test-Path $PRE_START)) {
 Write-Host "=== [5/5a] Ha num_workers cho Windows ==="
 & $PY "$PROJECT\scripts\va_num_workers.py" --workers 2
 
+# THU MUC CHECKPOINT DUNG CHUNG CHO MOI GIONG - day la mot cai bay.
+# --dataset_name ghi cung "your_training_dataset", khong kem $VoiceName, nen moi
+# buoi train deu doc/ghi vao cung ckpts\your_training_dataset. Voi --finetune,
+# F5 TIEP TUC tu model_last.pt trong do neu co.
+#
+# Hau qua da do duoc: train giong moi "kiem_thu" tiep tuc tu checkpoint cua
+# giong_nam (update 1260), roi voi -Epochs 1 thi logic bo epoch nhay qua het,
+# chay 0 buoc, va luu ra ban sao Y HET giong_nam. Log van bao "Train xong".
+$CKDIR = "$F5DIR\ckpts\your_training_dataset"
+$CKLAST = "$CKDIR\model_last.pt"
+# GIONG MOI thi LUON bat dau tu dau. Khong co luat nay thi giong moi ke thua
+# trong so cua giong truoc - da do duoc: train "kiem_thu" cho ra ban sao Y HET
+# "giong_nam". Giao dien web goi script nay ma khong truyen -Fresh, nen luat
+# phai nam O DAY chu khong phai o cho goi.
+$LaGiongMoi = -not (Test-Path "$OUTDIR\model_last.pt")
+if ($LaGiongMoi -and (Test-Path $CKLAST)) {
+    Write-Host "=== [5/5b] Giong MOI '$VoiceName' -> tu dong train tu dau ==="
+    $Fresh = $true
+}
+if ($Fresh -and (Test-Path $CKDIR)) {
+    $bak = "$CKDIR" + "_cu_" + (Get-Date -Format "MMdd_HHmmss")
+    Write-Host "=== [5/5b] -Fresh: doi ten checkpoint cu -> $bak ==="
+    Rename-Item $CKDIR $bak
+} elseif (Test-Path $CKLAST) {
+    $u = & $PY "$PROJECT\scripts\doc_update_ckpt.py" $CKLAST
+    Write-Host "=== [5/5b] TIEP TUC tu checkpoint cu, update = $u ==="
+    Write-Host "    Neu -Epochs qua nho so voi so update da co, vong lap se KHONG"
+    Write-Host "    chay buoc nao ma van bao thanh cong. Dung -Fresh de train lai tu dau."
+}
+
 Write-Host "=== [5/5] Fine-tuning ($Epochs epoch) ==="
 & $PY src\f5_tts\train\finetune_cli.py `
     --exp_name F5TTS_Base `
@@ -117,6 +148,13 @@ $ckpt = "$F5DIR\ckpts\your_training_dataset\model_last.pt"
 if (-not (Test-Path $ckpt)) { throw "Khong thay checkpoint output: $ckpt" }
 Copy-Item $ckpt "$OUTDIR\model_last.pt" -Force
 Copy-Item "$F5DIR\data\your_training_dataset\vocab.txt" "$OUTDIR\vocab.txt" -Force
+
+# CHOT CHAN: doi chieu trong so voi model goc. Khong co buoc nay thi mot buoi
+# train chay 0 buoc trong Y HET mot buoi thanh cong - co file, du dung luong,
+# ngay gio moi. Da mat hai buoi train vi khong kiem (giong_vivos va kiem_thu).
+Write-Host "=== Kiem tra trong so CO THAT SU doi khong ==="
+& $PY "$PROJECT\scripts\kiem_train_f5_that.py" --goc $PRE_CKPT --moi "$OUTDIR\model_last.pt"
+if ($LASTEXITCODE -ne 0) { throw "Buoi train KHONG doi trong so - xem canh bao o tren" }
 
 # Giọng mẫu: KHÔNG lấy bừa file đầu tiên. Chọn đoạn 3-8s, ưu tiên câu mở đầu
 # bằng "Dạ" - đo được chữ đó bị đọc sai ~70% khi giọng mẫu không chứa nó.

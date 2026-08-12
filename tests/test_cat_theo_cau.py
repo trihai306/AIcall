@@ -110,6 +110,37 @@ def test_cau_qua_ngan_gop_vao_cau_sau():
     assert manh[0] == "Dạ. Em chào anh chị và rất vui được hỗ trợ ạ."
 
 
+# --- thiếu khoảng trắng sau dấu chấm -------------------------------------
+
+def test_them_cach_khi_dinh_chu():
+    """LLM hay chữ dán vào có thể ra "ạ.Dạ" không khoảng trắng. Không thêm cách
+    thì bộ cắt không thấy ranh giới câu, dồn cả đoạn thành một mảnh rồi cắt
+    cưỡng bức giữa câu - đo được 2 mảnh và 22ms lặng thay vì 3 mảnh và 227ms."""
+    van = ("Dạ khoản vay hai trăm triệu ạ.Dạ lãi suất sáu phẩy năm phần trăm ạ."
+           "Dạ anh cho em xin số điện thoại ạ.")
+    manh = cat(van)
+    assert len(manh) == 3
+    assert manh[0] == "Dạ khoản vay hai trăm triệu ạ."
+    assert manh[1] == "Dạ lãi suất sáu phẩy năm phần trăm ạ."
+
+
+def test_khong_dung_cham_so_thap_phan():
+    """"7.9" phải giữ nguyên - thêm cách vào đó là bẻ đôi con số."""
+    assert cat("Lãi suất bên em là 7.9 phần trăm một năm ạ. Anh thấy sao ạ.")[0] \
+        == "Lãi suất bên em là 7.9 phần trăm một năm ạ."
+
+
+def test_khong_dung_dau_phan_cach_nghin():
+    """"142.500.000" phải giữ nguyên."""
+    assert cat("Dư nợ của anh là 142.500.000 đồng ạ. Em xác nhận lại nhé.")[0] \
+        == "Dư nợ của anh là 142.500.000 đồng ạ."
+
+
+def test_them_cach_cho_ca_dau_hoi_va_cham_than():
+    manh = cat("Anh cần hỗ trợ gì không?Dạ em nghe đây ạ.")
+    assert manh[0] == "Anh cần hỗ trợ gì không?"
+
+
 # --- không bẻ số ---------------------------------------------------------
 
 def test_khong_cat_o_dau_phan_cach_nghin():
