@@ -87,7 +87,11 @@ def _cat_manh_nhu_pipeline(text: str) -> list[str]:
     theo SỐ MẢNH ĐÃ GIAO (`co_manh`), nên đưa cả chuỗi sẽ ra kết quả khác với
     lúc LLM nhả token dần - tức lại lệch khỏi đường thật, đúng thứ đang chữa.
     """
-    from backend.pipeline.text_chunker import co_manh, tach_manh
+    from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI,
+                                               co_manh, tach_manh)
+
+    if not text.strip():
+        return []
 
     ra: list[str] = []
     dem = ""
@@ -98,9 +102,20 @@ def _cat_manh_nhu_pipeline(text: str) -> list[str]:
             if m is None:
                 break
             ra.append(m)
-    if dem.strip():
-        ra.append(dem.strip())
-    return ra or [text]
+
+    # ĐUÔI NGẮN gộp vào mảnh trước, không giao riêng - y hệt đoạn xả đệm cuối
+    # lượt của `streaming_pipeline` (chỗ dùng `TOI_THIEU_TU_MANH_CUOI`).
+    #
+    # Thiếu đúng bước này là trang nghe thử cho ra một mảnh cụt mà cuộc gọi thật
+    # không hề có. Mà F5 sinh MỖI mảnh như một phát ngôn trọn vẹn, nên mảnh "Vâng
+    # ạ" một mình nghe tách hẳn khỏi câu nó thuộc về - tức nghe thử xong vẫn
+    # không phải thứ khách nghe, đúng cái lệch mà hàm này sinh ra để xoá.
+    du = dem.strip()
+    if du and ra and len(du.split()) < TOI_THIEU_TU_MANH_CUOI:
+        ra[-1] = f"{ra[-1]} {du}".strip()
+    elif du:
+        ra.append(du)
+    return ra or [text.strip()]
 
 
 async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,

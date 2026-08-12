@@ -1,4 +1,10 @@
-"""`chia_ca_luot` phải cho ra ĐÚNG dãy mảnh mà `streaming_pipeline` giao cho TTS.
+"""Trang nghe thử phải cắt mảnh Y HỆT đường gọi thật.
+
+ĐỔI 13-08-2026: `chia_ca_luot` đã bị gỡ, việc đó nay do
+`api/voices._cat_manh_nhu_pipeline` làm. Test giữ nguyên MỤC ĐÍCH, chỉ đổi hàm
+được soi. Trước đó file này đỏ trên cả hai máy vì trỏ vào hàm đã mất - ghi chú
+dự án gọi đây là việc "đang treo, chưa chọn giữ bản nào"; bản `_cat_manh...`
+thắng vì nó chỉ dùng `tach_manh`+`co_manh`, thứ cả hai máy đều có.
 
 Vì sao cần bộ test này chứ không chỉ đọc mắt: trang nghe thử và đường gọi thật là
 hai đoạn mã khác nhau, và cái giá của việc chúng lệch nhau đúng là thứ đã xảy ra
@@ -12,8 +18,9 @@ hai bên lệch nhau và test đỏ.
 
 import pytest
 
+from backend.api.voices import _cat_manh_nhu_pipeline as chia_ca_luot
 from backend.pipeline.text_chunker import (CO_MANH_TANG_DAN,
-                                           TOI_THIEU_TU_MANH_CUOI, chia_ca_luot,
+                                           TOI_THIEU_TU_MANH_CUOI,
                                            co_manh, nhip_nghi_sau, tach_manh)
 
 try:
