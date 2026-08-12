@@ -129,10 +129,10 @@ async def test_tts(
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
         if cat_manh:
-            wav_bytes, so_manh = await _doc_nhu_cuoc_goi(
+            wav_bytes, manh = await _doc_nhu_cuoc_goi(
                 app_state.tts, text, voice_name, toc)
         else:
-            so_manh = 1
+            manh = [text]
             wav_bytes = await app_state.tts.synthesize(
                 text, fast=fast, voice=voice_name, use_cache=False, speed=toc
             )
@@ -165,7 +165,10 @@ async def test_tts(
         "voice": voice_name,
         "fast": fast,
         "cat_manh": cat_manh,
-        "so_manh": so_manh,
+        "so_manh": len(manh),
+        # Trả cả chữ từng mảnh: nghe thấy chỗ ngắt lạ thì phải nhìn được nó cắt
+        # ở đâu mới lần ra được nguyên nhân.
+        "manh": manh,
         "elapsed_ms": elapsed_ms,
         "duration_ms": duration_ms,
         "rtf": round(elapsed_ms / duration_ms, 3) if duration_ms else None,
@@ -273,10 +276,12 @@ async def dat_toc_thoai(req: HeSoThoai):
 
 
 async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
-                            toc: float) -> tuple[bytes, int]:
+                            toc: float) -> tuple[bytes, list[str]]:
     """Đọc `text` theo ĐÚNG cách đường gọi đọc nó, rồi ghép thành một wav.
 
-    Trả `(wav, số mảnh)`.
+    Trả `(wav, danh sách chữ từng mảnh)`. Trả cả chữ chứ không chỉ đếm số mảnh:
+    nghe thấy chỗ ngắt lạ thì phải nhìn được nó cắt Ở ĐÂU mới lần ra được, mà
+    đoán từ tiếng thì không ai đoán nổi.
 
     Vì sao trang nghe thử cần chế độ này: `synthesize()` một phát đưa NGUYÊN cả
     câu cho F5, còn cuộc gọi cắt mảnh rồi nối. Chỉnh tốc/chọn giọng trên bản một
@@ -336,7 +341,7 @@ async def _doc_nhu_cuoc_goi(tts, text: str, voice_name: str,
         nghi_ms = nhip_nghi_sau(m)
         cac_wav.append(w)
 
-    return noi_wav(cac_wav), len(manh)
+    return noi_wav(cac_wav), manh
 
 
 def _mo_phong_kenh_thoai(wav: bytes) -> bytes:

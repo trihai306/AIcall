@@ -1555,6 +1555,12 @@ async function testTTS() {
       bao(`${manh} · ${(data.duration_ms / 1000).toFixed(2)}s tiếng · `
           + `sinh ${data.elapsed_ms}ms${data.rtf != null ? ` · RTF ${data.rtf}` : ''}`,
           'text-gray-500');
+      // Chỗ cắt phải NHÌN được, không chỉ đếm: nghe thấy ngắt lạ mà không biết
+      // nó cắt ở đâu thì không lần ra được nguyên nhân.
+      const oManh = document.getElementById('ttsTestManh');
+      if (oManh) {
+        oManh.textContent = data.so_manh > 1 ? data.manh.join('  |  ') : '';
+      }
       const audioEl = document.getElementById('ttsTestAudio');
       audioEl.src = 'data:audio/wav;base64,' + data.audio;
       audioEl.play();

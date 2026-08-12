@@ -1,0 +1,159 @@
+- generic [ref=f8e1]:
+  - navigation [ref=f8e2]:
+    - generic [ref=f8e7]:
+      - generic [ref=f8e8]: VoiceBank
+      - generic [ref=f8e9]: AI System
+    - generic [ref=f8e10]:
+      - generic [ref=f8e11]: Vận hành
+      - button "Tổng quan" [ref=f8e12] [cursor=pointer]
+      - button "Hội thoại" [ref=f8e16] [cursor=pointer]
+      - button "Danh bạ gọi" [active] [ref=f8e20] [cursor=pointer]
+      - button "Báo cáo" [ref=f8e24] [cursor=pointer]
+      - generic [ref=f8e28]: Cấu hình
+      - button "Kịch bản" [ref=f8e29] [cursor=pointer]
+      - button "Nguồn dữ liệu" [ref=f8e33] [cursor=pointer]
+      - button "Tri thức AI" [ref=f8e38] [cursor=pointer]
+      - button "Giọng nói" [ref=f8e42] [cursor=pointer]
+      - button "Thiết bị" [ref=f8e46] [cursor=pointer]
+      - button "Cài đặt" [ref=f8e50] [cursor=pointer]
+      - generic [ref=f8e55]: Hệ thống
+      - button "Phiên gọi" [ref=f8e56] [cursor=pointer]
+      - button "Test giọng" [ref=f8e60] [cursor=pointer]
+      - button "Training giọng" [ref=f8e65] [cursor=pointer]
+      - button "Training LLM" [ref=f8e69] [cursor=pointer]
+      - button "Cài Model" [ref=f8e73] [cursor=pointer]
+      - button "Benchmark" [ref=f8e77] [cursor=pointer]
+      - button "Logs" [ref=f8e81] [cursor=pointer]
+    - generic [ref=f8e85]: Đã kết nối
+  - main [ref=f8e89]:
+    - generic [ref=f8e153]:
+      - generic [ref=f8e154]:
+        - generic [ref=f8e155]:
+          - heading "Danh bạ gọi" [level=2] [ref=f8e156]
+          - paragraph [ref=f8e157]: Số khách hàng, chiến dịch và kết quả từng cuộc gọi
+        - generic [ref=f8e158]:
+          - button "Nhập danh sách" [ref=f8e159] [cursor=pointer]
+          - button "Xuất CSV" [ref=f8e160] [cursor=pointer]
+          - button "+ Thêm số" [ref=f8e161] [cursor=pointer]
+          - combobox [ref=f8e162]:
+            - option "fosd_1"
+            - option "fosd_2"
+            - option "fosd_3"
+            - option "giong_heu"
+            - option "giong_nam"
+            - option "giong_ngan"
+            - option "giong_test"
+            - option "giong_vivos"
+            - option "heu_a" [selected]
+            - option "heu_b"
+            - option "heu_c"
+            - option "heu_d"
+            - option "heu_e"
+            - option "nam_moi1"
+            - option "nam_moi2"
+          - button "Gọi số tiếp theo" [ref=f8e163] [cursor=pointer]
+      - generic [ref=f8e164]:
+        - generic [ref=f8e165]:
+          - generic [ref=f8e166]: Tổng số
+          - generic [ref=f8e167]: "2"
+        - generic [ref=f8e168]:
+          - generic [ref=f8e169]: Chưa gọi
+          - generic [ref=f8e170]: "1"
+        - generic [ref=f8e171]:
+          - generic [ref=f8e172]: Đã gọi
+          - generic [ref=f8e173]: "1"
+        - generic [ref=f8e174]:
+          - generic [ref=f8e175]: Tư vấn xong
+          - generic [ref=f8e176]: "1"
+        - generic [ref=f8e177]:
+          - generic [ref=f8e178]: Từ chối / chặn gọi
+          - generic [ref=f8e179]: "0"
+      - generic [ref=f8e180]:
+        - generic [ref=f8e181]:
+          - generic [ref=f8e182]: Chạy chiến dịch tự động
+          - generic [ref=f8e183]:
+            - button "Cài đặt khác" [ref=f8e184] [cursor=pointer]
+            - button "Nhập từ chiến dịch khác" [ref=f8e185] [cursor=pointer]
+        - generic [ref=f8e186]: Chọn một chiến dịch ở ô lọc phía dưới để bật chế độ chạy tự động.
+      - generic [ref=f8e188]:
+        - button "Tất cả" [ref=f8e189] [cursor=pointer]
+        - button "+ Chiến dịch" [ref=f8e190] [cursor=pointer]
+      - generic [ref=f8e191]:
+        - generic [ref=f8e192]:
+          - textbox "Tìm số hoặc tên khách hàng..." [ref=f8e197]
+          - combobox [ref=f8e198]:
+            - option "Mọi trạng thái" [selected]
+            - option "Chưa gọi"
+            - option "Đang gọi"
+            - option "Đã tư vấn"
+            - option "Không nghe máy"
+            - option "Máy bận"
+            - option "voicemail"
+            - option "Từ chối"
+            - option "Số không hợp lệ"
+            - option "Không gọi lại"
+          - button "Làm mới" [ref=f8e199] [cursor=pointer]
+        - table [ref=f8e201]:
+          - rowgroup [ref=f8e202]:
+            - row [ref=f8e203]:
+              - columnheader [ref=f8e204]:
+                - checkbox [ref=f8e205] [cursor=pointer]
+              - columnheader "Số điện thoại" [ref=f8e206]
+              - columnheader "Khách hàng" [ref=f8e207]
+              - columnheader "Chiến dịch" [ref=f8e208]
+              - columnheader "Trạng thái" [ref=f8e209]
+              - columnheader "Lần gọi" [ref=f8e210]
+              - columnheader "Gọi lúc" [ref=f8e211]
+              - columnheader "Thao tác" [ref=f8e212]
+          - rowgroup [ref=f8e213]:
+            - row [ref=f8e214]:
+              - cell [ref=f8e215]:
+                - checkbox [ref=f8e216] [cursor=pointer]
+              - cell "0833816298" [ref=f8e217]
+              - cell "—" [ref=f8e218]
+              - cell "—" [ref=f8e219]
+              - cell "Đã tư vấn" [ref=f8e220]:
+                - combobox [ref=f8e221] [cursor=pointer]:
+                  - option "Chưa gọi"
+                  - option "Đang gọi"
+                  - option "Đã tư vấn" [selected]
+                  - option "Không nghe máy"
+                  - option "Máy bận"
+                  - option "Từ chối"
+                  - option "Số không hợp lệ"
+                  - option "Không gọi lại"
+              - cell "3" [ref=f8e222]
+              - cell "10/08 17:48" [ref=f8e223]
+              - cell [ref=f8e224]:
+                - button "Gọi" [ref=f8e225] [cursor=pointer]
+                - generic [ref=f8e226]:
+                  - button "Lịch sử" [ref=f8e227] [cursor=pointer]
+                  - button "Xóa" [ref=f8e228] [cursor=pointer]
+            - row [ref=f8e229]:
+              - cell [ref=f8e230]:
+                - checkbox [ref=f8e231] [cursor=pointer]
+              - cell "0396130621" [ref=f8e232]
+              - cell "Khách thử" [ref=f8e233]
+              - cell "—" [ref=f8e234]
+              - cell "Chưa gọi" [ref=f8e235]:
+                - combobox [ref=f8e236] [cursor=pointer]:
+                  - option "Chưa gọi" [selected]
+                  - option "Đang gọi"
+                  - option "Đã tư vấn"
+                  - option "Không nghe máy"
+                  - option "Máy bận"
+                  - option "Từ chối"
+                  - option "Số không hợp lệ"
+                  - option "Không gọi lại"
+              - cell "16" [ref=f8e237]
+              - cell "10/08 18:04" [ref=f8e238]
+              - cell [ref=f8e239]:
+                - button "Gọi" [ref=f8e240] [cursor=pointer]
+                - generic [ref=f8e241]:
+                  - button "Lịch sử" [ref=f8e242] [cursor=pointer]
+                  - button "Xóa" [ref=f8e243] [cursor=pointer]
+        - generic [ref=f8e244]:
+          - generic [ref=f8e245]: 2 số · trang 1/1
+          - generic [ref=f8e246]:
+            - button "Trước" [ref=f8e247] [cursor=pointer]
+            - button "Sau" [ref=f8e248] [cursor=pointer]

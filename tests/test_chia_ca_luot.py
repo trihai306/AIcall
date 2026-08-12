@@ -99,6 +99,24 @@ def test_co_manh_tang_dan():
 
 
 @pytest.mark.skipif(not CAT_THEO_CAU, reason="chỉ áp dụng cho lối cắt theo câu")
+@pytest.mark.parametrize("cau", [
+    "Dạ em chào anh Hải. Lãi suất bảy phẩy chín ạ. Vâng",
+    "Dạ em chào anh. Vâng ạ",
+    "Lãi suất vay tín chấp bảy phẩy chín phần trăm một năm ạ. Dạ",
+])
+def test_duoi_ngan_khong_thanh_manh_rieng_o_loi_cat_cau(cau):
+    """Đuôi cụt sau dấu chấm phải GỘP vào mảnh trước, không đứng riêng.
+
+    Đây đúng là chỗ một bản cắt viết tay (thiếu bước gộp đuôi của
+    `streaming_pipeline`) đi chệch: nó nhả "Vâng" / "Dạ" thành mảnh MỘT TỪ, mà F5
+    sinh mỗi mảnh như một câu trọn vẹn nên từ đó nghe tách hẳn khỏi câu nó thuộc
+    về. Xem `TOI_THIEU_TU_MANH_CUOI`.
+    """
+    manh = chia_ca_luot(cau)
+    assert all(len(m.split()) >= TOI_THIEU_TU_MANH_CUOI for m in manh), manh
+
+
+@pytest.mark.skipif(not CAT_THEO_CAU, reason="chỉ áp dụng cho lối cắt theo câu")
 def test_cat_theo_cau_moi_manh_la_mot_cau():
     """Lối cắt theo câu: mỗi dấu kết câu là một ranh giới mảnh."""
     manh = chia_ca_luot("Dạ em chào anh. Lãi suất bảy phẩy chín ạ. "

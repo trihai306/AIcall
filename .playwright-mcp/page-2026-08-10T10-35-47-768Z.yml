@@ -1,0 +1,72 @@
+- generic [ref=f1e1]:
+  - navigation [ref=f1e2]:
+    - generic [ref=f1e7]:
+      - generic [ref=f1e8]: VoiceBank
+      - generic [ref=f1e9]: AI System
+    - generic [ref=f1e10]:
+      - generic [ref=f1e11]: Vận hành
+      - button "Tổng quan" [ref=f1e12] [cursor=pointer]
+      - button "Hội thoại" [ref=f1e16] [cursor=pointer]
+      - button "Danh bạ gọi" [ref=f1e20] [cursor=pointer]
+      - button "Báo cáo" [ref=f1e24] [cursor=pointer]
+      - generic [ref=f1e28]: Cấu hình
+      - button "Kịch bản" [ref=f1e29] [cursor=pointer]
+      - button "Nguồn dữ liệu" [ref=f1e33] [cursor=pointer]
+      - button "Tri thức AI" [ref=f1e38] [cursor=pointer]
+      - button "Giọng nói" [ref=f1e42] [cursor=pointer]
+      - button "Thiết bị" [ref=f1e46] [cursor=pointer]
+      - button "Cài đặt" [active] [ref=f1e50] [cursor=pointer]
+      - generic [ref=f1e55]: Hệ thống
+      - button "Phiên gọi" [ref=f1e56] [cursor=pointer]
+      - button "Test giọng" [ref=f1e60] [cursor=pointer]
+      - button "Training giọng" [ref=f1e65] [cursor=pointer]
+      - button "Training LLM" [ref=f1e69] [cursor=pointer]
+      - button "Cài Model" [ref=f1e73] [cursor=pointer]
+      - button "Benchmark" [ref=f1e77] [cursor=pointer]
+      - button "Logs" [ref=f1e81] [cursor=pointer]
+    - generic [ref=f1e85]: Đã kết nối
+  - main [ref=f1e89]:
+    - generic [ref=f1e530]:
+      - generic [ref=f1e531]:
+        - heading "Cài đặt" [level=2] [ref=f1e532]
+        - paragraph [ref=f1e533]: Cấu hình hệ thống AI
+      - generic [ref=f1e534]:
+        - generic [ref=f1e535]:
+          - generic [ref=f1e536]: Gửi báo cáo qua Telegram
+          - button "+ Thêm bot" [ref=f1e537] [cursor=pointer]
+        - generic [ref=f1e538]:
+          - group [ref=f1e539]:
+            - generic "Lấy token và chat_id ở đâu?" [ref=f1e540] [cursor=pointer]
+          - generic [ref=f1e541]: Chưa có bot Telegram nào.
+      - generic [ref=f1e543]:
+        - generic [ref=f1e544]: Ghi âm cuộc gọi
+        - generic [ref=f1e546]:
+          - generic [ref=f1e547]: 28 bản ghi · 109.6 MB · 4 ngày
+          - generic [ref=f1e548]:
+            - generic [ref=f1e549]:
+              - generic [ref=f1e550]: Xoá bản ghi cũ hơn (ngày)
+              - spinbutton [ref=f1e551]: "90"
+            - button "Dọn ổ đĩa" [ref=f1e552] [cursor=pointer]
+      - generic [ref=f1e553]:
+        - generic [ref=f1e554]:
+          - heading "LLM Model" [level=3] [ref=f1e559]
+          - combobox [ref=f1e560]:
+            - option "Qwen2.5-3B — Nhanh, TTFT thấp" [selected]
+            - option "Qwen2.5-7B — Chất lượng cao"
+            - option "Qwen3-4B — Thinking mode"
+        - generic [ref=f1e561]:
+          - heading "Thông tin ngân hàng" [level=3] [ref=f1e566]
+          - generic [ref=f1e567]: Tên ngân hàng
+          - textbox [ref=f1e568]: Ngân hàng ABC
+          - generic [ref=f1e569]: Tên nhân viên AI
+          - textbox [ref=f1e570]: Lan
+        - generic [ref=f1e571]:
+          - heading "Giọng nói" [level=3] [ref=f1e576]
+          - generic [ref=f1e577]: File giọng mẫu (ref audio)
+          - generic [ref=f1e578]:
+            - textbox "models/tts/ref_voices/default.wav" [ref=f1e579]
+            - button "Chọn file" [ref=f1e580] [cursor=pointer]
+        - generic [ref=f1e581]:
+          - heading "Thông tin hệ thống" [level=3] [ref=f1e586]
+          - generic [ref=f1e587]: "{ \"status\": \"ok\", \"system\": { \"platform\": \"Windows\", \"arch\": \"AMD64\", \"python\": \"3.11.15\", \"torch\": \"2.11.0+cu128\", \"device\": \"cuda\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"gpu_vram_gb\": 11.9, \"cuda_version\": \"12.8\" }, \"services\": { \"stt\": \"ok\", \"llm\": \"ok\", \"tts\": \"loaded\", \"rag\": \"10 docs\" } }"
+          - button "Kiểm tra Health" [ref=f1e588] [cursor=pointer]

@@ -1,0 +1,46 @@
+- generic [active] [ref=f2e1]:
+  - navigation [ref=f2e2]:
+    - generic [ref=f2e7]:
+      - generic [ref=f2e8]: VoiceBank
+      - generic [ref=f2e9]: AI System
+    - generic [ref=f2e10]:
+      - generic [ref=f2e11]: Vận hành
+      - button "Tổng quan" [ref=f2e12] [cursor=pointer]
+      - button "Hội thoại" [ref=f2e16] [cursor=pointer]
+      - button "Danh bạ gọi" [ref=f2e20] [cursor=pointer]
+      - button "Báo cáo" [ref=f2e24] [cursor=pointer]
+      - generic [ref=f2e28]: Cấu hình
+      - button "Kịch bản" [ref=f2e29] [cursor=pointer]
+      - button "Nguồn dữ liệu" [ref=f2e33] [cursor=pointer]
+      - button "Tri thức AI" [ref=f2e38] [cursor=pointer]
+      - button "Giọng nói" [ref=f2e42] [cursor=pointer]
+      - button "Thiết bị" [ref=f2e46] [cursor=pointer]
+      - button "Cài đặt" [ref=f2e50] [cursor=pointer]
+      - generic [ref=f2e55]: Hệ thống
+      - button "Phiên gọi" [ref=f2e56] [cursor=pointer]
+      - button "Test giọng" [ref=f2e60] [cursor=pointer]
+      - button "Training giọng" [ref=f2e65] [cursor=pointer]
+      - button "Training LLM" [ref=f2e69] [cursor=pointer]
+      - button "Cài Model" [ref=f2e73] [cursor=pointer]
+      - button "Benchmark" [ref=f2e77] [cursor=pointer]
+      - button "Logs" [ref=f2e81] [cursor=pointer]
+    - generic [ref=f2e85]: Đang kết nối...
+  - main [ref=f2e89]:
+    - generic [ref=f2e91]:
+      - generic [ref=f2e92]:
+        - generic [ref=f2e93]:
+          - heading "Tổng quan" [level=2] [ref=f2e94]
+          - paragraph [ref=f2e95]: Tình hình hôm nay và các chiến dịch đang chạy
+        - button "Làm mới" [ref=f2e96] [cursor=pointer]
+      - generic [ref=f2e98]:
+        - generic [ref=f2e99]:
+          - generic [ref=f2e100]: Chiến dịch đang chạy
+          - button "Mở danh bạ →" [ref=f2e101] [cursor=pointer]
+        - generic [ref=f2e102]: Đang tải…
+      - generic [ref=f2e104]:
+        - generic [ref=f2e106]:
+          - generic [ref=f2e107]: Thiết bị
+          - button "Quản lý →" [ref=f2e108] [cursor=pointer]
+        - generic [ref=f2e111]:
+          - generic [ref=f2e112]: Cuộc gọi gần nhất
+          - button "Xem báo cáo →" [ref=f2e113] [cursor=pointer]
