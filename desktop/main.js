@@ -5,7 +5,7 @@ const http = require('http');
 
 let mainWindow = null;
 let backendProcess = null;
-const PORT = 8000;
+const PORT = Number(process.env.CHATAI_PORT) || 8100;
 const isDev = process.argv.includes('--dev');
 
 const projectDir = path.resolve(__dirname, '..');
