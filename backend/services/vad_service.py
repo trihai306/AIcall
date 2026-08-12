@@ -22,8 +22,26 @@ class VADService:
         if self._is_loaded:
             return
         logger.info("Loading Silero VAD model...")
+        # GHI RÕ NHÁNH ":master" - đây mới là thứ chặn được lần gọi mạng.
+        #
+        # `_parse_repo_info` trong torch/hub.py: chỉ khi KHÔNG ghi nhánh nó mới
+        # mở https://github.com/<repo>/tree/main/ để đoán xem nhánh mặc định là
+        # `main` hay `master`. Ghi sẵn `:master` (khớp thư mục cache
+        # `snakers4_silero-vad_master`) thì `ref` khác None và nhánh gọi mạng
+        # không bao giờ chạy.
+        #
+        # `skip_validation=True` KHÔNG cứu được: `_parse_repo_info` chạy vô điều
+        # kiện ở đầu `_get_cache_or_reload`, trước cả chỗ xét cờ đó. Đã thử và
+        # thất bại 12-08-2026.
+        #
+        # Torch CÓ đường lùi offline, nhưng nó chỉ bắt `URLError`. Sự cố thật
+        # 12-08-2026 là `http.client.RemoteDisconnected` - kết nối được chấp
+        # nhận rồi bị đóng giữa chừng - không phải `URLError`, nên đường lùi
+        # không chạy và cả backend chết ở "[2/6] Loading VAD" dù cache còn
+        # nguyên. Mạng HỎNG NỬA VỜI nguy hiểm hơn mất mạng hẳn.
         self.model, _ = torch.hub.load(
-            "snakers4/silero-vad", "silero_vad", trust_repo=True
+            "snakers4/silero-vad:master", "silero_vad",
+            trust_repo=True, skip_validation=True,
         )
         self.model.eval()
         self._is_loaded = True

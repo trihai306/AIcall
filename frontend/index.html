@@ -41,6 +41,10 @@
         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
         <span>Hội thoại</span>
       </button>
+      <button class="nav-btn" data-page="messaging" onclick="switchPage('messaging')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2H8l-5 4V5z"/><path d="M7 8h10M7 11h6"/></svg>
+        <span>Nhắn tin</span>
+      </button>
       <button class="nav-btn" data-page="contacts" onclick="switchPage('contacts')">
         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span>Danh bạ gọi</span>
@@ -273,6 +277,82 @@
           </div>
         </div>
       </aside>
+    </div>
+
+    <!-- ===== PAGE: NHẮN TIN (kiểm thử tư vấn bằng chữ) ===== -->
+    <!-- Vì sao KHÔNG dùng lại trang Hội thoại: trang đó cố ý bỏ ô gõ chữ để mọi
+         số đo là số thật của đường thoại (xem chú thích ở khối micro). Trang này
+         chạy CHẾ ĐỘ SOI - không câu đệm, không sinh tiếng - và mở WebSocket
+         RIÊNG, nên phiên, lịch sử lẫn số đo đều không lẫn sang bên kia. -->
+    <div class="page hidden flex-1 overflow-hidden" id="page-messaging">
+      <div class="flex-1 flex flex-col min-w-0">
+        <header class="h-14 border-b border-slate-750 flex items-center justify-between px-6 shrink-0 bg-abyss/50 backdrop-blur-sm">
+          <div class="flex items-center gap-3">
+            <h2 class="text-sm font-semibold text-white">Nhắn tin</h2>
+            <div class="h-4 w-px bg-slate-750"></div>
+            <select id="msgProduct" onchange="msgGuiCauHinh()" class="bg-transparent text-xs text-gray-400 border-none outline-none cursor-pointer">
+              <option value="vay tín chấp">Vay tín chấp</option>
+              <option value="vay mua nhà">Vay mua nhà</option>
+              <option value="thẻ tín dụng">Thẻ tín dụng</option>
+              <option value="tiết kiệm">Tiết kiệm</option>
+            </select>
+            <span class="text-[10px] font-mono text-gray-600" id="msgTrangThai">chưa nối</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="msgCustomerName" value="Anh Minh" onchange="msgGuiCauHinh()" class="bg-deep border border-slate-750 rounded-md px-2.5 py-1 text-xs text-gray-300 w-28 outline-none focus:border-cyan-500/50 transition-colors">
+            <select id="msgVoiceSelect" onchange="msgVeToc()" class="bg-deep border border-slate-750 rounded-md px-2 py-1 text-xs text-gray-400 outline-none" title="Giọng dùng khi bấm nghe thử">
+              <option value="default">Giọng mặc định</option>
+            </select>
+            <!-- Tốc đọc của giọng ĐANG CHỌN.
+                 `width` và `accent-color` đặt inline chứ không dùng lớp: hai lớp
+                 `w-24`/`accent-violet-500` mà trang Giọng nói dùng KHÔNG có trong
+                 tailwind.css biên dịch sẵn (đã đối chiếu từng lớp), nên thanh
+                 trượt bên đó đang mất cả cỡ lẫn màu. Không build lại được CSS
+                 (npx cần mạng) nên chỗ này tự lo lấy. -->
+            <div class="flex items-center gap-1.5" title="Tốc đọc riêng của giọng đang chọn. LƯU CHUNG cho giọng — cuộc gọi thật cũng đổi theo.">
+              <span class="text-[9px] text-gray-600 uppercase tracking-wider">Tốc</span>
+              <input type="range" id="msgToc" min="0.5" max="1.6" step="0.02" value="1"
+                     style="width:5.5rem;accent-color:#8b5cf6" class="cursor-pointer"
+                     oninput="document.getElementById('msgTocSo').textContent = (+this.value).toFixed(2)"
+                     onchange="msgDatToc(this.value)">
+              <span id="msgTocSo" class="text-[10px] font-mono text-gray-500 w-8">1.00</span>
+              <button id="msgTocBo" onclick="msgBoToc()" class="hidden text-[9px] text-gray-600 hover:text-amber-400" title="Bỏ tốc riêng, dùng lại tốc chung trong .env">↺</button>
+            </div>
+            <button onclick="msgXoaHoiThoai()" class="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Xóa hội thoại">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-6 py-5 space-y-3" id="msgList">
+          <div id="msgWelcome" class="flex flex-col items-center justify-center h-full text-center pb-10 animate-fade-up">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/20 flex items-center justify-center mb-5">
+              <svg class="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v9a2 2 0 01-2 2H8l-5 4V5z"/><path d="M7 8h10M7 11h6"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Kiểm thử bằng chữ</h3>
+            <p class="text-sm text-gray-500 max-w-sm leading-relaxed">Gõ câu khách hay hỏi rồi Enter. AI trả lời bằng chữ — không phát tiếng — kèm phiếu soi cho biết <b class="text-gray-400">vì sao</b> nó trả lời như vậy.</p>
+          </div>
+        </div>
+
+        <div id="msgTyping" class="hidden px-6 pb-2">
+          <div class="flex items-center gap-2 text-xs text-gray-500">
+            <div class="flex gap-1">
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400" style="animation-delay:0.15s"></span>
+              <span class="typing-dot w-1.5 h-1.5 rounded-full bg-cyan-400" style="animation-delay:0.3s"></span>
+            </div>
+            <span>AI đang trả lời</span>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-750 p-4 bg-abyss/80 backdrop-blur-sm shrink-0">
+          <div class="flex items-center gap-2 max-w-3xl mx-auto">
+            <input type="text" id="msgInput" placeholder="Gõ câu khách hỏi rồi Enter…" autocomplete="off"
+                   class="flex-1 bg-deep border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-cyan-500/50 transition-colors">
+            <button id="msgSend" onclick="msgGui()" class="btn btn-primary">Gửi</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ===== PAGE: CONTACTS (danh bạ gọi) ===== -->

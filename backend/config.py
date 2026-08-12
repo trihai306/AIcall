@@ -94,6 +94,18 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # Banking
+    #
+    # CHỈ DÙNG ĐỂ GIEO MẦM. Nguồn thật của tên tổ chức / nhân viên là KỊCH BẢN
+    # trong CSDL (`scenarios.org_name` / `agent_name`); mọi đường chạy đọc qua
+    # `scenarios_db.ten_to_chuc` / `ten_nhan_vien`. Hai giá trị dưới đây chỉ được
+    # dùng ở hai chỗ:
+    #   1. `core/startup.ensure_default` - tạo kịch bản đầu tiên khi bảng còn trống
+    #   2. lưới cuối trong hai hàm trên, cho phiên chưa kịp gắn kịch bản
+    #
+    # Nên ĐỔI TÊN Ở TRANG KỊCH BẢN, đừng sửa `.env` rồi chờ nó ăn: kịch bản đè
+    # lên `.env`, và `ensure_default` chỉ chạy một lần lúc CSDL trống nên sửa
+    # `.env` sau đó không đồng bộ ngược lại. Tên còn nằm cả trong `opening_line`
+    # của kịch bản dưới dạng chữ ghi thẳng trong câu - phải sửa cả trường đó.
     bank_name: str = "Ngân hàng ABC"
     agent_name: str = "Lan"
 

@@ -134,9 +134,82 @@ CHAN_CUM_SO = False
 #   là trả việc lại cho nó.
 CAT_THEO_CAU = True
 
-# Dấu kết câu. KHÔNG gồm phẩy/chấm phẩy/hai chấm: những dấu đó nằm GIỮA câu và
-# phải ở lại trong mảnh để F5 tự nghỉ tại chỗ.
+# Dấu kết câu.
 DAU_KET_CAU_RE = re.compile(r"[.!?…]$")
+
+# Dấu ngắt Ý giữa câu.
+DAU_NGAT_Y_RE = re.compile(r"[,;:]$")
+
+# TÁCH THÊM Ở DẤU PHẨY khi cả hai vế đủ dài.
+#
+# Bản trước để phẩy ở lại trong mảnh, với lý do "dấu câu tới được F5 nên nó tự
+# nghỉ ở phẩy" - và ghi thẳng là "không cần đo cũng biết". ĐO RA THÌ SAI.
+#
+# Đối chứng 12-08-2026 (`scripts/do_nghi_o_phay.py`, hai cặp câu có/không phẩy,
+# 3 lần mỗi bản, ngưỡng 8% đỉnh, tối thiểu 60ms):
+#
+#   "Em là Dương, chuyên viên…"  phẩy ở ~0,60s -> quãng nghỉ ở 1,49 / 1,62 / 1,65s
+#   bản BỎ phẩy                                -> 1,56+1,75 / 1,62 / (không có)
+#   "…cứ yên tâm, hồ sơ…"        phẩy ở ~1,0s  -> 0,34 / (không có) / 0,24s
+#   bản BỎ phẩy                                -> 1,38 / 0,29+1,42+1,77 / (không có)
+#
+# KHÔNG quãng nào rơi vào vị trí dấu phẩy; số quãng hai bản gần như nhau (5 so
+# với 7 trên 6 lượt) và vị trí đổi ngẫu nhiên mỗi lần sinh. Tức F5 nhận được
+# phẩy nhưng LỜ nó, còn những quãng xuất hiện là nó tự bịa chỗ khác - đúng hai
+# lời phàn nàn "đọc bị giãn giữa các từ" và "cảm giác đè lên nhau".
+#
+# Mà phẩy không phải chỗ cắt mảnh nên `nhip_nghi_sau` cũng không chèn gì. Kết
+# quả: KHÔNG cơ chế nào tạo quãng nghỉ ở dấu phẩy. Người dùng nghe ra trước khi
+# có số ("Đoạn 'em là dương, chuyên viên tư vấn' không ngắt dấu phẩy.wav").
+TACH_O_PHAY = True
+
+# Mỗi vế phải có ít nhất ngần này từ thì mới tách ở phẩy.
+#
+# Vì sao 3 chứ không phải 4: vế đầu của chính câu hỏng - "Em là Dương," - đúng 3
+# từ. Lấy 4 thì ca hỏng đã báo vẫn không được chữa. Trùng luôn
+# `TOI_THIEU_TU_MOT_CAU` nên hai luật cùng một quan niệm về "mảnh quá cụt".
+#
+# Chặn dưới có ý nghĩa thật: "Dạ," một từ mà tách riêng thì tốn trọn một lượt
+# gọi F5 (~250ms chi phí cố định) để sinh 0,3 giây tiếng, và F5 sinh mỗi mảnh
+# như một phát ngôn TRỌN VẸN nên vế cụt nghe tách hẳn khỏi câu nó thuộc về.
+TOI_THIEU_TU_MOI_VE = 3
+
+# NGẮT MỀM: câu dài mà KHÔNG có dấu phẩy nào thì tách trước một từ nối.
+#
+# Vì sao cần: câu dài không dấu phẩy thì `TACH_O_PHAY` không có chỗ nào để tách,
+# mảnh giữ nguyên 20+ âm tiết và F5 đọc nhịp KHÔNG ĐỀU - lúc nhanh lúc chậm
+# trong cùng một mảnh. Người dùng nghe ra trước khi có số: "'em nhận được thông
+# tin' tự nhiên đọc nhanh hơn hẳn" và "giây 10-11 bị đè chữ".
+#
+# Đo 13-08-2026 (`scripts/do_nhip_theo_thoi_gian.py`, bộ đếm âm tiết đã kiểm
+# chuẩn lệch 2%): trên câu 12,8 giây nhịp trung bình 320 âm tiết/phút nhưng vọt
+# lên 404-468 ở hai chỗ, đúng hai chỗ khách chỉ ra, và hai chỗ đó nằm trong hai
+# mảnh DÀI NHẤT (19 và 22 âm tiết).
+#
+# NGƯỠNG ĐẶT Ở ĐÂU: đo đối chứng nguyên-mảnh so với tách-đôi
+# (`scripts/do_dai_manh.py`, 4 lần mỗi bản, độ lệch nhịp trong mảnh):
+#
+#   19 âm tiết:  nguyên 32%  |  tách 34%   <- tách KHÔNG giúp gì
+#   22 âm tiết:  nguyên 49%  |  tách 33%   <- tách giúp rõ
+#
+# Nên chỉ đụng tới mảnh THẬT SỰ dài. 16 từ ≈ 20+ âm tiết (từ tiếng Việt nhiều
+# chữ là 2 âm tiết), nằm giữa hai mốc đo được.
+TRAN_TU_TRUOC_NGAT_MEM = 16
+
+# Tách TRƯỚC những từ này - chỗ người thật cũng lấy hơi. Chỉ nhận từ nối MỆNH
+# ĐỀ, không nhận từ nối trong lòng một cụm.
+#
+# Đã thử rồi loại: "của", "cho" (bẻ giữa cụm danh từ); "để" và "rồi" (dính vào
+# động từ đứng trước - "vay ĐỂ làm gì", "gọi ĐỂ giới thiệu" là một ý liền, bẻ ở
+# đó nghe gãy hơn là để nguyên câu dài). Bản đầu có "để" và nó cướp chỗ tách của
+# "và" ngay trong câu mẫu, vì vòng quét đi từ trái sang.
+TU_NGAT_MEM = {"và", "nhưng", "hoặc", "còn", "nên", "vì", "nếu"}
+
+# Vế ĐẦU của ngắt mềm phải đủ dài. `TOI_THIEU_TU_MOI_VE` (3) là chặn dưới cho
+# dấu phẩy - người viết đặt phẩy ở đâu là có ý ở đó. Ngắt mềm thì KHÔNG có ý
+# người viết, nó là máy tự bẻ, nên chỉ được bẻ khi đã đọc được một quãng dài:
+# bẻ ở từ thứ 3 của câu 20 từ là cắt vụn vô cớ.
+TOI_THIEU_TU_VE_DAU_NGAT_MEM = 8
 
 # Câu ngắn hơn ngần này thì GỘP vào câu sau thay vì giao riêng. "Dạ." một từ mà
 # giao riêng thì tốn trọn một lượt gọi F5 (~250ms chi phí cố định cho đoạn mẫu)
@@ -271,11 +344,18 @@ DAU_NGAT_Y = (",", ";", ":")
 def nhip_nghi_sau(chunk_text: str) -> float:
     """Sau mảnh này thì cần nghỉ bao lâu (ms) trước khi vào mảnh kế?"""
     if CAT_THEO_CAU:
-        # Mảnh là trọn một câu, nên ranh giới mảnh LÀ ranh giới câu - chỗ đáng
-        # nghỉ. Phải chèn chứ không nối thẳng: `trim_silence` vừa dọn sạch quãng
-        # lặng hai đầu mảnh, không trả lại thì hai câu dính vào nhau.
-        # Dấu phẩy GIỮA câu không đi qua đây - nó ở lại trong mảnh và F5 tự nghỉ.
-        return NGHI_CHAM_MS if chunk_text.rstrip().endswith(DAU_KET_CAU) else 0.0
+        # Ranh giới mảnh là chỗ đáng nghỉ. Phải chèn chứ không nối thẳng:
+        # `trim_silence` vừa dọn sạch quãng lặng hai đầu mảnh, không trả lại thì
+        # hai câu dính vào nhau.
+        #
+        # Phẩy nghỉ NGẮN HƠN chấm. Trước đây nhánh này chỉ xét dấu kết câu, vì
+        # tin rằng F5 tự nghỉ ở phẩy - đo ra thì nó LỜ hẳn, xem `TACH_O_PHAY`.
+        t = chunk_text.rstrip()
+        if t.endswith(DAU_KET_CAU):
+            return NGHI_CHAM_MS
+        if TACH_O_PHAY and t.endswith(DAU_NGAT_Y):
+            return NGHI_PHAY_MS
+        return 0.0
     if CAT_DON_GIAN:
         return 0.0          # nối thẳng, không chèn gì
     t = chunk_text.rstrip()
@@ -349,15 +429,35 @@ def _tach_theo_cau(tu: list[str], co_the: int,
     mới bắt đầu sau nó (xem `_tu_cuoi_da_tron`). Nhờ vậy dấu chấm vừa tới nơi
     KHÔNG được tin ngay: "ạ." có thể còn là nửa của "ạ..." đang gõ dở.
     """
-    for k in range(TOI_THIEU_TU_MOT_CAU, co_the + 1):
+    # Quét từ ngắn tới dài nên chỗ ngắt tới TRƯỚC luôn thắng, bất kể là dấu kết
+    # câu hay dấu phẩy.
+    for k in range(min(TOI_THIEU_TU_MOT_CAU, TOI_THIEU_TU_MOI_VE), co_the + 1):
         manh = " ".join(tu[:k])
-        if not DAU_KET_CAU_RE.search(manh):
-            continue
         # "142." KHÔNG phải hết câu mà là dấu phân cách nghìn - lỗi thật
-        # 2026-08-06, bản ghi lưu thành "142. 500.000".
+        # 2026-08-06, bản ghi lưu thành "142. 500.000". Cùng lưới này chặn luôn
+        # "7,9": tiếng Việt dùng phẩy làm dấu thập phân.
         if _dang_giua_con_so(manh):
             continue
-        return manh, " ".join(tu[k:])
+        if DAU_KET_CAU_RE.search(manh) and k >= TOI_THIEU_TU_MOT_CAU:
+            return manh, " ".join(tu[k:])
+        # Tách ở phẩy chỉ khi CẢ HAI vế đủ dài. Vế sau đếm trên phần đã chắc
+        # chắn viết xong (`co_the`), nên lúc token còn đang chảy về thì hàm trả
+        # None và đợi thêm - chứ không giao ra một vế cụt rồi mới biết là hụt.
+        if (TACH_O_PHAY and DAU_NGAT_Y_RE.search(manh)
+                and k >= TOI_THIEU_TU_MOI_VE
+                and co_the - k >= TOI_THIEU_TU_MOI_VE):
+            return manh, " ".join(tu[k:])
+        # Ngắt mềm: câu DÀI mà chưa gặp dấu nào -> tách trước một từ nối.
+        #
+        # Điều kiện xét trên `co_the` (độ dài cả câu đang có) chứ KHÔNG xét vị
+        # trí từ nối: từ nối thường rơi vào giữa câu, nên xét vị trí thì câu 23
+        # từ có "và" ở từ thứ 15 vẫn trượt ngưỡng 16 và không bao giờ tách. Đúng
+        # lỗi bản đầu tôi viết.
+        if (co_the >= TRAN_TU_TRUOC_NGAT_MEM
+                and k >= TOI_THIEU_TU_VE_DAU_NGAT_MEM
+                and co_the - k >= TOI_THIEU_TU_MOI_VE
+                and tu[k].strip(".,!?:;\"'").lower() in TU_NGAT_MEM):
+            return manh, " ".join(tu[k:])
 
     # Chưa thấy dấu kết câu nào. Đợi thêm token, TRỪ KHI đã quá trần: LLM nói lan
     # man không chấm thì đợi mãi là khách nghe im.

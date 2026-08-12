@@ -58,24 +58,40 @@ def cat(van: str) -> list[str]:
 
 # --- mỗi mảnh là trọn một câu -------------------------------------------
 
-def test_moi_manh_la_mot_cau():
+def test_moi_manh_ket_bang_dau_cau():
+    """Mọi mảnh phải kết bằng dấu câu - chấm HOẶC phẩy.
+
+    ĐỔI 12-08-2026: trước đây đòi mỗi mảnh là trọn một câu, vì tin F5 tự nghỉ ở
+    phẩy. Đo ra thì nó LỜ phẩy hẳn (xem `TACH_O_PHAY`), nên phẩy giờ cũng là chỗ
+    cắt khi cả hai vế đủ dài. Điều còn giữ nguyên: KHÔNG cắt giữa chừng, mọi
+    ranh giới mảnh vẫn rơi đúng vào một dấu câu.
+    """
     van = ("Dạ em chào anh chị, em là nhân viên tư vấn của ngân hàng ABC. "
            "Hiện bên em đang có gói vay tín chấp lãi suất tốt, hạn mức cao. "
            "Hồ sơ chỉ cần căn cước công dân thôi ạ.")
     manh = cat(van)
-    assert len(manh) == 3
     for m in manh:
-        assert m.endswith("."), f"mảnh không kết bằng dấu chấm: {m!r}"
+        assert m.endswith((".", "!", "?", "…", ",", ";", ":")), \
+            f"mảnh không kết bằng dấu câu: {m!r}"
 
 
 def test_giu_nguyen_dau_cau_trong_manh():
-    """Dấu phẩy GIỮA câu phải còn - đó là chỗ F5 sẽ tự nghỉ."""
+    """Dấu phẩy phải CÒN trong chữ đưa vào F5, không bị xoá đi."""
     manh = cat("Dạ em chào anh chị, rất vui được hỗ trợ ạ. Em nghe đây.")
-    assert manh[0] == "Dạ em chào anh chị, rất vui được hỗ trợ ạ."
+    assert "".join(manh).count(",") == 1
 
 
-def test_dau_phay_khong_phai_cho_cat():
+def test_dau_phay_LA_cho_cat_khi_hai_ve_du_dai():
+    """ĐỔI 12-08-2026 - xem `test_moi_manh_ket_bang_dau_cau`."""
     van = "Dạ vâng ạ, em xin phép trả lời anh ngay bây giờ nhé anh."
+    assert cat(van) == ["Dạ vâng ạ,",
+                        "em xin phép trả lời anh ngay bây giờ nhé anh."]
+
+
+def test_ve_qua_cut_thi_van_khong_cat_o_phay():
+    """Chặn dưới vẫn giữ: vế 1-2 từ tách riêng là tốn trọn một lượt F5 cho
+    ~0,3 giây tiếng, và nghe tách hẳn khỏi câu nó thuộc về."""
+    van = "Dạ, em nghe anh chị nói ạ."
     assert cat(van) == [van]
 
 
@@ -177,10 +193,12 @@ def test_khong_chen_nghi_khi_cat_cuong_buc():
     assert nhip_nghi_sau("em xin phép kiểm tra lại hồ sơ của anh") == 0.0
 
 
-def test_dau_phay_khong_di_qua_nhip_nghi():
-    """Phẩy ở lại TRONG mảnh để F5 tự nghỉ, không phải chỗ code chèn."""
-    from backend.pipeline.text_chunker import nhip_nghi_sau
-    assert nhip_nghi_sau("Dạ em chào anh chị,") == 0.0
+def test_dau_phay_ĐI_qua_nhip_nghi_va_ngan_hon_dau_cham():
+    """ĐỔI 12-08-2026: F5 không tự nghỉ ở phẩy, nên code phải chèn."""
+    from backend.pipeline.text_chunker import (NGHI_CHAM_MS, NGHI_PHAY_MS,
+                                               nhip_nghi_sau)
+    assert nhip_nghi_sau("Dạ em chào anh chị,") == NGHI_PHAY_MS
+    assert NGHI_PHAY_MS < NGHI_CHAM_MS
 
 
 # --- dấu câu phải tới được F5 -------------------------------------------

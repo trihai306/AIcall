@@ -1282,7 +1282,10 @@ async function loadVoices() {
   try {
     const res = await fetch('/api/voices');
     const data = await res.json();
-    const selectors = ['voiceSelect', 'contactVoiceSelect'].map(id => document.getElementById(id)).filter(Boolean);
+    // `msgVoiceSelect` là ô giọng của trang Nhắn tin (nút "nghe thử"). Nhét vào
+    // đây chứ không tự nạp riêng: đoạn chọn giọng mặc định bên dưới đã phải chữa
+    // lỗi chọn nhầm giọng một lần rồi, viết lại lần hai là mời lỗi đó quay lại.
+    const selectors = ['voiceSelect', 'contactVoiceSelect', 'msgVoiceSelect'].map(id => document.getElementById(id)).filter(Boolean);
     selectors.forEach(sel => { sel.innerHTML = ''; });
     // Ưu tiên: 1) giọng đã lưu trong localStorage, 2) giọng mặc định từ server.
     const savedVoice = localStorage.getItem('selectedVoice');

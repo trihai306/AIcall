@@ -29,7 +29,7 @@ GOC = Path("./knowledge")
 # Thư mục cho phép. KHÔNG nhận tên thư mục tuỳ ý từ client: nó ghép thẳng vào
 # đường dẫn file, nhận bừa là mở đường ghi đè file bất kỳ trên máy.
 #
-# `products` có ý nghĩa ĐẶC BIỆT, đừng đổi tên: RAGService._loc_theo_san_pham chỉ
+# `products` có ý nghĩa ĐẶC BIỆT, đừng đổi tên: RAGService._mat_na_loc chỉ
 # lọc mảnh nằm trong thư mục này. Tài liệu sản phẩm đặt sai chỗ sẽ không được lọc,
 # và bot lại đọc lãi suất của sản phẩm khác cho khách.
 NHOM = {

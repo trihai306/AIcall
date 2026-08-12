@@ -3,6 +3,7 @@ import base64
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.services.filler_store import lay_kho
@@ -156,7 +157,18 @@ async def websocket_call(websocket: WebSocket, session_id: str):
 
     session = app_state.sessions.get(session_id)
     if not session:
-        session = app_state.sessions.create(customer_name="Khách hàng")
+        # Phiên web PHẢI mang kịch bản mặc định giống cuộc gọi thật.
+        #
+        # Trước đây tạo phiên không kèm kịch bản, nên `session.scenario` rỗng và
+        # mọi lượt trên trang Hội thoại / Nhắn tin rơi về `bank_name`/`agent_name`
+        # trong `.env`. Hậu quả: đổi tên tổ chức trong kịch bản xong thử trên web
+        # vẫn nghe tên cũ, mà log không nói gì - đo được ngày 12-08, `scenario_id`
+        # của phiên web trả về rỗng. Trang Nhắn tin sinh ra để KIỂM THỬ, thử trên
+        # một cấu hình khác cuộc gọi thật thì kiểm thử mất nghĩa.
+        session = app_state.sessions.create(
+            customer_name="Khách hàng",
+            scenario=await scenarios_db.resolve(""),
+        )
         session_id = session.session_id
 
     await websocket.send_json({
@@ -272,11 +284,14 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                     # Khách vừa ngừng tiếng → đoán lại trên toàn câu, giống hệt
                     # phone_call_service dòng ~1129. Đường chat KHÔNG có luồng
                     # phát hiện im lặng, nên speculate(ngay=True) phải gọi thẳng
-                    # tại đây. Task này không bị huỷ bởi audio_chunk tiếp theo
-                    # (không còn chunk nào nữa), và kết quả spec_stt của nó được
-                    # dùng cho STT caching trong process_turn nếu kịp hoàn thành.
-                    # Phân loại tình huống sẽ được _phan_loai_dong_bo lấy từ
-                    # spec_stt của lần đoán trung gian cuối (đồng bộ, ~10ms).
+                    # tại đây. Gọi SAU take_audio() để đệm rỗng:
+                    #   - Nếu spec_running=False (task cũ đã xong): n=0 < 600ms
+                    #     → thoát sớm, task cũ không bị huỷ, tinh_huong được giữ.
+                    #   - Nếu spec_running=True (task cũ trong RAG/LLM): huỷ nó,
+                    #     nhưng STT + phân loại đã chạy xong (ghi trước khi vào
+                    #     RAG) → tinh_huong vẫn còn và _send_filler dùng được.
+                    # Đo thực tế (2026-08-11, commit 290b9af): 5/9 lượt có
+                    # tình huống với cách này.
                     await app_state.pipeline.speculate(session, ngay=True)
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_turn(
                         audio_bytes=audio_bytes, session=session, ws=websocket,
@@ -319,6 +334,18 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 if text.strip():
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_text_turn(
                         text=text, session=session, ws=websocket,
+                    ))
+
+            # Trang Nhắn tin: cùng đường nghiệp vụ với "text", nhưng bỏ câu đệm +
+            # bỏ sinh tiếng và kèm dấu vết chẩn đoán trong metrics. Tách hẳn loại
+            # tin thay vì thêm cờ vào "text": trang Hội thoại và các chỗ gọi
+            # sendText() cũ không phải biết gì về chế độ soi, nên không có đường
+            # nào bật nhầm nó cho đường thoại.
+            elif msg_type == "text_soi":
+                text = data.get("text", "")
+                if text.strip():
+                    await bat_dau_luot(data, lambda: app_state.pipeline.process_text_turn(
+                        text=text, session=session, ws=websocket, soi=True,
                     ))
 
             # Khách đang gõ, chưa bấm gửi: nạp sẵn RAG cho câu dở dang. Đối xứng

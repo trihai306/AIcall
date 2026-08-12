@@ -62,6 +62,67 @@ _KHOANG_GACH_RE = re.compile(
 # F5 nguyên dạng và bị đọc thành "kiev ba".
 _ACRONYM_RE = re.compile(r"\b[A-ZĐ]{2,}\d*\b")
 
+# TÊN NGÂN HÀNG kiểu HOA + "Bank" dính liền: VPBank, TPBank, MBBank, HDBank...
+#
+# `_ACRONYM_RE` KHÔNG bắt được chúng: `\b[A-Z]{2,}\b` đòi ranh giới từ ngay sau
+# cụm hoa, mà sau "VP" là "ank" - vẫn là ký tự từ - nên cả cụm trượt và "VPBank"
+# xuống tới F5 nguyên dạng chuỗi Latin. F5 phải tự đoán cách đọc, MỖI LẦN MỘT
+# KIỂU. Đo 12-08-2026, cho STT nghe lại 10 lần sinh: sai 10/10, ra "vấp banh",
+# "phập banh", "vạc bánh", "việt anh", "váp banh"... Đây là lỗi chiếm phần lớn
+# trong toàn bộ bản ghi khách gửi về (thư mục "Check giọng", 5 đợt thu).
+#
+# "Bank" -> "ben" là chọn theo ĐO, không phải theo cách viết phiên âm cho đẹp.
+# Thử 4 cách, mỗi cách sinh rồi cho STT nghe lại (`scripts/thu_cach_doc_bank.py`):
+#
+#   nguyên xi "VPBank"   -> 3/3 lần ra kết quả KHÁC NHAU
+#   "vê pê bank"         -> 3/3 khác nhau
+#   "vê pê banh"         -> 3/3 khác nhau
+#   "vê pê ben"          -> 4/4 nghe ra đúng "vpbank"      <- chọn cái này
+#
+# Kèm theo: ở các bản bất ổn, chữ "ạ" ngay sau cũng hỏng lây ("cạ", "gạo",
+# "cả") - hỏng một chỗ kéo theo chỗ bên cạnh, nên đừng coi đây là lỗi lẻ.
+_NGAN_HANG_BANK_RE = re.compile(r"\b([A-ZĐ]{2,})Bank\b")
+
+# DẤU CÂU LẶP: "......" -> "."
+#
+# F5 cấp thời lượng theo SỐ BYTE của chữ, nên 6 dấu chấm được tính là 6 ký tự
+# phải đọc trong khi chúng không có âm nào. Model thừa ra một khoảng thời gian
+# không có chữ để lấp, và nó lấp bằng cách kéo giãn các từ quanh đó rồi bịa thêm
+# một âm ở cuối.
+#
+# Kịch bản khách đang dùng có "…bên em...... Không biết…" - và ĐÚNG chỗ đó là
+# nơi mọi bản ghi bị hỏng: "bêm", "bmm", "bmin", "bên mi", "bên em em".
+#
+# Đo 12-08-2026 (`scripts/thu_dau_cham.py`, 5 lần mỗi bản, bỏ nhiễu tên ngân
+# hàng): giữ "......" cho 5 lỗi/5 lượt, thay bằng một dấu chấm còn 2 lỗi/5 lượt
+# và có một lượt SẠCH HOÀN TOÀN. Trước khi chữa tên ngân hàng thì chênh lệch này
+# bị lỗi tên át mất (20 so với 17) nên đo lần đầu tưởng là nhiễu.
+#
+# Sửa ở ĐÂY chứ không sửa kịch bản: kịch bản do người dùng viết, họ cứ viết như
+# cũ. Xem "GHI CHU.txt" trong thư mục Check giọng - bản vá này đã được đề xuất
+# từ 08-08 nhưng chưa bao giờ có trong code.
+_DAU_LAP_RE = re.compile(r"([.,!?;:…])\1+")
+
+
+# Tên ngân hàng đọc KHÔNG theo bảng chữ cái chung. Để riêng ở đây thay vì sửa
+# `VI_LETTER_NAMES`: "P" đọc thành "bê" là riêng của VPBank, đổi trong bảng
+# chung thì "OTP" hoá "ô tê bê" - sai một chỗ khác.
+#
+# Người dùng chốt cách đọc này (13-08-2026). Số đo của tôi nghiêng về "vê pê
+# ben" vì nó ổn định hơn khi cho STT nghe lại, NHƯNG thước đo đó chỉ nói máy
+# nghe ra gì, không nói tai người thấy đúng hay sai. Tên riêng thì người dùng
+# mới là bên biết khách nghe quen kiểu nào.
+NGAN_HANG_OVERRIDES = {
+    "VPBank": "vê bê banh",
+}
+
+
+def _doc_ten_ngan_hang(m: re.Match) -> str:
+    if m.group(0) in NGAN_HANG_OVERRIDES:
+        return NGAN_HANG_OVERRIDES[m.group(0)]
+    chu = " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in m.group(1))
+    return f"{chu} banh"
+
 _VOWELS = set("aeiouy")
 # Âm tiết tiếng Việt chỉ kết thúc bằng nguyên âm hoặc một trong các phụ âm cuối này.
 _VALID_CODAS = {"", "c", "ch", "m", "n", "ng", "nh", "p", "t", "i", "y", "o", "u"}
@@ -698,6 +759,9 @@ def normalize_for_tts(text: str) -> str:
     """
     if not text:
         return text
+    # Gộp dấu câu lặp NGAY ĐẦU, trước mọi luật khác: "......" chiếm ngân sách
+    # thời lượng của F5 mà không có âm nào - xem `_DAU_LAP_RE`.
+    text = _DAU_LAP_RE.sub(r"\1", text)
     # Đọc số TRƯỚC khi bung viết tắt: bung trước thì "500 triệu" đã thành chữ
     # lẫn lộn, khó bắt lại bằng biểu thức chính quy.
     # Thành ngữ thay TRƯỚC khi đọc số: `doc_so_trong_cau` biến "24" thành chữ
@@ -713,6 +777,10 @@ def normalize_for_tts(text: str) -> str:
     # Xử "/" TRƯỚC khi bung viết tắt: "CMND/CCCD" phải còn nguyên dạng viết tắt
     # thì luật liệt kê mới nhận ra hai vế.
     text = doc_dau_xien(text)
+    # Tên ngân hàng TRƯỚC luật viết tắt chung: phải ăn nguyên cụm "VPBank" khi
+    # chữ "Bank" còn nguyên chữ hoa đầu. Chạy sau `_ACRONYM_RE` thì không sao
+    # (nó vốn không khớp), nhưng chạy sau `.lower()` thì hỏng hẳn.
+    text = _NGAN_HANG_BANK_RE.sub(_doc_ten_ngan_hang, text)
     text = _ACRONYM_RE.sub(_spell_out, text).lower()
     return _DA_DAU_CAU_RE.sub(r"\1, ", text)
 

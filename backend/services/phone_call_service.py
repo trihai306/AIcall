@@ -1379,9 +1379,14 @@ class PhoneCallManager:
 
         cau = (session.scenario or {}).get("opening_line", "").strip()
         if not cau:
-            cau = (f"Dạ em chào anh chị ạ. Em là {settings.agent_name} bên "
-                   f"{settings.bank_name}, em gọi để giới thiệu chương trình "
-                   f"{session.product} ưu đãi ạ.")
+            # Kịch bản không đặt câu mở đầu -> dựng câu chung, nhưng tên vẫn lấy
+            # từ kịch bản qua `scenarios_db`, KHÔNG đọc thẳng `.env`. Đọc `.env` ở
+            # đây là câu chào xưng một tên còn phần tư vấn phía sau xưng tên khác.
+            from backend.models import scenarios_db
+            cau = (f"Dạ em chào anh chị ạ. "
+                   f"Em là {scenarios_db.ten_nhan_vien(session.scenario)} bên "
+                   f"{scenarios_db.ten_to_chuc(session.scenario)}, "
+                   f"em gọi để giới thiệu chương trình {session.product} ưu đãi ạ.")
         # SINH SẴN NGAY BÂY GIỜ, lúc còn đang đổ chuông. Câu chào là câu cố định,
         # không có lý do gì chờ nối máy mới sinh - đổ chuông thường 5-12 giây,
         # thừa sức che toàn bộ thời gian sinh. Sinh sau khi nối làm khách phải

@@ -60,17 +60,46 @@ class RAGService:
     async def retrieve(self, query: str, top_k: int = 3, san_pham: str = "") -> str:
         """Retrieve relevant documents for the query.
 
+        Chỉ trả phần ngữ cảnh ghép sẵn - đúng thứ đường thoại cần. Muốn biết
+        đoạn nào được lấy, khớp bao nhiêu, đoạn nào bị lọc thì gọi
+        `retrieve_chi_tiet`.
+        """
+        ngu_canh, _ = await self.retrieve_chi_tiet(query, top_k, san_pham)
+        return ngu_canh
+
+    async def retrieve_chi_tiet(
+        self, query: str, top_k: int = 3, san_pham: str = "",
+    ) -> tuple[str, list[dict]]:
+        """Như `retrieve` nhưng GIỮ LẠI điểm khớp, tên nguồn và mảnh bị lọc.
+
         Runs the blocking encode/query in a thread so it can overlap
         with other pipeline work (e.g. sending the filler audio).
 
         `san_pham` là sản phẩm phiên đang tư vấn ("vay tín chấp", ...). Có nó thì
-        các mảnh thuộc sản phẩm KHÁC bị loại - xem `_loc_theo_san_pham`.
+        các mảnh thuộc sản phẩm KHÁC bị loại - xem `_mat_na_loc`.
+
+        Trả `(ngữ_cảnh, chi_tiết)`. `chi_tiết` xếp theo đúng thứ hạng ChromaDB:
+
+            {"doan": str, "diem": float, "nguon": str, "bi_loc": bool}
+
+        `diem` là độ tương đồng cosine (càng cao càng khớp), đổi từ `distance`
+        Chroma trả về - collection tạo với `hnsw:space=cosine` nên
+        `diem = 1 - distance`.
+
+        `bi_loc=True` là mảnh `_mat_na_loc` đã bỏ. Giữ lại trong chi tiết
+        vì chính nó là dấu vết của lỗi "RAG lạc sản phẩm": thấy mảnh
+        vay_mua_nha.md bị loại khi đang tư vấn vay tín chấp thì biết ngay lưới
+        lọc vừa ăn - và thấy nó KHÔNG bị loại thì biết lưới đang hở.
+
+        Đường thoại đi qua `retrieve` rồi bỏ phần chi tiết. Chi phí dựng danh
+        sách nhiều nhất `top_k` phần tử, không đáng kể cạnh một lần truy vấn
+        vector, nên không tách đôi đường truy vấn để tránh lệch hành vi.
         """
         if not self._is_loaded:
             self.load()
 
         if self._collection.count() == 0:
-            return ""
+            return "", []
 
         import asyncio
 
@@ -86,11 +115,28 @@ class RAGService:
             results = await asyncio.to_thread(_query)
 
         if not results["documents"] or not results["documents"][0]:
-            return ""
+            return "", []
 
-        docs = self._loc_theo_san_pham(
-            results["documents"][0], (results.get("metadatas") or [[]])[0], san_pham)
-        return "\n---\n".join(docs)
+        docs = results["documents"][0]
+        metas = (results.get("metadatas") or [[]])[0] or []
+        dists = (results.get("distances") or [[]])[0] or []
+
+        giu = self._mat_na_loc(docs, metas, san_pham)
+
+        chi_tiet = []
+        for i, doc in enumerate(docs):
+            meta = metas[i] if i < len(metas) else None
+            nguon = PurePath(((meta or {}).get("source") or "").replace("\\", "/")).name
+            chi_tiet.append({
+                "doan": doc,
+                # Không có distance (Chroma đổi API, hoặc bản giả lập trong test)
+                # thì để None chứ đừng bịa số 0 - 0 nghĩa là "khớp hoàn hảo".
+                "diem": round(1.0 - dists[i], 3) if i < len(dists) else None,
+                "nguon": nguon,
+                "bi_loc": not giu[i],
+            })
+
+        return "\n---\n".join(d for d, k in zip(docs, giu) if k), chi_tiet
 
     @staticmethod
     def _ma_san_pham(s: str) -> str:
@@ -103,9 +149,12 @@ class RAGService:
         return re.sub(r"[^a-z0-9]+", "_", s).strip("_")
 
     @classmethod
-    def _loc_theo_san_pham(cls, docs: list[str], metas: list[dict] | None,
-                           san_pham: str) -> list[str]:
-        """Bỏ các mảnh thuộc SẢN PHẨM KHÁC với sản phẩm đang tư vấn.
+    def _mat_na_loc(cls, docs: list[str], metas: list[dict] | None,
+                    san_pham: str) -> list[bool]:
+        """Mảnh nào thuộc SẢN PHẨM KHÁC với sản phẩm đang tư vấn thì bỏ.
+
+        Trả MẶT NẠ (`True` = giữ) chứ không trả danh sách đã lọc: chỗ soi cần
+        biết đoạn nào bị bỏ, mà nhìn phần còn lại thì không suy ra được.
 
         Vì sao cần: truy vấn đã được neo theo sản phẩm của phiên, nhưng `top_k`
         vẫn kéo thêm tài liệu sản phẩm bên cạnh - và LLM lấy SỐ ở đó. Đo được
@@ -129,7 +178,7 @@ class RAGService:
         """
         moc = cls._ma_san_pham(san_pham) if san_pham else ""
         if not moc or not metas or len(metas) != len(docs):
-            return docs
+            return [True] * len(docs)
 
         def cua_san_pham(meta: dict | None) -> str:
             src = (meta or {}).get("source") or ""
@@ -138,12 +187,13 @@ class RAGService:
 
         ma = [cua_san_pham(m) for m in metas]
         if moc not in ma:
-            return docs          # không có tài liệu cho sản phẩm này -> đừng lọc
+            # không có tài liệu cho sản phẩm này -> đừng lọc
+            return [True] * len(docs)
 
-        giu = [d for d, s in zip(docs, ma) if not s or s == moc]
-        if len(giu) < len(docs):
+        giu = [not s or s == moc for s in ma]
+        if not all(giu):
             logger.info("RAG: bỏ %d mảnh lạc sản phẩm (%s) vì đang tư vấn %s",
-                        len(docs) - len(giu),
+                        giu.count(False),
                         ", ".join(sorted({s for s in ma if s and s != moc})), moc)
         return giu
 

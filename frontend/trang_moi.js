@@ -75,6 +75,16 @@ window.switchPage = function (name) {
   if (name === 'datasources') loadDataSources();
   if (name === 'settings') { loadNotifyChannels(); loadRecordingStats(); }
   if (name === 'contacts') setTimeout(initCampaignRunner, 60);
+  // Trang Nhắn tin xếp theo cột như trang Hội thoại, mà danh sách `flex` nằm
+  // trong app.js. Bật ở đây thay vì sửa app.js - đúng lý do file này bọc
+  // switchPage chứ không sửa nó.
+  if (name === 'messaging') {
+    document.getElementById('page-messaging').classList.add('flex');
+    initMessaging();
+  } else if (typeof msgDungTieng === 'function') {
+    // Rời trang mà tiếng vẫn chạy thì không còn nút nào để tắt nó.
+    msgDungTieng();
+  }
 };
 
 // =====================================================================
@@ -1117,3 +1127,372 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 });
+
+// =====================================================================
+// NHẮN TIN - kiểm thử tư vấn bằng chữ
+// =====================================================================
+//
+// Đường đi: gõ chữ -> {type:'text_soi'} -> process_text_turn(soi=True). Chế độ
+// soi đi trọn vòng nghiệp vụ (lượt thường gặp, tra hồ sơ, RAG, LLM, lưới chặn
+// số) nhưng BỎ câu đệm và BỎ sinh tiếng, đổi lại `metrics` mang thêm dấu vết
+// chẩn đoán: nguồn RAG kèm điểm khớp, cờ đường đi, lưới chặn đã bắt gì.
+//
+// WebSocket RIÊNG, KHÔNG dùng chung `ws` của app.js. Dùng chung là hai trang đổ
+// vào cùng một CallSession: lịch sử lẫn nhau và AI coi lượt gõ với lượt nói là
+// một cuộc trò chuyện. Trang Hội thoại cố ý bỏ ô gõ chữ để số đo ở đó là số
+// thật của đường thoại - tách hẳn phiên là cách duy nhất giữ được điều đó.
+
+let msgWs = null;
+let msgSessionId = null;
+let msgLuot = 0;
+let msgDangCho = false;
+let msgOTraLoi = null;        // <div> câu trả lời đang chảy về
+let msgChuoiTraLoi = '';
+let msgDaGanPhim = false;
+
+function msgTrangThai(chu, mau = 'text-gray-600') {
+  const el = document.getElementById('msgTrangThai');
+  if (el) { el.textContent = chu; el.className = `text-[10px] font-mono ${mau}`; }
+}
+
+function initMessaging() {
+  msgNoi();
+  msgNapToc();
+  if (!msgDaGanPhim) {
+    const o = document.getElementById('msgInput');
+    o.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); msgGui(); }
+    });
+    msgDaGanPhim = true;
+  }
+  setTimeout(() => document.getElementById('msgInput')?.focus(), 50);
+}
+
+function msgNoi() {
+  if (msgWs && (msgWs.readyState === WebSocket.OPEN || msgWs.readyState === WebSocket.CONNECTING)) return;
+  const giaoThuc = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  // Nối lại bằng ĐÚNG session cũ: mất mạng giữa chừng mà xin phiên mới thì AI
+  // quên sạch mấy lượt vừa rồi, còn người soi thì không nhận ra vì khung chat
+  // vẫn còn nguyên chữ trên màn hình.
+  msgWs = new WebSocket(`${giaoThuc}//${location.host}/ws/call/${msgSessionId || 'new'}`);
+
+  msgWs.onopen = () => { msgTrangThai('đã nối', 'text-emerald-400'); msgGuiCauHinh(); };
+  msgWs.onmessage = (e) => msgNhan(JSON.parse(e.data));
+  msgWs.onclose = () => {
+    msgTrangThai('mất kết nối - đang nối lại', 'text-amber-400');
+    msgHienCho(false);
+    setTimeout(msgNoi, 3000);
+  };
+  msgWs.onerror = () => msgTrangThai('lỗi kết nối', 'text-red-400');
+}
+
+function msgGuiCauHinh() {
+  if (!msgWs || msgWs.readyState !== WebSocket.OPEN) return;
+  msgWs.send(JSON.stringify({
+    type: 'set_session',
+    customer_name: document.getElementById('msgCustomerName').value,
+    product: document.getElementById('msgProduct').value,
+  }));
+}
+
+function msgHienCho(bat) {
+  msgDangCho = bat;
+  document.getElementById('msgTyping').classList.toggle('hidden', !bat);
+  document.getElementById('msgSend').disabled = bat;
+}
+
+function msgCuonXuong() {
+  const l = document.getElementById('msgList');
+  l.scrollTop = l.scrollHeight;
+}
+
+function msgGui() {
+  const o = document.getElementById('msgInput');
+  const chu = o.value.trim();
+  if (!chu || msgDangCho) return;
+  if (!msgWs || msgWs.readyState !== WebSocket.OPEN) {
+    msgTrangThai('chưa nối - thử lại sau giây lát', 'text-amber-400');
+    return;
+  }
+
+  document.getElementById('msgWelcome')?.remove();
+  msgThemBongKhach(chu);
+  msgLuot += 1;
+  msgWs.send(JSON.stringify({ type: 'text_soi', text: chu, turn_id: msgLuot }));
+  o.value = '';
+  msgChuoiTraLoi = '';
+  msgOTraLoi = null;
+  msgHienCho(true);
+}
+
+function msgXoaHoiThoai() {
+  msgDungTieng();
+  document.getElementById('msgList').innerHTML =
+    '<div class="text-xs text-gray-600 text-center py-4">Đã xóa. Lịch sử phía AI vẫn giữ - mở lại trang hoặc tải lại app để bắt đầu phiên mới.</div>';
+  msgChuoiTraLoi = '';
+  msgOTraLoi = null;
+}
+
+function msgThemBongKhach(chu) {
+  const d = document.createElement('div');
+  d.className = 'flex animate-fade-up';
+  d.innerHTML = `<div class="ml-auto max-w-2xl bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap break-words">${esc(chu)}</div>`;
+  document.getElementById('msgList').appendChild(d);
+  msgCuonXuong();
+}
+
+function msgBatDauTraLoi() {
+  const boc = document.createElement('div');
+  boc.className = 'animate-fade-up';
+  boc.innerHTML =
+    '<div class="max-w-2xl bg-deep border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap break-words" data-vaitro="loi"></div>' +
+    '<div class="max-w-2xl mt-1.5" data-vaitro="soi"></div>';
+  document.getElementById('msgList').appendChild(boc);
+  msgOTraLoi = boc;
+  return boc;
+}
+
+function msgNhan(m) {
+  switch (m.type) {
+    case 'connected':
+      msgSessionId = m.session_id;
+      break;
+
+    case 'response_chunk':
+      // Dùng `response_chunk` chứ không dùng `token`: đây là chữ ĐÃ qua bộ lọc
+      // xưng hô, tức đúng thứ khách sẽ nghe. Token thô còn "chúng tôi" chưa đổi.
+      if (!msgOTraLoi) msgBatDauTraLoi();
+      msgChuoiTraLoi += (msgChuoiTraLoi ? ' ' : '') + (m.text || '');
+      msgOTraLoi.querySelector('[data-vaitro="loi"]').textContent = msgChuoiTraLoi;
+      msgCuonXuong();
+      break;
+
+    case 'turn_complete': {
+      msgHienCho(false);
+      if (!msgOTraLoi && !m.full_response) break;
+      const boc = msgOTraLoi || msgBatDauTraLoi();
+      const cau = m.full_response || msgChuoiTraLoi;
+      boc.querySelector('[data-vaitro="loi"]').textContent = cau;
+      boc.querySelector('[data-vaitro="soi"]').innerHTML = msgPhieuSoi(m.metrics || {}, cau);
+      msgOTraLoi = null;
+      msgChuoiTraLoi = '';
+      msgCuonXuong();
+      break;
+    }
+
+    case 'error': {
+      msgHienCho(false);
+      const d = document.createElement('div');
+      d.className = 'text-xs text-red-400 bg-red-500/10 border border-slate-750 rounded-lg px-3 py-2';
+      d.textContent = m.message || 'Lỗi không rõ';
+      document.getElementById('msgList').appendChild(d);
+      msgCuonXuong();
+      break;
+    }
+  }
+}
+
+// ---------- phiếu soi ----------
+
+function msgChip(chu, mau = 'text-gray-400') {
+  return `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 ${mau}">${chu}</span>`;
+}
+
+function msgPhieuSoi(m, cau) {
+  const chips = [];
+
+  // --- đường đi: câu này do ĐÂU trả lời ---
+  // Không có mấy cờ này thì rất dễ tưởng model vừa nghĩ ra câu trả lời, trong
+  // khi thực ra nó lấy từ bảng cứng - sửa prompt cả buổi không đổi được gì.
+  if (m.luot_thuong_gap) chips.push(msgChip(`bảng sẵn: ${esc(m.luot_thuong_gap)}`, 'text-amber-400'));
+  if (m.tra_tu_ho_so) chips.push(msgChip(`hồ sơ: ${esc(m.tra_tu_ho_so)}`, 'text-amber-400'));
+  if (m.cong_cu) chips.push(msgChip(`công cụ: ${esc(m.cong_cu)}`, 'text-violet-400'));
+  if (m.llm_nghi_san) chips.push(msgChip('bản nghĩ sẵn', 'text-violet-400'));
+  if (m.rag_doan_truoc) chips.push(msgChip('RAG đoán trước', 'text-violet-400'));
+  if (!m.luot_thuong_gap && !m.tra_tu_ho_so) chips.push(msgChip('RAG → LLM'));
+
+  // --- số đo ---
+  if (m.rag_ms != null) chips.push(msgChip(`RAG ${m.rag_ms}ms`));
+  if (m.llm_ttft_ms != null) chips.push(msgChip(`LLM đầu ${m.llm_ttft_ms}ms`));
+  if (m.total_ms != null) chips.push(msgChip(`tổng ${m.total_ms}ms`));
+  if (m.llm_tokens != null) chips.push(msgChip(`${m.llm_tokens} token`));
+
+  // --- lưới chặn ---
+  if (m.chan_so_sai) chips.push(msgChip(`chặn số: ${esc(m.chan_so_sai)}`, 'text-red-400'));
+  if (m.chan_tien_sai) chips.push(msgChip(`chặn tiền: ${esc(m.chan_tien_sai)}`, 'text-red-400'));
+
+  let html = `<div class="flex flex-wrap gap-1.5 items-center">${chips.join('')}` +
+    `<button class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 text-cyan-400" ` +
+    `onclick="msgNgheThu(this)" data-cau="${esc(cau)}">▶ nghe thử</button></div>`;
+
+  // --- nguồn RAG ---
+  const nguon = m.rag_nguon || [];
+  if (nguon.length) {
+    const dong = nguon.map(n => {
+      const mau = n.bi_loc ? 'text-gray-600 opacity-50' : 'text-gray-400';
+      const nhan = n.bi_loc ? msgChip('ĐÃ LỌC', 'text-amber-300') : '';
+      const diem = n.diem == null ? '—' : n.diem;
+      const trich = (n.doan || '').replace(/\s+/g, ' ').slice(0, 140);
+      return `<div class="border-l border-slate-750 px-2 py-1 ${mau}">` +
+        `<div class="flex flex-wrap gap-1.5 items-center mb-1">` +
+        `<span class="text-[10px] font-mono text-violet-400">${esc(n.nguon || 'không rõ nguồn')}</span>` +
+        `<span class="text-[10px] font-mono text-gray-600">khớp ${diem}</span>${nhan}</div>` +
+        `<div class="text-[10px] font-mono">${esc(trich)}${(n.doan || '').length > 140 ? '…' : ''}</div></div>`;
+    }).join('');
+    html += `<div class="mt-1.5 space-y-1">` +
+      `<div class="text-[10px] font-mono text-gray-600">truy vấn RAG: ${esc(m.rag_truy_van || '—')}</div>` +
+      dong + `</div>`;
+  }
+
+  return html;
+}
+
+async function msgNgheThu(btn) {
+  const cau = btn.getAttribute('data-cau') || '';
+  if (!cau) return;
+  const cu = btn.textContent;
+  btn.textContent = '… đang đọc';
+  btn.disabled = true;
+  // Bấm nút này cũng phải cắt tiếng đang phát: bấm hai câu liền nhau mà không
+  // cắt là hai câu chồng lên nhau.
+  const luot = ++msgLuotPhat;
+  msgDungTieng();
+  try {
+    const fd = new FormData();
+    fd.append('text', cau);
+    fd.append('voice_name', document.getElementById('msgVoiceSelect')?.value || 'default');
+    // Cắt mảnh y như cuộc gọi: nghe thử mà đọc nguyên câu một phát thì nhịp
+    // lệch ~10% so với thứ khách thật sự nghe, tức nghe xong vẫn không biết gì.
+    fd.append('cat_manh', 'true');
+    const d = await (await fetch('/api/voices/test-tts', { method: 'POST', body: fd })).json();
+    if (d.error) { btn.textContent = '✗ ' + d.error.slice(0, 40); return; }
+    await msgPhatTieng(d.audio, luot);
+    btn.textContent = cu;
+  } catch (e) {
+    btn.textContent = '✗ lỗi phát';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- tốc đọc của giọng đang chọn ----------
+//
+// Tốc là thuộc tính của GIỌNG, không phải của phiên: backend ghi vào tệp
+// `<giọng>.speed` nằm cạnh file wav. Nên kéo thanh này là đổi luôn cho CUỘC GỌI
+// THẬT, không riêng trang Nhắn tin. Tiêu đề của khối đã ghi rõ điều đó.
+//
+// Còn một hệ số THỨ HAI nhân chồng lên khi gọi điện (`/api/voices/phone-speed`,
+// đang 1.28) vì kênh GSM 8kHz mất dải cao mang phụ âm. Nút "nghe thử" ở trang
+// này KHÔNG áp hệ số đó, nên tiếng nghe ở đây chậm hơn thứ khách thật sự nghe.
+
+let msgTocGiong = {};   // tên giọng -> { toc, rieng }
+
+// MỘT thẻ Audio dùng chung cho cả trang, và một số thứ tự lượt phát.
+//
+// Vì sao cần cả hai: bản đầu tạo `new Audio().play()` mới mỗi lần, không dừng
+// cái đang chạy. Kéo thanh tốc vài nhịp là mấy bản tiếng chồng lên nhau, và
+// người nghe tưởng "chỉnh tốc không ăn, vẫn ra tốc cũ" - thật ra tiếng tốc cũ
+// vẫn đang phát đè lên tiếng tốc mới.
+//
+// Số lượt lo nốt trường hợp còn lại: yêu cầu cũ chạy chậm về SAU yêu cầu mới thì
+// vẫn là tiếng tốc cũ, dừng thẻ Audio không cứu được vì lúc đó nó chưa phát.
+let msgTieng = null;
+let msgLuotPhat = 0;
+
+function msgDungTieng() {
+  if (msgTieng) {
+    msgTieng.pause();
+    msgTieng.currentTime = 0;
+    msgTieng = null;
+  }
+}
+
+/** Phát một bản WAV base64, cắt hẳn thứ đang phát. `luot` là số thứ tự lấy
+ *  trước khi gọi mạng; khác `msgLuotPhat` nghĩa là đã có yêu cầu mới hơn -> bỏ. */
+async function msgPhatTieng(b64, luot) {
+  if (luot !== msgLuotPhat) return;
+  msgDungTieng();
+  msgTieng = new Audio('data:audio/wav;base64,' + b64);
+  try {
+    await msgTieng.play();
+  } catch { /* trình duyệt chặn tự phát khi không có thao tác người dùng */ }
+}
+
+async function msgNapToc() {
+  try {
+    const d = await (await fetch('/api/voices')).json();
+    msgTocGiong = {};
+    (d.voices || []).forEach(v => {
+      msgTocGiong[v.name] = { toc: +(v.speed ?? 1), rieng: !!v.speed_rieng };
+    });
+    msgVeToc();
+  } catch { /* chưa nạp được thì giữ nguyên thanh trượt */ }
+}
+
+function msgVeToc() {
+  const ten = document.getElementById('msgVoiceSelect')?.value;
+  const t = msgTocGiong[ten];
+  const thanh = document.getElementById('msgToc');
+  const so = document.getElementById('msgTocSo');
+  const nutBo = document.getElementById('msgTocBo');
+  if (!thanh || !so || !nutBo) return;
+  // Chưa biết tốc của giọng này thì KHOÁ thanh lại thay vì hiện 1.00 - hiện số
+  // bịa rồi người dùng kéo từ đó là ghi đè tốc thật bằng một số vô căn cứ.
+  if (!t) {
+    thanh.disabled = true;
+    so.textContent = '—';
+    nutBo.classList.add('hidden');
+    return;
+  }
+  thanh.disabled = false;
+  thanh.value = t.toc;
+  so.textContent = t.toc.toFixed(2);
+  so.className = `text-[10px] font-mono w-8 ${t.rieng ? 'text-violet-400' : 'text-gray-500'}`;
+  nutBo.classList.toggle('hidden', !t.rieng);
+}
+
+async function msgDatToc(toc) {
+  const ten = document.getElementById('msgVoiceSelect').value;
+  if (!msgTocGiong[ten]) return;
+  // CẮT tiếng đang phát NGAY khi thả thanh trượt, trước cả khi gọi mạng: người
+  // dùng vừa đổi tốc thì bản tốc cũ không còn nghĩa gì, để nó chạy tiếp là vừa
+  // chồng tiếng vừa làm tưởng chỉnh tốc không ăn.
+  msgDungTieng();
+  try {
+    const d = await (await fetch(`/api/voices/${encodeURIComponent(ten)}/speed`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speed: parseFloat(toc) }),
+    })).json();
+    if (d.error) { alert(d.error); return; }
+    await msgNapToc();
+    msgNgheThuToc(ten);
+  } catch (e) { alert('Lỗi đặt tốc: ' + e.message); }
+}
+
+async function msgBoToc() {
+  const ten = document.getElementById('msgVoiceSelect').value;
+  msgDungTieng();
+  await fetch(`/api/voices/${encodeURIComponent(ten)}/speed`, { method: 'DELETE' });
+  await msgNapToc();
+}
+
+/** Đọc lại NGAY sau khi đổi tốc. Chỉnh tốc mà không nghe lại thì phải mò, và
+ *  tiếng cũ trong bộ nhớ đệm từng làm người dùng tưởng nút không ăn. Ưu tiên đọc
+ *  chính câu AI vừa trả lời - đó mới là văn bản đang cần nghe cho vừa tai. */
+async function msgNgheThuToc(ten) {
+  const cuoi = [...document.querySelectorAll('button[data-cau]')].pop();
+  const cau = cuoi?.getAttribute('data-cau')
+    || 'Dạ em chào anh chị, lãi suất vay tín chấp hiện tại là 7.9% một năm ạ.';
+  // Lấy số lượt TRƯỚC khi gọi mạng. Kéo thanh nhanh vài nhịp thì các yêu cầu về
+  // không theo thứ tự gửi; bản nào không phải lượt mới nhất là tiếng TỐC CŨ,
+  // `msgPhatTieng` sẽ bỏ nó thay vì phát đè.
+  const luot = ++msgLuotPhat;
+  try {
+    const fd = new FormData();
+    fd.append('text', cau);
+    fd.append('voice_name', ten);
+    fd.append('cat_manh', 'true');
+    const d = await (await fetch('/api/voices/test-tts', { method: 'POST', body: fd })).json();
+    if (d.audio) await msgPhatTieng(d.audio, luot);
+  } catch { /* nghe thử hỏng thì thôi, tốc vẫn đã lưu */ }
+}

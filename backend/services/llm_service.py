@@ -147,8 +147,11 @@ class LLMService:
         keeps working without passing anything.
         """
         sc = scenario or {}
-        org_name = sc.get("org_name") or settings.bank_name
-        agent_name = sc.get("agent_name") or settings.agent_name
+        # Đi qua `scenarios_db` chứ không tự đọc: ba đường xưng tên phải dùng
+        # CHUNG một luật, không thì cùng một cuộc gọi lại xưng hai tên khác nhau.
+        from backend.models import scenarios_db
+        org_name = scenarios_db.ten_to_chuc(sc)
+        agent_name = scenarios_db.ten_nhan_vien(sc)
 
         parts = [
             f"Bạn là nhân viên tư vấn của {org_name}, tên là {agent_name}, "

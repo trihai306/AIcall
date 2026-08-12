@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import zlib
 import re
 import time
 import concurrent.futures
@@ -127,6 +128,33 @@ def so_am_tiet(text: str) -> int:
         cs = len(_CHU_SO_RE.findall(t))
         n += max(1, round(cs * 1.5)) if cs else 1
     return n
+
+
+def _dat_seed(_t, text: str, voice: str, toc: float) -> None:
+    """Cố định nhiễu khởi tạo của F5 để CÙNG chữ luôn ra CÙNG tiếng.
+
+    Vì sao đây mới là thứ khách kêu: ghi chú của khách viết "mỗi lần gen ra 1
+    kiểu, lúc thì bị mất chữ, lúc thì đọc thừa chữ". Lỗi không phải "nhịp lệch"
+    mà là KHÔNG ĐOÁN TRƯỚC ĐƯỢC - F5 là mô hình khuếch tán, mỗi lần sinh khởi
+    tạo từ một mớ nhiễu ngẫu nhiên khác nhau nên cùng một câu ra mỗi lần một
+    kiểu, và thỉnh thoảng rơi vào một lần hỏng.
+
+    Cố định seed KHÔNG làm câu đọc hay hơn. Nó làm câu đọc LẶP LẠI ĐƯỢC, và đó
+    mới là thứ mở đường cho việc nghiệm thu: nghe duyệt một kịch bản xong thì
+    biết chắc lúc gọi thật khách nghe đúng như thế. Câu nào rơi vào bản hỏng thì
+    sửa chữ trong kịch bản là hỏng luôn cố định, không phải chờ may rủi.
+
+    Seed suy từ (chữ, giọng, tốc) chứ không phải một hằng số: hằng số thì MỌI
+    câu dùng chung một mớ nhiễu, mà nhiễu khởi tạo ảnh hưởng tới cả ngữ điệu -
+    dễ làm mọi câu nghe cùng một khuôn. Suy từ nội dung thì mỗi câu có mớ nhiễu
+    riêng nhưng CỐ ĐỊNH của riêng nó.
+
+    Chi phí: 0. Không thêm một phép tính nào vào đường sinh.
+    """
+    if settings.f5tts_seed is None:
+        return          # để trống trong .env -> ngẫu nhiên như cũ
+    khoa = f"{text}|{voice}|{toc:.3f}"
+    _t.manual_seed((settings.f5tts_seed + zlib.crc32(khoa.encode("utf-8"))) & 0x7FFFFFFF)
 
 
 def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float) -> float | None:
@@ -690,6 +718,7 @@ class F5TTSService:
         # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
         # của autograd. Suy luận thuần nên không mất gì.
         import torch as _t
+        _dat_seed(_t, text, voice, toc)
         with _t.inference_mode(), self._autocast_ctx():
             audio, sr, _ = next(
                 infer_batch_process(
@@ -774,6 +803,10 @@ class F5TTSService:
             khung.append(ref_len + int(ref_len / len(rt.encode("utf-8"))
                                        * len(c.encode("utf-8")) / toc_cuc_bo))
 
+        # Seed cho CẢ LÔ, khoá theo nội dung cả lô. Đặt theo từng mảnh là vô
+        # nghĩa ở đây: `sample` bốc nhiễu MỘT lần cho cả lô, nên mảnh nào cũng
+        # dùng chung mớ nhiễu đó.
+        _dat_seed(_t, "\x1f".join(chu), voice, toc)
         with _t.inference_mode(), self._autocast_ctx():
             gen, _ = self._model.sample(
                 cond=a.repeat(len(chu), 1),
