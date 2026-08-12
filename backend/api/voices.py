@@ -80,6 +80,59 @@ async def upload_voice(
     return {"name": safe_name, "path": str(wav_path), "size_kb": round(len(content) / 1024, 1)}
 
 
+def _cat_manh_nhu_pipeline(text: str) -> list[str]:
+    """Cắt chữ y hệt vòng stream của `streaming_pipeline`.
+
+    Nạp token từng từ một chứ không đưa cả chuỗi vào `tach_manh`: cỡ mảnh lấy
+    theo SỐ MẢNH ĐÃ GIAO (`co_manh`), nên đưa cả chuỗi sẽ ra kết quả khác với
+    lúc LLM nhả token dần - tức lại lệch khỏi đường thật, đúng thứ đang chữa.
+    """
+    from backend.pipeline.text_chunker import co_manh, tach_manh
+
+    ra: list[str] = []
+    dem = ""
+    for tu in text.split():
+        dem = f"{dem} {tu}" if dem else tu
+        while True:
+            m, dem = tach_manh(dem, n=co_manh(len(ra)))
+            if m is None:
+                break
+            ra.append(m)
+    if dem.strip():
+        ra.append(dem.strip())
+    return ra or [text]
+
+
+async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
+                             toc: float, fast: bool) -> bytes:
+    """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
+
+    Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
+    `streaming_pipeline`, nhờ vậy mảnh đầu không bị thêm gì và mảnh cuối không
+    có đuôi lặng thừa.
+
+    `fast` chỉ áp cho mảnh ĐẦU, vì `f5tts_nfe_step_first` trong đường thật cũng
+    chỉ dùng cho mảnh đầu. Áp cho mọi mảnh là nghe ra một thứ không tồn tại.
+    """
+    import numpy as np
+
+    from backend.pipeline.text_chunker import nhip_nghi_sau
+    from backend.services.audio_utils import pcm_to_wav
+
+    SR = 24000
+    khuc: list[np.ndarray] = []
+    nghi_ms = 0.0
+    for i, m in enumerate(manh):
+        b = await tts.synthesize(m, voice=voice_name, use_cache=False,
+                                 speed=toc, fast=(fast and i == 0))
+        pcm = np.frombuffer(b[44:], dtype=np.int16)
+        if nghi_ms > 0:
+            khuc.append(np.zeros(int(SR * nghi_ms / 1000), dtype=np.int16))
+        khuc.append(pcm)
+        nghi_ms = nhip_nghi_sau(m)
+    return pcm_to_wav(np.concatenate(khuc).tobytes(), sample_rate=SR)
+
+
 @router.post("/test-tts")
 async def test_tts(
     text: str = Form(...),
@@ -119,12 +172,25 @@ async def test_tts(
     if qua_dien_thoai:
         toc *= app_state.tts.he_so_thoai()
 
+    # ĐI ĐÚNG ĐƯỜNG CUỘC GỌI THẬT: cắt mảnh rồi ghép có chèn nhịp nghỉ.
+    #
+    # Trước 2026-08-12 chỗ này gọi thẳng `synthesize` cho CẢ đoạn, nên toàn bộ
+    # phần chèn nhịp nghỉ của `streaming_pipeline` không áp dụng - trang nghe thử
+    # cho ra tiếng TỆ HƠN thứ khách thật sự nghe. Đo trên đoạn 3 câu:
+    #
+    #     gọi thẳng cả đoạn : 2 quãng lặng, dài 20ms và 40ms   (tai không nghe ra)
+    #     đúng đường thật   : 3 quãng lặng, 20ms + 210ms + 200ms
+    #
+    # Hậu quả thật: người dùng nghe trang này rồi báo "giọng bị nhảy chữ", trong
+    # khi cuộc gọi thật không bị. Một trang thử không phản ánh đúng đầu ra thì
+    # tệ hơn không có, vì nó dẫn tới quyết định sai.
+    manh = _cat_manh_nhu_pipeline(text)
     t0 = time.perf_counter()
     try:
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
-        wav_bytes = await app_state.tts.synthesize(
-            text, fast=fast, voice=voice_name, use_cache=False, speed=toc
+        wav_bytes = await _ghep_nhu_pipeline(
+            app_state.tts, manh, voice_name, toc, fast
         )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
@@ -157,6 +223,11 @@ async def test_tts(
         "elapsed_ms": elapsed_ms,
         "duration_ms": duration_ms,
         "rtf": round(elapsed_ms / duration_ms, 3) if duration_ms else None,
+        # Để nhìn ra chữ đã bị cắt thế nào. Chữ dán từ nơi khác hay thiếu khoảng
+        # trắng sau dấu chấm ("nghìn ạ.Dạ lãi suất") làm cả đoạn thành MỘT mảnh,
+        # và đó là lúc khách nghe chữ dính vào nhau.
+        "so_manh": len(manh),
+        "manh": manh,
     }
 
 
