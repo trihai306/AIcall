@@ -82,30 +82,23 @@ def test_nguong_khop_voi_ca_hong_that():
 
 # --- ngắt mềm cho câu dài không có dấu phẩy ------------------------------
 
-def test_cau_dai_khong_dau_phay_duoc_tach_truoc_tu_noi():
-    """Đúng câu người dùng báo "giây 10-11 bị đè chữ" - 22 âm tiết, không dấu nào.
+def test_ngat_mem_dang_TAT():
+    """Ngắt mềm TẮT, và đây là test canh giữ quyết định đó.
 
-    Đo: mảnh 22 âm tiết có độ lệch nhịp 49%, tách đôi còn 33%.
+    Nó từng được bật dựa trên số đo lấy từ bản code ĐÃ HỒI QUY (thiếu bản vá
+    `HE_SO_BU_LANG` 1.11 -> 0.85 của main). Đo lại trên code đúng, số tất định:
+
+        19 âm tiết:  nguyên 35%  |  tách 13%
+        22 âm tiết:  nguyên 26%  |  tách 36%   <- tách LÀM TỆ HƠN
+
+    Câu 22 âm tiết chính là câu nó sinh ra để chữa. Ai bật lại thì phải đo lại
+    trên code đúng và tìm ngưỡng mới - con số 16 không còn căn cứ nào.
     """
+    from backend.pipeline.text_chunker import NGAT_MEM
+    assert NGAT_MEM is False
     manh = _cat_het("Không biết hiện tại anh chị đang có nhu cầu vay để làm gì "
                     "và dự kiến cần vay khoảng bao nhiêu ạ? ")
-    assert len(manh) == 2
-    assert manh[1].startswith("và")
-
-
-def test_cau_ngan_khong_bi_ngat_mem():
-    """Chỉ đụng tới mảnh THẬT SỰ dài - 19 âm tiết đo ra tách không giúp gì."""
-    manh = _cat_het("Em nhận được thông tin anh chị đang quan tâm đến gói vay. ")
-    assert manh == ["Em nhận được thông tin anh chị đang quan tâm đến gói vay."]
-
-
-def test_ngat_mem_khong_de_lai_ve_cut():
-    """Từ nối nằm gần cuối câu thì KHÔNG tách - vế sau sẽ cụt."""
-    van = ("Em xin phép kiểm tra lại hồ sơ của anh chị trong hệ thống ngân hàng "
-           "chúng em và báo lại. ")
-    manh = _cat_het(van)
-    for m in manh:
-        assert len(m.split()) >= 3, f"vế cụt: {m!r}"
+    assert len(manh) == 1, "ngắt mềm đang tắt thì câu này phải giữ nguyên một mảnh"
 
 
 def test_dau_phay_van_thang_ngat_mem():

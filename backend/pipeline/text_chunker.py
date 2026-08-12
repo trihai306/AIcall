@@ -174,7 +174,27 @@ TACH_O_PHAY = True
 # như một phát ngôn TRỌN VẸN nên vế cụt nghe tách hẳn khỏi câu nó thuộc về.
 TOI_THIEU_TU_MOI_VE = 3
 
-# NGẮT MỀM: câu dài mà KHÔNG có dấu phẩy nào thì tách trước một từ nối.
+# NGẮT MỀM: TẮT. Giữ code lại vì lý do bên dưới đáng ghi hơn là xoá.
+#
+# Bật ngày 13-08 rồi TẮT cùng ngày. Nó được quyết định trên số đo lấy từ một bản
+# code ĐÃ HỒI QUY: nhánh này thiếu bản vá `HE_SO_BU_LANG` 1.11 -> 0.85 của main,
+# và tôi còn đẩy bản cũ đó đè lên máy Windows nên đo trên chính bản sai.
+#
+# Cấp dư thời lượng thì F5 nhồi im lặng, nên mảnh dài "hỏng" theo một kiểu khác
+# hẳn - và tách đôi trông như có ích. Đo lại sau khi gộp main (hạt giống đã cố
+# định nên số tất định, 4/4 lần giống nhau):
+#
+#   19 âm tiết:  nguyên 35%  |  tách 13%
+#   22 âm tiết:  nguyên 26%  |  tách 36%   <- tách LÀM TỆ HƠN
+#
+# Trên bản hồi quy tôi đo ra ngược hẳn (19 không giúp, 22 giúp rõ). Câu 22 âm
+# tiết chính là câu ngắt mềm sinh ra để chữa, mà nó làm tệ thêm 10 điểm.
+#
+# Muốn thử lại thì phải đo TRÊN CODE ĐÚNG và tìm ngưỡng từ chính số đo mới, đừng
+# lấy lại con số 16 - nó không có căn cứ nào còn hiệu lực.
+NGAT_MEM = False
+
+# Câu dài mà KHÔNG có dấu phẩy nào thì tách trước một từ nối.
 #
 # Vì sao cần: câu dài không dấu phẩy thì `TACH_O_PHAY` không có chỗ nào để tách,
 # mảnh giữ nguyên 20+ âm tiết và F5 đọc nhịp KHÔNG ĐỀU - lúc nhanh lúc chậm
@@ -453,7 +473,7 @@ def _tach_theo_cau(tu: list[str], co_the: int,
         # trí từ nối: từ nối thường rơi vào giữa câu, nên xét vị trí thì câu 23
         # từ có "và" ở từ thứ 15 vẫn trượt ngưỡng 16 và không bao giờ tách. Đúng
         # lỗi bản đầu tôi viết.
-        if (co_the >= TRAN_TU_TRUOC_NGAT_MEM
+        if (NGAT_MEM and co_the >= TRAN_TU_TRUOC_NGAT_MEM
                 and k >= TOI_THIEU_TU_VE_DAU_NGAT_MEM
                 and co_the - k >= TOI_THIEU_TU_MOI_VE
                 and tu[k].strip(".,!?:;\"'").lower() in TU_NGAT_MEM):
