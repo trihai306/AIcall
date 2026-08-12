@@ -76,6 +76,11 @@ async def inference(
     language: str = Form("vi"),
     response_format: str = Form("json"),
     temperature: str = Form("0"),
+    # Câu mồi từ vựng. `stt_service` GỬI trường này từ lâu (`moi_tu_vung()`,
+    # có cả biến thể vùng miền), nhưng endpoint không khai nên FastAPI lặng lẽ
+    # vứt đi và `initial_prompt` chưa bao giờ tới được model. Tính năng viết
+    # xong, đo xong, mà thực tế chưa chạy lần nào - bắt được 13-08-2026.
+    prompt: str = Form(""),
 ):
     """whisper.cpp-compatible inference endpoint."""
     if model is None:
@@ -89,7 +94,7 @@ async def inference(
     # stall every other in-flight request. Two concurrent phone lines would
     # then serialize on the socket, not just on the model.
     text, doan = await asyncio.to_thread(
-        _transcribe_sync, audio_bytes, language, float(temperature or 0)
+        _transcribe_sync, audio_bytes, language, float(temperature or 0), prompt
     )
 
     elapsed_ms = (time.perf_counter() - t0) * 1000
@@ -100,7 +105,8 @@ async def inference(
 
 
 def _transcribe_sync(audio_bytes: bytes, language: str,
-                     temperature: float) -> tuple[str, list[dict]]:
+                     temperature: float,
+                     prompt: str = "") -> tuple[str, list[dict]]:
     """Trả (văn bản, danh sách đoạn kèm chỉ số tin cậy).
 
     Phải trả cả `no_speech_prob` và `avg_logprob`: Whisper BỊA CHỮ khi đầu vào
@@ -114,6 +120,10 @@ def _transcribe_sync(audio_bytes: bytes, language: str,
         language=language,
         temperature=temperature,
         beam_size=BEAM_SIZE,
+        # Nghiêng bộ giải mã về từ vựng ngân hàng. Không "dạy" model từ mới -
+        # nó chỉ đổi xác suất tiên nghiệm, nên chỉ giúp với từ model VỐN BIẾT
+        # mà đang đoán lệch ("lãnh xuất" -> "lãi suất").
+        initial_prompt=prompt or None,
         # BẬT VAD Silero của faster-whisper. Chú thích cũ nói "VAD đã làm ở phía
         # client" - đúng với đường TRÌNH DUYỆT (Silero chạy trong trang), nhưng
         # SAI với đường THOẠI: ở đó VAD chỉ là ngưỡng RMS thô. Không có VAD ở
