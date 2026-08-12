@@ -933,7 +933,19 @@
             <input type="text" id="ttsTestText" value="Xin chào anh chị, em là nhân viên tư vấn ngân hàng ABC" class="flex-1 bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-emerald-500/40">
             <button onclick="testTTS()" id="ttsTestBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Phát thử</button>
           </div>
+          <!-- KHÔNG ghi cứng luật cắt vào nhãn: luật đổi nhiều lần (5 từ -> 16 ->
+               tăng dần 5/10/20 -> theo nguyên câu) và nhãn cũ hoá sai lặng lẽ.
+               Số mảnh thật hiện ngay ở dòng kết quả bên dưới sau khi phát. -->
+          <label class="flex items-center gap-2 mt-3 text-xs text-gray-400 cursor-pointer select-none w-fit" title="Cắt mảnh rồi nối đúng như đường gọi đang cắt, mảnh đầu dùng nfe thấp, có chèn nhịp nghỉ ở ranh giới mảnh. Tắt thì đưa cả câu cho F5 một phát — nhịp và thời lượng lệch so với thứ khách thật sự nghe.">
+            <input type="checkbox" id="ttsTestCatManh" class="accent-emerald-500">
+            <span>Đọc giống cuộc gọi <span class="text-gray-600">(cắt mảnh như đường gọi)</span></span>
+          </label>
           <div id="ttsTestResult" class="mt-3 text-xs text-gray-500 hidden">
+            <!-- Thông báo phải có ô RIÊNG. Trước đây báo lỗi ghi thẳng innerHTML
+                 lên #ttsTestResult, tức xoá luôn thẻ <audio> nằm trong nó: sau
+                 một lỗi bất kỳ, mọi lần Phát thử sau đều chết vì audio đã biến
+                 mất, dù server hoàn toàn khoẻ. -->
+            <div id="ttsTestMsg" class="empty:hidden"></div>
             <audio id="ttsTestAudio" controls class="w-full h-8 mt-2"></audio>
           </div>
         </div>
@@ -1785,7 +1797,7 @@
 
   </main>
 
-  <script src="/static/app.js?v=20260810c"></script>
+  <script src="/static/app.js?v=20260811a"></script>
   <script src="/static/trang_moi.js"></script>
 </body>
 </html>

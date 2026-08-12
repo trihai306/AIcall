@@ -117,3 +117,35 @@ def chen_lang_dau_wav(wav_bytes: bytes, ms: float) -> bytes:
     im = b"\x00" * (int(sr * ms / 1000) * kenh * rong)
     return pcm_to_wav(im + wav_bytes[i + 8:], sample_rate=sr,
                       channels=kenh, sample_width=rong)
+
+
+def noi_wav(cac_wav: list[bytes]) -> bytes:
+    """Nối nhiều WAV 16-bit mono cùng tần số thành MỘT wav.
+
+    Cuộc gọi gửi từng mảnh xuống máy khách rồi để bên đó phát nối tiếp nhau; trang
+    nghe thử chỉ có một thẻ <audio> nên phải ghép sẵn ở đây. Ghép chứ không phát
+    lần lượt bằng JS: phát lần lượt thì mỗi lần đổi `src` trình duyệt chèn thêm
+    một quãng nghỉ riêng của nó, thành ra đo nhịp trên trang test lại sai kiểu
+    khác.
+
+    Dò khối "data" từng tệp thay vì cắt cứng 44 byte - cùng lý do như
+    `chen_lang_dau_wav`. Tệp không phải RIFF thì bỏ qua chứ không làm hỏng cả dãy.
+    """
+    dau: bytes | None = None
+    cac_pcm: list[bytes] = []
+    for w in cac_wav:
+        if not w or len(w) < 44 or w[:4] != b"RIFF":
+            continue
+        i = w.find(b"data", 12)
+        if i < 0:
+            continue
+        if dau is None:
+            dau = w
+        cac_pcm.append(w[i + 8:])
+    if dau is None:
+        return b""
+    sr = struct.unpack("<I", dau[24:28])[0]
+    kenh = struct.unpack("<H", dau[22:24])[0]
+    rong = struct.unpack("<H", dau[34:36])[0] // 8
+    return pcm_to_wav(b"".join(cac_pcm), sample_rate=sr,
+                      channels=kenh, sample_width=rong)

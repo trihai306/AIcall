@@ -1518,6 +1518,17 @@ async function testTTS() {
   const voice = document.getElementById('ttsTestVoice').value;
   const btn = document.getElementById('ttsTestBtn');
   const result = document.getElementById('ttsTestResult');
+  const msg = document.getElementById('ttsTestMsg');
+
+  // Viết vào ô thông báo RIÊNG (#ttsTestMsg), tuyệt đối không đặt innerHTML lên
+  // #ttsTestResult: thẻ <audio> là con của nó, ghi đè là xoá mất thẻ đó và panel
+  // hỏng vĩnh viễn tới khi F5. Dùng textContent nên chữ của server không bao giờ
+  // bị hiểu thành HTML.
+  const bao = (t, mau) => {
+    result.classList.remove('hidden');
+    msg.textContent = t;
+    msg.className = mau;
+  };
 
   if (!text) return;
   btn.textContent = 'Đang tạo...';
@@ -1527,22 +1538,37 @@ async function testTTS() {
     const formData = new FormData();
     formData.append('text', text);
     formData.append('voice_name', voice);
+    // Cắt mảnh giống cuộc gọi. Không bật thì F5 nhận NGUYÊN cả câu một phát -
+    // nhịp và thời lượng lệch ~10% so với thứ khách thật sự nghe.
+    const catManh = (document.getElementById('ttsTestCatManh') || {}).checked;
+    formData.append('cat_manh', catManh ? 'true' : 'false');
 
     const res = await fetch('/api/voices/test-tts', { method: 'POST', body: formData });
     const data = await res.json();
 
     if (data.error) {
-      result.classList.remove('hidden');
-      result.innerHTML = `<span class="text-amber-400">${data.error}</span>`;
+      bao(data.error, 'text-amber-400');
     } else if (data.audio) {
-      result.classList.remove('hidden');
+      // Hiện số đo thay vì để trống: chỉ nghe tai thì không biết bản cắt mảnh
+      // dài hơn bản một phát bao nhiêu, mà đó chính là thứ cần so.
+      const manh = data.so_manh > 1 ? `${data.so_manh} mảnh` : 'một phát';
+      bao(`${manh} · ${(data.duration_ms / 1000).toFixed(2)}s tiếng · `
+          + `sinh ${data.elapsed_ms}ms${data.rtf != null ? ` · RTF ${data.rtf}` : ''}`,
+          'text-gray-500');
       const audioEl = document.getElementById('ttsTestAudio');
       audioEl.src = 'data:audio/wav;base64,' + data.audio;
       audioEl.play();
     }
   } catch (err) {
-    result.classList.remove('hidden');
-    result.innerHTML = `<span class="text-red-400">Lỗi: ${err.message}</span>`;
+    // `fetch` chỉ ném khi KHÔNG tới được server (backend tắt, còn đang nạp
+    // F5-TTS, hoặc đường hầm SSH rớt) - lỗi HTTP 4xx/5xx vẫn về nhánh trên.
+    // Chuỗi trần "Failed to fetch" của trình duyệt khiến người dùng tưởng giọng
+    // nói hỏng, trong khi TTS không hề được gọi tới.
+    const mangDut = err instanceof TypeError;
+    bao(mangDut
+      ? 'Không kết nối được server. Kiểm tra backend còn chạy (/api/health) '
+        + 'và tải lại trang — chưa gọi tới được TTS nên chưa biết giọng có lỗi hay không.'
+      : `Lỗi: ${err.message}`, 'text-red-400');
   }
   btn.textContent = 'Phát thử';
   btn.disabled = false;
