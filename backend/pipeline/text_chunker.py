@@ -159,6 +159,24 @@ TRAN_TU_MOT_CAU = 40
 # vô hiệu hoàn toàn và "hai mươi | triệu" lại bị bẻ.
 TRAN_CUM_SO_KHI_CUONG_BUC = TRAN_TU_MOT_CAU + 4
 
+# Thiếu khoảng trắng sau dấu kết câu thì bộ cắt KHÔNG thấy ranh giới câu:
+# `buffer.split()` coi "ạ.Dạ" là MỘT mẩu, không mẩu nào kết bằng dấu chấm, nên
+# cả đoạn dồn lại tới khi chạm trần rồi bị cắt cưỡng bức GIỮA câu - mà cắt cưỡng
+# bức thì `nhip_nghi_sau` trả 0, tức không có nhịp nghỉ nào.
+#
+# Đo 2026-08-12 trên đoạn 3 câu, cùng một nội dung:
+#     "nghìn ạ.Dạ lãi suất"  -> 2 mảnh, quãng lặng 22ms       (khách nghe dính chữ)
+#     "nghìn ạ. Dạ lãi suất" -> 3 mảnh, quãng lặng 227 + 211ms
+#
+# Chỉ thêm cách khi sau dấu là CHỮ CÁI, không phải chữ số: "7.9" và "142.500.000"
+# phải giữ nguyên, thêm cách vào đó là bẻ đôi con số - lỗi thật đã gặp 2026-08-06.
+_THIEU_CACH_RE = re.compile(r"([.!?…])(?=[^\W\d_])")
+
+
+def them_cach_sau_dau(s: str) -> str:
+    """Trả `s` với khoảng trắng chèn sau dấu kết câu khi thiếu. Số giữ nguyên."""
+    return _THIEU_CACH_RE.sub(r"\1 ", s)
+
 # Cỡ mảnh TĂNG DẦN theo thứ tự, thay vì cố định. Mảnh thứ i lấy cỡ thứ i, hết
 # bảng thì giữ nguyên cỡ cuối.
 #
@@ -373,6 +391,12 @@ def tach_manh(buffer: str, n: int = GIOI_HAN_TU_MANH,
     Nên khi đệm có `n+1` mẩu thì `n` mẩu đầu chắc chắn trọn - giao đúng `n` đó,
     giữ mẩu cuối lại cho lượt sau.
     """
+    # Vá chữ dính TRƯỚC khi tách mẩu: `split()` coi "ạ.Dạ" là một mẩu nên không
+    # mẩu nào kết bằng dấu chấm, và mọi luật bên dưới mù với ranh giới câu.
+    # Đặt ở đây, trong `tach_manh`, để CẢ đường gọi thật lẫn trang nghe thử cùng
+    # được vá - `normalize_for_tts` chạy trong `synthesize`, tức SAU khi cắt, nên
+    # sửa ở đó không giúp gì cho việc cắt.
+    buffer = them_cach_sau_dau(buffer)
     tu = buffer.split()
     if not tu:
         return None, buffer

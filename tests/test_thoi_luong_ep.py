@@ -24,6 +24,19 @@ REF = 5.45      # đoạn mẫu đang dùng, giây
 
 # --- đếm âm tiết ---------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def bat_bo_dau_cau(monkeypatch):
+    """Khoá hành vi XOÁ DẤU của `bo_dau_cau_cho_f5`.
+
+    Đường chạy thật từ 2026-08-11 để `BO_DAU_CAU = False` (F5 nhìn thấy dấu để
+    tự nghỉ - xem chú thích tại hàm đó). Hàm khi ấy là no-op, nên mọi test dưới
+    đây đỏ nếu không ghim cờ. Giữ chúng vì hành vi xoá dấu vẫn còn nguyên trong
+    mã và bật lại chỉ bằng một dòng; mất test là mất luôn lý do nó tồn tại.
+    """
+    from backend.services import tts_service
+    monkeypatch.setattr(tts_service, "BO_DAU_CAU", True)
+
+
 def test_dem_tu_thuong():
     assert so_am_tiet("anh chị cho em xin") == 5
 
