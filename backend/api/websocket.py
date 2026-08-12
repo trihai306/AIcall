@@ -272,11 +272,14 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                     # Khách vừa ngừng tiếng → đoán lại trên toàn câu, giống hệt
                     # phone_call_service dòng ~1129. Đường chat KHÔNG có luồng
                     # phát hiện im lặng, nên speculate(ngay=True) phải gọi thẳng
-                    # tại đây. Task này không bị huỷ bởi audio_chunk tiếp theo
-                    # (không còn chunk nào nữa), và kết quả spec_stt của nó được
-                    # dùng cho STT caching trong process_turn nếu kịp hoàn thành.
-                    # Phân loại tình huống sẽ được _phan_loai_dong_bo lấy từ
-                    # spec_stt của lần đoán trung gian cuối (đồng bộ, ~10ms).
+                    # tại đây. Gọi SAU take_audio() để đệm rỗng:
+                    #   - Nếu spec_running=False (task cũ đã xong): n=0 < 600ms
+                    #     → thoát sớm, task cũ không bị huỷ, tinh_huong được giữ.
+                    #   - Nếu spec_running=True (task cũ trong RAG/LLM): huỷ nó,
+                    #     nhưng STT + phân loại đã chạy xong (ghi trước khi vào
+                    #     RAG) → tinh_huong vẫn còn và _send_filler dùng được.
+                    # Đo thực tế (2026-08-11, commit 290b9af): 5/9 lượt có
+                    # tình huống với cách này.
                     await app_state.pipeline.speculate(session, ngay=True)
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_turn(
                         audio_bytes=audio_bytes, session=session, ws=websocket,

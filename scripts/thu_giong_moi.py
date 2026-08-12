@@ -5,6 +5,7 @@ thứ khách nghe qua điện thoại. Nghe cả hai mới biết giọng nào c
 
     python scripts/thu_giong_moi.py
     python scripts/thu_giong_moi.py --cau "Câu khác"
+    python scripts/thu_giong_moi.py --cau-tep data/cau_thu.txt
 """
 
 import argparse
@@ -30,7 +31,15 @@ CAU = ("Dạ em chào anh chị ạ. Em là nhân viên tư vấn của ngân h�
 async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cau", default=CAU)
+    # Chạy từ Mac qua SSH thì `--cau` KHÔNG dùng được: chuỗi tiếng Việt đi qua
+    # PowerShell rồi SSH bị hỏng dấu, F5 đọc ra đúng cái chuỗi hỏng đó. Đưa câu
+    # vào tệp UTF-8 rồi scp sang (nhị phân, không tầng nào đụng vào) thì sạch.
+    ap.add_argument("--cau-tep", type=Path, default=None,
+                    help="Đọc câu thử từ tệp UTF-8 thay vì từ dòng lệnh.")
     a = ap.parse_args()
+    if a.cau_tep:
+        a.cau = a.cau_tep.read_text(encoding="utf-8").strip()
+        print(f"    câu thử đọc từ {a.cau_tep}: {a.cau[:60]}...")
 
     from backend.services.tts_service import F5TTSService
     from mo_phong_amr import doc_wav, hnr, qua_amr

@@ -52,7 +52,7 @@ class Kho:
 #            nguyên trên đĩa (log: "42 đọc từ đĩa, 0 dựng mới") còn câu trả lời
 #            thật đọc theo cách mới - khách nghe hai nhịp nối liền nhau ngay đầu
 #            mỗi lượt, và không có gì báo lỗi.
-PHIEN_BAN = 4
+PHIEN_BAN = 5
 
 
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:

@@ -167,7 +167,7 @@ async def main() -> int:
                   f"'{session.voice_name}'")
     # Nạp sẵn từ đệm CHO ĐÚNG GIỌNG đang dùng. Nạp cho giọng khác thì
     # `pick_filler` không tìm thấy và khách phải chờ im lặng hết TTFA.
-    await tts.dung_fillers(lay_kho().cau, voice=session.voice_name)
+    await tts.dung_fillers(lay_kho(), voice=session.voice_name)
     print(f"    giọng: {session.voice_name}")
 
     print(f"\n[1] Bật cầu tiếng trên máy (nguồn {args.src}) ...")
