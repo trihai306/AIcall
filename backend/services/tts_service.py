@@ -53,10 +53,34 @@ NHIP_CHUAN_AM_TIET_PHUT = 294.0
 # `speed` bao nhiêu thì cho ra nhịp chuẩn ở trên. Giữ mốc này để `speed` không
 # mất ý nghĩa: đặt tốc riêng cho giọng, hay hệ số tốc cho đường thoại, vẫn ăn.
 SPEED_CHUAN = 1.20
-# Ép đúng thời lượng tính ra thì nhịp đo được vẫn nhanh hơn mốc ~11%, vì
-# `fix_duration` cấp cho CẢ mảnh còn nhịp thì đo trên phần đã cắt lặng hai đầu.
-# Hệ số này bù đúng chỗ đó - đo được, không chọn bừa.
-HE_SO_BU_LANG = 1.11
+# Hệ số CẤP thời lượng. 1.11 -> 0.85 ngày 2026-08-12.
+#
+# Tên cũ là "bù lặng" vì bản đầu nghĩ đây là phần `trim_silence` cắt mất ở hai
+# đầu mảnh. Sai chỗ đó: phần cắt ở hai đầu gần như KHÔNG đổi theo độ dài mảnh,
+# còn hệ số này thì NHÂN - nên mảnh càng dài, thời lượng cấp thừa càng nhiều về
+# tuyệt đối, mà mảnh thì đã to dần lên (5 -> 10 -> 20 từ, rồi nguyên câu).
+#
+# Điều quyết định, đo được: F5 KHÔNG đọc chậm lại khi được cấp dư thời lượng -
+# nó lấy IM LẶNG tiêu chỗ thừa. Quét trên mảnh 20 từ, 3 lượt mỗi mức
+# (scripts/chan_doan_manh_dai.py):
+#
+#   hệ số   cấp dư   F5 tự bịa quãng dừng   còn sót sau khi lọc   nhịp phát âm
+#   0.85      16%       2 quãng /  820ms      14 quãng / 3460ms       341
+#   1.11      34%      12 quãng / 6080ms      34 quãng / 6820ms       297
+#
+# Cấp dư gấp đôi thì quãng lặng bịa ra gấp SÁU, trong khi nhịp phát âm chỉ nhích
+# 297 -> 341. Tức dưới ~300 âm tiết/phút thì F5 không chịu đọc chậm hơn nữa, mọi
+# giây cấp thêm đều rơi thành lỗ hổng giữa câu. Đó chính là bốn thứ người dùng
+# báo ngày 2026-08-12: "đọc bị cách ra dù không có dấu chấm phẩy", "đoạn sau đọc
+# giãn giữa các từ", "lắp từ", "đọc sai từ".
+#
+# 0.75 thì cấp dư chỉ còn 7% và chữ bắt đầu sai - hết chỗ dự trữ thì F5 nhồi cho
+# kịp. 0.85 là mức thấp nhất còn an toàn.
+#
+# ĐỔI SỐ NÀY LÀ PHẢI TĂNG `PHIEN_BAN` bên filler_store: câu đệm dựng sẵn nằm
+# trên đĩa theo vân tay cũ, không đổi vân tay thì khách nghe câu đệm ở nhịp cũ
+# nối thẳng vào câu trả lời ở nhịp mới.
+HE_SO_BU_LANG = 0.85
 # Dưới ngưỡng này thì để F5 tự lo: mảnh 1 âm tiết mà ép thời lượng thì sai số
 # một âm tiết đã là 100%.
 TOI_THIEU_AM_TIET_DE_EP = 3

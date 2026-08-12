@@ -41,7 +41,9 @@ class Kho:
 # Tăng khi CÁCH sinh tiếng đổi mà tham số trong vân tay thì không đổi.
 #   1 -> 2 : ép thời lượng theo âm tiết (2026-08-09)
 #   2 -> 3 : bỏ dấu chấm/phẩy khỏi chữ đưa vào F5 (2026-08-09)
-PHIEN_BAN = 3
+#   3 -> 4 : hạ HE_SO_BU_LANG 1.11 -> 0.85 (2026-08-12) - câu đệm cũ đọc chậm
+#            hơn câu trả lời mới, nối vào nhau là nghe rõ hai nhịp
+PHIEN_BAN = 4
 
 
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
