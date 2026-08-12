@@ -1404,9 +1404,27 @@ async function loadVoiceList() {
     if (mauDangNghe && !mauDangNghe.audio.paused) datIconNghe(mauDangNghe.ten, true);
 
     if (ttsSelect) {
+      // GIỮ lựa chọn cũ khi vẽ lại, và mặc định đứng ở giọng MẶC ĐỊNH.
+      //
+      // Vì sao: `loadVoiceList()` chạy lại sau mỗi lần upload / xoá / đổi tốc, mà
+      // vẽ lại `innerHTML` là ô chọn rơi về phần tử ĐẦU BẢNG CHỮ CÁI (fosd_1).
+      // Người dùng chỉnh tốc cho giọng mình quan tâm rồi bấm Phát thử thì nghe
+      // một giọng KHÁC HẲN, ở tốc của giọng đó - nhìn ra thành "chỉnh tốc không
+      // ăn". Đã xảy ra thật (12-08).
+      //
+      // `/api/voices` trả sẵn `mac_dinh` đúng để tránh chuyện chọn đại phần tử
+      // đầu - xem chú thích ở `list_voices` trong api/calls.py. Trước đây chỗ này
+      // không hề đọc tới nó.
+      const dangChon = ttsSelect.value;
+      const co = (t) => !!t && data.voices.some(v => v.name === t);
       ttsSelect.innerHTML = data.voices.map(v =>
-        `<option value="${v.name}">${v.name}</option>`
+        // Hiện tốc ngay trong nhãn: không có nó thì không cách nào biết mảnh
+        // tiếng vừa nghe đang đọc ở tốc bao nhiêu.
+        `<option value="${escapeHtml(v.name)}">${escapeHtml(v.name)} · tốc ${(+(v.speed ?? 1)).toFixed(2)}</option>`
       ).join('');
+      ttsSelect.value = co(dangChon) ? dangChon
+                      : co(data.mac_dinh) ? data.mac_dinh
+                      : data.voices[0].name;
     }
   } catch {}
 }
@@ -3737,6 +3755,11 @@ async function datTocGiong(ten, toc) {
       body: JSON.stringify({ speed: parseFloat(toc) }),
     }).then(r => r.json());
     if (d.error) { alert(d.error); return; }
+    // Vẽ lại để hiện dấu hiệu ĐÃ LƯU: số chuyển tím + hiện nút ↺ bỏ tốc riêng,
+    // và nhãn trong ô chọn của panel Test cập nhật theo tốc mới. Không vẽ lại
+    // thì lưu xong nhìn y như chưa lưu. An toàn vì `loadVoiceList` nay giữ
+    // nguyên lựa chọn đang có.
+    loadVoiceList();
     nghesThuToc(ten);
   } catch (e) {
     alert('Lỗi: ' + e.message);
