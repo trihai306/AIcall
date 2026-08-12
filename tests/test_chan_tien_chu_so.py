@@ -74,3 +74,44 @@ def test_khong_lam_dinh_chu():
                           khach_noi="")
     assert "triệuđược" not in ra
     assert "triệu được" in ra
+
+
+# --- hai lỗi bắt được 13-08-2026 trong bộ test nhiều hội thoại --------------
+
+TL = "Hạn mức: lên đến 500 triệu đồng."
+
+
+def test_thay_bang_so_GAN_NHAT_khong_phai_lon_nhat():
+    """Bản cũ dùng max(hợp lệ) nên làm câu trả lời SAI HƠN.
+
+        khách: "anh cần vay 80 triệu"
+        model: "vay 78 triệu"                (lệch nhẹ)
+        lưới : "78 triệu -> NĂM TRĂM TRIỆU"  (sai gấp 6 lần)
+    """
+    ra, sua = chan_tien_sai("anh vay 78 triệu đồng", TL,
+                            khach_noi="anh cần vay 80 triệu")
+    assert "tám mươi triệu" in ra
+    assert "năm trăm" not in ra
+
+
+def test_van_chan_duoc_so_bia_that():
+    """Đừng nới lỏng tới mức hết chặn: 2 tỷ trong khi tài liệu ghi 500 triệu."""
+    ra, sua = chan_tien_sai("hạn mức 2 tỷ đồng", TL)
+    assert "năm trăm triệu" in ra
+    assert sua is not None
+
+
+def test_khong_khop_mot_phan_so_thap_phan():
+    """"2.78 triệu" từng bị khớp đúng cụm "78 triệu" nằm giữa, thay xong để lại
+    "2." đằng trước -> khách nghe "hai phẩy năm trăm triệu", một chuỗi vô nghĩa,
+    mà log chỉ ghi "đã chặn số sai" nên nhìn như đang chạy tốt."""
+    ra, sua = chan_tien_sai("mỗi tháng trả khoảng 2.78 triệu đồng", TL,
+                            khach_noi="anh cần vay 80 triệu")
+    assert ra == "mỗi tháng trả khoảng 2.78 triệu đồng"
+    assert sua is None
+
+
+def test_so_khach_noi_khong_bi_dung_toi():
+    ra, sua = chan_tien_sai("anh vay 80 triệu đồng", TL,
+                            khach_noi="anh cần vay 80 triệu")
+    assert sua is None

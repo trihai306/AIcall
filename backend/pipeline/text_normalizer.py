@@ -319,8 +319,18 @@ _DON_VI_TIEN = ("triệu", "tỷ", "tỉ")
 _HE_SO = {"triệu": 10 ** 6, "tỷ": 10 ** 9, "tỉ": 10 ** 9}
 
 # "500 triệu" hoặc "năm trăm triệu" - bắt cả hai dạng vì mô hình viết lẫn lộn.
+# Lookbehind kể cả DẤU CHẤM/PHẨY, không chỉ `\w` và `/`.
+#
+# Thiếu chúng thì nó khớp MỘT PHẦN của số thập phân: nhóm `\d{3}` đòi đúng ba
+# chữ số, nên "2.78 triệu" không khớp được từ đầu, và regex khớp luôn cụm
+# "78 triệu" nằm giữa. Lưới chặn thay đúng cụm đó và để lại "2." đằng trước:
+#
+#   "trả khoảng 2.78 triệu đồng"  ->  "trả khoảng 2.năm trăm triệu đồng"
+#
+# Bắt được 13-08-2026 trong bộ test nhiều hội thoại - khách nghe một chuỗi
+# không có nghĩa, mà log chỉ ghi là đã "chặn số sai" nên nhìn như đang chạy tốt.
 _TIEN_SO_RE = re.compile(
-    r"(?<![\w/])(\d{1,3}(?:[.,]\d{3})*)\s*(" + "|".join(_DON_VI_TIEN) + r")\b",
+    r"(?<![\w/.,])(\d{1,3}(?:[.,]\d{3})*)\s*(" + "|".join(_DON_VI_TIEN) + r")\b",
     re.IGNORECASE)
 # Các từ có thể ghép thành một số tiếng Việt. Sắp XUỐNG DẦN theo độ dài để
 # regex không khớp trước phần đầu của từ dài hơn ("mười" trước "mươi").
@@ -405,7 +415,6 @@ def chan_tien_sai(text: str, tai_lieu: str,
     hop_le = _tien_trong(tai_lieu) | _tien_trong(khach_noi)
     if not hop_le:
         return text, None
-    thay_bang = max(hop_le)
     sua = None
 
     # Diễn đạt số thay thế bằng ĐƠN VỊ CỦA CHÍNH NÓ, đừng ép về đơn vị của câu
@@ -422,7 +431,22 @@ def chan_tien_sai(text: str, tai_lieu: str,
         nonlocal sua
         if gia_tri in hop_le:
             return goc
-        moi = _dien_dat(thay_bang)
+        # Thay bằng số GẦN NHẤT, không phải số LỚN NHẤT.
+        #
+        # Bản cũ dùng `max(hop_le)` với lý do "thường là hạn mức". Nó làm câu
+        # trả lời SAI HƠN hẳn khi khách đã nêu một con số. Bắt được 13-08-2026
+        # trong bộ test nhiều hội thoại:
+        #
+        #   khách: "anh cần vay 80 triệu"
+        #   model: "vay 78 triệu"                     (lệch nhẹ)
+        #   lưới : "78 triệu -> NĂM TRĂM TRIỆU"       (sai gấp 6 lần)
+        #
+        # 500 triệu là hạn mức trong tài liệu, và nó là số lớn nhất nên luôn
+        # thắng. Lấy số gần nhất thì ra "80 triệu" - đúng con số khách vừa nói.
+        # Không có trường hợp nào "gần nhất" tệ hơn "lớn nhất": lớn nhất chỉ
+        # đúng khi chính nó là số gần nhất.
+        moi_gt = min(hop_le, key=lambda v: abs(v - gia_tri))
+        moi = _dien_dat(moi_gt)
         sua = f"{goc} -> {moi}"
         return moi
 
