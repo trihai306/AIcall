@@ -11,7 +11,7 @@ import numpy as np
 import soundfile as sf
 
 from backend.config import settings
-from backend.pipeline.text_normalizer import normalize_for_tts
+from backend.pipeline.text_normalizer import dong_dau_cuoi, normalize_for_tts
 from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
@@ -877,7 +877,7 @@ class F5TTSService:
         if not self._is_loaded:
             self.load()
         voice = await self.ensure_voice(voice or self._default_voice)
-        chu = [normalize_for_tts(t) for t in texts]
+        chu = [dong_dau_cuoi(normalize_for_tts(t)) for t in texts]
 
         loop = asyncio.get_event_loop()
         with Timer("TTS lô", logger) as t:
@@ -962,7 +962,7 @@ class F5TTSService:
         # Chuẩn hoá ở đây, không ở từng caller: pipeline gọi, trang test gọi,
         # benchmark gọi, filler gọi - đặt một chỗ thì cả bốn cùng đi qua.
         # Đặt trước cache_key luôn để "ABC" và "abc" dùng chung một bản ghi.
-        text = normalize_for_tts(text)
+        text = dong_dau_cuoi(normalize_for_tts(text))
 
         # Sentence cache: repeated phrases served instantly. Keyed by voice -
         # two lines saying the same sentence in different voices must not share.

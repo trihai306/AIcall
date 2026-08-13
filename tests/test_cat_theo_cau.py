@@ -83,8 +83,8 @@ def test_giu_nguyen_dau_cau_trong_manh():
 
 def test_dau_phay_LA_cho_cat_khi_hai_ve_du_dai():
     """ĐỔI 12-08-2026 - xem `test_moi_manh_ket_bang_dau_cau`."""
-    van = "Dạ vâng ạ, em xin phép trả lời anh ngay bây giờ nhé anh."
-    assert cat(van) == ["Dạ vâng ạ,",
+    van = "Dạ vâng thưa anh ạ, em xin phép trả lời anh ngay bây giờ nhé anh."
+    assert cat(van) == ["Dạ vâng thưa anh ạ,",
                         "em xin phép trả lời anh ngay bây giờ nhé anh."]
 
 

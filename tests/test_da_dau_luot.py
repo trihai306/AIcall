@@ -36,7 +36,7 @@ from backend.pipeline.text_normalizer import normalize_for_tts
 
 
 def test_noi_dai_da_dau_luot():
-    assert normalize_for_tts("Dạ hạn mức vay ạ.").startswith("dạ vâng, hạn mức")
+    assert normalize_for_tts("Dạ hạn mức vay ạ.").startswith("dạ, hạn mức")
 
 
 def test_da_vang_san_thi_chi_them_dau_phay():
@@ -67,7 +67,7 @@ def test_da_em_da_anh_van_duoc_noi_dai(sau):
 
     Ca thật đã hỏng: 'Dạ em là Dương, chuyên viên...' nghe ra 'em là rước...'.
     """
-    assert normalize_for_tts(f"Dạ {sau} nói ạ.").startswith(f"dạ vâng, {sau}")
+    assert normalize_for_tts(f"Dạ {sau} nói ạ.").startswith(f"dạ, {sau}")
 
 
 def test_khong_dung_toi_da_giua_cau():
@@ -80,6 +80,17 @@ def test_khong_dung_toi_cau_khong_mo_bang_da():
     assert normalize_for_tts("Hạn mức vay ạ.").startswith("hạn mức")
 
 
-def test_khong_con_chen_dau_phay_sau_da():
-    """Bản vá cũ đã bị thay. Ai chèn lại phẩy thì phải đo lại - nó không ăn nữa."""
-    assert not normalize_for_tts("Dạ hạn mức vay ạ.").startswith("dạ,")
+def test_khong_tu_them_chu_vao_kich_ban():
+    """KHÔNG được thêm chữ nào vào lời khách viết - chỉ được thêm DẤU.
+
+    Người dùng nghe bản dựng và báo "thừa chữ 'vâng'": kịch bản họ viết là
+    "Dạ, đối với mục đích kinh doanh..." mà máy đọc ra "dạ vâng, đối với...".
+    Bản vá nối dài đã bị gỡ vì lý do đó, dù nó đo tốt hơn 2 điểm.
+    """
+    for cau in ("Dạ hạn mức vay lên đến năm trăm triệu ạ.",
+                "Dạ, đối với mục đích kinh doanh thì bên em hỗ trợ ạ.",
+                "Dạ em là Dương, chuyên viên tư vấn ạ."):
+        ra = normalize_for_tts(cau)
+        assert "vâng" not in ra, ra
+        # cùng số từ, chỉ khác dấu
+        assert len(ra.replace(",", " ").split()) == len(cau.replace(",", " ").split())

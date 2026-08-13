@@ -206,9 +206,28 @@ def _spell_out(match: re.Match) -> str:
 # với "Dạ vâng ạ. Em nghe đây." nó khớp " vâng", thấy phía sau không đủ hai từ,
 # rồi LÙI VỀ RỖNG và khớp lại từ "dạ " - đẻ ra "dạ vâng, vâng ạ.". Nguyên tử thì
 # đã nuốt "vâng" là không nhả, nên cả cụm hỏng khớp và câu giữ nguyên.
-_DA_DAU_CAU_RE = re.compile(r"^(\s*)dạ(?>(?:\s+vâng)?)\s*,?\s+(?=\w+\s+\w)",
+#
+# ĐÃ GỠ PHẦN THÊM CHỮ ngày 13-08-2026. Người dùng nghe bản dựng và báo "thừa chữ
+# 'vâng'": kịch bản họ viết là "Dạ, đối với mục đích kinh doanh..." mà máy đọc ra
+# "dạ vâng, đối với...". Hệ thống TỰ THÊM MỘT CHỮ vào kịch bản của khách - việc
+# đó không được phép, dù số đo có đẹp tới đâu.
+#
+# Giá phải trả, ghi lại cho rõ (đo qua kênh 8kHz, 12 câu):
+#     "Dạ, ..."       chữ mở đầu  8/12   cả câu sai 3,1%
+#     "Dạ vâng, ..."             12/12               1,1%
+# Tức bỏ "vâng" thì kém hơn 2 điểm. Chấp nhận: kênh 8kHz nay đã NGOÀI phạm vi
+# nghiệm thu (chỉ tính chạy trên máy tính), và không được sửa lời khách.
+#
+# Vẫn GIỮ dấu phẩy: nó không thêm chữ nào, chỉ tách "dạ" khỏi từ mang nội dung
+# liền sau - đúng chỗ hỏng đã đo ("Dạ hạn mức vay" nghe ra "giảm mức vay").
+#
+# Nuốt luôn "vâng" nếu KỊCH BẢN đã viết sẵn: "Dạ vâng em hiểu" phải thành
+# "dạ vâng, em hiểu" chứ không phải "dạ, vâng em hiểu" - dấu phẩy chẻ đôi một cụm
+# quen. `(?>...)` nguyên tử để nó không lùi về rỗng rồi chèn vào giữa (xem ca
+# "Dạ vâng ạ." trong `tests/test_da_dau_luot.py`).
+_DA_DAU_CAU_RE = re.compile(r"^(\s*dạ(?>(?:\s+vâng)?))\s+(?=\w+\s+\w)",
                             re.IGNORECASE)
-_DA_NOI_DAI = r"\1dạ vâng, "
+_DA_NOI_DAI = r"\1, "
 # "Dạ thưa" là lời chào khác hẳn, để nguyên - không biến thành "dạ vâng, thưa".
 #
 # "Dạ vâng" sẵn thì KHÔNG miễn nữa: nó vẫn cần dấu phẩy. `_DA_DAU_CAU_RE` đã nuốt
@@ -858,6 +877,35 @@ def normalize_for_tts(text: str) -> str:
     if _DA_DA_DAI_RE.match(text):
         return text
     return _DA_DAU_CAU_RE.sub(_DA_NOI_DAI, text)
+
+
+# Thiếu dấu kết câu thì F5 CẮT PHỰT âm cuối.
+#
+# Người dùng báo "âm cuối hay bị tắt lịm". Đo được, cùng một câu, biến duy nhất
+# là dấu chấm cuối (`scripts/soi_lan5_ba_loi.py`, 200ms cuối, mỗi ô 5ms):
+#     không dấu cuối   ████████████████████████████████▓▓▓▓▓░░·
+#     có dấu chấm      ███████████████▓█▓▓▓▓▓▓▓▓░░░░░░░░░░·····
+# Không dấu thì 160ms cuối vẫn ở biên độ tối đa rồi tắt phụt; có dấu thì tắt dần
+# đều. F5 dùng dấu câu làm mốc kết thúc phát ngôn, thiếu mốc thì nó hết ngân sách
+# thời lượng giữa chừng.
+#
+# Chỉ mảnh CUỐI của một lượt mới thiếu dấu: bộ cắt mảnh luôn cắt tại dấu kết câu
+# hoặc dấu phẩy, riêng phần dư còn lại khi mô hình ngừng sinh thì không có gì cả.
+# Nên thêm dấu chấm là an toàn - không có mảnh giữa câu nào bị đóng nhầm.
+#
+# ĐẶT NGOÀI `normalize_for_tts` một cách cố ý: hàm đó còn được nhiều nơi dùng để
+# so chữ (bộ chấm điểm, test đánh vần tên ngân hàng), thêm dấu vào đó là đổi hợp
+# đồng của nó và làm hỏng mọi phép so. Chỗ đúng là ranh giới ĐƯA CHỮ VÀO F5 -
+# `tts_service` gọi nó ở cả hai đường sinh (lô và đơn).
+_KET_CAU_RE = re.compile(r"[.!?,;:…]$")
+
+
+def dong_dau_cuoi(text: str) -> str:
+    """Thêm dấu chấm nếu mảnh chưa có dấu kết - cho F5 biết chỗ dừng."""
+    t = text.rstrip()
+    if t and not _KET_CAU_RE.search(t):
+        return t + "."
+    return text
 
 
 # --- bỏ câu lùi thừa ở đầu lượt -----------------------------------------------

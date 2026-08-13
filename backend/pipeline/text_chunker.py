@@ -165,14 +165,24 @@ TACH_O_PHAY = True
 
 # Mỗi vế phải có ít nhất ngần này từ thì mới tách ở phẩy.
 #
-# Vì sao 3 chứ không phải 4: vế đầu của chính câu hỏng - "Em là Dương," - đúng 3
-# từ. Lấy 4 thì ca hỏng đã báo vẫn không được chữa. Trùng luôn
-# `TOI_THIEU_TU_MOT_CAU` nên hai luật cùng một quan niệm về "mảnh quá cụt".
+# ĐÃ LÀ 3, ĐỔI THÀNH 4 ngày 13-08-2026. Đây là chỗ hai lần góp ý của người dùng
+# đánh nhau, và cả hai đều về ĐÚNG một câu:
+#     Lần 4: "đoạn 'em là dương, chuyên viên tư vấn' không ngắt dấu phẩy"
+#     Lần 5: "bị giật cục chữ 'Dương' giây 2"
+# Ngưỡng 3 tách được đúng chỗ họ muốn, nhưng vế đầu chỉ 3 từ nên nửa giây đầu bị
+# chẻ làm ba mẩu. Đo (`scripts/thu_nguong_phay.py`), cùng câu, chỉ đổi ngưỡng:
+#     ngưỡng 3   3 mảnh [4, 3, 10 từ]   quãng lặng 0,80s(200ms) VÀ 1,45s(125ms)
+#     ngưỡng 4+  2 mảnh [4, 13 từ]      quãng lặng 0,80s(200ms)
+# Hai chỗ dừng trong 1,5 giây đầu chính là thứ nghe ra "giật cục".
+#
+# Ngưỡng 4 KHÔNG bỏ hết chỗ ngắt phẩy - vế dài vẫn tách. Câu người dùng gửi kèm
+# ở Lần 5 ("Dạ, đối với mục đích kinh doanh hoặc tiêu dùng sửa nhà,") có vế đầu
+# 12 từ, vẫn tách như cũ, và họ không kêu chỗ đó.
 #
 # Chặn dưới có ý nghĩa thật: "Dạ," một từ mà tách riêng thì tốn trọn một lượt
 # gọi F5 (~250ms chi phí cố định) để sinh 0,3 giây tiếng, và F5 sinh mỗi mảnh
 # như một phát ngôn TRỌN VẸN nên vế cụt nghe tách hẳn khỏi câu nó thuộc về.
-TOI_THIEU_TU_MOI_VE = 3
+TOI_THIEU_TU_MOI_VE = 4
 
 # NGẮT MỀM: TẮT. Giữ code lại vì lý do bên dưới đáng ghi hơn là xoá.
 #

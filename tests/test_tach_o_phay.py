@@ -29,10 +29,11 @@ def _cat_het(buffer: str) -> list[str]:
 
 
 def test_tach_o_phay_khi_hai_ve_du_dai():
-    """Đúng ca người dùng báo: 'Em là Dương, chuyên viên tư vấn…'."""
-    manh = _cat_het("Em là Dương, chuyên viên tư vấn tín dụng. ")
-    assert manh[0] == "Em là Dương,"
-    assert manh[1] == "chuyên viên tư vấn tín dụng."
+    """Vế đủ dài thì vẫn tách - ca người dùng gửi ở Lần 5, vế đầu 12 từ."""
+    manh = _cat_het("Dạ đối với mục đích kinh doanh hoặc tiêu dùng sửa nhà, "
+                    "ngân hàng em hỗ trợ thời gian vay tối đa. ")
+    assert manh[0] == "Dạ đối với mục đích kinh doanh hoặc tiêu dùng sửa nhà,"
+    assert manh[1] == "ngân hàng em hỗ trợ thời gian vay tối đa."
 
 
 def test_ve_dau_qua_ngan_thi_khong_tach():
@@ -70,14 +71,25 @@ def test_nhip_nghi_sau_manh_ket_bang_phay():
 
 @pytest.mark.parametrize("dau", [",", ";", ":"])
 def test_ca_ba_dau_ngat_y(dau):
-    manh = _cat_het(f"Em là Dương{dau} chuyên viên tư vấn tín dụng. ")
-    assert manh[0] == f"Em là Dương{dau}"
+    manh = _cat_het(f"Em tên là Dương{dau} chuyên viên tư vấn tín dụng. ")
+    assert manh[0] == f"Em tên là Dương{dau}"
 
 
-def test_nguong_khop_voi_ca_hong_that():
-    """Vế 'Em là Dương' chỉ có 3 từ. Ngưỡng lớn hơn 3 là đúng ca người dùng báo
-    vẫn không tách - ghi lại để ai chỉnh ngưỡng thấy ngay hệ quả."""
-    assert TOI_THIEU_TU_MOI_VE <= 3
+def test_khong_tach_mau_ba_tu_dung_ca_giat_cuc():
+    """Ca người dùng báo ở Lần 5: 'bị giật cục chữ Dương giây 2'.
+
+    Vế 'Em là Dương' đúng 3 từ. Ngưỡng 3 tách được, nhưng đo ra hai chỗ dừng
+    trong 1,5 giây đầu (`scripts/thu_nguong_phay.py`):
+        ngưỡng 3   3 mảnh [4, 3, 10 từ]   quãng lặng 0,80s(200ms) VÀ 1,45s(125ms)
+        ngưỡng 4+  2 mảnh [4, 13 từ]      quãng lặng 0,80s(200ms)
+    Đây chính là chỗ hai lần góp ý đánh nhau: Lần 4 kêu KHÔNG ngắt dấu phẩy ở
+    đúng câu này, Lần 5 kêu ngắt thì GIẬT CỤC. Chọn ngưỡng 4 - vế dài vẫn tách,
+    chỉ mẩu cụt là thôi. Ai hạ lại về 3 thì phải nghe lại đúng câu này.
+    """
+    assert TOI_THIEU_TU_MOI_VE >= 4
+    manh = _cat_het("Em chào anh chị. Em là Dương, chuyên viên tư vấn tín dụng. ")
+    assert manh[0] == "Em chào anh chị."
+    assert manh[1] == "Em là Dương, chuyên viên tư vấn tín dụng."
 
 
 # --- ngắt mềm cho câu dài không có dấu phẩy ------------------------------
@@ -102,7 +114,11 @@ def test_ngat_mem_dang_TAT():
 
 
 def test_dau_phay_van_thang_ngat_mem():
-    """Có dấu phẩy thì tách ở phẩy, không đợi tới từ nối."""
-    manh = _cat_het("Dạ vâng ạ, em xin phép kiểm tra lại hồ sơ của anh chị "
-                    "và báo lại ngay ạ. ")
-    assert manh[0] == "Dạ vâng ạ,"
+    """Có dấu phẩy thì tách ở phẩy, không đợi tới từ nối.
+
+    Vế đầu để 4 từ cho khớp ngưỡng mới - "Dạ vâng ạ," chỉ 3 từ nên nay không
+    tách nữa (xem `test_khong_tach_mau_ba_tu_dung_ca_giat_cuc`).
+    """
+    manh = _cat_het("Dạ vâng thưa anh ạ, em xin phép kiểm tra lại hồ sơ của "
+                    "anh chị và báo lại ngay ạ. ")
+    assert manh[0] == "Dạ vâng thưa anh ạ,"
