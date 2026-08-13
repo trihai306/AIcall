@@ -1148,11 +1148,16 @@ class F5TTSService:
         )
 
         doc_dia = dung_moi = 0
+        # Đường dẫn của MỌI clip đúng vân tay hiện tại. Gom lại để quét dọn ở
+        # cuối hàm - xem `_don_filler_cu`.
+        can_giu: set[Path] = set()
 
         # Thứ tự BẮT BUỘC: đuôi trần trước — đây là đường xuống cấp cuối cùng
         for d in kho.duoi:
-            ket = await self._dung_mot_filler(
-                voice, "", d.id, ghep("", d.text), toc_giong)
+            van = ghep("", d.text)
+            can_giu.add(self._duong_dan_filler(
+                voice, "", d.id, self._van_tay_filler(van, voice, toc_giong)))
+            ket = await self._dung_mot_filler(voice, "", d.id, van, toc_giong)
             if ket == "doc_dia":
                 doc_dia += 1
             elif ket == "dung_moi":
@@ -1163,8 +1168,10 @@ class F5TTSService:
             toc = t.speed if t.speed is not None else toc_giong
             for m in t.mo_dau:
                 for d in kho.duoi:
-                    ket = await self._dung_mot_filler(
-                        voice, t.id, d.id, ghep(m, d.text), toc)
+                    van = ghep(m, d.text)
+                    can_giu.add(self._duong_dan_filler(
+                        voice, t.id, d.id, self._van_tay_filler(van, voice, toc)))
+                    ket = await self._dung_mot_filler(voice, t.id, d.id, van, toc)
                     if ket == "doc_dia":
                         doc_dia += 1
                     elif ket == "dung_moi":
@@ -1173,6 +1180,39 @@ class F5TTSService:
         logger.info("Câu đệm [%s]: %d đọc từ đĩa, %d dựng mới, tổng %d",
                     voice, doc_dia, dung_moi,
                     sum(1 for k in self._filler_cache if k[0] == voice))
+        self._don_filler_cu(voice, can_giu)
+
+    def _don_filler_cu(self, voice: str, can_giu: set[Path]) -> int:
+        """Xoá clip câu đệm còn sót từ vân tay CŨ của chính giọng này.
+
+        Vì sao cần thêm dù `_dung_mot_filler` đã tự dọn: cơ chế ở đó chỉ xoá bản
+        cũ của tổ hợp mà nó ĐANG dựng lại (`glob(f"{id_duoi}__*.wav")`). Tổ hợp
+        nào không còn được gọi tới - kho đổi câu, tình huống bị bỏ - thì bản vân
+        tay cũ của nó nằm lại mãi mãi. Đo được 13-08-2026: 1218 tệp trên đĩa với
+        1116 vân tay khác nhau, trong khi kho chỉ cần 882.
+        Chỉ tốn đĩa chứ không sai tiếng (vân tay không khớp thì hệ thống dựng mới
+        chứ không dùng bản cũ), nhưng để lâu thì đĩa phình mỗi lần chỉnh tốc.
+        Chỗ đúng để quét là ĐÂY: chỉ tại cuối `dung_fillers` mới biết trọn bộ vân
+        tay cần giữ.
+
+        CHỈ quét trong thư mục CỦA GIỌNG NÀY. Quét cả gốc là xoá clip của giọng
+        khác - giọng đó chưa nạp nên `can_giu` không có gì của nó.
+        """
+        goc = THU_MUC_FILLER / voice
+        if not goc.is_dir():
+            return 0
+        n = 0
+        for p in goc.rglob("*.wav"):
+            if p in can_giu:
+                continue
+            try:
+                p.unlink()
+                n += 1
+            except OSError as e:
+                logger.debug("Không xoá được clip cũ %s: %s", p, e)
+        if n:
+            logger.info("Câu đệm [%s]: dọn %d clip vân tay cũ", voice, n)
+        return n
 
     @staticmethod
     def _wav_duration_ms(wav_bytes: bytes) -> float:
