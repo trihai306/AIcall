@@ -37,10 +37,15 @@ def test_tach_o_phay_khi_hai_ve_du_dai():
 
 
 def test_ve_dau_qua_ngan_thi_khong_tach():
-    """'Dạ,' một từ mà tách riêng là tốn trọn một lượt F5 cho 0,3 giây tiếng,
-    và F5 sinh mỗi mảnh như phát ngôn trọn vẹn nên nó nghe tách hẳn khỏi câu."""
-    manh = _cat_het("Dạ, em là Dương chuyên viên tư vấn. ")
-    assert manh[0] == "Dạ, em là Dương chuyên viên tư vấn."
+    """Vế cụt KHÔNG phải tiếng đáp thì vẫn không tách.
+
+    ĐỔI 13-08-2026: "Dạ,"/"Vâng," nay ĐƯỢC tách (xem
+    `test_tieng_dap_mo_dau_duoc_tach_rieng`). Test này giữ nguyên MỤC ĐÍCH -
+    canh chặn dưới cho mọi vế cụt khác - chỉ đổi ví dụ sang cụm không phải
+    tiếng đáp.
+    """
+    manh = _cat_het("Em ạ, anh chị cho em xin thông tin liên hệ nhé. ")
+    assert manh[0] == "Em ạ, anh chị cho em xin thông tin liên hệ nhé."
 
 
 def test_ve_sau_chua_du_dai_thi_doi_them():
@@ -122,3 +127,40 @@ def test_dau_phay_van_thang_ngat_mem():
     manh = _cat_het("Dạ vâng thưa anh ạ, em xin phép kiểm tra lại hồ sơ của "
                     "anh chị và báo lại ngay ạ. ")
     assert manh[0] == "Dạ vâng thưa anh ạ,"
+
+
+# --- tiếng đáp mở đầu lượt được tách riêng (Lần 6) ------------------------
+
+@pytest.mark.parametrize("mo", ["Dạ,", "Vâng,", "Dạ vâng,", "Dạ vâng ạ,"])
+def test_tieng_dap_mo_dau_duoc_tach_rieng(mo):
+    """Người dùng báo BA lần "sau chữ 'dạ'/'vâng' có dấu phẩy nhưng đọc liền".
+
+    Đo ra thì KHÔNG có cơ chế nào tạo được quãng nghỉ ở đó: F5 lờ dấu phẩy (đo
+    0/6 lượt), còn nhịp nghỉ do code chèn thì chỉ chèn GIỮA HAI MẢNH - mà "Dạ,"
+    một từ không bao giờ đủ ngưỡng 4 để thành mảnh. Hai bên đều đúng luật của
+    mình, chỗ hỏng nằm ở giữa.
+    """
+    manh = _cat_het(f"{mo} đất ở đô thị có nhà kiên cố thì thanh khoản rất tốt. ")
+    assert manh[0] == mo
+    assert manh[1].startswith("đất ở đô thị")
+
+
+def test_mien_nay_KHONG_noi_long_nguong_chung():
+    """Chỉ mấy tiếng đáp được miễn. Cụm 3 từ khác vẫn không tách.
+
+    Ngưỡng 4 sinh ra để chữa "giật cục chữ Dương" ở Lần 5 - miễn trừ này không
+    được phép làm lỗi đó quay lại.
+    """
+    manh = _cat_het("Em là Dương, chuyên viên tư vấn tín dụng. ")
+    assert manh[0] == "Em là Dương, chuyên viên tư vấn tín dụng."
+
+
+def test_ve_sau_van_phai_du_dai():
+    """'Dạ, vâng ạ.' mà tách thì thành hai mẩu cụt - tệ hơn không tách."""
+    manh = _cat_het("Dạ, vâng ạ. ")
+    assert manh[0] == "Dạ, vâng ạ."
+
+
+def test_nhip_nghi_sau_tieng_dap_la_nhip_phay():
+    assert nhip_nghi_sau("Dạ,") == NGHI_PHAY_MS
+    assert nhip_nghi_sau("Vâng,") == NGHI_PHAY_MS

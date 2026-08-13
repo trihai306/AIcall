@@ -89,10 +89,21 @@ def test_dau_phay_LA_cho_cat_khi_hai_ve_du_dai():
 
 
 def test_ve_qua_cut_thi_van_khong_cat_o_phay():
-    """Chặn dưới vẫn giữ: vế 1-2 từ tách riêng là tốn trọn một lượt F5 cho
-    ~0,3 giây tiếng, và nghe tách hẳn khỏi câu nó thuộc về."""
-    van = "Dạ, em nghe anh chị nói ạ."
-    assert cat(van) == [van]
+    """Chặn dưới vẫn giữ cho vế cụt THƯỜNG - nhưng KHÔNG cho tiếng đáp mở đầu.
+
+    ĐỔI 13-08-2026 (Lần 6): "Dạ,"/"Vâng," nay được tách riêng vì người dùng báo
+    ba lần "có dấu phẩy nhưng đọc liền" - xem `MO_DAU_TACH_RIENG`. Vế cụt khác
+    thì vẫn không tách: tốn trọn một lượt F5 cho ~0,3 giây tiếng, và nghe tách
+    hẳn khỏi câu nó thuộc về.
+    """
+    # Vế sau chưa đủ 4 từ -> không tách, dù vế đầu là tiếng đáp.
+    assert cat("Dạ, em nghe ạ.") == ["Dạ, em nghe ạ."]
+    # Vế đầu KHÔNG phải tiếng đáp và quá cụt -> vẫn không tách.
+    assert cat("Em ạ, anh chị cho em xin thông tin liên hệ nhé.") == [
+        "Em ạ, anh chị cho em xin thông tin liên hệ nhé."]
+    # Tiếng đáp + vế sau đủ dài -> TÁCH.
+    assert cat("Dạ, em nghe anh chị nói rõ rồi ạ.") == [
+        "Dạ,", "em nghe anh chị nói rõ rồi ạ."]
 
 
 @pytest.mark.parametrize("dau", [".", "!", "?", "…"])

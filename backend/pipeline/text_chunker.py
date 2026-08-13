@@ -184,6 +184,25 @@ TACH_O_PHAY = True
 # như một phát ngôn TRỌN VẸN nên vế cụt nghe tách hẳn khỏi câu nó thuộc về.
 TOI_THIEU_TU_MOI_VE = 4
 
+# Tiếng đáp mở đầu lượt được MIỄN ngưỡng trên và tách thành mảnh riêng.
+#
+# Vì sao phải miễn: người dùng báo ba lần liền "sau chữ 'dạ'/'vâng' có dấu phẩy
+# nhưng đọc liền" (Lần 4, Lần 6 hai lần). Đo ra thì KHÔNG CÓ CƠ CHẾ NÀO tạo được
+# quãng nghỉ ở đó: F5 lờ dấu phẩy (đo 0/6), còn nhịp nghỉ do code chèn thì chỉ
+# chèn GIỮA HAI MẢNH - mà "Dạ," một từ thì không bao giờ đủ ngưỡng để thành mảnh.
+# Hai chỗ đều đúng luật của mình, chỗ hỏng nằm ở giữa.
+#
+# Chỉ miễn cho ĐÚNG mấy tiếng đáp này, không nới ngưỡng chung: ngưỡng 4 sinh ra
+# để chữa "giật cục chữ Dương" ở Lần 5, hạ nó xuống là lỗi đó quay lại.
+#
+# Vế sau vẫn phải đủ dài - không thì "Dạ, vâng ạ." tách thành hai mẩu cụt.
+MO_DAU_TACH_RIENG = frozenset({"dạ", "vâng", "dạ vâng", "vâng ạ", "dạ vâng ạ"})
+
+
+def _la_tieng_dap_mo_dau(manh: str) -> bool:
+    """Mảnh này có phải tiếng đáp mở đầu lượt không (đã kèm dấu phẩy)."""
+    return manh.strip().rstrip(",;:").strip().lower() in MO_DAU_TACH_RIENG
+
 # NGẮT MỀM: TẮT. Giữ code lại vì lý do bên dưới đáng ghi hơn là xoá.
 #
 # Bật ngày 13-08 rồi TẮT cùng ngày. Nó được quyết định trên số đo lấy từ một bản
@@ -461,7 +480,10 @@ def _tach_theo_cau(tu: list[str], co_the: int,
     """
     # Quét từ ngắn tới dài nên chỗ ngắt tới TRƯỚC luôn thắng, bất kể là dấu kết
     # câu hay dấu phẩy.
-    for k in range(min(TOI_THIEU_TU_MOT_CAU, TOI_THIEU_TU_MOI_VE), co_the + 1):
+    # Bắt đầu từ 1 chứ không phải từ ngưỡng: tiếng đáp mở đầu ("Dạ,", "Vâng,")
+    # phải được xét ở k=1. Các nhánh còn lại đều tự kiểm ngưỡng của mình nên hạ
+    # điểm bắt đầu không nới lỏng gì thêm - xem `MO_DAU_TACH_RIENG`.
+    for k in range(1, co_the + 1):
         manh = " ".join(tu[:k])
         # "142." KHÔNG phải hết câu mà là dấu phân cách nghìn - lỗi thật
         # 2026-08-06, bản ghi lưu thành "142. 500.000". Cùng lưới này chặn luôn
@@ -474,7 +496,7 @@ def _tach_theo_cau(tu: list[str], co_the: int,
         # chắn viết xong (`co_the`), nên lúc token còn đang chảy về thì hàm trả
         # None và đợi thêm - chứ không giao ra một vế cụt rồi mới biết là hụt.
         if (TACH_O_PHAY and DAU_NGAT_Y_RE.search(manh)
-                and k >= TOI_THIEU_TU_MOI_VE
+                and (k >= TOI_THIEU_TU_MOI_VE or _la_tieng_dap_mo_dau(manh))
                 and co_the - k >= TOI_THIEU_TU_MOI_VE):
             return manh, " ".join(tu[k:])
         # Ngắt mềm: câu DÀI mà chưa gặp dấu nào -> tách trước một từ nối.
