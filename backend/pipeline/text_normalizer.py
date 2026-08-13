@@ -158,17 +158,39 @@ def _spell_out(match: re.Match) -> str:
     return " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in word)
 
 
-# "Dạ" đứng đầu câu mà dính liền chữ sau thì F5-TTS đọc nhoè thành "giả".
-# Đo trên PhoWhisper, mỗi câu 8 lượt:
-#   "Dạ anh chị cần chuẩn bị chứng minh nhân dân"   -> sai 7/8 (87%)
-#   "Dạ, anh chị cần chuẩn bị chứng minh nhân dân"  -> sai 0/8
-#   "Dạ anh cho em hỏi mình thuê bao nhiêu ngày"    -> sai 7/8 (87%)
-#   "Dạ, anh cho em hỏi mình thuê bao nhiêu ngày"   -> sai 0/8
-# Nặng nhất khi chữ sau bắt đầu bằng nguyên âm ("anh" 87%, "em" 50%, "mình" 12%),
-# đúng kiểu ghép âm qua ranh giới từ. Dấu phẩy tạo chỗ ngắt nhịp nên tách hẳn ra.
-# Không nghe rõ được chỗ ngắt này - độ dài audio trước/sau chênh dưới 40ms.
-# Đây là lỗi của mô hình gốc, sửa ở khâu chuẩn hoá vì rẻ hơn train lại.
-_DA_DAU_CAU_RE = re.compile(r"^(\s*dạ)\s+(?=\w)", re.IGNORECASE)
+# "Dạ" mở đầu lượt bị F5 đọc nhoè thành "giả/giá/giảm/giải/xã".
+#
+# Bản vá CŨ chèn dấu phẩy sau "Dạ" (đo 8 lượt/câu: dính liền sai 7/8, có phẩy sai
+# 0/8). Bản vá đó KHÔNG CÒN ĂN - đo lại 13-08-2026 trên đúng đường cuộc gọi (cắt
+# mảnh như pipeline -> ghép kèm nhịp nghỉ -> kênh 8kHz), 12 câu, hạt giống cố định
+# nên số tất định:
+#     có phẩy (bản cũ)   chữ đầu 0/6   CER 10,2%
+#     bỏ phẩy            chữ đầu 2/6   CER 10,0%
+# Dấu phẩy không phải cơ chế. Nguyên nhân thật: F5 dựng hỏng âm tiết ĐẦU TIÊN khi
+# nó đứng một mình quá ngắn - lỗi rơi trọn vào một từ một âm tiết. Chứng cứ: đổi
+# từ mở đầu, cùng thân câu, cùng đường đo:
+#     "Dạ ..."            chữ đầu 4/12   CER 6,6%   câu đạt 4/12
+#     "Vâng ..."          chữ đầu 1/6    CER 8,7%
+#     "Dạ vâng ..."       chữ đầu 8/12   CER 3,1%   câu đạt 9/12
+#     "Thưa anh chị ..."  chữ đầu 6/6    CER 3,1%
+#     bỏ hẳn              chữ đầu 11/12  CER 2,1%   câu đạt 9/12
+# Mở đầu từ hai âm tiết trở lên thì lành, một âm tiết thì hỏng - không phụ thuộc
+# từ nào.
+#
+# Chọn NỐI DÀI thay vì bỏ hẳn: cả hai đạt 9/12 câu, nhưng bỏ "Dạ" là đổi lối nói
+# của tư vấn viên, còn nối dài giữ nguyên. Muốn đổi sang bỏ hẳn thì thay chuỗi
+# thế bên dưới thành r"" - số đo ở trên đã có sẵn để cân nhắc.
+#
+# Vì sao chữa ở khâu chuẩn hoá: đây là lỗi của mô hình gốc, train lại đắt hơn
+# nhiều. Đo lại bằng `scripts/chot_mo_dau.py`.
+_DA_DAU_CAU_RE = re.compile(r"^(\s*)dạ\s+(?=\w)", re.IGNORECASE)
+_DA_NOI_DAI = r"\1dạ vâng "
+# Đã có "Dạ vâng"/"Dạ thưa" sẵn thì thôi, không nối thành "dạ vâng vâng".
+# CHỈ hai từ này. "Dạ em"/"Dạ anh" KHÔNG được miễn: chỗ hỏng là âm tiết đầu, mà
+# "dạ" vẫn đứng một mình ở đó - "Dạ hạn mức" nghe ra "giảm mức", mất luôn chữ
+# "hạn" liền sau. Đó là lý do câu đạt nhảy 4/12 -> 9/12: "vâng" hứng đòn thay cho
+# từ mang nội dung.
+_DA_DA_DAI_RE = re.compile(r"^\s*dạ\s+(vâng|thưa)\b", re.IGNORECASE)
 
 
 # --- Đọc số thành chữ ------------------------------------------------------
@@ -806,7 +828,9 @@ def normalize_for_tts(text: str) -> str:
     # (nó vốn không khớp), nhưng chạy sau `.lower()` thì hỏng hẳn.
     text = _NGAN_HANG_BANK_RE.sub(_doc_ten_ngan_hang, text)
     text = _ACRONYM_RE.sub(_spell_out, text).lower()
-    return _DA_DAU_CAU_RE.sub(r"\1, ", text)
+    if _DA_DA_DAI_RE.match(text):
+        return text
+    return _DA_DAU_CAU_RE.sub(_DA_NOI_DAI, text)
 
 
 # --- bỏ câu lùi thừa ở đầu lượt -----------------------------------------------
