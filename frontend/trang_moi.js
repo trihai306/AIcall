@@ -1381,9 +1381,14 @@ async function msgNgheThu(btn) {
 // `<giọng>.speed` nằm cạnh file wav. Nên kéo thanh này là đổi luôn cho CUỘC GỌI
 // THẬT, không riêng trang Nhắn tin. Tiêu đề của khối đã ghi rõ điều đó.
 //
-// Còn một hệ số THỨ HAI nhân chồng lên khi gọi điện (`/api/voices/phone-speed`,
-// đang 1.28) vì kênh GSM 8kHz mất dải cao mang phụ âm. Nút "nghe thử" ở trang
-// này KHÔNG áp hệ số đó, nên tiếng nghe ở đây chậm hơn thứ khách thật sự nghe.
+// Còn một hệ số THỨ HAI nhân chồng lên khi gọi điện (`/api/voices/phone-speed`).
+// Nút "nghe thử" ở trang này CÓ áp hệ số đó, nên nhịp nghe ở đây đúng bằng nhịp
+// khách nghe - chỉ khác ở chỗ chưa hạ băng thông xuống 8kHz.
+//
+// Trước 13-08-2026 thì không: hệ số chỉ được nhân khi `qua_dien_thoai=true`, mà
+// cờ đó đồng thời hạ băng thông. Kết quả là nghe ở 24kHz ra 283 âm tiết/phút
+// còn cuộc gọi đọc 347, và chú thích cũ ở đây chỉ đi CẢNH BÁO điều đó thay vì
+// sửa. Nay `qua_dien_thoai` chỉ còn nghĩa "hạ băng thông".
 
 let msgTocGiong = {};   // tên giọng -> { toc, rieng }
 

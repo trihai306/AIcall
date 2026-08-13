@@ -1387,6 +1387,24 @@ class F5TTSService:
                 pass
         return 1.0
 
+    def toc_nghe_thu(self, voice: str | None = None) -> float:
+        """Tốc cho mọi nút NGHE THỬ - luôn bằng tốc của CUỘC GỌI.
+
+        Vì sao phải có hàm riêng thay vì để mỗi nơi tự nhân: `test-tts` trước đây
+        chỉ nhân hệ số khi `qua_dien_thoai=True`, mà cờ đó ĐỒNG THỜI hạ băng
+        thông xuống 8kHz. Một cờ điều khiển hai thứ độc lập, nên không có cách
+        nào nghe đúng nhịp cuộc gọi ở băng thông đầy đủ - bản 24kHz đọc 283 âm
+        tiết/phút còn cuộc gọi đọc 347. Người duyệt giọng nghe một đằng, khách
+        nghe một nẻo, và chú thích trong frontend đã phải đi cảnh báo điều đó
+        thay vì sửa nó.
+
+        Nay `qua_dien_thoai` chỉ còn nghĩa "hạ băng thông", còn NHỊP thì luôn
+        theo cuộc gọi. Bất biến "nghe thử == cuộc gọi" được canh bằng
+        `tests/test_nghe_thu_dung_nhip_cuoc_goi.py`, đối chiếu thẳng với
+        `StreamingPipeline._toc_cho_phien`.
+        """
+        return self.toc_do_cua(voice) * self.he_so_thoai()
+
     def dat_he_so_thoai(self, he_so: float) -> float:
         lo, hi = self._TRAN_HE_SO
         he_so = min(max(float(he_so), lo), hi)

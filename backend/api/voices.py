@@ -183,9 +183,13 @@ async def test_tts(
     # any live phone line is currently speaking with.
     # Hệ số tốc của đường thoại: nghe thử phải giống hệt lúc gọi thật, không
     # thì chỉnh trên web xong ra cuộc gọi lại khác.
-    toc = app_state.tts.toc_do_cua(voice_name)
-    if qua_dien_thoai:
-        toc *= app_state.tts.he_so_thoai()
+    #
+    # Hệ số này NHÂN VÔ ĐIỀU KIỆN, không còn buộc vào `qua_dien_thoai`. Buộc vào
+    # nhau là lỗi: một cờ điều khiển hai thứ độc lập (nhịp đọc và băng thông),
+    # nên nghe ở 24kHz thì được nhịp 283 âm tiết/phút trong khi cuộc gọi đọc 347
+    # - chậm hơn 28% so với thứ khách thật sự nghe. `qua_dien_thoai` giờ chỉ còn
+    # một nghĩa duy nhất: hạ băng thông xuống 8kHz.
+    toc = app_state.tts.toc_nghe_thu(voice_name)
 
     # ĐI ĐÚNG ĐƯỜNG CUỘC GỌI THẬT: cắt mảnh rồi ghép có chèn nhịp nghỉ.
     #

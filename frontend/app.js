@@ -3827,8 +3827,12 @@ async function luuTocThoai(v) {
   } catch (e) { tt.textContent = 'Lỗi: ' + e.message; }
 }
 
-/** Nghe thử. `quaDienThoai=true` hạ 24kHz->8kHz rồi nâng lại, tức nghe ĐÚNG
- *  thứ khách nghe. Chỉnh trên bản 24kHz rồi ra cuộc gọi lại khác là vô ích. */
+/** Nghe thử. `quaDienThoai=true` hạ 24kHz->8kHz rồi nâng lại.
+ *
+ *  CẢ HAI bản đều đọc ở NHỊP CUỘC GỌI, nên đây là phép so sánh sạch: chỉ khác
+ *  đúng một biến là băng thông. Trước 13-08-2026 hai nút này khác nhau cả nhịp
+ *  lẫn băng thông, nên nhãn "bản gốc 24kHz" nói không hết - nó còn chậm hơn
+ *  cuộc gọi 28% mà không ai thấy. */
 async function ngheThuThoai(quaDienThoai) {
   const tt = document.getElementById('tocThoaiTrangThai');
   const giong = (document.getElementById('tocThoaiGiong') || {}).value || 'default';
