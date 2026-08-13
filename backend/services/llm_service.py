@@ -85,6 +85,23 @@ CORE_RULES = """QUY TẮC BẮT BUỘC:
    nguyên văn câu nào trong đó, trừ khi tình huống của khách đúng y như tình huống
    của ví dụ."""
 
+# ĐÃ THỬ VÀ LOẠI 13-08-2026: thêm luật 13 "lấy Ý rồi nói lại bằng LỜI CỦA EM,
+# đừng đọc nguyên câu trong tài liệu". Đo bằng `scripts/do_bam_tai_lieu.py`
+# (10 câu hỏi, tỷ lệ 5-gram của câu trả lời có mặt nguyên văn trong tài liệu RAG):
+#
+#     nền                 13%  và  14%   (hai lần đo, chuỗi chép dài nhất 7,4-7,5 từ)
+#     có luật 13          17%            (chuỗi chép dài nhất 8,4 từ)
+#
+# Không giúp, còn hơi tệ hơn - và hai lần đo nền cách nhau 1 điểm nên 17% không
+# phải nhiễu. Cùng bài học với "ạ" và với việc đọc sai số: văn phong nằm trong
+# TRỌNG SỐ LoRA, prompt không với tới.
+#
+# Chỗ chép tập trung ở CÂU HỎI DẠNG LIỆT KÊ, không rải đều: "điều kiện vay là gì"
+# chép 63-68% và có chuỗi 30 từ nguyên văn, "vay bao nhiêu phần trăm giá trị nhà"
+# 24-46%. Tám câu còn lại đều dưới 22%. Muốn chữa thì còn hai đường, cả hai đều
+# đắt hơn nhiều: train lại LoRA với mẫu diễn đạt lại, hoặc chẻ nhỏ tài liệu trong
+# `knowledge/` để không còn đoạn dài nào để chép.
+
 # Vì sao phải nhắc lại: mô hình 3B quên ràng buộc độ dài khi prompt dài. Đặt sát
 # lượt của khách nên nó "nhớ" hơn là luật số 2 nằm tận đầu prompt.
 #
