@@ -70,9 +70,9 @@ def test_gop_dau_cau_lap(vao, ra):
 def test_dau_don_khong_bi_dung_toi():
     """Dấu đứng một mình thì để yên, chỉ dấu LẶP mới bị gộp.
 
-    Câu này từng kỳ vọng "dạ, vâng ạ." vì bản vá cũ chèn phẩy sau "Dạ". Bản vá
-    đó đã bị thay (không còn ăn - xem `tests/test_da_dau_luot.py`), và "Dạ vâng"
-    nay được miễn nối dài, nên không còn dấu phẩy nào ở đây.
+    Câu này từng kỳ vọng "dạ, vâng ạ." vì bản vá cũ chèn phẩy ngay sau "Dạ".
+    Nay quy tắc chỉ ra tay khi phía sau còn ít nhất hai từ - ở đây chỉ có "ạ."
+    nên không có gì để bảo vệ, câu giữ nguyên. Xem `tests/test_da_dau_luot.py`.
     """
     assert normalize_for_tts("Dạ vâng ạ. Em nghe đây.") == "dạ vâng ạ. em nghe đây."
 

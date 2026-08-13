@@ -183,14 +183,41 @@ def _spell_out(match: re.Match) -> str:
 #
 # Vì sao chữa ở khâu chuẩn hoá: đây là lỗi của mô hình gốc, train lại đắt hơn
 # nhiều. Đo lại bằng `scripts/chot_mo_dau.py`.
-_DA_DAU_CAU_RE = re.compile(r"^(\s*)dạ\s+(?=\w)", re.IGNORECASE)
-_DA_NOI_DAI = r"\1dạ vâng "
-# Đã có "Dạ vâng"/"Dạ thưa" sẵn thì thôi, không nối thành "dạ vâng vâng".
-# CHỈ hai từ này. "Dạ em"/"Dạ anh" KHÔNG được miễn: chỗ hỏng là âm tiết đầu, mà
-# "dạ" vẫn đứng một mình ở đó - "Dạ hạn mức" nghe ra "giảm mức", mất luôn chữ
-# "hạn" liền sau. Đó là lý do câu đạt nhảy 4/12 -> 9/12: "vâng" hứng đòn thay cho
-# từ mang nội dung.
-_DA_DA_DAI_RE = re.compile(r"^\s*dạ\s+(vâng|thưa)\b", re.IGNORECASE)
+# ĐO LẠI 13-08-2026 ở nhịp ĐÃ CHỮA (tốc 0.90, hệ số thoại 1.00 - mọi số ở trên
+# đo tại nhịp cũ 347 âm tiết/phút, nay là 283). 12 câu, qua kênh 8kHz:
+#     "Dạ ..."         chữ mở đầu 12/12   cả câu sai 5,9%
+#     "Dạ, ..."         8/12   3,1%
+#     "Dạ vâng ..."    10/12   2,9%
+#     "Dạ vâng, ..."   12/12   1,1%   <- chọn
+#     "Thưa anh chị"   11/12   2,0%
+#     bỏ hẳn           12/12   0,6%
+# Hai điều đổi so với lần đo trước, và cả hai đều do nhịp đã chậm lại:
+#   - "Dạ" trơn nay đọc ĐÚNG 12/12 (trước 4/12). Lỗi âm tiết đầu đã hết.
+#   - Nhưng cả câu vẫn sai 5,9%: chỗ hỏng chuyển sang RANH GIỚI "dạ"->từ liền
+#     sau, đúng như chẩn đoán gốc ("ghép âm qua ranh giới từ"). Nên vẫn cần tách
+#     hai chữ đó ra.
+# Dấu phẩy MỘT MÌNH không đủ (8/12) và "vâng" một mình cũng không (10/12, và
+# chính "vâng" bị rụng đuôi thành "vân" - người dùng nghe ra). Phải có CẢ HAI.
+#
+# Chỉ chèn khi sau đó còn ÍT NHẤT HAI TỪ: câu "Dạ vâng ạ." không có từ mang nội
+# dung nào để bảo vệ, chèn phẩy vào đó chỉ đẻ ra một quãng nghỉ vô nghĩa.
+#
+# `(?>...)` là nhóm NGUYÊN TỬ, không phải trang trí: để `(?:\s+vâng)?` thường thì
+# với "Dạ vâng ạ. Em nghe đây." nó khớp " vâng", thấy phía sau không đủ hai từ,
+# rồi LÙI VỀ RỖNG và khớp lại từ "dạ " - đẻ ra "dạ vâng, vâng ạ.". Nguyên tử thì
+# đã nuốt "vâng" là không nhả, nên cả cụm hỏng khớp và câu giữ nguyên.
+_DA_DAU_CAU_RE = re.compile(r"^(\s*)dạ(?>(?:\s+vâng)?)\s*,?\s+(?=\w+\s+\w)",
+                            re.IGNORECASE)
+_DA_NOI_DAI = r"\1dạ vâng, "
+# "Dạ thưa" là lời chào khác hẳn, để nguyên - không biến thành "dạ vâng, thưa".
+#
+# "Dạ vâng" sẵn thì KHÔNG miễn nữa: nó vẫn cần dấu phẩy. `_DA_DAU_CAU_RE` đã nuốt
+# sẵn cụm "vâng" nên không đẻ ra "dạ vâng vâng".
+#
+# "Dạ em"/"Dạ anh" cũng KHÔNG miễn: chỗ hỏng là RANH GIỚI "dạ" -> từ liền sau, mà
+# "em"/"anh" đều là từ liền sau cả. Ca thật đã hỏng: "Dạ em là Dương, chuyên
+# viên..." nghe ra "em là rước...".
+_DA_DA_DAI_RE = re.compile(r"^\s*dạ\s+thưa\b", re.IGNORECASE)
 
 
 # --- Đọc số thành chữ ------------------------------------------------------
