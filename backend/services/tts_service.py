@@ -83,10 +83,28 @@ SPEED_CHUAN = 1.20
 # 0.75 thì cấp dư chỉ còn 7% và chữ bắt đầu sai (đo 1 lượt: 7 chữ) - hết chỗ dự
 # trữ thì F5 nhồi cho kịp. 0.85 là mức thấp nhất còn an toàn.
 #
+# ĐỔI 0.85 -> 0.95 ngày 14-08-2026, vì người dùng báo "đọc bị nhanh" ở vài chỗ
+# (Lần 7, hai thư mục). Đo nhịp TỪNG CHỮ trên 122 chữ (`do_nhip_giat_cuc.py`):
+#     hệ số   chữ >600   chữ >800   nhanh nhất   nhịp TB   giây
+#     0.85      4/122      2/122       1500        333     24.6
+#     0.95      2/122      0/122        750        300     26.8
+#     1.05      1/123      0/123        750        273     28.7
+# 0.85 nén vài âm tiết xuống dưới 75ms - đó đúng là chỗ nghe thành "lướt qua".
+# 0.95 dập hết mức trên 800 mà chỉ dài thêm 9%; 1.05 gần như không hơn nữa mà
+# tốn thêm 8% nữa.
+#
+# GIÁ PHẢI TRẢ, ghi cho rõ: âm tiết CUỐI MẢNH có thể kém đi (đo 35 mảnh: 0.85
+# cho 25-26/35, 0.95 cho 22/35). Con số này KHÔNG chắc - cùng cấu hình 0.85 đo
+# hai lần ra 26 rồi 25, tức có nhiễu ±1, và trong buổi này đã bốn lần một phép
+# đo hẹp cho kết luận ngược với bộ rộng. Ai đo lại thì dùng bộ ĐỦ RỘNG.
+#
+# KHÔNG phải cần gạt cho lỗi âm tiết cuối mảnh: đo riêng 0.85/0.95/1.05/1.15
+# cho 9/13, 10/13, 12/13, 9/13 trên bộ hẹp nhưng 26/35 y hệt nhau trên bộ rộng.
+#
 # ĐỔI SỐ NÀY LÀ PHẢI TĂNG `PHIEN_BAN` bên filler_store: câu đệm dựng sẵn nằm
 # trên đĩa theo vân tay cũ, không đổi vân tay thì khách nghe câu đệm ở nhịp cũ
 # nối thẳng vào câu trả lời ở nhịp mới.
-HE_SO_BU_LANG = 0.85
+HE_SO_BU_LANG = 0.95
 # Dưới ngưỡng này thì để F5 tự lo: mảnh 1 âm tiết mà ép thời lượng thì sai số
 # một âm tiết đã là 100%.
 TOI_THIEU_AM_TIET_DE_EP = 3

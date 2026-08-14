@@ -17,7 +17,7 @@ from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             nhip_nghi_sau, tach_manh)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_lai_suat_bia,
-                                              chan_so_sai,
+                                              chan_so_sai, sua_chu_mo_hinh,
                                               chan_tien_sai, sua_xung_ho)
 from backend.services.audio_utils import chen_lang_dau_wav
 from backend.services.stt_service import STTService
@@ -1216,7 +1216,7 @@ class StreamingPipeline:
                 logger.warning("Model để lọt chữ nước ngoài %r - đã bỏ. "
                                "Lọt nhiều thì model đang trượt khỏi tiếng Việt.", lot)
             return bot_lich_su(_chan_so(bo_cau_lui_thua(
-                sua_xung_ho(doan, goi_khach=_goi_khach))))
+                sua_chu_mo_hinh(sua_xung_ho(doan, goi_khach=_goi_khach)))))
 
         t_llm = time.perf_counter()
         n_tokens = 0

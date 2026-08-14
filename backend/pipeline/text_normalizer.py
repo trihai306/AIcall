@@ -794,6 +794,35 @@ def chan_chu_ngoai(text: str) -> tuple[str, str | None]:
     return text.strip(), dinh
 
 
+# Chữ mô hình VIẾT SAI, sửa trước khi đọc ra.
+#
+# Khác `_SUA_NGHE_NHAM` bên `stt_service`: chỗ kia sửa lời KHÁCH bị nghe nhầm,
+# chỗ này sửa lời MÔ HÌNH viết ra. Người dùng báo Lần 7: "đọc sai 'lương' thì
+# đọc là 'lượng'". Soi lại thì TTS đọc ĐÚNG - chính văn bản đã ghi "chị nhà có
+# lượng thì cho sao kê". Sửa ở TTS là sửa nhầm chỗ.
+#
+# HẸP một cách cố ý, đúng lối `_SUA_NGHE_NHAM`: "lượng" là từ thật và rất hay
+# dùng ("số lượng", "chất lượng", "khối lượng", "định lượng"). Chỉ sửa khi nó
+# đứng sau những từ mà "lượng" không thể đúng - "có lượng", "nhận lượng",
+# "sao kê lượng". Dò gần đúng cả câu thì sớm muộn cũng sửa hỏng câu vốn đúng,
+# mà lỗi đó khó thấy hơn nhiều.
+_SUA_CHU_MO_HINH = [
+    (re.compile(r"\b(có|nhận|trả|hưởng|sao\s+kê|bảng)\s+lượng\b", re.IGNORECASE),
+     r"\1 lương"),
+    # Giữ hoa/thường của chữ gốc: "Lượng tháng" phải ra "Lương tháng", không
+    # phải "lương tháng" - mảnh này có thể đứng đầu câu.
+    (re.compile(r"\blượng(\s+)(tháng|cơ\s+bản|hưu|net|gross)\b", re.IGNORECASE),
+     lambda m: _giu_hoa(m.group(0), "lương") + m.group(1) + m.group(2)),
+]
+
+
+def sua_chu_mo_hinh(text: str) -> str:
+    """Sửa những chữ mô hình hay viết sai. Xem `_SUA_CHU_MO_HINH`."""
+    for mau, dung in _SUA_CHU_MO_HINH:
+        text = mau.sub(dung, text)
+    return text
+
+
 def sua_xung_ho(text: str, goi_khach: str = "anh chị") -> str:
     """Bỏ số thứ tự đầu câu, ép cách AI TỰ XƯNG và cách nó GỌI KHÁCH.
 
