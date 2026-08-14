@@ -66,8 +66,25 @@ def test_bat_may_roi_tat_may_la_done(monkeypatch):
 
 
 def test_ngat_ngay_khi_chua_kip_do_chuong_la_busy(monkeypatch):
-    _gia_trang_thai(monkeypatch, [0])
+    """ĐỔI 14-08-2026: phải ĐỔ CHUÔNG RỒI mới tắt thì mới là 'busy'.
+
+    Bản cũ chỉ cho dãy [0] (rảnh ngay từ đầu) và kỳ vọng 'busy'. Chính kỳ vọng
+    đó là lỗi: `dialer_service` bắn intent quay số rồi trả về ngay, còn tổng đài
+    của máy mất một lúc mới rời trạng thái rảnh, nên lần đọc ĐẦU TIÊN luôn ra 0.
+    Trên cuộc gọi thật 14-08 tới 0396130621, hệ thống TỰ CÚP MÁY sau đúng một
+    giây - xem `tests/test_cho_ket_qua_khong_tu_cup.py`.
+
+    Nay 'busy' đòi phải thấy cuộc gọi LÊN trước (mã 3 = đổ chuông) rồi mới tắt.
+    """
+    _gia_trang_thai(monkeypatch, [3, 0])
     assert _chay(MAY_ADB, GiaPhien(), {}) == "busy"
+
+
+def test_ranh_ngay_tu_dau_KHONG_phai_busy(monkeypatch):
+    """Rảnh ở lần đọc đầu = máy chưa kịp chuyển trạng thái, KHÔNG phải máy bận."""
+    monkeypatch.setattr(cr, "_CHO_LEN_S", 0.0)
+    _gia_trang_thai(monkeypatch, [0])
+    assert _chay(MAY_ADB, GiaPhien(), {}) == "no_answer"
 
 
 def test_do_chuong_mai_khong_ai_nghe_la_no_answer(monkeypatch):

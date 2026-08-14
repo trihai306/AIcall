@@ -1,51 +1,28 @@
-"""Theo doi cuoc goi: trang thai may + so luot AI da noi.
-
-Doc thang tu dumpsys telecom chu KHONG dung /api/.../call-state: endpoint do
-bao 'idle' trong khi may dang DIALING that - da bat duoc o lan thu nay.
-"""
-import json
-import re
-import subprocess
-import sys
-import time
-import urllib.request
-
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-SERIAL = "21f10e44220c7ece"
-
-_TT = re.compile(r"\b(DIALING|ACTIVE|RINGING|DISCONNECTED|ON_HOLD)\b")
-
-
-def trang_thai():
-    r = subprocess.run(["adb", "-s", SERIAL, "shell", "dumpsys telecom"],
-                       capture_output=True, text=True, timeout=25)
-    for d in r.stdout.splitlines():
-        if "TelephonyConnectionService" in d:
-            m = _TT.search(d)
-            if m:
-                return m.group(1)
-    return "khong-co-cuoc-goi"
-
-
-def cau_noi():
-    with urllib.request.urlopen(
-            "http://127.0.0.1:8100/api/devices/voice/status", timeout=15) as r:
-        c = (json.loads(r.read()).get("calls") or [{}])[0]
-    return c.get("turns", 0), c.get("khach_noi", ""), c.get("ai_noi", ""), c.get("last_error", "")
-
-
-truoc = None
-for i in range(30):
-    tt = trang_thai()
-    luot, khach, ai, loi = cau_noi()
-    if tt != truoc or khach or ai:
-        print(f"{i*3:>3}s  {tt:<18} luot={luot}")
-        if khach: print(f"      khach: {khach[:80]}")
-        if ai:    print(f"      AI   : {ai[:80]}")
-        if loi:   print(f"      LOI  : {loi[:80]}")
-        truoc = tt
-    if tt == "DISCONNECTED" or tt == "khong-co-cuoc-goi":
-        if i > 3:
-            print("   -> cuoc goi ket thuc")
-            break
-    time.sleep(3)
+"""Theo doi log backend, in ra cac moc cua CUOC GOI. Xa tung dong ngay."""
+import re, sys, time
+from pathlib import Path
+sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+L = Path(r"C:\duan\chat-ai\logs\backend.log")
+KHOA = re.compile(
+    r"dialled|cầu tiếng|đứt ổ cắm|bắt máy|nối máy|lời chào|chào|ghi âm|"
+    r"kết thúc|lượt\)|đường tiêm|uplink|ERROR|Traceback|Exception", re.IGNORECASE)
+while not L.exists():
+    time.sleep(1)
+f = L.open("r", encoding="utf-8", errors="replace")
+f.seek(0, 2)
+vi_tri = f.tell()
+print("đang theo dõi log cuộc gọi…")
+while True:
+    d = f.readline()
+    if not d:
+        # tệp bị cắt/xoay vòng thì mở lại
+        try:
+            if L.stat().st_size < vi_tri:
+                f.close(); f = L.open("r", encoding="utf-8", errors="replace"); vi_tri = 0
+        except OSError:
+            pass
+        time.sleep(0.4); continue
+    vi_tri = f.tell()
+    d = d.rstrip()
+    if KHOA.search(d):
+        print(d[-160:])
