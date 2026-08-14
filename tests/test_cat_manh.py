@@ -205,8 +205,19 @@ def test_khong_cat_o_dau_phan_cach_nghin():
 
 
 def test_nhip_nghi_dat_cung_theo_yeu_cau():
-    assert NGHI_CHAM_MS == 200.0
-    assert NGHI_PHAY_MS == 100.0
+    """Nhịp nghỉ là hằng số ĐẶT CỨNG, không đo lại từ model.
+
+    NỚI 14-08-2026: 100/200 -> 180/320. Người dùng báo hai lần "sau dấu phẩy /
+    sau dấu chấm không ngắt nghỉ"; đo trên chính câu họ gửi thì quãng nghỉ CÓ
+    tồn tại (300ms) nhưng tai họ vẫn thấy chưa đủ - và ở chỗ này tai người là
+    thước đo. Dựng ba mức rồi đo quãng nghỉ THẬT trong file:
+        100/200 -> 300ms   ·   180/320 -> 420ms   ·   250/450 -> 560ms
+    Chọn mức giữa; mức cao làm câu bốn mảnh dài thêm gần một giây.
+
+    Test này neo con số để ai đổi phải đọc lý do, không phải để cấm đổi.
+    """
+    assert NGHI_CHAM_MS == 320.0
+    assert NGHI_PHAY_MS == 180.0
     assert nhip_nghi_sau("em hiểu rồi ạ.") == NGHI_CHAM_MS
     assert nhip_nghi_sau("em hiểu rồi ạ,") == NGHI_PHAY_MS
 

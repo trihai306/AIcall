@@ -370,8 +370,24 @@ TRAN_CHO_CUM_SO_SAU = TRAN_CHO_CUM_SO_DAU
 #
 # Giá trị cũ (305/360) là ĐO TỪ MODEL - đúng khi F5 tự nghỉ và ta chỉ trả lại
 # phần `trim_silence` cắt mất. Nay ta chèn TOÀN BỘ quãng nghỉ nên phải nhỏ hơn.
-NGHI_PHAY_MS = 100.0
-NGHI_CHAM_MS = 200.0
+#
+# NỚI 14-08-2026 (100/200 -> 180/320) vì người dùng báo ở Lần 6, hai chỗ: "sau
+# chữ 'vâng' có dấu phẩy: không ngắt nghỉ" và "sau dấu chấm chỗ 'thẩm định':
+# không ngắt nghỉ". Đo trên chính câu họ gửi thì quãng nghỉ CÓ tồn tại, 300ms -
+# nhưng tai họ vẫn thấy chưa đủ, và chỗ này tai người mới là thước đo.
+#
+# Dựng ba mức rồi đo quãng nghỉ THẬT trong file (`scripts/dung_lai_lan6.py`),
+# lấy câu "Bước tiếp theo… trả nợ. Hiện tại…":
+#     phẩy 100 / chấm 200 (cũ)   nghỉ đo được 300ms
+#     phẩy 180 / chấm 320        nghỉ đo được 420ms   <- chọn
+#     phẩy 250 / chấm 450        nghỉ đo được 560ms
+# Chọn mức giữa: mức cao làm câu bốn mảnh dài thêm gần một giây, mà cuộc gọi
+# tính tiền theo phút.
+#
+# Quãng nghỉ là IM LẶNG CHÈN GIỮA HAI MẢNH, không đi qua F5 - nên nới nó KHÔNG
+# đụng gì tới chất lượng dựng tiếng, khác hẳn `HE_SO_BU_LANG`.
+NGHI_PHAY_MS = 180.0
+NGHI_CHAM_MS = 320.0
 
 # Nghỉ ở ranh giới mảnh KHÔNG có dấu câu. Trước để 0 - và đó là chỗ hở.
 #
