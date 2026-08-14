@@ -17,6 +17,8 @@ class RAGService:
         self._collection = None
         self._embedder = None
         self._is_loaded = False
+        # Danh mục sản phẩm có tài liệu riêng, dựng lười. None = chưa biết.
+        self._ma_sp_co_tai_lieu: set[str] | None = None
 
     def load(self):
         if self._is_loaded:
@@ -121,7 +123,8 @@ class RAGService:
         metas = (results.get("metadatas") or [[]])[0] or []
         dists = (results.get("distances") or [[]])[0] or []
 
-        giu = self._mat_na_loc(docs, metas, san_pham)
+        giu = self._mat_na_loc(docs, metas, san_pham,
+                               self._san_pham_co_tai_lieu())
 
         chi_tiet = []
         for i, doc in enumerate(docs):
@@ -148,9 +151,44 @@ class RAGService:
         s = s.replace("đ", "d")
         return re.sub(r"[^a-z0-9]+", "_", s).strip("_")
 
+    def _san_pham_co_tai_lieu(self) -> set[str] | None:
+        """Mã của những sản phẩm THẬT SỰ có tài liệu trong kho đang tìm kiếm.
+
+        Lấy từ chính collection chứ không đọc thư mục trên đĩa: kho có thể được
+        nạp từ nơi khác, và thứ quyết định kết quả tìm kiếm là thứ ĐÃ NẠP.
+
+        Nhớ lại kết quả vì nó chỉ đổi khi nạp/xoá tài liệu - `_quen_danh_muc`
+        xoá bộ nhớ đó ở cả hai chỗ. Không nhớ thì mỗi lượt gọi thêm một lần đọc
+        toàn bộ metadata, mà đường thoại gọi `retrieve` ba lần mỗi lượt.
+        """
+        if self._ma_sp_co_tai_lieu is None:
+            ma: set[str] = set()
+            try:
+                got = self._collection.get(include=["metadatas"])
+                for m in (got.get("metadatas") or []):
+                    src = (m or {}).get("source") or ""
+                    p = PurePath(src.replace("\\", "/"))
+                    if p.parent.name == "products":
+                        ma.add(self._ma_san_pham(p.name))
+            except Exception as e:
+                # Không đọc được thì trả tập RỖNG là sai hướng an toàn: nó biến
+                # mọi sản phẩm thành "không có tài liệu" và lọc sạch. Trả None
+                # để `_mat_na_loc` giữ nguyên hành vi cũ.
+                logger.warning("Không đọc được danh mục sản phẩm của kho: %s", e)
+                return None
+            self._ma_sp_co_tai_lieu = ma
+            logger.info("RAG: sản phẩm có tài liệu riêng: %s",
+                        ", ".join(sorted(ma)) or "(không có)")
+        return self._ma_sp_co_tai_lieu
+
+    def _quen_danh_muc(self):
+        """Kho vừa đổi -> dựng lại danh mục sản phẩm ở lần hỏi sau."""
+        self._ma_sp_co_tai_lieu = None
+
     @classmethod
     def _mat_na_loc(cls, docs: list[str], metas: list[dict] | None,
-                    san_pham: str) -> list[bool]:
+                    san_pham: str,
+                    ma_co_tai_lieu: set[str] | None = None) -> list[bool]:
         """Mảnh nào thuộc SẢN PHẨM KHÁC với sản phẩm đang tư vấn thì bỏ.
 
         Trả MẶT NẠ (`True` = giữ) chứ không trả danh sách đã lọc: chỗ soi cần
@@ -172,9 +210,29 @@ class RAGService:
         gì" cho mảnh đầu là vay_mua_nha.md, neo theo nó thì lọc xong vẫn sai.
 
         Chỉ lọc trong thư mục `products` - mảnh FAQ hay chính sách vẫn giữ, vì
-        chúng bổ nghĩa chứ không cạnh tranh về số liệu. Sản phẩm không có tài
-        liệu riêng (vd "tiết kiệm") thì không mảnh nào khớp, nên giữ nguyên tất
-        cả thay vì trả về rỗng.
+        chúng bổ nghĩa chứ không cạnh tranh về số liệu.
+
+        HAI CA KHÁC HẲN NHAU, đừng gộp (bản cũ gộp và đó là lỗi):
+
+        a) Sản phẩm CÓ tài liệu, nhưng truy vấn này không lôi được mảnh nào của
+           nó. Đây là hụt truy vấn - giữ nguyên tất cả, vì mảnh sản phẩm khác
+           vẫn có thể đang nói chuyện chung (điều kiện, thủ tục).
+
+        b) Sản phẩm KHÔNG HỀ có tài liệu (vd "tiết kiệm" - `knowledge/products/`
+           chỉ có thẻ tín dụng, vay mua nhà, vay tín chấp). Lúc này MỌI mảnh
+           sản phẩm đều chắc chắn nói về sản phẩm KHÁC, giữ lại là mời mô hình
+           đọc số của người ta. Đo được 13-08-2026, lặp lại cả ba lần: hỏi "lãi
+           suất gửi tiết kiệm bao nhiêu" thì AI đáp **7,9%/năm** - đó là lãi VAY
+           tín chấp. Báo sai lãi suất cho khách trong cuộc gọi bán sản phẩm tài
+           chính là lỗi nặng.
+
+        Ca (b) bỏ HẾT mảnh sản phẩm nhưng vẫn giữ FAQ/chính sách, nên mô hình
+        còn ngữ cảnh chung để nói "em xin phép kiểm tra lại và báo lại anh chị"
+        theo quy tắc 3 - đúng thứ nên nói khi không có dữ liệu.
+
+        `ma_co_tai_lieu` là tập mã sản phẩm THẬT SỰ có tài liệu trong kho.
+        Không truyền thì giữ nguyên hành vi cũ - để lối gọi nào chưa biết tập
+        này không đổi hành vi âm thầm.
         """
         moc = cls._ma_san_pham(san_pham) if san_pham else ""
         if not moc or not metas or len(metas) != len(docs):
@@ -187,7 +245,18 @@ class RAGService:
 
         ma = [cua_san_pham(m) for m in metas]
         if moc not in ma:
-            # không có tài liệu cho sản phẩm này -> đừng lọc
+            if ma_co_tai_lieu is not None and moc not in ma_co_tai_lieu:
+                # ca (b): sản phẩm này không có tài liệu nào -> mọi mảnh sản
+                # phẩm đều là của người khác.
+                giu = [not s for s in ma]
+                if not all(giu):
+                    logger.info(
+                        "RAG: '%s' không có tài liệu riêng - bỏ %d mảnh của sản "
+                        "phẩm khác (%s) để mô hình khỏi đọc số của người ta",
+                        moc, giu.count(False),
+                        ", ".join(sorted({s for s in ma if s})))
+                return giu
+            # ca (a): hụt truy vấn -> đừng lọc
             return [True] * len(docs)
 
         giu = [not s or s == moc for s in ma]
@@ -216,6 +285,8 @@ class RAGService:
             ids=ids,
             metadatas=metadatas,
         )
+        # Kho vừa có tài liệu mới -> danh mục sản phẩm có thể đã khác.
+        self._quen_danh_muc()
         logger.info(f"Ingested {len(chunks)} chunks from '{doc_id}'")
 
     def ingest_directory(self, directory: str):
@@ -267,6 +338,10 @@ class RAGService:
             ids = co.get("ids") or []
             if ids:
                 self._collection.delete(ids=ids)
+                # Xoá hết tài liệu của một sản phẩm là nó thành "không có tài
+                # liệu" - danh mục phải dựng lại, không thì lưới lọc vẫn tưởng
+                # sản phẩm đó còn tài liệu.
+                self._quen_danh_muc()
             return len(ids)
         except Exception as e:
             logger.warning(f"Không xoá được mảnh RAG của nguồn '{source}': {e}")

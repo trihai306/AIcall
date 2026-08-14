@@ -16,7 +16,8 @@ from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             nhip_nghi_sau, tach_manh)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
-                                              chan_chu_ngoai, chan_so_sai,
+                                              chan_chu_ngoai, chan_lai_suat_bia,
+                                              chan_so_sai,
                                               chan_tien_sai, sua_xung_ho)
 from backend.services.audio_utils import chen_lang_dau_wav
 from backend.services.stt_service import STTService
@@ -1129,6 +1130,8 @@ class StreamingPipeline:
                 )
             nguon_token = self.llm.stream_response(session.history, system_prompt)
 
+        da_chan_bia = False
+
         def _chan_so(doan: str) -> str:
             """Chặn số sai TRƯỚC khi đưa sang TTS - đây là tầng cuối còn sửa được.
 
@@ -1141,6 +1144,23 @@ class StreamingPipeline:
             # lưới coi dư nợ thật (142.500.000) là số bịa và thay bằng số lớn
             # nhất trong tài liệu sản phẩm (500 triệu) - tự tay tạo ra đúng cái
             # lỗi nó sinh ra để chặn.
+            # Hàng rào ĐẦU: tài liệu không có phần trăm nào mà câu lại nêu ->
+            # con số đó lấy từ TRÍ NHỚ mô hình, không phải từ tài liệu. Phải
+            # đứng trước `chan_so_sai` vì hàm đó chỉ sửa khi tài liệu CÓ số.
+            #
+            # Thay CẢ MẢNH được vì mảnh cắt theo NGUYÊN CÂU (`CAT_THEO_CAU`),
+            # nên câu thay vào vẫn đúng ngữ pháp. Chỉ thay MỘT lần mỗi lượt:
+            # hai câu cùng nêu phần trăm mà thay cả hai thì khách nghe "em xin
+            # phép kiểm tra lại" hai lần liền.
+            nonlocal da_chan_bia
+            if not da_chan_bia:
+                ra, sua_bia = chan_lai_suat_bia(doan, ngu_canh)
+                if sua_bia:
+                    da_chan_bia = True
+                    logger.warning("CHẶN LÃI SUẤT BỊA: %s | %r -> %r",
+                                   sua_bia, doan[:60], ra[:60])
+                    metrics["chan_lai_suat_bia"] = sua_bia
+                    return ra
             ra, sua = chan_so_sai(doan, ngu_canh)
             if sua:
                 logger.warning("CHẶN SỐ SAI: %s | %r -> %r", sua, doan[:50], ra[:50])

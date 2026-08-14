@@ -543,6 +543,98 @@ def chan_tien_sai(text: str, tai_lieu: str,
     return text, sua
 
 
+# Câu nói khi phải chặn: KHÔNG nêu con số nào, và hứa một việc làm được.
+CAU_KIEM_TRA_LAI = "Dạ em xin phép kiểm tra lại thông tin này rồi báo lại anh chị ngay ạ."
+
+# Tỷ lệ phần trăm trong câu, cả dạng chữ số lẫn dạng chữ.
+#
+# Phải bắt CẢ HAI dạng: mô hình xuất chữ số ("7.9%") theo quy tắc 7, còn
+# `doc_so_trong_cau` đã đổi sang chữ ("bảy phẩy chín phần trăm") trước khi tới
+# TTS - tuỳ hàm này chạy ở khâu nào mà gặp dạng nào.
+#
+# Ghép bằng nối chuỗi chứ KHÔNG dùng toán tử `%`: mẫu có ký tự `%` thật, dùng
+# `%` để chèn thì Python coi nó là ký tự định dạng và nổ ngay lúc nạp module.
+_SO_CHU = "|".join(sorted(_TU_SO, key=len, reverse=True))
+_PHAN_TRAM_RE = re.compile(
+    r"\d+\s*(?:[.,]\s*\d+)?\s*%"
+    r"|\d+\s*(?:phẩy|chấm)\s*\d+\s*phần\s*trăm"
+    r"|\d+\s*phần\s*trăm"
+    r"|(?:" + _SO_CHU + r")(?:\s+(?:phẩy|chấm)\s+(?:" + _SO_CHU + r"))?"
+    r"\s+phần\s+trăm",
+    re.IGNORECASE)
+
+
+def _tri_phan_tram(s: str) -> set[float]:
+    """Mọi giá trị phần trăm trong chuỗi, quy về số.
+
+    Phải quy về SỐ chứ không so chuỗi: cùng một mức xuất hiện đủ dạng - "7.9%",
+    "7,9%", "bảy phẩy chín phần trăm" - mà so chuỗi thì ba dạng đó thành ba số
+    khác nhau và lưới chặn nhầm câu vốn đúng.
+    """
+    ra: set[float] = set()
+    for m in _PHAN_TRAM_RE.finditer(s or ""):
+        cum = m.group(0).lower()
+        so = re.search(r"(\d+)\s*(?:[.,]\s*(\d+))?", cum)
+        if so:
+            ra.add(float(f"{so.group(1)}.{so.group(2)}") if so.group(2)
+                   else float(so.group(1)))
+            continue
+        # dạng chữ: "bảy phẩy chín phần trăm"
+        chu = re.search(r"(" + _SO_CHU + r")(?:\s+(?:phẩy|chấm)\s+(" + _SO_CHU + r"))?",
+                        cum)
+        if chu and chu.group(1) in _TU_SO:
+            ng = _TU_SO[chu.group(1)]
+            le = _TU_SO.get(chu.group(2) or "", None)
+            ra.add(float(f"{ng}.{le}") if le is not None else float(ng))
+    return ra
+
+
+def chan_lai_suat_bia(text: str, tai_lieu: str) -> tuple[str, str | None]:
+    """Câu trả lời nêu một mức phần trăm KHÔNG có trong tài liệu -> con số đó BỊA.
+
+    Vì sao phải chặn bằng code: đo 14-08-2026 sau khi lưới lọc sản phẩm thôi cho
+    mượn tài liệu của sản phẩm khác, mô hình quay sang lấy số TỪ TRÍ NHỚ. Cùng
+    một câu hỏi "lãi suất gửi tiết kiệm bao nhiêu", năm lần hỏi ra năm số khác
+    nhau: 4,2% · 3,8% · 0,7% · 4% · "3.5% đến 4.2%". `knowledge/` không có tài
+    liệu tiết kiệm nào, nên tất cả đều là bịa.
+
+    SO ĐÚNG CON SỐ, không phải "tài liệu có phần trăm hay không". Bản đầu của
+    hàm này chỉ hỏi câu sau, và nó KHÔNG NỔ trên máy thật: `ngu_canh` còn ghép
+    thêm HỒ SƠ KHÁCH (đo được 594 ký tự khi RAG trả rỗng), trong hồ sơ đó có
+    phần trăm của khoản vay khách đang có - thế là lưới tưởng có căn cứ rồi tha
+    cho mức lãi tiết kiệm bịa ra. Lãi vay của khách không chứng minh được gì về
+    lãi tiết kiệm.
+
+    Quy tắc 3 trong `CORE_RULES` đã dặn đúng điều này ("chỉ dùng câu kiểm tra lại
+    khi thật sự KHÔNG tìm thấy"), và bộ dữ liệu train cũng có mẫu KHÔNG BIẾT.
+    Cả hai đều không giữ được. Cùng bài học với việc đọc sai số và với chữ "ạ":
+    prompt không chữa được thì chặn bằng code.
+
+    CHỈ chặn PHẦN TRĂM, không chặn mọi con số. Câu trả lời hợp lệ vẫn đầy số
+    không đến từ tài liệu: nhắc lại số tiền khách vừa nói ("anh vay 100 triệu"),
+    số ngày, số tháng. Phần trăm mới là thứ khách nghe rồi tin ngay và là thứ
+    sai thì nặng nhất.
+
+    Thay CẢ CÂU chứ không xoá mỗi con số: bỏ số thì còn lại "lãi suất tiết kiệm
+    của bên em là ạ" - vừa vô nghĩa vừa vẫn hàm ý có mức lãi.
+
+    Trả (văn bản, mô tả chỗ chặn hoặc None).
+    """
+    if not text:
+        return text, None
+    trong_cau = _tri_phan_tram(text)
+    if not trong_cau:
+        return text, None
+    co_can_cu = _tri_phan_tram(tai_lieu)
+    la_bia = sorted(trong_cau - co_can_cu)
+    if not la_bia:
+        return text, None
+    return CAU_KIEM_TRA_LAI, (
+        "bịa " + ", ".join(f"{v:g}%" for v in la_bia)
+        + (f" (tài liệu chỉ có {', '.join(f'{v:g}%' for v in sorted(co_can_cu))})"
+           if co_can_cu else " (tài liệu không có phần trăm nào)"))
+
+
 def chan_so_sai(text: str, tai_lieu: str) -> tuple[str, str | None]:
     """Sửa số thập phân AI nói nếu nó KHÔNG có trong tài liệu.
 
