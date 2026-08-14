@@ -2225,6 +2225,7 @@ async function loadContacts(page) {
     contactTotal = data.total || 0;
     fillStatusFilter(data.statuses || []);
     renderContactTable();
+    doiChieuCuocDangGoi();
     document.getElementById('contactPageInfo').textContent = contactTotal
       ? `${contactTotal} số · trang ${contactPage}/${Math.max(1, Math.ceil(contactTotal / 50))}`
       : 'Chưa có số nào';
@@ -2233,6 +2234,36 @@ async function loadContacts(page) {
     document.getElementById('contactTableBody').innerHTML =
       `<tr><td colspan="9" class="text-center text-xs text-red-400 py-12">Lỗi tải danh bạ: ${escapeHtml(err.message)}</td></tr>`;
   }
+}
+
+/** Khách cúp máy thì tự xoá thanh "đang gọi", đừng bắt người ta bấm nút.
+ *
+ * Backend đã tự chốt kết quả khi máy về rảnh (`_theo_doi_cuoc_goi_tay`), nhưng
+ * frontend chỉ xoá `activeCall` trong `finishCall` - tức chỉ khi CÓ NGƯỜI BẤM
+ * nút kết quả. Khách cúp xong thanh vẫn nằm đó.
+ *
+ * Không chỉ xấu: thanh còn đó thì rất dễ bấm "Gọi" chồng lên, và cuộc mới báo
+ * "Máy này đã có phiên tiếng đang chạy" rồi chạy KHÔNG CÓ ĐƯỜNG TIẾNG - đúng
+ * dòng cảnh báo người dùng chụp lại ngày 14-08-2026.
+ *
+ * Bám vào `loadContacts` (đã tự nạp mỗi 2,5s ở trang này) thay vì dựng hẹn giờ
+ * riêng: dữ liệu vốn đã tươi, thêm một vòng lặp nữa là thừa.
+ */
+function doiChieuCuocDangGoi() {
+  if (!activeCall) return;
+  const moi = contacts.find(c => c.contact_id === activeCall.contact_id);
+  // Không thấy số trong trang hiện tại (đổi bộ lọc, sang trang khác) thì KHÔNG
+  // kết luận - vắng mặt ở đây không có nghĩa là cuộc gọi đã xong.
+  if (!moi || moi.status === 'calling') return;
+
+  const nhan = (CONTACT_STATUS[moi.status] || {}).label || moi.status;
+  const ct = document.getElementById('activeCallDetail');
+  if (ct) ct.textContent = `Cuộc gọi đã kết thúc — kết quả: ${nhan}`;
+  activeCall = null;
+  setTimeout(() => {
+    const bar = document.getElementById('activeCallBar');
+    if (bar && !activeCall) bar.classList.add('hidden');
+  }, 2000);
 }
 
 function fillStatusFilter(statuses) {
