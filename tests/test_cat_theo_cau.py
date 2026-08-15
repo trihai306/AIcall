@@ -1,5 +1,11 @@
 """Lối cắt theo NGUYÊN CÂU, và giữ nguyên dấu câu khi đưa vào F5.
 
+CẬP NHẬT 12-08-2026: `TACH_O_PHAY` được thêm ĐÈ LÊN lối cắt này, nên "nguyên
+câu" nay là trần chứ không còn là đơn vị cắt - vế trước dấu phẩy cũng thành mảnh
+khi cả hai vế đủ 4 từ. Lý do ghi ở `test_moi_manh_ket_o_ranh_gioi_y`. Phần dưới
+đây vẫn đúng nguyên văn cho phần "giữ nguyên dấu câu".
+
+
 Người dùng chốt 2026-08-11: "bỏ cơ chế bỏ dấu câu và cắt là cắt theo nguyên câu".
 
 Vì sao đổi - đo được 2026-08-11 trên đoạn 60 từ có 4 dấu (2 phẩy, 2 chấm):
@@ -56,22 +62,43 @@ def cat(van: str) -> list[str]:
     return ra
 
 
-# --- mỗi mảnh là trọn một câu -------------------------------------------
+# --- mỗi mảnh kết ở một ranh giới Ý -------------------------------------
+#
+# HỢP ĐỒNG NÀY ĐÃ ĐỔI ngày 12-08-2026, khi `TACH_O_PHAY` được thêm ĐÈ LÊN lối
+# cắt theo câu. Bản trước đòi "mỗi mảnh là trọn một câu", dựa trên lập luận
+# "dấu câu tới được F5 nên nó tự nghỉ ở phẩy". Đo ra thì SAI: trên 6 lượt sinh,
+# KHÔNG quãng nghỉ nào rơi vào vị trí dấu phẩy - F5 nhận được phẩy nhưng lờ nó
+# (xem khối chú thích ở `TACH_O_PHAY`). Nên phẩy phải thành chỗ cắt thật thì
+# `nhip_nghi_sau` mới chèn được quãng nghỉ vào đó.
+#
+# Cái BẤT BIẾN thì không đổi, và đó mới là thứ đáng khoá: mảnh không bao giờ
+# được kết GIỮA một mệnh đề, vì F5 sinh mỗi mảnh như một phát ngôn trọn vẹn -
+# cắt giữa chừng thì nửa đầu nghe như đã nói xong.
 
-def test_moi_manh_la_mot_cau():
+def test_moi_manh_ket_o_ranh_gioi_y():
     van = ("Dạ em chào anh chị, em là nhân viên tư vấn của ngân hàng ABC. "
            "Hiện bên em đang có gói vay tín chấp lãi suất tốt, hạn mức cao. "
            "Hồ sơ chỉ cần căn cước công dân thôi ạ.")
     manh = cat(van)
-    assert len(manh) == 3
+    assert len(manh) == 4, f"cắt ra {len(manh)} mảnh: {manh}"
     for m in manh:
-        assert m.endswith("."), f"mảnh không kết bằng dấu chấm: {m!r}"
+        assert m[-1] in ".,", f"mảnh kết GIỮA mệnh đề: {m!r}"
+    # Chỉ vế đầu mới được kết bằng phẩy; ba mảnh còn lại là câu trọn.
+    assert manh[0].endswith(",")
+    assert all(m.endswith(".") for m in manh[1:])
 
 
-def test_giu_nguyen_dau_cau_trong_manh():
-    """Dấu phẩy GIỮA câu phải còn - đó là chỗ F5 sẽ tự nghỉ."""
-    manh = cat("Dạ em chào anh chị, rất vui được hỗ trợ ạ. Em nghe đây.")
-    assert manh[0] == "Dạ em chào anh chị, rất vui được hỗ trợ ạ."
+def test_phay_o_LAI_trong_manh_khi_ve_qua_ngan():
+    """Phẩy chỉ thành chỗ cắt khi CẢ HAI vế đủ `TOI_THIEU_TU_MOI_VE` từ.
+
+    Vế đầu ở đây có 3 từ nên phẩy ở lại trong mảnh. Ngưỡng này sinh ra để chữa
+    "giật cục chữ Dương giây 2": vế cụt tách riêng thì nửa giây đầu bị chẻ làm
+    ba mẩu.
+    """
+    from backend.pipeline.text_chunker import TOI_THIEU_TU_MOI_VE
+    assert TOI_THIEU_TU_MOI_VE == 4
+    manh = cat("Em rất vui, được hỗ trợ anh chị trong hôm nay ạ.")
+    assert manh == ["Em rất vui, được hỗ trợ anh chị trong hôm nay ạ."]
 
 
 def test_dau_phay_khong_phai_cho_cat():
@@ -208,10 +235,26 @@ def test_khong_chen_nghi_khi_cat_cuong_buc():
     assert nhip_nghi_sau("em xin phép kiểm tra lại hồ sơ của anh") == 0.0
 
 
-def test_dau_phay_khong_di_qua_nhip_nghi():
-    """Phẩy ở lại TRONG mảnh để F5 tự nghỉ, không phải chỗ code chèn."""
-    from backend.pipeline.text_chunker import nhip_nghi_sau
-    assert nhip_nghi_sau("Dạ em chào anh chị,") == 0.0
+def test_do_dai_nghi_theo_LOAI_ranh_gioi():
+    """Nghỉ ở phẩy phải NGẮN HƠN nghỉ ở chấm, và cả hai đều phải > 0.
+
+    ĐỔI ngày 12-08-2026. Bản trước đòi phẩy = 0.0 với lý do "F5 tự nghỉ ở phẩy
+    nên code không cần chèn". Đo 6 lượt: F5 KHÔNG nghỉ ở phẩy lần nào. Để 0.0
+    nghĩa là không cơ chế nào tạo quãng nghỉ ở đó - đúng thứ người dùng phàn nàn
+    sáu lần ("sau chữ dạ có dấu phẩy nhưng đọc liền").
+
+    Hai số lấy từ chính model chứ không chọn cho đẹp: sinh cả câu một lần rồi đo
+    quãng lặng bên trong - phẩy trung vị 356ms, chấm 411ms, trừ ~50ms mà
+    `trim_silence` đã chừa ở hai đầu mảnh.
+    """
+    from backend.pipeline.text_chunker import (NGHI_CHAM_MS, NGHI_PHAY_MS,
+                                               nhip_nghi_sau)
+    assert nhip_nghi_sau("Dạ em chào anh chị,") == NGHI_PHAY_MS
+    assert nhip_nghi_sau("Em nghe đây.") == NGHI_CHAM_MS
+    assert 0 < NGHI_PHAY_MS < NGHI_CHAM_MS, (
+        "nghỉ ở phẩy phải ngắn hơn nghỉ ở chấm - bằng nhau thì ranh giới câu "
+        "và ranh giới vế nghe giống hệt nhau"
+    )
 
 
 # --- dấu câu phải tới được F5 -------------------------------------------

@@ -708,3 +708,45 @@ def should_flush(buffer: str, word_threshold: int = GIOI_HAN_TU_MANH,
     trả về phần đệm còn lại. Giữ hàm này cho các script đo đang gọi tới.
     """
     return tach_manh(buffer, word_threshold, first_chunk)[0] is not None
+
+
+def chia_ca_luot(text: str) -> list[str]:
+    """Cắt CẢ một lượt trả lời thành đúng dãy mảnh mà pipeline giao cho TTS.
+
+    NGUỒN DUY NHẤT của luật cắt "cả lượt". Trước 16-08-2026 hàm này bị gỡ khỏi
+    đây và `api/voices.py` giữ một bản CHÉP RIÊNG (`_cat_manh_nhu_pipeline`) -
+    tức hai bộ luật song song cho cùng một việc. Đó đúng là kiểu hỏng đã xảy ra
+    thật trong dự án này: trang nghe thử và cuộc gọi thật cắt khác nhau, người
+    dùng chỉnh giọng trên web xong ra cuộc gọi nghe một kiểu khác, và không có
+    gì báo lỗi. `tests/test_chia_ca_luot.py` neo hàm này vào một bản mô phỏng
+    pipeline viết ĐỘC LẬP, nên lệch là đỏ ngay.
+
+    Nạp token TỪNG TỪ chứ không đưa cả chuỗi vào `tach_manh`: cỡ mảnh lấy theo
+    SỐ MẢNH ĐÃ GIAO (`co_manh`), nên đưa cả chuỗi một lần sẽ ra kết quả khác với
+    lúc LLM nhả token dần - tức lại lệch khỏi đường thật.
+    """
+    if not text.strip():
+        return []
+
+    ra: list[str] = []
+    dem = ""
+    for tu in text.split():
+        dem = f"{dem} {tu}" if dem else tu
+        while True:
+            m, dem = tach_manh(dem, n=co_manh(len(ra)))
+            if m is None:
+                break
+            ra.append(m)
+
+    # ĐUÔI NGẮN gộp vào mảnh trước, không giao riêng - y hệt đoạn xả đệm cuối
+    # lượt của `streaming_pipeline`.
+    #
+    # Thiếu đúng bước này là trang nghe thử cho ra một mảnh cụt mà cuộc gọi thật
+    # không hề có. F5 sinh MỖI mảnh như một phát ngôn trọn vẹn, nên mảnh "Vâng
+    # ạ" một mình nghe tách hẳn khỏi câu nó thuộc về.
+    du = dem.strip()
+    if du and ra and len(du.split()) < TOI_THIEU_TU_MANH_CUOI:
+        ra[-1] = f"{ra[-1]} {du}".strip()
+    elif du:
+        ra.append(du)
+    return ra or [text.strip()]

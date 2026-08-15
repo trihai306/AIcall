@@ -205,10 +205,27 @@ def test_khong_cat_o_dau_phan_cach_nghin():
 
 
 def test_nhip_nghi_dat_cung_theo_yeu_cau():
-    assert NGHI_CHAM_MS == 200.0
-    assert NGHI_PHAY_MS == 100.0
+    """NỚI 100/200 -> 180/320 ngày 14-08-2026, theo tai người dùng.
+
+    Họ báo ở Lần 6 hai chỗ "không ngắt nghỉ" (sau chữ "vâng" có phẩy, và sau dấu
+    chấm chỗ "thẩm định"). Đo trên chính câu họ gửi thì quãng nghỉ CÓ tồn tại,
+    300ms - nhưng tai họ vẫn thấy chưa đủ, và ở chỗ này tai người là thước đo.
+
+    Dựng ba mức rồi đo quãng nghỉ THẬT trong file (`scripts/dung_lai_lan6.py`):
+        phẩy 100 / chấm 200 (cũ)   nghỉ đo được 300ms
+        phẩy 180 / chấm 320        nghỉ đo được 420ms   <- chọn
+        phẩy 250 / chấm 450        nghỉ đo được 560ms
+    Chọn mức giữa vì mức cao làm câu bốn mảnh dài thêm gần một giây, mà cuộc gọi
+    tính tiền theo phút.
+
+    Ai hạ lại thì phải đo bằng chính script trên và hỏi người dùng - đây là con
+    số do tai họ chốt, không phải hằng số kỹ thuật.
+    """
+    assert NGHI_CHAM_MS == 320.0
+    assert NGHI_PHAY_MS == 180.0
     assert nhip_nghi_sau("em hiểu rồi ạ.") == NGHI_CHAM_MS
     assert nhip_nghi_sau("em hiểu rồi ạ,") == NGHI_PHAY_MS
+    assert 0 < NGHI_PHAY_MS < NGHI_CHAM_MS
 
 
 def test_nghi_o_ranh_gioi_khong_co_dau():

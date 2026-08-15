@@ -65,8 +65,33 @@ def test_bat_may_roi_tat_may_la_done(monkeypatch):
     assert _chay(MAY_ADB, GiaPhien(), {}) == "done"
 
 
-def test_ngat_ngay_khi_chua_kip_do_chuong_la_busy(monkeypatch):
+def test_chua_kip_LEN_thi_khong_duoc_ket_luan_busy(monkeypatch):
+    """Máy báo "rảnh" ngay sau khi bấm số KHÔNG có nghĩa là bận.
+
+    ĐÂY LÀ BẢN VÁ 14-08-2026, và test cũ khoá đúng cái hành vi HỎNG. Trước đó
+    vòng theo dõi chạy ngay sau khi quay số, lúc tổng đài máy vẫn báo 0 (rảnh)
+    vì chưa kịp chuyển trạng thái. Lần đọc ĐẦU TIÊN rơi vào nhánh "rảnh mà chưa
+    tới 8 giây -> busy", hàm trả 'busy' và nơi gọi TỰ CÚP MÁY - đúng một giây
+    sau khi bấm gọi:
+
+        08:42:12  ADB dialled 0396130621
+        08:42:13  đã đóng cầu tiếng (0 lượt)
+        08:42:13  cuộc gọi tay kết thúc: busy
+
+    Người dùng thấy triệu chứng "bấm gọi được mà không nghe thấy gì". Luật đúng:
+    chỉ được đọc "rảnh" thành ĐÃ NGẮT sau khi đã thấy cuộc gọi LÊN.
+
+    Quá `_CHO_LEN_S` mà vẫn chưa lên thì là quay số hỏng thật -> no_answer,
+    KHÔNG phải busy.
+    """
+    monkeypatch.setattr(cr, "_CHO_LEN_S", 0.05)
     _gia_trang_thai(monkeypatch, [0])
+    assert _chay(MAY_ADB, GiaPhien(), {}) == "no_answer"
+
+
+def test_do_chuong_roi_ngat_som_moi_la_busy(monkeypatch):
+    """Đã LÊN rồi mới ngắt, dưới 8 giây - đây mới đúng là máy bận."""
+    _gia_trang_thai(monkeypatch, [3, 0])
     assert _chay(MAY_ADB, GiaPhien(), {}) == "busy"
 
 
