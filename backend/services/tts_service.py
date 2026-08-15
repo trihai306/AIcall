@@ -777,6 +777,11 @@ class F5TTSService:
                     mel_spec_type="vocos",
                     progress=None,
                     nfe_step=nfe_step or settings.f5tts_nfe_step,
+                    # Truyền TAY hai núm này. Không truyền thì ăn mặc định của
+                    # thư viện, và mọi chỉnh trong .env đều vô hiệu mà không
+                    # báo gì - xem khối chú thích ở `config.f5tts_cfg_strength`.
+                    cfg_strength=settings.f5tts_cfg_strength,
+                    sway_sampling_coef=settings.f5tts_sway_sampling_coef,
                     speed=toc,
                     # Ép thời lượng theo ÂM TIẾT thay vì để F5 chia theo BYTE -
                     # xem khối chú thích ở `thoi_luong_ep`. None thì F5 tự tính
@@ -860,8 +865,13 @@ class F5TTSService:
                 text=convert_char_to_pinyin([rt + c for c in chu]),
                 duration=_t.tensor(khung, device=DEVICE, dtype=_t.long),
                 steps=nfe_step or settings.f5tts_nfe_step,
-                cfg_strength=2.0,
-                sway_sampling_coef=-1,
+                # PHẢI trùng đường một mảnh. Để hai chỗ hai giá trị thì lượt ra
+                # nhiều mảnh (đi đường lô này) đọc khác lượt ra một mảnh, mà
+                # không có gì báo lỗi - `streaming_pipeline._try_synthesize_lo`
+                # dùng đường này cho MỌI lượt nhiều hơn một mảnh, nó không bị
+                # cờ `GOP_LO` chặn.
+                cfg_strength=settings.f5tts_cfg_strength,
+                sway_sampling_coef=settings.f5tts_sway_sampling_coef,
             )
             del _
             gen = gen.to(_t.float32)[:, ref_len:, :].permute(0, 2, 1)

@@ -46,6 +46,35 @@ class Settings(BaseSettings):
     # cả câu - hỏng ở đây là hỏng từ khách nghe đầu tiên.
     f5tts_nfe_step_first: int = 12
     f5tts_speed: float = 1.0
+    # Hai núm chất lượng của F5. Trước 16-08-2026 KHÔNG chỉnh được: đường một
+    # mảnh gọi `infer_batch_process` mà không truyền (ăn mặc định thư viện),
+    # còn đường gộp lô ghi cứng 2.0 / -1.
+    #
+    # Người dùng: "âm sắc như máy, không ra chất người". Đo được chữ ký của nó -
+    # đầu ra KHÔNG méo mà ngược lại, quá đều và quá sạch so với 5 clip gốc của
+    # chính người đó:
+    #     người thật:  phẳng phổ 0.0155 | F0 dao động 16.5% | jitter 2.15% | HNR 5.87dB
+    #     nfe16 cũ  :  phẳng phổ 0.0197 | F0 dao động 13.3% | jitter 1.99% | HNR 6.95dB
+    #
+    # Quét 16 cấu hình, thước đo = lệch trung bình so với người thật trên 4 đặc
+    # trưng đó, kèm CER cho STT nghe lại (6 câu/cấu hình):
+    #     nfe48 cfg2.0 sway 0.0   lệch  8.3%   CER 1.44%   1084ms/mảnh
+    #     nfe32 cfg3.0 sway-1.0   lệch 10.0%   CER 1.74%    725ms
+    #     nfe32 cfg2.0 sway-1.0   lệch 12.4%   CER 2.32%    728ms
+    #     nfe16 cfg2.0 sway-1.0   lệch 18.0%               370ms   <- cũ
+    # Cấu hình gần người thật nhất CŨNG là cấu hình đọc rõ nhất - hai thước đo
+    # độc lập cùng chỉ một hướng.
+    #
+    # HAI NÚM NÀY KHÔNG ĐỘC LẬP, đừng vặn lẻ: sway 0.0 ghép với cfg 3.0 đo ra
+    # lệch 88% và HNR tụt còn 1.56dB. Đổi thì quét lưới lại.
+    #
+    # Checkpoint KHÔNG ảnh hưởng: `finetuned/giong_nam` 18.0% vs gốc ViVoice
+    # 16.5% ở cùng cấu hình. Đừng đi đổi checkpoint để chữa âm sắc.
+    #
+    # Mặc định giữ ĐÚNG hành vi cũ (2.0 / -1.0) để máy nào chưa sửa .env thì
+    # không âm thầm đổi giọng. Khoá bằng `tests/test_cfg_va_sway.py`.
+    f5tts_cfg_strength: float = 2.0
+    f5tts_sway_sampling_coef: float = -1.0
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08
