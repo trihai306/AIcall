@@ -124,14 +124,35 @@ async def resolve(scenario_id: str = "", direction: str = "outbound") -> dict:
     """Scenario by id, falling back to the default, falling back to {}.
 
     Returns a dict either way so callers never have to null-check before
-    reading a field - an empty dict makes llm_service fall back to the values
-    in .env, which is exactly the pre-scenario behaviour.
+    reading a field - an empty dict makes the helpers below fall back to the
+    values in .env, which is exactly the pre-scenario behaviour.
     """
     if scenario_id:
         found = await get_scenario(scenario_id)
         if found:
             return found
     return await get_default(direction) or {}
+
+
+# --- tên xưng hô: MỘT chỗ duy nhất -------------------------------------------
+#
+# Ba đường cùng phải xưng tên tổ chức: prompt cho LLM, bảng lượt thường gặp, và
+# câu mở đầu cuộc gọi ra. Trước đây mỗi đường tự đọc lấy - đường LLM đọc kịch
+# bản còn hai đường kia đọc thẳng `.env`, nên đổi tên trong kịch bản xong thì
+# trong CÙNG một cuộc gọi, câu chào sẵn nói một tên còn câu mô hình sinh nói tên
+# khác. Gom về đây để không thể lệch nữa.
+#
+# `.env` chỉ còn là lưới cuối cho phiên chưa kịp gắn kịch bản; nguồn thật là
+# CSDL. Xem `core/startup.ensure_default` - nó chỉ gieo mầm khi bảng còn trống.
+
+def ten_to_chuc(scenario: dict | None) -> str:
+    from backend.config import settings
+    return (scenario or {}).get("org_name") or settings.bank_name
+
+
+def ten_nhan_vien(scenario: dict | None) -> str:
+    from backend.config import settings
+    return (scenario or {}).get("agent_name") or settings.agent_name
 
 
 # --- writes ------------------------------------------------------------------

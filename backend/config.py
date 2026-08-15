@@ -23,12 +23,28 @@ class Settings(BaseSettings):
     f5tts_ref_audio: str = "./models/tts/ref_voices/default.wav"
     f5tts_ref_text: str = "xin chào, tôi là nhân viên tư vấn ngân hàng"
     f5tts_nfe_step: int = 16
-    # Chunk đầu vốn để đánh đổi chất lượng lấy TTFA. Đo trên 6 câu mở đầu ngắn:
-    # nfe 8 -> WER 25%, nfe 12 -> 17%, nfe 16 -> 7%. Ở nfe thấp chữ "Dạ" (mở đầu
-    # gần như mọi câu) bị đọc thành "Giả"/"Sạc" - hỏng đúng từ khách nghe đầu tiên.
-    # Chốt bằng nfe_step: ưu tiên đọc đúng, chấp nhận chunk đầu chậm hơn ~1.6s.
-    # Để bằng nhau thì cờ fast=True thành vô hiệu - đó là chủ ý, không phải quên.
-    f5tts_nfe_step_first: int = 16
+    # Chunk đầu đánh đổi chất lượng lấy TTFA.
+    #
+    # ĐỔI 16 -> 12 ngày 14-08-2026. Lần chốt TRƯỚC (giữ lại để đừng ai lật đi
+    # lật lại): đo 6 câu mở đầu ngắn, nfe 8 -> WER 25%, nfe 12 -> 17%,
+    # nfe 16 -> 7%; ở nfe thấp chữ "Dạ" bị đọc thành "Giả"/"Sạc" - hỏng đúng từ
+    # khách nghe đầu tiên. Nên chốt 16 và chấp nhận chunk đầu chậm.
+    #
+    # Quyết định đó ĐÚNG ở thời điểm của nó, nhưng điều kiện đã đổi hẳn: tốc đọc
+    # về 0,98, hệ số thoại về 1,00, và "Dạ" nay được tách bằng dấu phẩy. Đo lại
+    # trên 16 câu mở đầu thật (`scripts/nfe_manh_dau_ky.py`), cho STT nghe lại:
+    #     nfe 16   chữ ĐẦU đúng 13/16   từ sai 2,2%   451ms
+    #     nfe 12   chữ ĐẦU đúng 14/16   từ sai 1,6%   244ms
+    # nfe 12 tốt HƠN ở cả hai thước đo mà nhanh hơn 207ms. Chỗ "Dạ -> Giả" nay
+    # xảy ra ở CẢ HAI mức gần như nhau, nên nó không còn phân biệt được hai mức.
+    #
+    # Đây là chunk ĐẦU của mỗi lượt, phần khách nghe ngay sau câu đệm - nên
+    # 200ms ở đây rơi thẳng vào TTFA. Đo trên cuộc gọi thật: TTFA 1991-2829ms,
+    # trong đó "TTS mảnh đầu" chiếm 601-799ms, là khoản lớn nhất.
+    #
+    # Ai đổi lại thì đo bằng chính script trên, và đo CHỮ ĐẦU chứ không chỉ WER
+    # cả câu - hỏng ở đây là hỏng từ khách nghe đầu tiên.
+    f5tts_nfe_step_first: int = 12
     f5tts_speed: float = 1.0
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
@@ -94,6 +110,18 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # Banking
+    #
+    # CHỈ DÙNG ĐỂ GIEO MẦM. Nguồn thật của tên tổ chức / nhân viên là KỊCH BẢN
+    # trong CSDL (`scenarios.org_name` / `agent_name`); mọi đường chạy đọc qua
+    # `scenarios_db.ten_to_chuc` / `ten_nhan_vien`. Hai giá trị dưới đây chỉ được
+    # dùng ở hai chỗ:
+    #   1. `core/startup.ensure_default` - tạo kịch bản đầu tiên khi bảng còn trống
+    #   2. lưới cuối trong hai hàm trên, cho phiên chưa kịp gắn kịch bản
+    #
+    # Nên ĐỔI TÊN Ở TRANG KỊCH BẢN, đừng sửa `.env` rồi chờ nó ăn: kịch bản đè
+    # lên `.env`, và `ensure_default` chỉ chạy một lần lúc CSDL trống nên sửa
+    # `.env` sau đó không đồng bộ ngược lại. Tên còn nằm cả trong `opening_line`
+    # của kịch bản dưới dạng chữ ghi thẳng trong câu - phải sửa cả trường đó.
     bank_name: str = "Ngân hàng ABC"
     agent_name: str = "Lan"
 

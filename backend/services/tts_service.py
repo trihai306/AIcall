@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import zlib
 import re
 import time
 import concurrent.futures
@@ -10,7 +11,7 @@ import numpy as np
 import soundfile as sf
 
 from backend.config import settings
-from backend.pipeline.text_normalizer import normalize_for_tts
+from backend.pipeline.text_normalizer import dong_dau_cuoi, normalize_for_tts
 from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
@@ -82,10 +83,28 @@ SPEED_CHUAN = 1.20
 # 0.75 thì cấp dư chỉ còn 7% và chữ bắt đầu sai (đo 1 lượt: 7 chữ) - hết chỗ dự
 # trữ thì F5 nhồi cho kịp. 0.85 là mức thấp nhất còn an toàn.
 #
+# ĐỔI 0.85 -> 0.95 ngày 14-08-2026, vì người dùng báo "đọc bị nhanh" ở vài chỗ
+# (Lần 7, hai thư mục). Đo nhịp TỪNG CHỮ trên 122 chữ (`do_nhip_giat_cuc.py`):
+#     hệ số   chữ >600   chữ >800   nhanh nhất   nhịp TB   giây
+#     0.85      4/122      2/122       1500        333     24.6
+#     0.95      2/122      0/122        750        300     26.8
+#     1.05      1/123      0/123        750        273     28.7
+# 0.85 nén vài âm tiết xuống dưới 75ms - đó đúng là chỗ nghe thành "lướt qua".
+# 0.95 dập hết mức trên 800 mà chỉ dài thêm 9%; 1.05 gần như không hơn nữa mà
+# tốn thêm 8% nữa.
+#
+# GIÁ PHẢI TRẢ, ghi cho rõ: âm tiết CUỐI MẢNH có thể kém đi (đo 35 mảnh: 0.85
+# cho 25-26/35, 0.95 cho 22/35). Con số này KHÔNG chắc - cùng cấu hình 0.85 đo
+# hai lần ra 26 rồi 25, tức có nhiễu ±1, và trong buổi này đã bốn lần một phép
+# đo hẹp cho kết luận ngược với bộ rộng. Ai đo lại thì dùng bộ ĐỦ RỘNG.
+#
+# KHÔNG phải cần gạt cho lỗi âm tiết cuối mảnh: đo riêng 0.85/0.95/1.05/1.15
+# cho 9/13, 10/13, 12/13, 9/13 trên bộ hẹp nhưng 26/35 y hệt nhau trên bộ rộng.
+#
 # ĐỔI SỐ NÀY LÀ PHẢI TĂNG `PHIEN_BAN` bên filler_store: câu đệm dựng sẵn nằm
 # trên đĩa theo vân tay cũ, không đổi vân tay thì khách nghe câu đệm ở nhịp cũ
 # nối thẳng vào câu trả lời ở nhịp mới.
-HE_SO_BU_LANG = 0.85
+HE_SO_BU_LANG = 0.95
 # Dưới ngưỡng này thì để F5 tự lo: mảnh 1 âm tiết mà ép thời lượng thì sai số
 # một âm tiết đã là 100%.
 TOI_THIEU_AM_TIET_DE_EP = 3
@@ -156,6 +175,33 @@ def so_am_tiet(text: str) -> int:
         cs = len(_CHU_SO_RE.findall(t))
         n += max(1, round(cs * 1.5)) if cs else 1
     return n
+
+
+def _dat_seed(_t, text: str, voice: str, toc: float) -> None:
+    """Cố định nhiễu khởi tạo của F5 để CÙNG chữ luôn ra CÙNG tiếng.
+
+    Vì sao đây mới là thứ khách kêu: ghi chú của khách viết "mỗi lần gen ra 1
+    kiểu, lúc thì bị mất chữ, lúc thì đọc thừa chữ". Lỗi không phải "nhịp lệch"
+    mà là KHÔNG ĐOÁN TRƯỚC ĐƯỢC - F5 là mô hình khuếch tán, mỗi lần sinh khởi
+    tạo từ một mớ nhiễu ngẫu nhiên khác nhau nên cùng một câu ra mỗi lần một
+    kiểu, và thỉnh thoảng rơi vào một lần hỏng.
+
+    Cố định seed KHÔNG làm câu đọc hay hơn. Nó làm câu đọc LẶP LẠI ĐƯỢC, và đó
+    mới là thứ mở đường cho việc nghiệm thu: nghe duyệt một kịch bản xong thì
+    biết chắc lúc gọi thật khách nghe đúng như thế. Câu nào rơi vào bản hỏng thì
+    sửa chữ trong kịch bản là hỏng luôn cố định, không phải chờ may rủi.
+
+    Seed suy từ (chữ, giọng, tốc) chứ không phải một hằng số: hằng số thì MỌI
+    câu dùng chung một mớ nhiễu, mà nhiễu khởi tạo ảnh hưởng tới cả ngữ điệu -
+    dễ làm mọi câu nghe cùng một khuôn. Suy từ nội dung thì mỗi câu có mớ nhiễu
+    riêng nhưng CỐ ĐỊNH của riêng nó.
+
+    Chi phí: 0. Không thêm một phép tính nào vào đường sinh.
+    """
+    if settings.f5tts_seed is None:
+        return          # để trống trong .env -> ngẫu nhiên như cũ
+    khoa = f"{text}|{voice}|{toc:.3f}"
+    _t.manual_seed((settings.f5tts_seed + zlib.crc32(khoa.encode("utf-8"))) & 0x7FFFFFFF)
 
 
 def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float) -> float | None:
@@ -719,6 +765,7 @@ class F5TTSService:
         # inference_mode mạnh hơn no_grad: bỏ luôn version-counter và view-tracking
         # của autograd. Suy luận thuần nên không mất gì.
         import torch as _t
+        _dat_seed(_t, text, voice, toc)
         with _t.inference_mode(), self._autocast_ctx():
             audio, sr, _ = next(
                 infer_batch_process(
@@ -803,6 +850,10 @@ class F5TTSService:
             khung.append(ref_len + int(ref_len / len(rt.encode("utf-8"))
                                        * len(c.encode("utf-8")) / toc_cuc_bo))
 
+        # Seed cho CẢ LÔ, khoá theo nội dung cả lô. Đặt theo từng mảnh là vô
+        # nghĩa ở đây: `sample` bốc nhiễu MỘT lần cho cả lô, nên mảnh nào cũng
+        # dùng chung mớ nhiễu đó.
+        _dat_seed(_t, "\x1f".join(chu), voice, toc)
         with _t.inference_mode(), self._autocast_ctx():
             gen, _ = self._model.sample(
                 cond=a.repeat(len(chu), 1),
@@ -844,7 +895,7 @@ class F5TTSService:
         if not self._is_loaded:
             self.load()
         voice = await self.ensure_voice(voice or self._default_voice)
-        chu = [normalize_for_tts(t) for t in texts]
+        chu = [dong_dau_cuoi(normalize_for_tts(t)) for t in texts]
 
         loop = asyncio.get_event_loop()
         with Timer("TTS lô", logger) as t:
@@ -929,7 +980,7 @@ class F5TTSService:
         # Chuẩn hoá ở đây, không ở từng caller: pipeline gọi, trang test gọi,
         # benchmark gọi, filler gọi - đặt một chỗ thì cả bốn cùng đi qua.
         # Đặt trước cache_key luôn để "ABC" và "abc" dùng chung một bản ghi.
-        text = normalize_for_tts(text)
+        text = dong_dau_cuoi(normalize_for_tts(text))
 
         # Sentence cache: repeated phrases served instantly. Keyed by voice -
         # two lines saying the same sentence in different voices must not share.
@@ -1115,11 +1166,16 @@ class F5TTSService:
         )
 
         doc_dia = dung_moi = 0
+        # Đường dẫn của MỌI clip đúng vân tay hiện tại. Gom lại để quét dọn ở
+        # cuối hàm - xem `_don_filler_cu`.
+        can_giu: set[Path] = set()
 
         # Thứ tự BẮT BUỘC: đuôi trần trước — đây là đường xuống cấp cuối cùng
         for d in kho.duoi:
-            ket = await self._dung_mot_filler(
-                voice, "", d.id, ghep("", d.text), toc_giong)
+            van = ghep("", d.text)
+            can_giu.add(self._duong_dan_filler(
+                voice, "", d.id, self._van_tay_filler(van, voice, toc_giong)))
+            ket = await self._dung_mot_filler(voice, "", d.id, van, toc_giong)
             if ket == "doc_dia":
                 doc_dia += 1
             elif ket == "dung_moi":
@@ -1130,8 +1186,10 @@ class F5TTSService:
             toc = t.speed if t.speed is not None else toc_giong
             for m in t.mo_dau:
                 for d in kho.duoi:
-                    ket = await self._dung_mot_filler(
-                        voice, t.id, d.id, ghep(m, d.text), toc)
+                    van = ghep(m, d.text)
+                    can_giu.add(self._duong_dan_filler(
+                        voice, t.id, d.id, self._van_tay_filler(van, voice, toc)))
+                    ket = await self._dung_mot_filler(voice, t.id, d.id, van, toc)
                     if ket == "doc_dia":
                         doc_dia += 1
                     elif ket == "dung_moi":
@@ -1140,6 +1198,39 @@ class F5TTSService:
         logger.info("Câu đệm [%s]: %d đọc từ đĩa, %d dựng mới, tổng %d",
                     voice, doc_dia, dung_moi,
                     sum(1 for k in self._filler_cache if k[0] == voice))
+        self._don_filler_cu(voice, can_giu)
+
+    def _don_filler_cu(self, voice: str, can_giu: set[Path]) -> int:
+        """Xoá clip câu đệm còn sót từ vân tay CŨ của chính giọng này.
+
+        Vì sao cần thêm dù `_dung_mot_filler` đã tự dọn: cơ chế ở đó chỉ xoá bản
+        cũ của tổ hợp mà nó ĐANG dựng lại (`glob(f"{id_duoi}__*.wav")`). Tổ hợp
+        nào không còn được gọi tới - kho đổi câu, tình huống bị bỏ - thì bản vân
+        tay cũ của nó nằm lại mãi mãi. Đo được 13-08-2026: 1218 tệp trên đĩa với
+        1116 vân tay khác nhau, trong khi kho chỉ cần 882.
+        Chỉ tốn đĩa chứ không sai tiếng (vân tay không khớp thì hệ thống dựng mới
+        chứ không dùng bản cũ), nhưng để lâu thì đĩa phình mỗi lần chỉnh tốc.
+        Chỗ đúng để quét là ĐÂY: chỉ tại cuối `dung_fillers` mới biết trọn bộ vân
+        tay cần giữ.
+
+        CHỈ quét trong thư mục CỦA GIỌNG NÀY. Quét cả gốc là xoá clip của giọng
+        khác - giọng đó chưa nạp nên `can_giu` không có gì của nó.
+        """
+        goc = THU_MUC_FILLER / voice
+        if not goc.is_dir():
+            return 0
+        n = 0
+        for p in goc.rglob("*.wav"):
+            if p in can_giu:
+                continue
+            try:
+                p.unlink()
+                n += 1
+            except OSError as e:
+                logger.debug("Không xoá được clip cũ %s: %s", p, e)
+        if n:
+            logger.info("Câu đệm [%s]: dọn %d clip vân tay cũ", voice, n)
+        return n
 
     @staticmethod
     def _wav_duration_ms(wav_bytes: bytes) -> float:
@@ -1353,6 +1444,24 @@ class F5TTSService:
             except ValueError:
                 pass
         return 1.0
+
+    def toc_nghe_thu(self, voice: str | None = None) -> float:
+        """Tốc cho mọi nút NGHE THỬ - luôn bằng tốc của CUỘC GỌI.
+
+        Vì sao phải có hàm riêng thay vì để mỗi nơi tự nhân: `test-tts` trước đây
+        chỉ nhân hệ số khi `qua_dien_thoai=True`, mà cờ đó ĐỒNG THỜI hạ băng
+        thông xuống 8kHz. Một cờ điều khiển hai thứ độc lập, nên không có cách
+        nào nghe đúng nhịp cuộc gọi ở băng thông đầy đủ - bản 24kHz đọc 283 âm
+        tiết/phút còn cuộc gọi đọc 347. Người duyệt giọng nghe một đằng, khách
+        nghe một nẻo, và chú thích trong frontend đã phải đi cảnh báo điều đó
+        thay vì sửa nó.
+
+        Nay `qua_dien_thoai` chỉ còn nghĩa "hạ băng thông", còn NHỊP thì luôn
+        theo cuộc gọi. Bất biến "nghe thử == cuộc gọi" được canh bằng
+        `tests/test_nghe_thu_dung_nhip_cuoc_goi.py`, đối chiếu thẳng với
+        `StreamingPipeline._toc_cho_phien`.
+        """
+        return self.toc_do_cua(voice) * self.he_so_thoai()
 
     def dat_he_so_thoai(self, he_so: float) -> float:
         lo, hi = self._TRAN_HE_SO

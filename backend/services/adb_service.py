@@ -481,12 +481,28 @@ async def diagnose(serial: str) -> dict:
                            "Chỉ cần nếu muốn đưa tiếng cuộc gọi về máy tính"))
 
     # 9. app cầu nối tiếng
-    _, pkg, _ = await _run("-s", serial, "shell", "pm", "path", "com.tuktech.voicebridge")
+    #
+    # Kiểm QUYỀN THẬT, không kiểm chỗ cài. Bản cũ chỉ xem đường dẫn có chứa
+    # "priv-app" không, và nó BÁO NHẦM: trên máy đang chạy, APK nằm ở
+    # `/data/app/...` (cài như app thường) nhưng quyền `CAPTURE_AUDIO_OUTPUT` đã
+    # được module Magisk cấp - `dumpsys` xác nhận `granted=true`, và cầu tiếng
+    # chảy byte bình thường (đo 14-08-2026: 46KB/3s = 0,97x thời gian thực ở cả
+    # nguồn MIC lẫn VOICE_CALL).
+    #
+    # Cảnh báo sai ở đây đắt hơn bình thường: nó xuất hiện đúng lúc người ta đang
+    # dò vì sao cuộc gọi không có tiếng, và nó chỉ thẳng vào một chỗ KHÔNG hỏng.
+    _, pkg, _ = await _run("-s", serial, "shell", "pm", "path", BRIDGE_PKG)
     if "package:" in pkg:
-        priv = "priv-app" in pkg
-        checks.append(_chk("bridge", "App cầu nối tiếng", "ok" if priv else "warn",
-                           "Đã cài (privileged)" if priv else "Đã cài nhưng chưa phải privileged",
-                           "" if priv else "Cài qua module Magisk để có quyền thu tiếng cuộc gọi"))
+        _, quyen, _ = await _run("-s", serial, "shell", "dumpsys", "package",
+                                 BRIDGE_PKG, timeout=10.0)
+        co_quyen = "CAPTURE_AUDIO_OUTPUT: granted=true" in quyen
+        cho_cai = "priv-app" if "priv-app" in pkg else "/data/app"
+        checks.append(_chk(
+            "bridge", "App cầu nối tiếng", "ok" if co_quyen else "warn",
+            f"Đã cài ({cho_cai}), quyền thu tiếng cuộc gọi: "
+            + ("có" if co_quyen else "CHƯA được cấp"),
+            "" if co_quyen else "Cấp CAPTURE_AUDIO_OUTPUT qua module Magisk, "
+                               "hoặc cài app vào /system/priv-app"))
     else:
         checks.append(_chk("bridge", "App cầu nối tiếng", "warn", "Chưa cài",
                            "Xem tools/voicebridge/README.md"))

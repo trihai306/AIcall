@@ -3,6 +3,7 @@ import base64
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.services.filler_store import lay_kho
@@ -156,7 +157,18 @@ async def websocket_call(websocket: WebSocket, session_id: str):
 
     session = app_state.sessions.get(session_id)
     if not session:
-        session = app_state.sessions.create(customer_name="Khách hàng")
+        # Phiên web PHẢI mang kịch bản mặc định giống cuộc gọi thật.
+        #
+        # Trước đây tạo phiên không kèm kịch bản, nên `session.scenario` rỗng và
+        # mọi lượt trên trang Hội thoại / Nhắn tin rơi về `bank_name`/`agent_name`
+        # trong `.env`. Hậu quả: đổi tên tổ chức trong kịch bản xong thử trên web
+        # vẫn nghe tên cũ, mà log không nói gì - đo được ngày 12-08, `scenario_id`
+        # của phiên web trả về rỗng. Trang Nhắn tin sinh ra để KIỂM THỬ, thử trên
+        # một cấu hình khác cuộc gọi thật thì kiểm thử mất nghĩa.
+        session = app_state.sessions.create(
+            customer_name="Khách hàng",
+            scenario=await scenarios_db.resolve(""),
+        )
         session_id = session.session_id
 
     await websocket.send_json({
@@ -322,6 +334,18 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 if text.strip():
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_text_turn(
                         text=text, session=session, ws=websocket,
+                    ))
+
+            # Trang Nhắn tin: cùng đường nghiệp vụ với "text", nhưng bỏ câu đệm +
+            # bỏ sinh tiếng và kèm dấu vết chẩn đoán trong metrics. Tách hẳn loại
+            # tin thay vì thêm cờ vào "text": trang Hội thoại và các chỗ gọi
+            # sendText() cũ không phải biết gì về chế độ soi, nên không có đường
+            # nào bật nhầm nó cho đường thoại.
+            elif msg_type == "text_soi":
+                text = data.get("text", "")
+                if text.strip():
+                    await bat_dau_luot(data, lambda: app_state.pipeline.process_text_turn(
+                        text=text, session=session, ws=websocket, soi=True,
                     ))
 
             # Khách đang gõ, chưa bấm gửi: nạp sẵn RAG cho câu dở dang. Đối xứng

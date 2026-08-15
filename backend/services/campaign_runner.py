@@ -36,6 +36,18 @@ _NHIP_THAM = 0.8
 # thư thoại quanh giây thứ 25-30.
 _CHO_BAT_MAY_S = 35.0
 
+# Chờ bao lâu cho cuộc gọi LÊN được (đổ chuông) sau khi bấm số.
+#
+# Không phải con số cho đẹp: `dialer_service` bắn intent quay số rồi trả về ngay,
+# còn tổng đài của máy mất một lúc mới chuyển khỏi trạng thái rảnh. Đo trên cuộc
+# gọi thật 14-08-2026, lần đọc đầu tiên (ngay sau khi bấm) vẫn ra 0 = rảnh.
+# Thiếu khoảng chờ này thì vòng theo dõi kết luận 'busy' ngay lập tức và tự cúp
+# máy - xem chú thích `da_len` trong `cho_ket_qua`.
+#
+# 12 giây: rộng rãi cho máy chậm hoặc sóng yếu, mà vẫn ngắn hơn nhiều so với
+# `_CHO_BAT_MAY_S`, nên số hỏng thật vẫn bị chốt nhanh chứ không giữ máy lâu.
+_CHO_LEN_S = 12.0
+
 # Trần thời lượng một cuộc gọi. Không có trần thì một cuộc treo (khách để máy
 # đó rồi bỏ đi) giữ máy điện thoại vô hạn và chiến dịch đứng im.
 _TRAN_CUOC_GOI_S = 600.0
@@ -495,17 +507,45 @@ async def cho_ket_qua(device: dict, session, campaign: dict | None,
     serial = device["address"]
     t0 = time.time()
     da_nghe = False
+    # Đã THẤY cuộc gọi lên chưa (đổ chuông hoặc đã nhấc máy).
+    #
+    # Thiếu cờ này là lỗi đã xảy ra thật, bắt được 14-08-2026 trên cuộc gọi
+    # thật: vòng theo dõi chạy NGAY sau khi quay số, mà lúc đó tổng đài máy vẫn
+    # báo 0 (rảnh) vì chưa kịp chuyển trạng thái. Lần đọc ĐẦU TIÊN đã rơi vào
+    # nhánh "rảnh mà chưa tới 8 giây -> busy", thế là hàm trả 'busy' rồi nơi gọi
+    # TỰ CÚP MÁY - đúng một giây sau khi bấm gọi:
+    #     08:42:12  ADB dialled 0396130621
+    #     08:42:13  đã đóng cầu tiếng (0 lượt)
+    #     08:42:13  cuộc gọi tay kết thúc: busy
+    # Người dùng thấy đúng triệu chứng "bấm gọi được mà không nghe thấy gì" -
+    # AI chỉ chào SAU khi nối máy, mà cuộc gọi đã bị chính hệ thống cúp trước đó.
+    #
+    # Luật đúng: chỉ được đọc "rảnh" thành ĐÃ NGẮT sau khi đã thấy nó LÊN.
+    da_len = False
 
     while not dung.is_set():
         ma, mo_ta = await adb_service.precise_call_state(serial)
 
         if ma == 1:                       # đang nói chuyện
+            da_len = True
             if not da_nghe:
                 da_nghe = True
                 logger.info(f"[{session.phone}] khách đã bắt máy")
+        elif ma == 3:                     # đang đổ chuông
+            da_len = True
         elif ma in (0, 7, 8):             # rảnh / vừa ngắt / đang ngắt
             if da_nghe:
                 break
+            if not da_len:
+                # Chưa từng thấy cuộc gọi lên -> máy chưa kịp chuyển trạng thái.
+                # Đợi tiếp, ĐỪNG kết luận. Quá `_CHO_LEN_S` mà vẫn chưa lên thì
+                # là quay số hỏng thật (không có sóng, số sai, máy chặn).
+                if time.time() - t0 < _CHO_LEN_S:
+                    await asyncio.sleep(_NHIP_THAM)
+                    continue
+                logger.warning(f"[{session.phone}] quá {_CHO_LEN_S:.0f}s mà cuộc "
+                               f"gọi không lên được — coi như không gọi được")
+                return "no_answer"
             # Ngắt mà chưa từng đổ chuông và chưa tới 8 giây: gần như luôn là
             # máy bận hoặc thuê bao không liên lạc được. Đổ chuông rồi mới
             # ngắt thì là khách chủ động không nghe.

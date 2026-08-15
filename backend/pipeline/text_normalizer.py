@@ -62,6 +62,67 @@ _KHOANG_GACH_RE = re.compile(
 # F5 nguyên dạng và bị đọc thành "kiev ba".
 _ACRONYM_RE = re.compile(r"\b[A-ZĐ]{2,}\d*\b")
 
+# TÊN NGÂN HÀNG kiểu HOA + "Bank" dính liền: VPBank, TPBank, MBBank, HDBank...
+#
+# `_ACRONYM_RE` KHÔNG bắt được chúng: `\b[A-Z]{2,}\b` đòi ranh giới từ ngay sau
+# cụm hoa, mà sau "VP" là "ank" - vẫn là ký tự từ - nên cả cụm trượt và "VPBank"
+# xuống tới F5 nguyên dạng chuỗi Latin. F5 phải tự đoán cách đọc, MỖI LẦN MỘT
+# KIỂU. Đo 12-08-2026, cho STT nghe lại 10 lần sinh: sai 10/10, ra "vấp banh",
+# "phập banh", "vạc bánh", "việt anh", "váp banh"... Đây là lỗi chiếm phần lớn
+# trong toàn bộ bản ghi khách gửi về (thư mục "Check giọng", 5 đợt thu).
+#
+# "Bank" -> "ben" là chọn theo ĐO, không phải theo cách viết phiên âm cho đẹp.
+# Thử 4 cách, mỗi cách sinh rồi cho STT nghe lại (`scripts/thu_cach_doc_bank.py`):
+#
+#   nguyên xi "VPBank"   -> 3/3 lần ra kết quả KHÁC NHAU
+#   "vê pê bank"         -> 3/3 khác nhau
+#   "vê pê banh"         -> 3/3 khác nhau
+#   "vê pê ben"          -> 4/4 nghe ra đúng "vpbank"      <- chọn cái này
+#
+# Kèm theo: ở các bản bất ổn, chữ "ạ" ngay sau cũng hỏng lây ("cạ", "gạo",
+# "cả") - hỏng một chỗ kéo theo chỗ bên cạnh, nên đừng coi đây là lỗi lẻ.
+_NGAN_HANG_BANK_RE = re.compile(r"\b([A-ZĐ]{2,})Bank\b")
+
+# DẤU CÂU LẶP: "......" -> "."
+#
+# F5 cấp thời lượng theo SỐ BYTE của chữ, nên 6 dấu chấm được tính là 6 ký tự
+# phải đọc trong khi chúng không có âm nào. Model thừa ra một khoảng thời gian
+# không có chữ để lấp, và nó lấp bằng cách kéo giãn các từ quanh đó rồi bịa thêm
+# một âm ở cuối.
+#
+# Kịch bản khách đang dùng có "…bên em...... Không biết…" - và ĐÚNG chỗ đó là
+# nơi mọi bản ghi bị hỏng: "bêm", "bmm", "bmin", "bên mi", "bên em em".
+#
+# Đo 12-08-2026 (`scripts/thu_dau_cham.py`, 5 lần mỗi bản, bỏ nhiễu tên ngân
+# hàng): giữ "......" cho 5 lỗi/5 lượt, thay bằng một dấu chấm còn 2 lỗi/5 lượt
+# và có một lượt SẠCH HOÀN TOÀN. Trước khi chữa tên ngân hàng thì chênh lệch này
+# bị lỗi tên át mất (20 so với 17) nên đo lần đầu tưởng là nhiễu.
+#
+# Sửa ở ĐÂY chứ không sửa kịch bản: kịch bản do người dùng viết, họ cứ viết như
+# cũ. Xem "GHI CHU.txt" trong thư mục Check giọng - bản vá này đã được đề xuất
+# từ 08-08 nhưng chưa bao giờ có trong code.
+_DAU_LAP_RE = re.compile(r"([.,!?;:…])\1+")
+
+
+# Tên ngân hàng đọc KHÔNG theo bảng chữ cái chung. Để riêng ở đây thay vì sửa
+# `VI_LETTER_NAMES`: "P" đọc thành "bê" là riêng của VPBank, đổi trong bảng
+# chung thì "OTP" hoá "ô tê bê" - sai một chỗ khác.
+#
+# Người dùng chốt cách đọc này (13-08-2026). Số đo của tôi nghiêng về "vê pê
+# ben" vì nó ổn định hơn khi cho STT nghe lại, NHƯNG thước đo đó chỉ nói máy
+# nghe ra gì, không nói tai người thấy đúng hay sai. Tên riêng thì người dùng
+# mới là bên biết khách nghe quen kiểu nào.
+NGAN_HANG_OVERRIDES = {
+    "VPBank": "vê bê banh",
+}
+
+
+def _doc_ten_ngan_hang(m: re.Match) -> str:
+    if m.group(0) in NGAN_HANG_OVERRIDES:
+        return NGAN_HANG_OVERRIDES[m.group(0)]
+    chu = " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in m.group(1))
+    return f"{chu} banh"
+
 _VOWELS = set("aeiouy")
 # Âm tiết tiếng Việt chỉ kết thúc bằng nguyên âm hoặc một trong các phụ âm cuối này.
 _VALID_CODAS = {"", "c", "ch", "m", "n", "ng", "nh", "p", "t", "i", "y", "o", "u"}
@@ -97,17 +158,85 @@ def _spell_out(match: re.Match) -> str:
     return " ".join(VI_LETTER_NAMES.get(c.lower(), c) for c in word)
 
 
-# "Dạ" đứng đầu câu mà dính liền chữ sau thì F5-TTS đọc nhoè thành "giả".
-# Đo trên PhoWhisper, mỗi câu 8 lượt:
-#   "Dạ anh chị cần chuẩn bị chứng minh nhân dân"   -> sai 7/8 (87%)
-#   "Dạ, anh chị cần chuẩn bị chứng minh nhân dân"  -> sai 0/8
-#   "Dạ anh cho em hỏi mình thuê bao nhiêu ngày"    -> sai 7/8 (87%)
-#   "Dạ, anh cho em hỏi mình thuê bao nhiêu ngày"   -> sai 0/8
-# Nặng nhất khi chữ sau bắt đầu bằng nguyên âm ("anh" 87%, "em" 50%, "mình" 12%),
-# đúng kiểu ghép âm qua ranh giới từ. Dấu phẩy tạo chỗ ngắt nhịp nên tách hẳn ra.
-# Không nghe rõ được chỗ ngắt này - độ dài audio trước/sau chênh dưới 40ms.
-# Đây là lỗi của mô hình gốc, sửa ở khâu chuẩn hoá vì rẻ hơn train lại.
-_DA_DAU_CAU_RE = re.compile(r"^(\s*dạ)\s+(?=\w)", re.IGNORECASE)
+# "Dạ" mở đầu lượt bị F5 đọc nhoè thành "giả/giá/giảm/giải/xã".
+#
+# Bản vá CŨ chèn dấu phẩy sau "Dạ" (đo 8 lượt/câu: dính liền sai 7/8, có phẩy sai
+# 0/8). Bản vá đó KHÔNG CÒN ĂN - đo lại 13-08-2026 trên đúng đường cuộc gọi (cắt
+# mảnh như pipeline -> ghép kèm nhịp nghỉ -> kênh 8kHz), 12 câu, hạt giống cố định
+# nên số tất định:
+#     có phẩy (bản cũ)   chữ đầu 0/6   CER 10,2%
+#     bỏ phẩy            chữ đầu 2/6   CER 10,0%
+# Dấu phẩy không phải cơ chế. Nguyên nhân thật: F5 dựng hỏng âm tiết ĐẦU TIÊN khi
+# nó đứng một mình quá ngắn - lỗi rơi trọn vào một từ một âm tiết. Chứng cứ: đổi
+# từ mở đầu, cùng thân câu, cùng đường đo:
+#     "Dạ ..."            chữ đầu 4/12   CER 6,6%   câu đạt 4/12
+#     "Vâng ..."          chữ đầu 1/6    CER 8,7%
+#     "Dạ vâng ..."       chữ đầu 8/12   CER 3,1%   câu đạt 9/12
+#     "Thưa anh chị ..."  chữ đầu 6/6    CER 3,1%
+#     bỏ hẳn              chữ đầu 11/12  CER 2,1%   câu đạt 9/12
+# Mở đầu từ hai âm tiết trở lên thì lành, một âm tiết thì hỏng - không phụ thuộc
+# từ nào.
+#
+# Chọn NỐI DÀI thay vì bỏ hẳn: cả hai đạt 9/12 câu, nhưng bỏ "Dạ" là đổi lối nói
+# của tư vấn viên, còn nối dài giữ nguyên. Muốn đổi sang bỏ hẳn thì thay chuỗi
+# thế bên dưới thành r"" - số đo ở trên đã có sẵn để cân nhắc.
+#
+# Vì sao chữa ở khâu chuẩn hoá: đây là lỗi của mô hình gốc, train lại đắt hơn
+# nhiều. Đo lại bằng `scripts/chot_mo_dau.py`.
+# ĐO LẠI 13-08-2026 ở nhịp ĐÃ CHỮA (tốc 0.90, hệ số thoại 1.00 - mọi số ở trên
+# đo tại nhịp cũ 347 âm tiết/phút, nay là 283). 12 câu, qua kênh 8kHz:
+#     "Dạ ..."         chữ mở đầu 12/12   cả câu sai 5,9%
+#     "Dạ, ..."         8/12   3,1%
+#     "Dạ vâng ..."    10/12   2,9%
+#     "Dạ vâng, ..."   12/12   1,1%   <- chọn
+#     "Thưa anh chị"   11/12   2,0%
+#     bỏ hẳn           12/12   0,6%
+# Hai điều đổi so với lần đo trước, và cả hai đều do nhịp đã chậm lại:
+#   - "Dạ" trơn nay đọc ĐÚNG 12/12 (trước 4/12). Lỗi âm tiết đầu đã hết.
+#   - Nhưng cả câu vẫn sai 5,9%: chỗ hỏng chuyển sang RANH GIỚI "dạ"->từ liền
+#     sau, đúng như chẩn đoán gốc ("ghép âm qua ranh giới từ"). Nên vẫn cần tách
+#     hai chữ đó ra.
+# Dấu phẩy MỘT MÌNH không đủ (8/12) và "vâng" một mình cũng không (10/12, và
+# chính "vâng" bị rụng đuôi thành "vân" - người dùng nghe ra). Phải có CẢ HAI.
+#
+# Chỉ chèn khi sau đó còn ÍT NHẤT HAI TỪ: câu "Dạ vâng ạ." không có từ mang nội
+# dung nào để bảo vệ, chèn phẩy vào đó chỉ đẻ ra một quãng nghỉ vô nghĩa.
+#
+# `(?>...)` là nhóm NGUYÊN TỬ, không phải trang trí: để `(?:\s+vâng)?` thường thì
+# với "Dạ vâng ạ. Em nghe đây." nó khớp " vâng", thấy phía sau không đủ hai từ,
+# rồi LÙI VỀ RỖNG và khớp lại từ "dạ " - đẻ ra "dạ vâng, vâng ạ.". Nguyên tử thì
+# đã nuốt "vâng" là không nhả, nên cả cụm hỏng khớp và câu giữ nguyên.
+#
+# ĐÃ GỠ PHẦN THÊM CHỮ ngày 13-08-2026. Người dùng nghe bản dựng và báo "thừa chữ
+# 'vâng'": kịch bản họ viết là "Dạ, đối với mục đích kinh doanh..." mà máy đọc ra
+# "dạ vâng, đối với...". Hệ thống TỰ THÊM MỘT CHỮ vào kịch bản của khách - việc
+# đó không được phép, dù số đo có đẹp tới đâu.
+#
+# Giá phải trả, ghi lại cho rõ (đo qua kênh 8kHz, 12 câu):
+#     "Dạ, ..."       chữ mở đầu  8/12   cả câu sai 3,1%
+#     "Dạ vâng, ..."             12/12               1,1%
+# Tức bỏ "vâng" thì kém hơn 2 điểm. Chấp nhận: kênh 8kHz nay đã NGOÀI phạm vi
+# nghiệm thu (chỉ tính chạy trên máy tính), và không được sửa lời khách.
+#
+# Vẫn GIỮ dấu phẩy: nó không thêm chữ nào, chỉ tách "dạ" khỏi từ mang nội dung
+# liền sau - đúng chỗ hỏng đã đo ("Dạ hạn mức vay" nghe ra "giảm mức vay").
+#
+# Nuốt luôn "vâng" nếu KỊCH BẢN đã viết sẵn: "Dạ vâng em hiểu" phải thành
+# "dạ vâng, em hiểu" chứ không phải "dạ, vâng em hiểu" - dấu phẩy chẻ đôi một cụm
+# quen. `(?>...)` nguyên tử để nó không lùi về rỗng rồi chèn vào giữa (xem ca
+# "Dạ vâng ạ." trong `tests/test_da_dau_luot.py`).
+_DA_DAU_CAU_RE = re.compile(r"^(\s*dạ(?>(?:\s+vâng)?))\s+(?=\w+\s+\w)",
+                            re.IGNORECASE)
+_DA_NOI_DAI = r"\1, "
+# "Dạ thưa" là lời chào khác hẳn, để nguyên - không biến thành "dạ vâng, thưa".
+#
+# "Dạ vâng" sẵn thì KHÔNG miễn nữa: nó vẫn cần dấu phẩy. `_DA_DAU_CAU_RE` đã nuốt
+# sẵn cụm "vâng" nên không đẻ ra "dạ vâng vâng".
+#
+# "Dạ em"/"Dạ anh" cũng KHÔNG miễn: chỗ hỏng là RANH GIỚI "dạ" -> từ liền sau, mà
+# "em"/"anh" đều là từ liền sau cả. Ca thật đã hỏng: "Dạ em là Dương, chuyên
+# viên..." nghe ra "em là rước...".
+_DA_DA_DAI_RE = re.compile(r"^\s*dạ\s+thưa\b", re.IGNORECASE)
 
 
 # --- Đọc số thành chữ ------------------------------------------------------
@@ -258,8 +387,18 @@ _DON_VI_TIEN = ("triệu", "tỷ", "tỉ")
 _HE_SO = {"triệu": 10 ** 6, "tỷ": 10 ** 9, "tỉ": 10 ** 9}
 
 # "500 triệu" hoặc "năm trăm triệu" - bắt cả hai dạng vì mô hình viết lẫn lộn.
+# Lookbehind kể cả DẤU CHẤM/PHẨY, không chỉ `\w` và `/`.
+#
+# Thiếu chúng thì nó khớp MỘT PHẦN của số thập phân: nhóm `\d{3}` đòi đúng ba
+# chữ số, nên "2.78 triệu" không khớp được từ đầu, và regex khớp luôn cụm
+# "78 triệu" nằm giữa. Lưới chặn thay đúng cụm đó và để lại "2." đằng trước:
+#
+#   "trả khoảng 2.78 triệu đồng"  ->  "trả khoảng 2.năm trăm triệu đồng"
+#
+# Bắt được 13-08-2026 trong bộ test nhiều hội thoại - khách nghe một chuỗi
+# không có nghĩa, mà log chỉ ghi là đã "chặn số sai" nên nhìn như đang chạy tốt.
 _TIEN_SO_RE = re.compile(
-    r"(?<![\w/])(\d{1,3}(?:[.,]\d{3})*)\s*(" + "|".join(_DON_VI_TIEN) + r")\b",
+    r"(?<![\w/.,])(\d{1,3}(?:[.,]\d{3})*)\s*(" + "|".join(_DON_VI_TIEN) + r")\b",
     re.IGNORECASE)
 # Các từ có thể ghép thành một số tiếng Việt. Sắp XUỐNG DẦN theo độ dài để
 # regex không khớp trước phần đầu của từ dài hơn ("mười" trước "mươi").
@@ -344,7 +483,6 @@ def chan_tien_sai(text: str, tai_lieu: str,
     hop_le = _tien_trong(tai_lieu) | _tien_trong(khach_noi)
     if not hop_le:
         return text, None
-    thay_bang = max(hop_le)
     sua = None
 
     # Diễn đạt số thay thế bằng ĐƠN VỊ CỦA CHÍNH NÓ, đừng ép về đơn vị của câu
@@ -361,7 +499,22 @@ def chan_tien_sai(text: str, tai_lieu: str,
         nonlocal sua
         if gia_tri in hop_le:
             return goc
-        moi = _dien_dat(thay_bang)
+        # Thay bằng số GẦN NHẤT, không phải số LỚN NHẤT.
+        #
+        # Bản cũ dùng `max(hop_le)` với lý do "thường là hạn mức". Nó làm câu
+        # trả lời SAI HƠN hẳn khi khách đã nêu một con số. Bắt được 13-08-2026
+        # trong bộ test nhiều hội thoại:
+        #
+        #   khách: "anh cần vay 80 triệu"
+        #   model: "vay 78 triệu"                     (lệch nhẹ)
+        #   lưới : "78 triệu -> NĂM TRĂM TRIỆU"       (sai gấp 6 lần)
+        #
+        # 500 triệu là hạn mức trong tài liệu, và nó là số lớn nhất nên luôn
+        # thắng. Lấy số gần nhất thì ra "80 triệu" - đúng con số khách vừa nói.
+        # Không có trường hợp nào "gần nhất" tệ hơn "lớn nhất": lớn nhất chỉ
+        # đúng khi chính nó là số gần nhất.
+        moi_gt = min(hop_le, key=lambda v: abs(v - gia_tri))
+        moi = _dien_dat(moi_gt)
         sua = f"{goc} -> {moi}"
         return moi
 
@@ -388,6 +541,98 @@ def chan_tien_sai(text: str, tai_lieu: str,
     # thì regex chữ-số thuần nuốt mất phần "500" và bỏ lại "triệu" chơ vơ.
     text = _TIEN_CHU_SO_RE.sub(_t_chu_so, text)
     return text, sua
+
+
+# Câu nói khi phải chặn: KHÔNG nêu con số nào, và hứa một việc làm được.
+CAU_KIEM_TRA_LAI = "Dạ em xin phép kiểm tra lại thông tin này rồi báo lại anh chị ngay ạ."
+
+# Tỷ lệ phần trăm trong câu, cả dạng chữ số lẫn dạng chữ.
+#
+# Phải bắt CẢ HAI dạng: mô hình xuất chữ số ("7.9%") theo quy tắc 7, còn
+# `doc_so_trong_cau` đã đổi sang chữ ("bảy phẩy chín phần trăm") trước khi tới
+# TTS - tuỳ hàm này chạy ở khâu nào mà gặp dạng nào.
+#
+# Ghép bằng nối chuỗi chứ KHÔNG dùng toán tử `%`: mẫu có ký tự `%` thật, dùng
+# `%` để chèn thì Python coi nó là ký tự định dạng và nổ ngay lúc nạp module.
+_SO_CHU = "|".join(sorted(_TU_SO, key=len, reverse=True))
+_PHAN_TRAM_RE = re.compile(
+    r"\d+\s*(?:[.,]\s*\d+)?\s*%"
+    r"|\d+\s*(?:phẩy|chấm)\s*\d+\s*phần\s*trăm"
+    r"|\d+\s*phần\s*trăm"
+    r"|(?:" + _SO_CHU + r")(?:\s+(?:phẩy|chấm)\s+(?:" + _SO_CHU + r"))?"
+    r"\s+phần\s+trăm",
+    re.IGNORECASE)
+
+
+def _tri_phan_tram(s: str) -> set[float]:
+    """Mọi giá trị phần trăm trong chuỗi, quy về số.
+
+    Phải quy về SỐ chứ không so chuỗi: cùng một mức xuất hiện đủ dạng - "7.9%",
+    "7,9%", "bảy phẩy chín phần trăm" - mà so chuỗi thì ba dạng đó thành ba số
+    khác nhau và lưới chặn nhầm câu vốn đúng.
+    """
+    ra: set[float] = set()
+    for m in _PHAN_TRAM_RE.finditer(s or ""):
+        cum = m.group(0).lower()
+        so = re.search(r"(\d+)\s*(?:[.,]\s*(\d+))?", cum)
+        if so:
+            ra.add(float(f"{so.group(1)}.{so.group(2)}") if so.group(2)
+                   else float(so.group(1)))
+            continue
+        # dạng chữ: "bảy phẩy chín phần trăm"
+        chu = re.search(r"(" + _SO_CHU + r")(?:\s+(?:phẩy|chấm)\s+(" + _SO_CHU + r"))?",
+                        cum)
+        if chu and chu.group(1) in _TU_SO:
+            ng = _TU_SO[chu.group(1)]
+            le = _TU_SO.get(chu.group(2) or "", None)
+            ra.add(float(f"{ng}.{le}") if le is not None else float(ng))
+    return ra
+
+
+def chan_lai_suat_bia(text: str, tai_lieu: str) -> tuple[str, str | None]:
+    """Câu trả lời nêu một mức phần trăm KHÔNG có trong tài liệu -> con số đó BỊA.
+
+    Vì sao phải chặn bằng code: đo 14-08-2026 sau khi lưới lọc sản phẩm thôi cho
+    mượn tài liệu của sản phẩm khác, mô hình quay sang lấy số TỪ TRÍ NHỚ. Cùng
+    một câu hỏi "lãi suất gửi tiết kiệm bao nhiêu", năm lần hỏi ra năm số khác
+    nhau: 4,2% · 3,8% · 0,7% · 4% · "3.5% đến 4.2%". `knowledge/` không có tài
+    liệu tiết kiệm nào, nên tất cả đều là bịa.
+
+    SO ĐÚNG CON SỐ, không phải "tài liệu có phần trăm hay không". Bản đầu của
+    hàm này chỉ hỏi câu sau, và nó KHÔNG NỔ trên máy thật: `ngu_canh` còn ghép
+    thêm HỒ SƠ KHÁCH (đo được 594 ký tự khi RAG trả rỗng), trong hồ sơ đó có
+    phần trăm của khoản vay khách đang có - thế là lưới tưởng có căn cứ rồi tha
+    cho mức lãi tiết kiệm bịa ra. Lãi vay của khách không chứng minh được gì về
+    lãi tiết kiệm.
+
+    Quy tắc 3 trong `CORE_RULES` đã dặn đúng điều này ("chỉ dùng câu kiểm tra lại
+    khi thật sự KHÔNG tìm thấy"), và bộ dữ liệu train cũng có mẫu KHÔNG BIẾT.
+    Cả hai đều không giữ được. Cùng bài học với việc đọc sai số và với chữ "ạ":
+    prompt không chữa được thì chặn bằng code.
+
+    CHỈ chặn PHẦN TRĂM, không chặn mọi con số. Câu trả lời hợp lệ vẫn đầy số
+    không đến từ tài liệu: nhắc lại số tiền khách vừa nói ("anh vay 100 triệu"),
+    số ngày, số tháng. Phần trăm mới là thứ khách nghe rồi tin ngay và là thứ
+    sai thì nặng nhất.
+
+    Thay CẢ CÂU chứ không xoá mỗi con số: bỏ số thì còn lại "lãi suất tiết kiệm
+    của bên em là ạ" - vừa vô nghĩa vừa vẫn hàm ý có mức lãi.
+
+    Trả (văn bản, mô tả chỗ chặn hoặc None).
+    """
+    if not text:
+        return text, None
+    trong_cau = _tri_phan_tram(text)
+    if not trong_cau:
+        return text, None
+    co_can_cu = _tri_phan_tram(tai_lieu)
+    la_bia = sorted(trong_cau - co_can_cu)
+    if not la_bia:
+        return text, None
+    return CAU_KIEM_TRA_LAI, (
+        "bịa " + ", ".join(f"{v:g}%" for v in la_bia)
+        + (f" (tài liệu chỉ có {', '.join(f'{v:g}%' for v in sorted(co_can_cu))})"
+           if co_can_cu else " (tài liệu không có phần trăm nào)"))
 
 
 def chan_so_sai(text: str, tai_lieu: str) -> tuple[str, str | None]:
@@ -549,6 +794,35 @@ def chan_chu_ngoai(text: str) -> tuple[str, str | None]:
     return text.strip(), dinh
 
 
+# Chữ mô hình VIẾT SAI, sửa trước khi đọc ra.
+#
+# Khác `_SUA_NGHE_NHAM` bên `stt_service`: chỗ kia sửa lời KHÁCH bị nghe nhầm,
+# chỗ này sửa lời MÔ HÌNH viết ra. Người dùng báo Lần 7: "đọc sai 'lương' thì
+# đọc là 'lượng'". Soi lại thì TTS đọc ĐÚNG - chính văn bản đã ghi "chị nhà có
+# lượng thì cho sao kê". Sửa ở TTS là sửa nhầm chỗ.
+#
+# HẸP một cách cố ý, đúng lối `_SUA_NGHE_NHAM`: "lượng" là từ thật và rất hay
+# dùng ("số lượng", "chất lượng", "khối lượng", "định lượng"). Chỉ sửa khi nó
+# đứng sau những từ mà "lượng" không thể đúng - "có lượng", "nhận lượng",
+# "sao kê lượng". Dò gần đúng cả câu thì sớm muộn cũng sửa hỏng câu vốn đúng,
+# mà lỗi đó khó thấy hơn nhiều.
+_SUA_CHU_MO_HINH = [
+    (re.compile(r"\b(có|nhận|trả|hưởng|sao\s+kê|bảng)\s+lượng\b", re.IGNORECASE),
+     r"\1 lương"),
+    # Giữ hoa/thường của chữ gốc: "Lượng tháng" phải ra "Lương tháng", không
+    # phải "lương tháng" - mảnh này có thể đứng đầu câu.
+    (re.compile(r"\blượng(\s+)(tháng|cơ\s+bản|hưu|net|gross)\b", re.IGNORECASE),
+     lambda m: _giu_hoa(m.group(0), "lương") + m.group(1) + m.group(2)),
+]
+
+
+def sua_chu_mo_hinh(text: str) -> str:
+    """Sửa những chữ mô hình hay viết sai. Xem `_SUA_CHU_MO_HINH`."""
+    for mau, dung in _SUA_CHU_MO_HINH:
+        text = mau.sub(dung, text)
+    return text
+
+
 def sua_xung_ho(text: str, goi_khach: str = "anh chị") -> str:
     """Bỏ số thứ tự đầu câu, ép cách AI TỰ XƯNG và cách nó GỌI KHÁCH.
 
@@ -698,6 +972,9 @@ def normalize_for_tts(text: str) -> str:
     """
     if not text:
         return text
+    # Gộp dấu câu lặp NGAY ĐẦU, trước mọi luật khác: "......" chiếm ngân sách
+    # thời lượng của F5 mà không có âm nào - xem `_DAU_LAP_RE`.
+    text = _DAU_LAP_RE.sub(r"\1", text)
     # Đọc số TRƯỚC khi bung viết tắt: bung trước thì "500 triệu" đã thành chữ
     # lẫn lộn, khó bắt lại bằng biểu thức chính quy.
     # Thành ngữ thay TRƯỚC khi đọc số: `doc_so_trong_cau` biến "24" thành chữ
@@ -713,8 +990,43 @@ def normalize_for_tts(text: str) -> str:
     # Xử "/" TRƯỚC khi bung viết tắt: "CMND/CCCD" phải còn nguyên dạng viết tắt
     # thì luật liệt kê mới nhận ra hai vế.
     text = doc_dau_xien(text)
+    # Tên ngân hàng TRƯỚC luật viết tắt chung: phải ăn nguyên cụm "VPBank" khi
+    # chữ "Bank" còn nguyên chữ hoa đầu. Chạy sau `_ACRONYM_RE` thì không sao
+    # (nó vốn không khớp), nhưng chạy sau `.lower()` thì hỏng hẳn.
+    text = _NGAN_HANG_BANK_RE.sub(_doc_ten_ngan_hang, text)
     text = _ACRONYM_RE.sub(_spell_out, text).lower()
-    return _DA_DAU_CAU_RE.sub(r"\1, ", text)
+    if _DA_DA_DAI_RE.match(text):
+        return text
+    return _DA_DAU_CAU_RE.sub(_DA_NOI_DAI, text)
+
+
+# Thiếu dấu kết câu thì F5 CẮT PHỰT âm cuối.
+#
+# Người dùng báo "âm cuối hay bị tắt lịm". Đo được, cùng một câu, biến duy nhất
+# là dấu chấm cuối (`scripts/soi_lan5_ba_loi.py`, 200ms cuối, mỗi ô 5ms):
+#     không dấu cuối   ████████████████████████████████▓▓▓▓▓░░·
+#     có dấu chấm      ███████████████▓█▓▓▓▓▓▓▓▓░░░░░░░░░░·····
+# Không dấu thì 160ms cuối vẫn ở biên độ tối đa rồi tắt phụt; có dấu thì tắt dần
+# đều. F5 dùng dấu câu làm mốc kết thúc phát ngôn, thiếu mốc thì nó hết ngân sách
+# thời lượng giữa chừng.
+#
+# Chỉ mảnh CUỐI của một lượt mới thiếu dấu: bộ cắt mảnh luôn cắt tại dấu kết câu
+# hoặc dấu phẩy, riêng phần dư còn lại khi mô hình ngừng sinh thì không có gì cả.
+# Nên thêm dấu chấm là an toàn - không có mảnh giữa câu nào bị đóng nhầm.
+#
+# ĐẶT NGOÀI `normalize_for_tts` một cách cố ý: hàm đó còn được nhiều nơi dùng để
+# so chữ (bộ chấm điểm, test đánh vần tên ngân hàng), thêm dấu vào đó là đổi hợp
+# đồng của nó và làm hỏng mọi phép so. Chỗ đúng là ranh giới ĐƯA CHỮ VÀO F5 -
+# `tts_service` gọi nó ở cả hai đường sinh (lô và đơn).
+_KET_CAU_RE = re.compile(r"[.!?,;:…]$")
+
+
+def dong_dau_cuoi(text: str) -> str:
+    """Thêm dấu chấm nếu mảnh chưa có dấu kết - cho F5 biết chỗ dừng."""
+    t = text.rstrip()
+    if t and not _KET_CAU_RE.search(t):
+        return t + "."
+    return text
 
 
 # --- bỏ câu lùi thừa ở đầu lượt -----------------------------------------------

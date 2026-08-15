@@ -437,6 +437,10 @@ class PhoneAudioSink:
         if kind == "audio":
             wav = base64.b64decode(msg.get("data", ""))
             if wav:
+                # Mở cửa sổ đếm đói khung: từ mảnh tiếng ĐẦU TIÊN của lượt tới
+                # lúc `turn_complete`. Ngoài cửa sổ đó, hàng đợi rỗng là chuyện
+                # bình thường (đang chờ khách nói) chứ không phải TTS đẻ không kịp.
+                self.bridge._luot_dang_chay = True
                 await self.bridge.play(wav)
             return
 
@@ -450,6 +454,9 @@ class PhoneAudioSink:
             # Tên trường là `full_response`, không phải `text` - lấy nhầm thì
             # giao diện luôn hiện AI chưa nói gì dù nó đã trả lời xong.
             self.last_reply = msg.get("full_response", self.last_reply)
+            # Đóng cửa sổ đếm đói khung. Tiếng còn xếp hàng vẫn phát nốt, nhưng
+            # từ đây TTS không còn nợ gì nên chờ lâu không phải lỗi của nó.
+            self.bridge._luot_dang_chay = False
             logger.info(f"{self.bridge.tag} AI: {self.last_reply[:80]}")
         elif kind == "error":
             self.bridge.last_error = msg.get("message", "lỗi không rõ")
@@ -505,6 +512,20 @@ class PhoneCallBridge:
         self._doi_lan = 0
         self._doi_tong_ms = 0.0
         self._doi_lau_nhat_ms = 0.0
+        # Lượt này còn đang đẻ tiếng không.
+        #
+        # BẮT BUỘC phải có, không thì bộ đếm trên ĐẾM NHẦM: sau khung cuối của
+        # một lượt, cờ "đang giữa câu" vẫn bật (nó chỉ xét `next_at + RESET_GAP`),
+        # nên trọn khoảng chờ tới lượt SAU bị tính thành đói khung. Cuộc gọi thật
+        # 14-08-2026 báo "ĐÓI KHUNG 6 lần, tổng 26213ms, lâu nhất 10630ms" trên
+        # đúng 6 lượt - mỗi lượt một lần, và lần 10630ms rơi ngay sau dòng "bỏ
+        # đoạn 120ms - ngắn hơn MIN_TURN_MS": khách nói hụt, AI không có gì để
+        # đáp, im 10 giây rồi khách nói tiếp. Đó là khoảng nghỉ tự nhiên chứ
+        # không phải đứt giữa câu.
+        #
+        # Con số sai kiểu này đắt: log tự đổ cho `phone_dem_mo_ms` và chỉ người
+        # ta đi chỉnh đệm mồi - một chỗ KHÔNG hỏng.
+        self._luot_dang_chay = False
 
         # Chưa nối máy thì đường xuống chỉ có nhạc chờ / hồi âm chuông. Để
         # pipeline nghe cái đó thì STT phiên âm ra rác và AI trả lời vào hư
@@ -817,7 +838,11 @@ class PhoneCallBridge:
                 # nghĩa là TTS không kịp đẻ ra tiếng - đó chính là chỗ khách
                 # nghe đứt quãng. Không đo thì nó là hộp đen.
                 _t_cho = time.perf_counter()
-                dang_giua_cau = next_at is not None and _t_cho <= next_at + RESET_GAP
+                # `_luot_dang_chay` là điều kiện BẮT BUỘC, không phải cho chặt
+                # thêm: thiếu nó thì khoảng nghỉ giữa hai lượt bị đếm thành đói
+                # khung - xem chú thích chỗ khai báo cờ.
+                dang_giua_cau = (self._luot_dang_chay and next_at is not None
+                                 and _t_cho <= next_at + RESET_GAP)
                 frame = await self._out.get()
                 now = time.perf_counter()
                 _cho_ms = (now - _t_cho) * 1000.0
@@ -1379,9 +1404,14 @@ class PhoneCallManager:
 
         cau = (session.scenario or {}).get("opening_line", "").strip()
         if not cau:
-            cau = (f"Dạ em chào anh chị ạ. Em là {settings.agent_name} bên "
-                   f"{settings.bank_name}, em gọi để giới thiệu chương trình "
-                   f"{session.product} ưu đãi ạ.")
+            # Kịch bản không đặt câu mở đầu -> dựng câu chung, nhưng tên vẫn lấy
+            # từ kịch bản qua `scenarios_db`, KHÔNG đọc thẳng `.env`. Đọc `.env` ở
+            # đây là câu chào xưng một tên còn phần tư vấn phía sau xưng tên khác.
+            from backend.models import scenarios_db
+            cau = (f"Dạ em chào anh chị ạ. "
+                   f"Em là {scenarios_db.ten_nhan_vien(session.scenario)} bên "
+                   f"{scenarios_db.ten_to_chuc(session.scenario)}, "
+                   f"em gọi để giới thiệu chương trình {session.product} ưu đãi ạ.")
         # SINH SẴN NGAY BÂY GIỜ, lúc còn đang đổ chuông. Câu chào là câu cố định,
         # không có lý do gì chờ nối máy mới sinh - đổ chuông thường 5-12 giây,
         # thừa sức che toàn bộ thời gian sinh. Sinh sau khi nối làm khách phải

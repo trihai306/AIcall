@@ -87,7 +87,11 @@ def _cat_manh_nhu_pipeline(text: str) -> list[str]:
     theo SỐ MẢNH ĐÃ GIAO (`co_manh`), nên đưa cả chuỗi sẽ ra kết quả khác với
     lúc LLM nhả token dần - tức lại lệch khỏi đường thật, đúng thứ đang chữa.
     """
-    from backend.pipeline.text_chunker import co_manh, tach_manh
+    from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI,
+                                               co_manh, tach_manh)
+
+    if not text.strip():
+        return []
 
     ra: list[str] = []
     dem = ""
@@ -98,9 +102,20 @@ def _cat_manh_nhu_pipeline(text: str) -> list[str]:
             if m is None:
                 break
             ra.append(m)
-    if dem.strip():
-        ra.append(dem.strip())
-    return ra or [text]
+
+    # ĐUÔI NGẮN gộp vào mảnh trước, không giao riêng - y hệt đoạn xả đệm cuối
+    # lượt của `streaming_pipeline` (chỗ dùng `TOI_THIEU_TU_MANH_CUOI`).
+    #
+    # Thiếu đúng bước này là trang nghe thử cho ra một mảnh cụt mà cuộc gọi thật
+    # không hề có. Mà F5 sinh MỖI mảnh như một phát ngôn trọn vẹn, nên mảnh "Vâng
+    # ạ" một mình nghe tách hẳn khỏi câu nó thuộc về - tức nghe thử xong vẫn
+    # không phải thứ khách nghe, đúng cái lệch mà hàm này sinh ra để xoá.
+    du = dem.strip()
+    if du and ra and len(du.split()) < TOI_THIEU_TU_MANH_CUOI:
+        ra[-1] = f"{ra[-1]} {du}".strip()
+    elif du:
+        ra.append(du)
+    return ra or [text.strip()]
 
 
 async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
@@ -168,9 +183,13 @@ async def test_tts(
     # any live phone line is currently speaking with.
     # Hệ số tốc của đường thoại: nghe thử phải giống hệt lúc gọi thật, không
     # thì chỉnh trên web xong ra cuộc gọi lại khác.
-    toc = app_state.tts.toc_do_cua(voice_name)
-    if qua_dien_thoai:
-        toc *= app_state.tts.he_so_thoai()
+    #
+    # Hệ số này NHÂN VÔ ĐIỀU KIỆN, không còn buộc vào `qua_dien_thoai`. Buộc vào
+    # nhau là lỗi: một cờ điều khiển hai thứ độc lập (nhịp đọc và băng thông),
+    # nên nghe ở 24kHz thì được nhịp 283 âm tiết/phút trong khi cuộc gọi đọc 347
+    # - chậm hơn 28% so với thứ khách thật sự nghe. `qua_dien_thoai` giờ chỉ còn
+    # một nghĩa duy nhất: hạ băng thông xuống 8kHz.
+    toc = app_state.tts.toc_nghe_thu(voice_name)
 
     # ĐI ĐÚNG ĐƯỜNG CUỘC GỌI THẬT: cắt mảnh rồi ghép có chèn nhịp nghỉ.
     #
@@ -228,6 +247,154 @@ async def test_tts(
         # và đó là lúc khách nghe chữ dính vào nhau.
         "so_manh": len(manh),
         "manh": manh,
+    }
+
+
+# ============================================================
+# Bộ 200 câu hội thoại dài để test
+# ============================================================
+#
+# PHẢI khai TRƯỚC các route `/{voice_name}` bên dưới. FastAPI khớp theo thứ tự
+# đăng ký, nên `/bo-test` đặt sau `/{voice_name}` là bị nuốt thành tên giọng.
+# Cùng họ với bẫy đã gặp: `calls.py` có `@router.get("/voices")` che mất
+# `/api/voices` của chính file này.
+
+BO_TEST_PATH = Path("data/bo_test_200_cau.json")
+
+# Tiểu từ lễ phép. Mảnh NGẮN kết bằng chúng là chỗ khách nghe "ạ" tách rời -
+# xem `TIEU_TU_CUOI_VE` bên text_chunker.
+_TIEU_TU = {"ạ", "nhé", "nha", "nhá", "nhỉ", "à", "ấy"}
+_TRAN_MANH_XAU = 6
+
+
+def _doc_bo_test() -> dict:
+    import json
+    if not BO_TEST_PATH.exists():
+        return {}
+    return json.loads(BO_TEST_PATH.read_text(encoding="utf-8"))
+
+
+def _manh_xau(manh: list[str]) -> list[str]:
+    """Mảnh ngắn kết bằng tiểu từ - dấu hiệu 'ạ' bị tách thành phát ngôn riêng."""
+    ra = []
+    for m in manh:
+        tu = m.rstrip(".,!?… ").split()
+        if tu and tu[-1].lower() in _TIEU_TU and len(tu) <= _TRAN_MANH_XAU:
+            ra.append(m)
+    return ra
+
+
+def _quang_lang(pcm, sr=24000, nguong_db=-42.0, toi_thieu_ms=120):
+    """Quãng lặng NGHE RA ĐƯỢC (>=120ms), bỏ qua rìa đầu file."""
+    import numpy as np
+
+    x = pcm.astype("float32") / 32768.0
+    win = int(sr * 0.01)
+    n = len(x) // win
+    if n == 0:
+        return []
+    e = np.sqrt(np.array([np.mean(x[i*win:(i+1)*win] ** 2) for i in range(n)]))
+    db = 20 * np.log10(np.maximum(e, 1e-9))
+    im = db < nguong_db
+    ra, i = [], 0
+    while i < n:
+        if im[i]:
+            j = i
+            while j < n and im[j]:
+                j += 1
+            if (j - i) * 10 >= toi_thieu_ms and i > 3:
+                ra.append({"tai_ms": i * 10, "dai_ms": (j - i) * 10})
+            i = j
+        else:
+            i += 1
+    return ra
+
+
+@router.get("/bo-test")
+async def xem_bo_test(nhom: str = ""):
+    """Trả bộ câu test. `nhom` để lọc theo nhóm bẫy."""
+    bo = _doc_bo_test()
+    if not bo:
+        return {"error": f"Không tìm thấy {BO_TEST_PATH}. Cần đẩy file bộ câu sang máy này."}
+    cau = bo.get("cau", [])
+    if nhom:
+        cau = [c for c in cau if c.get("nhom") == nhom]
+    return {"nhom": bo.get("nhom", {}), "so_cau": len(cau), "cau": cau}
+
+
+@router.post("/bo-test/chay")
+async def chay_bo_test(
+    voice_name: str = Form("default"),
+    nhom: str = Form(""),
+    gioi_han: int = Form(20),
+    qua_dien_thoai: bool = Form(False),
+):
+    """Chạy bộ câu qua ĐÚNG đường xuất voice rồi trả BÁO CÁO ĐO, không trả audio.
+
+    Vì sao mặc định `gioi_han` 20 chứ không phải cả 200: mỗi câu tốn ~2 giây trên
+    GPU, cả bộ là 6-8 phút - quá lâu cho một request HTTP, trình duyệt sẽ tự
+    ngắt. Muốn chạy trọn bộ thì dùng `scripts/do_bo_test.py`, nó chạy ngoài
+    request nên không bị giới hạn.
+
+    Không trả audio: 200 câu base64 là hàng chục MB, đủ làm treo trang.
+    """
+    from backend.main import app_state
+
+    if not app_state.tts._is_loaded:
+        return {"error": "TTS chưa được tải."}
+
+    import time
+
+    import numpy as np
+
+    bo = _doc_bo_test()
+    if not bo:
+        return {"error": f"Không tìm thấy {BO_TEST_PATH}."}
+    cau = bo.get("cau", [])
+    if nhom:
+        cau = [c for c in cau if c.get("nhom") == nhom]
+    if gioi_han > 0:
+        cau = cau[:gioi_han]
+
+    toc = app_state.tts.toc_do_cua(voice_name)
+    if qua_dien_thoai:
+        toc *= app_state.tts.he_so_thoai()
+
+    chi_tiet = []
+    t0 = time.perf_counter()
+    for c in cau:
+        manh = _cat_manh_nhu_pipeline(c["text"])
+        try:
+            wav = await _ghep_nhu_pipeline(app_state.tts, manh, voice_name, toc, False)
+        except Exception as e:                       # một câu hỏng không được giết cả lô
+            chi_tiet.append({"id": c["id"], "nhom": c.get("nhom"), "loi": str(e)})
+            continue
+        pcm = np.frombuffer(wav[44:], dtype=np.int16)
+        chi_tiet.append({
+            "id": c["id"],
+            "nhom": c.get("nhom"),
+            "text": c["text"],
+            "manh": manh,
+            "so_manh": len(manh),
+            "tong_ms": round(len(pcm) / 24000 * 1000),
+            "lang": _quang_lang(pcm),
+            "manh_xau": _manh_xau(manh),
+        })
+
+    ok = [r for r in chi_tiet if "loi" not in r]
+    return {
+        "voice": voice_name,
+        "nhom": nhom or "tất cả",
+        "da_chay": len(chi_tiet),
+        "elapsed_ms": round((time.perf_counter() - t0) * 1000),
+        "tong_ket": {
+            "cau_co_manh_xau": sum(1 for r in ok if r["manh_xau"]),
+            "so_manh_xau": sum(len(r["manh_xau"]) for r in ok),
+            "tong_manh": sum(r["so_manh"] for r in ok),
+            "tong_quang_lang": sum(len(r["lang"]) for r in ok),
+            "loi": len(chi_tiet) - len(ok),
+        },
+        "chi_tiet": chi_tiet,
     }
 
 

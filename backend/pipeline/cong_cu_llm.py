@@ -117,7 +117,7 @@ async def _tra_thong_tin_san_pham(session, rag=None, san_pham: str = "",
     try:
         # Neo theo sản phẩm ĐANG TƯ VẤN chứ không theo tham số mô hình đưa: mô
         # hình nghe nhầm "tín chấp" thành "tín dụng" là RAG lạc sang tài liệu
-        # khác, và đó đúng là lỗi đã phải chữa bằng `_loc_theo_san_pham`.
+        # khác, và đó đúng là lỗi đã phải chữa bằng `_mat_na_loc`.
         van = await rag.retrieve(truy_van, top_k=3,
                                  san_pham=getattr(session, "product", "") or san_pham)
     except Exception as e:

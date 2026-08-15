@@ -7,6 +7,7 @@ import time
 from fastapi import WebSocket
 
 from backend.config import settings
+from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.pipeline import cong_cu_llm
@@ -15,7 +16,8 @@ from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             nhip_nghi_sau, tach_manh)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
-                                              chan_chu_ngoai, chan_so_sai,
+                                              chan_chu_ngoai, chan_lai_suat_bia,
+                                              chan_so_sai, sua_chu_mo_hinh,
                                               chan_tien_sai, sua_xung_ho)
 from backend.services.audio_utils import chen_lang_dau_wav
 from backend.services.stt_service import STTService
@@ -61,7 +63,7 @@ def _ghep_uu_tien(du_lieu_cong_cu: str, ngu_canh: str) -> str:
     Xếp trước thôi là KHÔNG ĐỦ - đã đo: khách hỏi "anh còn nợ bao nhiêu", hồ sơ
     ghi dư nợ 142.500.000 mà mô hình trả lời "vay tối đa 500 triệu" (hạn mức
     trong tài liệu sản phẩm). Cùng loại lỗi hai-con-số-cạnh-tranh đã phải chữa
-    ở `_loc_theo_san_pham`: hai số cùng đơn vị tiền trong ngữ cảnh là mô hình
+    ở `_mat_na_loc`: hai số cùng đơn vị tiền trong ngữ cảnh là mô hình
     chọn bừa.
 
     Dùng CHUNG cho cả đường chính lẫn đường nghĩ-sẵn. Hai chỗ dựng ngữ cảnh khác
@@ -780,15 +782,27 @@ class StreamingPipeline:
                                {"full_response": "", "metrics": {"bi_cat_loi": True}})
         return True
 
-    async def process_text_turn(self, text: str, session: CallSession, ws: WebSocket):
-        """Text-only turn (skip STT)."""
+    async def process_text_turn(self, text: str, session: CallSession, ws: WebSocket,
+                                soi: bool = False):
+        """Text-only turn (skip STT).
+
+        `soi=True` là chế độ SOI của trang Nhắn tin: đi trọn vòng nghiệp vụ như
+        thường (lượt thường gặp, tra hồ sơ, RAG, LLM, lưới chặn số) nhưng bỏ câu
+        đệm và bỏ sinh tiếng, đồng thời ghi thêm dấu vết chẩn đoán vào `metrics`.
+        Mặc định `False` để đường thoại và trang Hội thoại không đổi hành vi.
+        """
         t_start = time.perf_counter()
         metrics = {"stt_ms": 0, "la_thoai": False}
 
         # Đường chat trước đây KHÔNG có filler: khách gõ xong bấm gửi rồi ngồi im
         # 1.2-1.4 giây (đo thật) mới nghe tiếng, trong khi gọi điện thì nghe ngay.
         # Cùng một pipeline, chỉ thiếu đúng dòng này.
-        await self._send_filler(ws, session, t_start, metrics, la_thoai=False)
+        #
+        # Chế độ soi bỏ câu đệm: nó chỉ có nghĩa khi khách đang CHỜ TIẾNG. Soi thì
+        # không phát tiếng, câu đệm chỉ tổ chen một dòng lạ vào giữa hội thoại và
+        # tốn một lần đọc kho filler.
+        if not soi:
+            await self._send_filler(ws, session, t_start, metrics, la_thoai=False)
 
         if session.cau_bi_cat:
             truoc = session.cau_bi_cat
@@ -799,10 +813,14 @@ class StreamingPipeline:
         session.add_turn("user", text)
         await self._send_event(ws, "transcript", {"text": text, "latency_ms": 0})
 
-        await self._generate_response(text, session, ws, t_start, metrics)
+        await self._generate_response(text, session, ws, t_start, metrics, soi=soi)
 
-    async def _generate_response(self, user_text: str, session: CallSession, ws: WebSocket, t_start: float, metrics: dict):
-        """Shared logic: RAG -> LLM streaming -> optional TTS."""
+    async def _generate_response(self, user_text: str, session: CallSession, ws: WebSocket,
+                                 t_start: float, metrics: dict, soi: bool = False):
+        """Shared logic: RAG -> LLM streaming -> optional TTS.
+
+        `soi=True`: xem `process_text_turn`. Chỉ đường chữ dùng tới.
+        """
         # Chụp lại bản đoán RỒI dọn ngay: dọn muộn thì đoạn LLM bên dưới đọc phải
         # ô đã bị xoá, còn dọn thiếu thì lượt sau dùng nhầm bản nghĩ của lượt này.
         spec_transcript = session.spec_transcript
@@ -813,8 +831,14 @@ class StreamingPipeline:
         # Lượt thường gặp (chào máy, "ai đấy", "đang bận", từ chối...) trả lời
         # bằng bảng có sẵn, KHÔNG qua mô hình - đo được mô hình đóng khuôn
         # 5/10 lượt loại này. Xem `luot_thuong_gap` cho số liệu và lý do.
+        # Tên tổ chức/nhân viên lấy từ KỊCH BẢN của phiên, không phải `.env`.
+        # Đường LLM đã đọc từ kịch bản (`llm_service.build_system_prompt`), nên
+        # để chỗ này đọc `.env` là hai đường xưng tên KHÁC NHAU trong cùng một
+        # cuộc: câu chào sẵn nói một tên, câu do mô hình sinh nói tên khác.
         dap_san = tra_loi_san(
-            user_text, bank=settings.bank_name, agent=settings.agent_name,
+            user_text,
+            bank=scenarios_db.ten_to_chuc(session.scenario),
+            agent=scenarios_db.ten_nhan_vien(session.scenario),
             product=session.product, luot_thu=session.turn_count)
         if dap_san:
             metrics["luot_thuong_gap"] = dap_san[0]
@@ -868,10 +892,20 @@ class StreamingPipeline:
                     spec_transcript[:40], user_text[:40],
                 )
             try:
+                truy_van = self._truy_van_rag(user_text, session)
                 with Timer("RAG") as t_rag:
-                    rag_context = await self.rag.retrieve(
-                        self._truy_van_rag(user_text, session), top_k=2,
-                        san_pham=session.product)
+                    if soi:
+                        # Giữ luôn điểm khớp, nguồn và mảnh bị lọc để trang Nhắn
+                        # tin chỉ ra được VÌ SAO câu trả lời ra như vậy. Truy vấn
+                        # cũng ghi lại: nó đã được neo theo sản phẩm nên khác câu
+                        # khách gõ, mà lệch neo là một nguồn lỗi thật.
+                        rag_context, metrics["rag_nguon"] = \
+                            await self.rag.retrieve_chi_tiet(
+                                truy_van, top_k=2, san_pham=session.product)
+                        metrics["rag_truy_van"] = truy_van
+                    else:
+                        rag_context = await self.rag.retrieve(
+                            truy_van, top_k=2, san_pham=session.product)
                 metrics["rag_ms"] = round(t_rag.elapsed_ms)
             except Exception as e:
                 logger.warning(f"RAG error: {e}")
@@ -1019,7 +1053,14 @@ class StreamingPipeline:
                         dan.append((t_chu, t_nghi))
 
                 t_synth = time.perf_counter()
-                if len(dan) > 1:
+                if soi:
+                    # Chế độ soi: KHÔNG sinh tiếng. Vẫn đi trọn vòng cắt mảnh và
+                    # vẫn gửi `response_chunk` bên dưới, nên chữ hiện ra đúng
+                    # từng mảnh y như đường thoại - chỉ bỏ đúng phần chiếm GPU.
+                    # `tieng = None` nên các nhánh `if tieng` tự bỏ qua, không
+                    # phải rắc thêm điều kiện xuống dưới.
+                    song = [None] * len(dan)
+                elif len(dan) > 1:
                     song = await self._try_synthesize_lo(
                         [d[0] for d in dan], voice=session.voice_name, session=session)
                 else:
@@ -1089,6 +1130,8 @@ class StreamingPipeline:
                 )
             nguon_token = self.llm.stream_response(session.history, system_prompt)
 
+        da_chan_bia = False
+
         def _chan_so(doan: str) -> str:
             """Chặn số sai TRƯỚC khi đưa sang TTS - đây là tầng cuối còn sửa được.
 
@@ -1101,6 +1144,23 @@ class StreamingPipeline:
             # lưới coi dư nợ thật (142.500.000) là số bịa và thay bằng số lớn
             # nhất trong tài liệu sản phẩm (500 triệu) - tự tay tạo ra đúng cái
             # lỗi nó sinh ra để chặn.
+            # Hàng rào ĐẦU: tài liệu không có phần trăm nào mà câu lại nêu ->
+            # con số đó lấy từ TRÍ NHỚ mô hình, không phải từ tài liệu. Phải
+            # đứng trước `chan_so_sai` vì hàm đó chỉ sửa khi tài liệu CÓ số.
+            #
+            # Thay CẢ MẢNH được vì mảnh cắt theo NGUYÊN CÂU (`CAT_THEO_CAU`),
+            # nên câu thay vào vẫn đúng ngữ pháp. Chỉ thay MỘT lần mỗi lượt:
+            # hai câu cùng nêu phần trăm mà thay cả hai thì khách nghe "em xin
+            # phép kiểm tra lại" hai lần liền.
+            nonlocal da_chan_bia
+            if not da_chan_bia:
+                ra, sua_bia = chan_lai_suat_bia(doan, ngu_canh)
+                if sua_bia:
+                    da_chan_bia = True
+                    logger.warning("CHẶN LÃI SUẤT BỊA: %s | %r -> %r",
+                                   sua_bia, doan[:60], ra[:60])
+                    metrics["chan_lai_suat_bia"] = sua_bia
+                    return ra
             ra, sua = chan_so_sai(doan, ngu_canh)
             if sua:
                 logger.warning("CHẶN SỐ SAI: %s | %r -> %r", sua, doan[:50], ra[:50])
@@ -1156,7 +1216,7 @@ class StreamingPipeline:
                 logger.warning("Model để lọt chữ nước ngoài %r - đã bỏ. "
                                "Lọt nhiều thì model đang trượt khỏi tiếng Việt.", lot)
             return bot_lich_su(_chan_so(bo_cau_lui_thua(
-                sua_xung_ho(doan, goi_khach=_goi_khach))))
+                sua_chu_mo_hinh(sua_xung_ho(doan, goi_khach=_goi_khach)))))
 
         t_llm = time.perf_counter()
         n_tokens = 0
@@ -1295,6 +1355,12 @@ class StreamingPipeline:
             # câu đệm hỏng, và đó đúng là thứ đã làm mất một buổi truy lỗi.
             logger.info("Bỏ câu đệm (%s) -> khách chờ %sms, ngắn nên nghe tự nhiên",
                         metrics["filler_bo_qua"], metrics.get("ttfa_ms", "-"))
+        elif soi:
+            # Chế độ soi không sinh tiếng, nên "khách chờ im lặng" ở nhánh dưới
+            # là vô nghĩa: không có khách và không có tiếng nào để chờ. Để nó rơi
+            # xuống đó là dựng lại ĐÚNG cái log gây hiểu nhầm mà chú thích ngay
+            # trên vừa nói đã tốn một buổi truy lỗi.
+            logger.info("Chế độ soi: không câu đệm, không sinh tiếng (đúng thiết kế)")
         else:
             # Tới đây mới THẬT SỰ là không tìm được câu đệm nào - khách phải chờ
             # im lặng hết TTFA. `pick_filler` đã ghi log chi tiết vì sao trượt.
@@ -1303,8 +1369,12 @@ class StreamingPipeline:
                 session.voice_name, metrics.get("ttfa_ms", "-"),
             )
         logger.info(
-            "Turn complete: TTFA=%sms Total=%dms | %d token, %d mảnh TTS",
+            "Turn complete%s: TTFA=%sms Total=%dms | %d token, %d mảnh%s",
+            " (soi)" if soi else "",
             metrics.get("ttfa_ms", "-"), metrics["total_ms"], n_tokens, chunks_enqueued,
+            # "mảnh TTS" khi KHÔNG gọi TTS là đọc log ra kết luận sai. Mảnh vẫn
+            # được cắt như thường, chỉ không ai sinh tiếng cho nó.
+            " (đã cắt, không sinh tiếng)" if soi else " TTS",
         )
 
     async def _send_audio(self, ws: WebSocket, wav_bytes: bytes, chunk_id: int = 0,
