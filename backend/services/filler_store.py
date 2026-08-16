@@ -52,7 +52,12 @@ class Kho:
 #            nguyên trên đĩa (log: "42 đọc từ đĩa, 0 dựng mới") còn câu trả lời
 #            thật đọc theo cách mới - khách nghe hai nhịp nối liền nhau ngay đầu
 #            mỗi lượt, và không có gì báo lỗi.
-PHIEN_BAN = 6
+#   6 -> 7 : LÀM SẠCH tệp wav của đoạn mẫu `giong_heu` (2026-08-16). Vân tay
+#            KHÔNG tính nội dung tệp wav - chỉ tính text/giọng/nfe/speed/ref_text
+#            - nên thay clip mà không tăng số này thì câu đệm cũ nằm nguyên trên
+#            đĩa với giọng THỀU THÀO cũ, nối thẳng vào câu trả lời giọng mới.
+#            Khách nghe hai chất giọng liền nhau ngay đầu mỗi lượt.
+PHIEN_BAN = 7
 
 
 def van_tay(text: str, giong: str, nfe: int, speed: float, ref_text: str) -> str:
