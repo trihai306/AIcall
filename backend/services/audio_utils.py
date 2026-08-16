@@ -149,3 +149,26 @@ def noi_wav(cac_wav: list[bytes]) -> bytes:
     rong = struct.unpack("<H", dau[34:36])[0] // 8
     return pcm_to_wav(b"".join(cac_pcm), sample_rate=sr,
                       channels=kenh, sample_width=rong)
+
+
+def dai_wav_ms(wav_bytes: bytes) -> float:
+    """Thời lượng một WAV, tính bằng mili-giây. 0 nếu không đọc được.
+
+    Dùng để biết đã gửi cho khách bao nhiêu tiếng, từ đó tính DƯ ĐỊA PHÁT -
+    phần tiếng đã gửi mà khách chưa nghe tới. Vòng tiêu thụ dựa vào con số này
+    để quyết định có được chờ gom thêm mảnh hay không.
+
+    Dò khối "data" chứ không giả định header 44 byte, giống `chen_lang_dau_wav`.
+    """
+    if len(wav_bytes) < 44 or wav_bytes[:4] != b"RIFF":
+        return 0.0
+    i = wav_bytes.find(b"data", 12)
+    if i < 0:
+        return 0.0
+    sr = struct.unpack("<I", wav_bytes[24:28])[0]
+    kenh = struct.unpack("<H", wav_bytes[22:24])[0]
+    rong = struct.unpack("<H", wav_bytes[34:36])[0] // 8
+    nhip = sr * kenh * rong
+    if nhip <= 0:
+        return 0.0
+    return len(wav_bytes[i + 8:]) / nhip * 1000.0

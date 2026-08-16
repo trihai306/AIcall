@@ -14,13 +14,13 @@ from backend.pipeline import cong_cu_llm
 from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
-                                            nhip_nghi_sau, noi_lo,
-                                            sap_cum_gop, tach_manh)
+                                            cho_gom_ms, nhip_nghi_sau, noi_lo,
+                                            sap_cum_gop, tach_manh, uoc_sinh_ms)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_lai_suat_bia,
                                               chan_so_sai, sua_chu_mo_hinh,
                                               chan_tien_sai, sua_xung_ho)
-from backend.services.audio_utils import chen_lang_dau_wav
+from backend.services.audio_utils import chen_lang_dau_wav, dai_wav_ms
 from backend.services.stt_service import STTService
 from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
@@ -992,6 +992,12 @@ class StreamingPipeline:
         async def tts_consumer():
             idx = 0
             first_audio_sent = False
+            # DƯ ĐỊA PHÁT: tiếng đã gửi trừ đi thời gian đã trôi kể từ mảnh
+            # tiếng đầu. Đây là thứ duy nhất cho phép chờ gom mảnh mà không
+            # tạo quãng im. Câu đệm KHÔNG tính vào đây (nó gửi ở chỗ khác) -
+            # thiếu đi thì chỉ khiến ta dè dặt hơn thực tế, hướng an toàn.
+            da_gui_ms = 0.0
+            t_am_dau = None
             nghi_ms = 0.0        # nhịp nghỉ nợ từ mảnh TRƯỚC, trả vào đầu mảnh này
             while True:
                 goi = await tts_queue.get()
@@ -1048,7 +1054,30 @@ class StreamingPipeline:
                 if settings.f5tts_gop_manh and not GOP_LO and idx > 0:
                     cho = []
                     het_luot = False
-                    while True:
+                    # CHỜ CÓ ĐIỀU KIỆN. Không chờ thì gộp chỉ ăn được 25% chỗ
+                    # nối (đo 16-08): lúc lấy mảnh 2 thì LLM chưa sinh xong mảnh
+                    # 3, hàng đợi rỗng, không có gì để gộp.
+                    #
+                    # Chỉ chờ trong phần DƯ ĐỊA đã đo được, và đã trừ cả thời
+                    # gian sinh sắp tới - xem `cho_gom_ms`. Hết dư địa thì chờ
+                    # 0ms, tức quay về đúng hành vi cũ. Không bao giờ được đổi
+                    # chữ ngân lấy quãng im.
+                    if t_am_dau is not None:
+                        du_dia = da_gui_ms - (time.perf_counter() - t_am_dau) * 1000
+                        doi = cho_gom_ms(du_dia, uoc_sinh_ms(chunk_text))
+                        if doi > 0:
+                            try:
+                                them = await asyncio.wait_for(tts_queue.get(),
+                                                              timeout=doi / 1000.0)
+                            except asyncio.TimeoutError:
+                                them = ...              # không có gì thêm
+                            if them is None:
+                                het_luot = True
+                            elif them is not ...:
+                                cho.append(them)
+                    # Từ đây tới lúc trả lại hàng đợi KHÔNG được có `await` nào,
+                    # nếu không thứ tự mảnh sẽ loạn.
+                    while not het_luot:
                         try:
                             them = tts_queue.get_nowait()
                         except asyncio.QueueEmpty:
@@ -1141,6 +1170,9 @@ class StreamingPipeline:
                     if tieng:
                         await self._send_audio(ws, tieng, chunk_id=idx,
                                                turn_id=session.turn_id)
+                        if t_am_dau is None:
+                            t_am_dau = time.perf_counter()
+                        da_gui_ms += dai_wav_ms(tieng)
                     await self._send_event(ws, "response_chunk",
                                            {"text": t_chu, "chunk_id": idx})
                     idx += 1

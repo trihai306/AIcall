@@ -844,3 +844,44 @@ def sap_cum_gop(dau: tuple[str, float], cho: list, het_luot: bool):
     if het_luot:
         tra_lai.append(None)
     return dan, tra_lai
+
+
+# --- Chờ gom thêm mảnh ----------------------------------------------------
+#
+# Gộp mảnh chỉ ăn được 25% chỗ nối trên cuộc gọi thật (4/16 chỗ, đo 16-08): lúc
+# vòng tiêu thụ lấy mảnh 2 thì LLM chưa sinh xong mảnh 3. Hai mảnh liên tiếp
+# cách nhau 521-1377ms, còn hàng đợi thì rỗng.
+#
+# Chờ thêm thì gom được nhiều hơn, nhưng chờ là ăn vào DƯ ĐỊA PHÁT - phần tiếng
+# đã gửi mà khách chưa nghe tới. Hết dư địa là khách nghe quãng im, tức đổi một
+# lỗi nhỏ (chữ ngân) lấy một lỗi to hơn hẳn.
+#
+# Đo dư địa trên cuộc gọi thật lúc sinh mảnh 2: 1070-2165ms, thấp nhất 515ms.
+# Nên phải tính chứ không được chờ cứng một con số.
+
+# Trần chờ. Dư địa 8 giây cũng không chờ quá mức này: chờ lâu là kéo dài lượt
+# nói của bot, mà khách đang đợi câu trả lời.
+TRAN_CHO_MS = 600.0
+
+# Chừa cho dao động: mạng, GPU bận vì lượt đoán trước, ghi đĩa.
+JITTER_MS = 250.0
+
+# Ước tốc độ sinh. Đo thật: ~1420ms cho lượt ~32 âm tiết (~6,5s tiếng), tức
+# ~44ms mỗi âm tiết trên RTX 5070 với nfe=16.
+MS_MOI_AM_TIET = 45.0
+
+
+def uoc_sinh_ms(text: str) -> float:
+    """Ước thời gian F5 sinh xong đoạn này."""
+    from backend.services.tts_service import so_am_tiet   # nhập muộn: tránh vòng
+    return so_am_tiet(text or "") * MS_MOI_AM_TIET
+
+
+def cho_gom_ms(du_dia_ms: float, uoc_sinh: float) -> float:
+    """Được phép chờ bao lâu để gom thêm mảnh. 0 nghĩa là sinh ngay.
+
+    Trừ CẢ thời gian sinh sắp tới: chờ hết dư địa rồi mới sinh thì đúng lúc
+    sinh xong khách đã nghe hết tiếng cũ.
+    """
+    con = du_dia_ms - uoc_sinh - JITTER_MS
+    return max(0.0, min(TRAN_CHO_MS, con))
