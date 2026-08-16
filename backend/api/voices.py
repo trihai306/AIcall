@@ -128,7 +128,9 @@ async def _sinh_co_bu_duoi(tts, chu: str, voice_name: str, toc: float,
 
 async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
                              toc: float, fast: bool, bu_duoi: bool = False,
-                             nen_duoi: bool = False) -> bytes:
+                             nen_duoi: bool = False,
+                             gop_sau: bool = False,
+                             gop_phay: bool = False) -> bytes:
     """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
 
     Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
@@ -145,6 +147,30 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
     from backend.services.nen_duoi_manh import nen_duoi as _nen
 
     SR = 24000
+    # GỘP mọi mảnh SAU mảnh đầu thành một. Chỉ mảnh ĐẦU tính vào thời gian khách
+    # chờ; mảnh sau sinh trong lúc mảnh trước đang phát, nên to lên gần như miễn
+    # phí. Mỗi mảnh đẻ ~1 chữ ngân ở đuôi, nên ít mảnh là ít chỗ ngân.
+    #
+    # ĐÁNH ĐỔI: gộp rồi thì `nhip_nghi_sau` không còn chỗ để chèn quãng nghỉ,
+    # phải trông vào quãng nghỉ F5 TỰ tạo - mà F5 gần như LỜ dấu phẩy (đo 0/6).
+    if gop_sau and len(manh) > 2:
+        manh = [manh[0], " ".join(manh[1:])]
+    # GỘP CHỖ PHẨY. Nhắm đúng chỗ hỏng thay vì gộp mù:
+    #
+    #   - ranh giới ở dấu CHẤM  -> âm cuối dài ra là ĐÚNG, người thật cũng vậy.
+    #     Giữ nguyên mảnh riêng để còn quãng nghỉ hết câu.
+    #   - ranh giới ở dấu PHẨY  -> chỗ dài ra rơi vào GIỮA câu, nghe như "ngân".
+    #     Gộp lại cho F5 đọc liền.
+    #
+    # KHÔNG đụng vào mảnh ĐẦU: chỉ nó tính vào thời gian khách chờ.
+    elif gop_phay and len(manh) > 2:
+        ra = [manh[0]]
+        for m in manh[1:]:
+            if len(ra) > 1 and ra[-1].rstrip().endswith(","):
+                ra[-1] = ra[-1].rstrip() + " " + m
+            else:
+                ra.append(m)
+        manh = ra
     khuc: list[np.ndarray] = []
     nghi_ms = 0.0
     for i, m in enumerate(manh):
@@ -173,6 +199,8 @@ async def test_tts(
     qua_dien_thoai: bool = Form(False),
     bu_duoi: bool = Form(False),
     nen_duoi: bool = Form(False),
+    gop_sau: bool = Form(False),
+    gop_phay: bool = Form(False),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
@@ -229,7 +257,7 @@ async def test_tts(
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
         wav_bytes = await _ghep_nhu_pipeline(
             app_state.tts, manh, voice_name, toc, fast, bu_duoi=bu_duoi,
-            nen_duoi=nen_duoi,
+            nen_duoi=nen_duoi, gop_sau=gop_sau, gop_phay=gop_phay,
         )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
