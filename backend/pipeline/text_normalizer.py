@@ -976,6 +976,30 @@ _NGAY_NGAN_RE = re.compile(
     r"\b(ngày|hạn|đến|từ|tới)\s+(\d{1,2})\s*/\s*(\d{1,2})\b(?!\s*/)", re.I)
 
 
+# "tháng 10/2023" - dạng THÁNG/NĂM, không có ngày. Không bắt riêng thì nó rơi
+# vào nhánh liệt kê và thành "tháng mười HOẶC 2023".
+_THANG_NAM_RE = re.compile(r"\btháng\s*(\d{1,2})\s*/\s*(\d{4})\b", re.I)
+
+
+# CHỮ DÍNH SỐ. LLM hay nhả "thu nhập15 triệu", "tối đa là10 tỷ", "cần từ22 - 60".
+#
+# Bộ đọc số cần chữ số đứng RIÊNG mới nhận ra, nên dính chữ là cả cụm rơi nguyên
+# chữ số xuống F5: khách nghe sai, và `so_am_tiet` ước 1,5 âm tiết/chữ số nên
+# `thoi_luong_ep` cấp sai thời lượng -> mảnh đó lệch nhịp hẳn (xem
+# `tests/test_doc_ngay_thang.py` để biết cơ chế).
+#
+# CHỈ tách khi chữ trước là chữ THƯỜNG. Chữ hoa thì để yên: "F5", "M4" là tên
+# riêng/mã, tách ra thành "f 5" là đọc sai hẳn.
+_CHU_DINH_SO_RE = re.compile(r"(?<=[a-zà-ỹ])(?=\d)")
+
+# "200.000đ" - "đ" viết tắt của "đồng". Bộ đọc số dừng ở "200.000" rồi để lại
+# ".000đ", nên phải bung TRƯỚC khi đọc số.
+#
+# Bắt buộc có CHỮ SỐ ngay trước: "đ" đứng một mình là chữ thường ("anh đưa", "đi
+# ạ"), đổi bừa thành "đồng" là hỏng câu.
+_DONG_VIET_TAT_RE = re.compile(r"(?<=\d)\s*đ(?![a-zà-ỹ])", re.I)
+
+
 def _hop_le(ngay: int, thang: int) -> bool:
     return 1 <= ngay <= 31 and 1 <= thang <= 12
 
@@ -994,12 +1018,26 @@ def _doc_ngay_ngan(m: re.Match) -> str:
     return f"{dan} {d} tháng {t}"
 
 
+def _doc_thang_nam(m: re.Match) -> str:
+    t, n = int(m.group(1)), m.group(2)
+    if not 1 <= t <= 12:
+        return m.group(0)
+    return f"tháng {t} năm {n}"
+
+
 def doc_ngay_thang(text: str) -> str:
     """Đổi "15/09/2026" -> "15 tháng 9 năm 2026" để bộ đọc số lo phần còn lại."""
     if "/" not in text:
         return text
     text = _NGAY_DU_RE.sub(_doc_ngay_du, text)
+    text = _THANG_NAM_RE.sub(_doc_thang_nam, text)
     return _NGAY_NGAN_RE.sub(_doc_ngay_ngan, text)
+
+
+def tach_chu_dinh_so(text: str) -> str:
+    """Tách chữ dính số và bung "đ" thành "đồng". Phải chạy TRƯỚC mọi luật số."""
+    text = _CHU_DINH_SO_RE.sub(" ", text)
+    return _DONG_VIET_TAT_RE.sub(" đồng", text)
 
 
 def doc_dau_xien(text: str) -> str:
@@ -1026,6 +1064,11 @@ def normalize_for_tts(text: str) -> str:
     # Gộp dấu câu lặp NGAY ĐẦU, trước mọi luật khác: "......" chiếm ngân sách
     # thời lượng của F5 mà không có âm nào - xem `_DAU_LAP_RE`.
     text = _DAU_LAP_RE.sub(r"\1", text)
+    # Tách chữ dính số và bung "đ" -> "đồng" TRƯỚC mọi luật số: bộ đọc số cần
+    # chữ số đứng riêng, còn "200.000đ" thì nó đọc được "200.000" rồi bỏ lại
+    # ".000đ". Cũng phải trước `_KHOANG_GACH_RE` để "từ22 - 60" kịp thành
+    # "từ 22 - 60" mà luật khoảng nhận ra.
+    text = tach_chu_dinh_so(text)
     # Đọc số TRƯỚC khi bung viết tắt: bung trước thì "500 triệu" đã thành chữ
     # lẫn lộn, khó bắt lại bằng biểu thức chính quy.
     # Thành ngữ thay TRƯỚC khi đọc số: `doc_so_trong_cau` biến "24" thành chữ
