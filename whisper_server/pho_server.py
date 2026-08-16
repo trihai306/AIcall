@@ -76,6 +76,7 @@ async def inference(
     language: str = Form("vi"),
     response_format: str = Form("json"),
     temperature: str = Form("0"),
+    word_timestamps: str = Form("0"),
 ):
     """whisper.cpp-compatible inference endpoint."""
     if model is None:
@@ -89,18 +90,19 @@ async def inference(
     # stall every other in-flight request. Two concurrent phone lines would
     # then serialize on the socket, not just on the model.
     text, doan = await asyncio.to_thread(
-        _transcribe_sync, audio_bytes, language, float(temperature or 0)
+        _transcribe_sync, audio_bytes, language, float(temperature or 0),
+        str(word_timestamps).lower() in ("1", "true", "yes"),
     )
 
     elapsed_ms = (time.perf_counter() - t0) * 1000
     logger.info(f"STT {elapsed_ms:.0f}ms: '{text[:60]}'")
-    if response_format == "verbose_json":
+    if response_format == "verbose_json" or any("words" in d for d in doan):
         return {"text": text, "segments": doan}
     return {"text": text}
 
 
 def _transcribe_sync(audio_bytes: bytes, language: str,
-                     temperature: float) -> tuple[str, list[dict]]:
+                     temperature: float, moc_chu: bool = False) -> tuple[str, list[dict]]:
     """Trả (văn bản, danh sách đoạn kèm chỉ số tin cậy).
 
     Phải trả cả `no_speech_prob` và `avg_logprob`: Whisper BỊA CHỮ khi đầu vào
@@ -129,12 +131,25 @@ def _transcribe_sync(audio_bytes: bytes, language: str,
         log_prob_threshold=-1.0,
         compression_ratio_threshold=2.4,
         condition_on_previous_text=False,
-        without_timestamps=True,
+        # MỐC TỪNG CHỮ chỉ bật khi được hỏi. Nó buộc `without_timestamps=False`
+        # và chạy thêm một lượt căn chữ, nên chậm hơn - đường thoại KHÔNG dùng.
+        # Chỗ dùng nó là đường XUẤT FILE: ở đó không có ràng buộc thời gian, và
+        # cần biết CHÍNH XÁC chữ nào bắt đầu ở giây nào để cắt mẩu bù đuôi (xem
+        # `cat_mau_bu` trong backend/api/voices.py).
+        word_timestamps=moc_chu,
+        without_timestamps=not moc_chu,
     )
-    doan = [{"text": seg.text.strip(),
+    doan = []
+    for seg in segments:
+        d = {"text": seg.text.strip(),
              "no_speech_prob": float(getattr(seg, "no_speech_prob", 0.0) or 0.0),
              "avg_logprob": float(getattr(seg, "avg_logprob", 0.0) or 0.0)}
-            for seg in segments]
+        if moc_chu:
+            d["words"] = [{"word": w.word.strip(),
+                           "start": float(w.start),
+                           "end": float(w.end)}
+                          for w in (getattr(seg, "words", None) or [])]
+        doan.append(d)
     return " ".join(d["text"] for d in doan).strip(), doan
 
 

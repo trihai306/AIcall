@@ -359,6 +359,30 @@ class STTService:
     # CER 0.86 một cách vô lý: hai lần gọi liên tiếp trên cùng câu, lần sau bị
     # chặn. `avg_logprob` vốn đã tách sạch nhiễu khỏi giọng thật nên không cần.
 
+    async def moc_tung_chu(self, wav: bytes) -> list[dict]:
+        """Phiên âm KÈM mốc thời gian từng chữ. Trả danh sách đoạn có khoá `words`.
+
+        Chỉ dùng cho đường XUẤT FILE: bật mốc chữ buộc faster-whisper chạy thêm
+        một lượt căn chữ nên chậm hơn hẳn, mà đường thoại thì có trần TTFA.
+        Chỗ dùng: cắt mẩu bù đuôi (xem `backend/services/bu_duoi.py`).
+
+        KHÔNG mồi từ vựng: mồi kéo bộ giải mã về phía văn bản ngân hàng, mà mẩu
+        bù ("Tạm biệt") nằm ngoài miền đó - mồi vào là dễ nghe chệch đúng chữ ta
+        cần tìm.
+        """
+        response = await self.client.post(
+            f"{self.base_url}/inference",
+            files={"file": ("audio.wav", wav, "audio/wav")},
+            data={
+                "language": "vi",
+                "response_format": "verbose_json",
+                "temperature": "0",
+                "word_timestamps": "1",
+            },
+        )
+        response.raise_for_status()
+        return response.json().get("segments") or []
+
     async def _goi_whisper(self, wav: bytes, moi: str) -> tuple[str, float, float] | None:
         """Một lần gọi máy chủ. Trả (chữ, no_speech, logprob) hoặc None nếu lỗi."""
         response = await self.client.post(

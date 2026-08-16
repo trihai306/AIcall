@@ -94,8 +94,40 @@ def _cat_manh_nhu_pipeline(text: str) -> list[str]:
     return chia_ca_luot(text)
 
 
+async def _sinh_co_bu_duoi(tts, chu: str, voice_name: str, toc: float,
+                           fast: bool):
+    """Sinh một mảnh, cho F5 ngân vào MẨU BÙ rồi cắt mẩu đó đi.
+
+    Xem `backend/services/bu_duoi.py` để biết vì sao cần và vì sao phải cắt bằng
+    mốc từng chữ. Tốn thêm một lượt STT mỗi mảnh nên CHỈ dùng ở đường xuất.
+
+    Hỏng ở bất kỳ khâu nào (STT chết, không thấy mẩu bù, mốc vô lý) thì lùi về
+    bản sinh THƯỜNG - đường xuất không được vì một tính năng làm đẹp mà trả về
+    tiếng cụt.
+    """
+    import numpy as np
+
+    from backend.main import app_state
+    from backend.services import bu_duoi as B
+
+    b = await tts.synthesize(chu + B.MAU_BU, voice=voice_name, use_cache=False,
+                             speed=toc, fast=fast)
+    pcm = np.frombuffer(b[44:], dtype=np.int16)
+    try:
+        doan = await app_state.stt.moc_tung_chu(b)
+        moc = B.tim_moc_cat(doan)
+    except Exception as e:
+        logger.warning("bù đuôi: không lấy được mốc chữ (%s) — dùng bản thường", e)
+        moc = None
+    if moc is None:
+        return np.frombuffer(
+            (await tts.synthesize(chu, voice=voice_name, use_cache=False,
+                                  speed=toc, fast=fast))[44:], dtype=np.int16)
+    return B.cat_theo_moc(pcm, 24000, moc)
+
+
 async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
-                             toc: float, fast: bool) -> bytes:
+                             toc: float, fast: bool, bu_duoi: bool = False) -> bytes:
     """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
 
     Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
@@ -114,9 +146,12 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
     khuc: list[np.ndarray] = []
     nghi_ms = 0.0
     for i, m in enumerate(manh):
-        b = await tts.synthesize(m, voice=voice_name, use_cache=False,
-                                 speed=toc, fast=(fast and i == 0))
-        pcm = np.frombuffer(b[44:], dtype=np.int16)
+        if bu_duoi:
+            pcm = await _sinh_co_bu_duoi(tts, m, voice_name, toc, fast and i == 0)
+        else:
+            b = await tts.synthesize(m, voice=voice_name, use_cache=False,
+                                     speed=toc, fast=(fast and i == 0))
+            pcm = np.frombuffer(b[44:], dtype=np.int16)
         if nghi_ms > 0:
             khuc.append(np.zeros(int(SR * nghi_ms / 1000), dtype=np.int16))
         khuc.append(pcm)
@@ -130,6 +165,7 @@ async def test_tts(
     voice_name: str = Form("default"),
     fast: bool = Form(False),
     qua_dien_thoai: bool = Form(False),
+    bu_duoi: bool = Form(False),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
@@ -185,7 +221,7 @@ async def test_tts(
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
         wav_bytes = await _ghep_nhu_pipeline(
-            app_state.tts, manh, voice_name, toc, fast
+            app_state.tts, manh, voice_name, toc, fast, bu_duoi=bu_duoi
         )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
