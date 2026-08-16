@@ -127,7 +127,8 @@ async def _sinh_co_bu_duoi(tts, chu: str, voice_name: str, toc: float,
 
 
 async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
-                             toc: float, fast: bool, bu_duoi: bool = False) -> bytes:
+                             toc: float, fast: bool, bu_duoi: bool = False,
+                             nen_duoi: bool = False) -> bytes:
     """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
 
     Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
@@ -141,6 +142,7 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
 
     from backend.pipeline.text_chunker import nhip_nghi_sau
     from backend.services.audio_utils import pcm_to_wav
+    from backend.services.nen_duoi_manh import nen_duoi as _nen
 
     SR = 24000
     khuc: list[np.ndarray] = []
@@ -152,6 +154,10 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
             b = await tts.synthesize(m, voice=voice_name, use_cache=False,
                                      speed=toc, fast=(fast and i == 0))
             pcm = np.frombuffer(b[44:], dtype=np.int16)
+        # Nén phần ngân ở đuôi - CHỈ cho mảnh không phải mảnh cuối. Mảnh cuối
+        # kéo dài là kết câu THẬT, nghe tự nhiên; đụng vào là làm hỏng.
+        if nen_duoi and i < len(manh) - 1:
+            pcm = _nen(pcm, SR)
         if nghi_ms > 0:
             khuc.append(np.zeros(int(SR * nghi_ms / 1000), dtype=np.int16))
         khuc.append(pcm)
@@ -166,6 +172,7 @@ async def test_tts(
     fast: bool = Form(False),
     qua_dien_thoai: bool = Form(False),
     bu_duoi: bool = Form(False),
+    nen_duoi: bool = Form(False),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
@@ -221,7 +228,8 @@ async def test_tts(
         # use_cache=False: đo thời gian tổng hợp thật. Nếu để cache, lần thứ hai
         # cùng câu + cùng giọng sẽ báo 0ms và bảng so sánh A/B thành vô nghĩa.
         wav_bytes = await _ghep_nhu_pipeline(
-            app_state.tts, manh, voice_name, toc, fast, bu_duoi=bu_duoi
+            app_state.tts, manh, voice_name, toc, fast, bu_duoi=bu_duoi,
+            nen_duoi=nen_duoi,
         )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")
