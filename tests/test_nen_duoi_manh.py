@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pytest
 
-from backend.services.nen_duoi_manh import (BOT_TOI_DA_MS, CHUYEN_TIEP_MS,
-                                            GIU_CUOI_MS, TOI_THIEU_MS, nen_duoi)
+from backend.services.nen_duoi_manh import (CHUYEN_TIEP_MS, GIU_CUOI_MS,
+                                            NGUONG_NGAN_MS, TI_LE_NEN, nen_duoi)
 
 SR = 24000
 
@@ -34,20 +34,35 @@ def test_duoi_NGAN_thi_giu_nguyen():
     assert len(nen_duoi(x, SR)) == len(x)
 
 
+def test_GIU_NGUYEN_CAO_DO_vi_thanh_dieu():
+    """Thanh điệu tiếng Việt nằm ở cao độ - nén KHÔNG được làm đổi cao độ.
+
+    Bản đầu cắt-và-nối làm "nhé" thành "nha" (sắc -> ngang), tức đổi nghĩa chữ.
+    """
+    x = np.concatenate([tieng(400), lang(80), tieng(600)])
+    ra = nen_duoi(x, SR)
+    n = int(SR * 0.25)
+    def tan_so(y):
+        y = y.astype(np.float64)
+        ph = np.abs(np.fft.rfft(y * np.hanning(len(y))))
+        return np.fft.rfftfreq(len(y), 1 / SR)[np.argmax(ph)]
+    assert abs(tan_so(ra[-n:]) - tan_so(x[-n:])) < 15, "cao độ bị đổi -> đổi thanh điệu"
+
+
 def test_duoi_DAI_thi_bi_nen():
     x = np.concatenate([tieng(400), lang(80), tieng(600)])
     ra = nen_duoi(x, SR)
     assert len(ra) < len(x), "đuôi 600ms mà không nén gì"
     bot_ms = (len(x) - len(ra)) / SR * 1000
-    assert 50 < bot_ms <= BOT_TOI_DA_MS + 1, f"cắt {bot_ms:.0f}ms — ngoài dự kiến"
+    assert 50 < bot_ms < 400, f"rút {bot_ms:.0f}ms — ngoài dự kiến"
 
 
-def test_khong_cat_qua_TOI_THIEU():
-    """Sau khi nén, đuôi vẫn phải dài hơn ngưỡng - không được bóp thành cụt."""
+def test_khong_bop_qua_ti_le_da_chot():
+    """Chỉ được rút đúng theo TI_LE_NEN, không hơn."""
     x = np.concatenate([tieng(400), lang(80), tieng(700)])
     ra = nen_duoi(x, SR)
-    con_lai = 700 - (len(x) - len(ra)) / SR * 1000
-    assert con_lai >= TOI_THIEU_MS * 0.6, f"đuôi còn {con_lai:.0f}ms — quá cụt"
+    rut = (len(x) - len(ra)) / SR * 1000
+    assert rut <= 700 * (1 - TI_LE_NEN) + 60, f"rút {rut:.0f}ms — quá tay"
 
 
 def test_giu_doan_TAT_DAN_cuoi():
