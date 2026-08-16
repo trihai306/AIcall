@@ -75,6 +75,18 @@ class Settings(BaseSettings):
     # không âm thầm đổi giọng. Khoá bằng `tests/test_cfg_va_sway.py`.
     f5tts_cfg_strength: float = 2.0
     f5tts_sway_sampling_coef: float = -1.0
+    # Gộp các mảnh đang xếp hàng thành MỘT phát ngôn thay vì sinh từng mảnh.
+    #
+    # F5 kéo dài âm tiết cuối mỗi mảnh; ở giữa câu thì nghe như "ngân dài". Gộp
+    # lại thì chỗ nối biến mất. Đo trên 12 lượt thật: chữ ngân 447 -> 332ms
+    # (-26%), đổi lại tổng quãng nghỉ 629 -> 316ms (-50%).
+    #
+    # Bên A đã nghe hai bộ 100 câu (bản thường và bản gộp) và chọn bản GỘP
+    # ngày 16-08-2026. Chi tiết và các hướng ĐÃ LOẠI: xem `text_chunker.py`
+    # phần `TRAN_AM_TIET_GOP`.
+    #
+    # Chỉ áp dụng từ mảnh THỨ HAI trở đi - mảnh đầu nằm trên đường găng TTFA.
+    f5tts_gop_manh: bool = True
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08

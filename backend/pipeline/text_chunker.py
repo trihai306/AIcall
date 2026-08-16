@@ -750,3 +750,97 @@ def chia_ca_luot(text: str) -> list[str]:
     elif du:
         ra.append(du)
     return ra or [text.strip()]
+
+
+# --- Gộp nhiều mảnh thành MỘT phát ngôn -----------------------------------
+#
+# VÌ SAO. F5 sinh mỗi mảnh như một phát ngôn trọn vẹn nên nó kéo dài âm tiết
+# cuối mảnh. Ở cuối CÂU thì đúng - người thật cũng vậy. Ở GIỮA câu thì khách
+# nghe ra: *"lâu lâu có chữ nó đọc kiểu ạ nhưng chữ ngân dài"*.
+#
+# Đo trên 12 lượt thật (đã gạt chữ ma của PhoWhisper trước khi tính, xem
+# `bu_duoi.py` và sổ tay - không gạt thì trung vị tụt và số liệu sai 15 lần):
+#
+#                     từng mảnh   gộp lại
+#     chữ ngân            447ms     332ms   (-26%)
+#     tổng quãng nghỉ     629ms     316ms   (-50%)
+#     WER                 1,07%     1,23%
+#
+# Đánh đổi đã rõ và bên A đã nghe cả hai bộ 100 câu rồi chọn bản GỘP.
+#
+# ĐÃ LOẠI, đừng đi lại: nâng ngưỡng tách ở dấu phẩy (đổi 1-1, bớt 12 mảnh thì
+# mất đúng 12 quãng nghỉ, mà 171/212 mảnh vốn sinh từ ranh giới CÂU chứ không
+# phải phẩy); bù thêm chữ vào đuôi rồi cắt (`bu_duoi.py`, làm TỆ HƠN); nén đuôi
+# bằng kéo giãn (`nen_duoi_manh.py`, chỉ được -14%).
+
+# Trần âm tiết cho MỘT phát ngôn gộp.
+#
+# Không phải trần chất lượng mà là trần ĐỘ TRỄ: gộp càng to thì sinh càng lâu,
+# mà tiếng của mảnh trước vẫn đang phát và có thể hết trước. Ước từ số đo thật:
+# sinh ~1420ms cho ~6,5s tiếng, tức ~0,22 lần thời gian thực; 32 âm tiết ≈ 6,5s
+# tiếng ≈ 1,4s sinh - vừa đủ lọt trong lúc mảnh trước đang phát.
+#
+# Lượt trả lời trung bình của bot là ~32 âm tiết, nên trần này gộp trọn phần
+# đuôi của hầu hết các lượt mà không phải chờ gì thêm.
+TRAN_AM_TIET_GOP = 32
+
+
+def noi_lo(manh: list[str]) -> str:
+    """Nối nhiều mảnh thành một chuỗi để giao cho F5 sinh MỘT lần.
+
+    Chỉ nối, KHÔNG tự thêm dấu câu: dấu quyết định ngữ điệu và nhịp nghỉ của
+    F5, tự chèn vào là đổi cách đọc của bên A mà không ai yêu cầu.
+    """
+    return " ".join(m.strip() for m in manh if m and m.strip())
+
+
+def gom_thanh_mot_luot(manh: list[str]) -> int:
+    """Lấy được bao nhiêu mảnh đầu danh sách để gộp thành một phát ngôn.
+
+    Luôn trả về ít nhất 1 khi có mảnh - trả 0 là bỏ rơi mảnh đó và khách mất
+    hẳn đoạn tiếng ấy.
+    """
+    if not manh:
+        return 0
+    from backend.services.tts_service import so_am_tiet   # nhập muộn: tránh vòng
+
+    n = 0
+    tong = 0
+    for m in manh:
+        it = so_am_tiet(m or "")
+        if n and tong + it > TRAN_AM_TIET_GOP:
+            break
+        n += 1
+        tong += it
+    return max(1, n)
+
+
+def sap_cum_gop(dau: tuple[str, float], cho: list, het_luot: bool):
+    """Xếp cụm mảnh để gộp thành một phát ngôn, và phần phải trả lại hàng đợi.
+
+    `dau` là mảnh vừa lấy ra, `cho` là những mảnh vét thêm được, `het_luot` cho
+    biết có gặp tín hiệu kết thúc trong lúc vét hay không.
+
+    Trả về `(dan, tra_lai)`:
+      - `dan`     cụm sẽ nối thành MỘT phát ngôn (ít nhất một mảnh)
+      - `tra_lai` đẩy lại hàng đợi theo ĐÚNG thứ tự này, `None` (nếu có) nằm
+        cuối cùng
+
+    Tách riêng khỏi vòng tiêu thụ vì đây là chỗ dễ mất tiếng nhất: `asyncio.Queue`
+    chỉ đẩy vào CUỐI, nên trả tín hiệu hết lượt trước phần dư sẽ làm vòng tiêu
+    thụ dừng sớm và khách mất trắng đuôi lượt.
+    """
+    def co_chu(t) -> bool:
+        return bool(t) and any(c.isalnum() for c in t)
+
+    thuc = [(t, n) for t, n in cho if co_chu(t)]
+    # Mảnh rỗng (thường là đúng một dấu chấm) không có chữ để nối, nhưng nhịp
+    # nghỉ của nó phải chuyển sang mảnh đầu - bỏ luôn là mảnh sau mất chỗ ngắt.
+    nghi_rong = max([n for t, n in cho if not co_chu(t)] or [0.0])
+
+    lay = gom_thanh_mot_luot([dau[0]] + [t for t, _ in thuc])
+    dan = [(dau[0], max(dau[1], nghi_rong))] + thuc[:lay - 1]
+    tra_lai = list(thuc[lay - 1:])
+    if het_luot:
+        tra_lai.append(None)
+    return dan, tra_lai

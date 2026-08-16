@@ -14,7 +14,8 @@ from backend.pipeline import cong_cu_llm
 from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
-                                            nhip_nghi_sau, tach_manh)
+                                            nhip_nghi_sau, noi_lo,
+                                            sap_cum_gop, tach_manh)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_lai_suat_bia,
                                               chan_so_sai, sua_chu_mo_hinh,
@@ -1035,6 +1036,36 @@ class StreamingPipeline:
                 # giữ nguyên số THÔ của từng mảnh, việc cộng dồn để vòng phát ở
                 # dưới lo - đúng y hệt thứ tự của đường một mảnh.
                 dan = [(chunk_text, 0.0)]
+                # GỘP THÀNH MỘT PHÁT NGÔN. Khác hẳn `GOP_LO` ngay dưới: chỗ kia
+                # gom để chạy lô cho nhanh GPU nhưng vẫn sinh N phát ngôn RỜI,
+                # nên chỗ nối - và chữ ngân ở đó - vẫn còn nguyên. Chỗ này nối
+                # chữ lại rồi sinh MỘT lần, chỗ nối biến mất thật.
+                #
+                # Vét CƠ HỘI, không chờ: chỉ lấy mảnh ĐÃ nằm sẵn trong hàng đợi.
+                # Chờ cho LLM sinh nốt để gộp được nhiều hơn là đổi độ trễ lấy
+                # ngữ điệu - sai hướng, và khách nghe ra quãng im ngay.
+                gop_mot = False
+                if settings.f5tts_gop_manh and not GOP_LO and idx > 0:
+                    cho = []
+                    het_luot = False
+                    while True:
+                        try:
+                            them = tts_queue.get_nowait()
+                        except asyncio.QueueEmpty:
+                            break
+                        if them is None:                  # tín hiệu hết lượt
+                            het_luot = True
+                            break
+                        cho.append(them)
+                    # Thứ tự chỉ đúng nhờ hai điều: hàng đợi vừa bị vét sạch, và
+                    # từ lúc vét tới lúc trả KHÔNG có `await` nào nên không
+                    # coroutine nào chen được vào giữa. Việc xếp cụm và xếp thứ
+                    # tự trả lại nằm trong `sap_cum_gop`, có test riêng
+                    # (`tests/test_sap_cum_gop.py`) vì sai ở đây là mất tiếng.
+                    dan, tra_lai = sap_cum_gop((chunk_text, 0.0), cho, het_luot)
+                    for goi_du in tra_lai:
+                        tts_queue.put_nowait(goi_du)
+                    gop_mot = len(dan) > 1
                 if GOP_LO and idx > 0:
                     while len(dan) < LO_TOI_DA:
                         try:
@@ -1060,6 +1091,22 @@ class StreamingPipeline:
                     # `tieng = None` nên các nhánh `if tieng` tự bỏ qua, không
                     # phải rắc thêm điều kiện xuống dưới.
                     song = [None] * len(dan)
+                elif gop_mot:
+                    # MỘT lần sinh cho cả cụm - đó chính là chỗ chữ ngân biến
+                    # mất. Tiếng đi kèm mảnh đầu; các mảnh sau vẫn được gửi
+                    # `response_chunk` để chữ hiện đúng như cũ, chỉ không có
+                    # tiếng riêng.
+                    mot = noi_lo([d[0] for d in dan])
+                    tieng_gop = await self._try_synthesize(
+                        mot, voice=session.voice_name, session=session)
+                    if tieng_gop is None:
+                        # Đường lùi: gộp hỏng thì sinh từng mảnh như cũ, thà
+                        # còn chữ ngân hơn là khách nghe im cả cụm.
+                        logger.warning("gộp mảnh hỏng - lùi về sinh từng mảnh")
+                        song = [await self._try_synthesize(
+                            d[0], voice=session.voice_name, session=session) for d in dan]
+                    else:
+                        song = [tieng_gop] + [None] * (len(dan) - 1)
                 elif len(dan) > 1:
                     song = await self._try_synthesize_lo(
                         [d[0] for d in dan], voice=session.voice_name, session=session)
