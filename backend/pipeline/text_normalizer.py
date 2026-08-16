@@ -951,6 +951,57 @@ _XIEN_CHUNG_RE = re.compile(r"(?<=\w)\s*/\s*(?=\w)")
 _XIEN_THANH_NGU = {"24/7": "hai mươi tư trên bảy"}
 
 
+# NGÀY THÁNG. Phải bắt TRƯỚC `doc_so_trong_cau` và trước mọi luật dấu "/".
+#
+# Không có luật này thì "15/09/2026" rơi vào nhánh liệt kê của `doc_dau_xien` và
+# thành "mười lăm HOẶC 09 HOẶC 2026" - khách nghe một câu vô nghĩa đúng chỗ nói
+# về hạn trả nợ. Trên 1385 lời AI phân biệt trong `conversation_turns`, 45 câu
+# (3,2%) dính, gần như toàn bộ là ngày tháng.
+#
+# Nó còn kéo theo LỆCH NHỊP, và đó mới là thứ người dùng nghe ra trước ("đọc lúc
+# nhanh lúc chậm"): chuỗi "09 hoặc 2026" còn nguyên chữ số, mà `so_am_tiet` ước
+# 1,5 âm tiết cho mỗi chữ số nên ước THỪA 64%. `thoi_luong_ep` cấp dư 64% thời
+# lượng cho mảnh đó, và F5 tiêu chỗ thừa bằng cách đọc chậm hẳn lại:
+#     "Em vẫn nghe anh chị ạ."            319 âm tiết/phút
+#     "…đến hạn ngày 02/09/2026 ạ."       146      <- chậm hơn một nửa
+#
+# Đổi thành dạng CHỮ "15 tháng 9 năm 2026" rồi để `doc_so_trong_cau` đọc số -
+# không tự đọc số ở đây, tránh đẻ ra một bộ đọc số thứ hai lệch với bộ đang có.
+#
+# Bỏ số 0 dẫn đầu: "09" mà để nguyên thì đọc thành "không chín".
+_NGAY_DU_RE = re.compile(r"\b(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})\b")
+# Không có năm thì PHẢI có từ dẫn ("ngày 2/9"), không thì "1/2" trong "một nửa"
+# hay tỉ số cũng bị đọc thành ngày.
+_NGAY_NGAN_RE = re.compile(
+    r"\b(ngày|hạn|đến|từ|tới)\s+(\d{1,2})\s*/\s*(\d{1,2})\b(?!\s*/)", re.I)
+
+
+def _hop_le(ngay: int, thang: int) -> bool:
+    return 1 <= ngay <= 31 and 1 <= thang <= 12
+
+
+def _doc_ngay_du(m: re.Match) -> str:
+    d, t, n = int(m.group(1)), int(m.group(2)), m.group(3)
+    if not _hop_le(d, t):
+        return m.group(0)          # không phải ngày -> để nguyên cho luật khác
+    return f"{d} tháng {t} năm {n}"
+
+
+def _doc_ngay_ngan(m: re.Match) -> str:
+    dan, d, t = m.group(1), int(m.group(2)), int(m.group(3))
+    if not _hop_le(d, t):
+        return m.group(0)
+    return f"{dan} {d} tháng {t}"
+
+
+def doc_ngay_thang(text: str) -> str:
+    """Đổi "15/09/2026" -> "15 tháng 9 năm 2026" để bộ đọc số lo phần còn lại."""
+    if "/" not in text:
+        return text
+    text = _NGAY_DU_RE.sub(_doc_ngay_du, text)
+    return _NGAY_NGAN_RE.sub(_doc_ngay_ngan, text)
+
+
 def doc_dau_xien(text: str) -> str:
     """Đổi "/" thành chữ đọc được, theo đúng nghĩa của từng dạng."""
     if "/" not in text:
@@ -986,6 +1037,10 @@ def normalize_for_tts(text: str) -> str:
     # Không bỏ hẳn dấu gạch: "hai mươi hai-sáu mươi tuổi" đọc lên nghe dính,
     # phải thành "từ hai mươi hai ĐẾN sáu mươi tuổi".
     text = _KHOANG_GACH_RE.sub(r"\1 đến \2", text)
+    # Ngày tháng TRƯỚC khi đọc số: sau `doc_so_trong_cau` thì "15" đã thành chữ
+    # và không còn dạng d/m/y để nhận ra nữa. Cũng phải trước `doc_dau_xien`,
+    # không thì dấu "/" đã thành " hoặc ".
+    text = doc_ngay_thang(text)
     text = doc_so_trong_cau(text)
     # Xử "/" TRƯỚC khi bung viết tắt: "CMND/CCCD" phải còn nguyên dạng viết tắt
     # thì luật liệt kê mới nhận ra hai vế.
