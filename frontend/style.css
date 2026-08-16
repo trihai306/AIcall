@@ -436,3 +436,131 @@ select.status-select {
    tự nạp và ghi đè đúng một luật, ít rủi ro hơn đảo thứ tự file.
    --------------------------------------------------------------------------- */
 .hidden { display: none !important; }
+
+/* ===========================================================================
+   ĐIỆN THOẠI  (≤ 767px)
+
+   Giao diện vốn dựng cho màn hình rộng: sidebar 220px + nội dung + panel chỉ
+   số 260px, tất cả đều `shrink-0`. Trên máy 375px thì sidebar chiếm gần 60%
+   bề ngang, nội dung còn ~155px nên chữ xuống dòng từng từ một và các thẻ
+   tràn hẳn ra ngoài mép phải.
+
+   VÌ SAO VIẾT Ở ĐÂY, KHÔNG RẮC `md:` VÀO HTML:
+
+   1. `tailwind.css` là bản BUILD SẴN để chạy offline. Thêm lớp mới vào HTML
+      thì phải chạy lại `npx tailwindcss` - mà chính config đã cảnh báo build
+      thiếu là vỡ đúng những trang mới. Đổi ở đây thì không phải build lại.
+   2. Có chỗ đặt STYLE NỘI TUYẾN (`.stat-strip` mang
+      `style="grid-template-columns:repeat(5,1fr)"`). Lớp Tailwind KHÔNG đè
+      được style nội tuyến; media query có `!important` thì được.
+   3. File này đã có sẵn media query cho bảng (1400/1280/1150px), nên đây là
+      chỗ quen thuộc của việc co giãn theo bề ngang.
+
+   Mốc 767px = ngay dưới `md` của Tailwind, để sau này có trộn lớp `md:` vào
+   thì hai bên vẫn khớp mốc, không so le nhau 1px.
+   =========================================================================== */
+
+/* Thanh trên cùng: CHỈ có trên điện thoại. Đặt mặc định ẩn ở ngoài media
+   query để trên máy tính không bao giờ thấy, kể cả khi CSS tải dở. */
+.mobile-topbar { display: none; }
+.drawer-backdrop { display: none; }
+
+@media (max-width: 767px) {
+
+  /* Không cho cuộn ngang: mọi thứ tràn phải tự xử trong khung của nó. */
+  body { overflow-x: hidden; }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;          /* body là flex - phải thoát khỏi dòng chảy,
+                                 không thì nó thành một cột flex nữa */
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    z-index: 60;
+    padding: 0 14px;
+    background: #0a0e17;
+    border-bottom: 1px solid #1e293b;
+  }
+  .mobile-topbar .ham {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px; height: 38px;   /* ≥38px: ngón tay bấm được */
+    margin-left: -6px;
+    border: none;
+    background: transparent;
+    color: #cbd5e1;
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  .mobile-topbar .ham:active { background: rgba(30, 41, 59, 0.8); }
+  .mobile-topbar .ten { font-size: 14px; font-weight: 700; color: #fff; }
+
+  /* Sidebar thành NGĂN KÉO trượt từ trái. */
+  .sidebar {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    z-index: 70;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+  }
+  body.drawer-open .sidebar { transform: translateX(0); }
+
+  body.drawer-open .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  /* Chừa chỗ cho thanh trên. `main` đang `overflow-hidden` nên padding ở đây
+     là cách duy nhất không đụng vào cấu trúc flex. */
+  main { padding-top: 52px; }
+
+  /* Panel chỉ số bên phải trang Hội thoại rộng 260px - trên màn 375px thì
+     không còn chỗ cho nội dung chính. Ẩn đi; số liệu vẫn xem được trên máy
+     tính. */
+  main aside { display: none; }
+
+  /* Lưới nhiều cột xếp thành một cột. Chỉ nhắm các lưới TỪ 2 CỘT trở lên,
+     không đụng `.grid` một cột. */
+  .grid-cols-2, .grid-cols-3, .grid-cols-4,
+  .grid-cols-5, .grid-cols-6 { grid-template-columns: 1fr !important; }
+
+  /* Dải thống kê: giữ 2 cột cho đỡ dài, và phải `!important` vì số cột đặt
+     bằng style nội tuyến ngay trên thẻ. */
+  .stat-strip { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* --- Hai lưới đặt SỐ ĐO CỨNG, không khớp `.grid-cols-N` ở trên ---------- */
+
+  /* Trang Kịch bản: cột trái 320px + phần còn lại. Xếp dọc là đúng ý đồ -
+     danh sách lên trên, nội dung xuống dưới. */
+  [class*="grid-cols-[320px"] { grid-template-columns: 1fr !important; }
+
+  /* Trang Phiên gọi: lưới 7 cột cố định (~660px) dùng chung cho cả dòng tiêu
+     đề lẫn từng dòng dữ liệu (index.html:608 và app.js:2777).
+     KHÔNG xếp dọc: bỏ cột đi thì mỗi phiên thành 7 dòng KHÔNG CÓ NHÃN, đọc
+     không ra gì. Cho cuộn ngang - đúng cách 4 bảng còn lại đang làm.
+     Khung bao đang để `overflow-hidden` nên phải mở ra, nếu không nội dung bị
+     CẮT chứ không phải cuộn. */
+  div:has(> #sessionList) { overflow-x: auto !important; }
+  [class*="grid-cols-[90px"] { min-width: 660px; }
+
+  /* Lề rộng của bản máy tính ăn mất quá nhiều bề ngang. */
+  .p-6 { padding: 14px !important; }
+  .p-5 { padding: 13px !important; }
+  .gap-6 { gap: 14px !important; }
+
+  /* Nút to hơn cho vừa đầu ngón tay. */
+  .btn { padding: 9px 14px; font-size: 12px; }
+  .nav-btn { padding: 11px 12px; font-size: 14px; }
+
+  /* Bảng: đã có `.overflow-x-auto` bọc ngoài nên cuộn ngang được. Bỏ nốt các
+     cột phụ để phần quan trọng (tên, số điện thoại, thao tác) hiện trước. */
+  .data-table .col-when,
+  .data-table .col-product,
+  .data-table .col-campaign { display: none; }
+}
