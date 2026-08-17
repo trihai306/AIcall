@@ -1061,6 +1061,42 @@
             <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Câu hay đọc vấp — bấm để thử</div>
             <div id="vtestPresets" class="flex flex-wrap gap-2"></div>
           </div>
+
+          <!-- Bộ 200 câu hội thoại dài.
+               DỰNG LẠI 17-08-2026: khối này từng bị ghi đè mất khi đẩy nhầm
+               index.html từ máy khác sang. Phần chạy (napBoTest / layCauBoTest /
+               chayBoTest trong app.js) và hai endpoint /api/voices/bo-test vẫn
+               còn nguyên - chỉ mất khung. Bố cục dưới đây dựng theo đúng những
+               gì app.js đọc/ghi, nên có thể khác bản gốc về hình thức. -->
+          <div class="mt-4 pt-4 border-t border-slate-750">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[10px] text-gray-500 uppercase tracking-wider">Bộ câu kiểm thử — bấm một nhóm để lấy câu</div>
+              <span id="boTestGhiChu" class="text-[10px] text-gray-600 font-mono"></span>
+            </div>
+            <div id="boTestNhom" class="flex flex-wrap gap-2">
+              <span class="text-[11px] text-gray-600">Đang nạp bộ câu…</span>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-end gap-2">
+              <div>
+                <label class="fld">Nhóm để chạy cả bộ</label>
+                <select id="boTestNhomChay" class="inp" style="min-width:150px">
+                  <option value="">Tất cả các nhóm</option>
+                </select>
+              </div>
+              <div>
+                <label class="fld">Số câu tối đa</label>
+                <select id="boTestGioiHan" class="inp" style="min-width:96px">
+                  <option value="10">10 câu</option>
+                  <option value="25">25 câu</option>
+                  <option value="50">50 câu</option>
+                  <option value="200">Cả bộ</option>
+                </select>
+              </div>
+              <button id="boTestChayBtn" onclick="chayBoTest()" class="btn btn-soft">Chạy bộ câu</button>
+            </div>
+            <div id="boTestKetQua" class="hidden mt-3 text-[11px] leading-relaxed"></div>
+          </div>
         </div>
 
         <!-- So sánh A/B -->
@@ -1357,6 +1393,16 @@
             </div>
             <div id="datasetList" class="space-y-2">
               <div class="text-xs text-gray-600 text-center py-8">Đang tải...</div>
+            </div>
+            <!-- DỰNG LẠI 17-08-2026 cùng lý do với khối Bộ câu bên trang Test
+                 giọng. `loadDatasets()` trong app.js đổ danh sách vào đây; thiếu
+                 thẻ này thì nó vẫn chạy (có chốt `if (select)`) nhưng người dùng
+                 không có chỗ chọn dataset để train. -->
+            <div class="mt-3 pt-3 border-t border-slate-750">
+              <label class="fld">Dataset dùng để train</label>
+              <select id="trainDataset" class="inp">
+                <option value="">-- Chưa có dataset --</option>
+              </select>
             </div>
           </div>
         </div>
