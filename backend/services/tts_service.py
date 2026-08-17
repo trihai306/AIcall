@@ -259,6 +259,28 @@ TI_LE_DAY_LANG = 0.07      # ngưỡng chặt: phải chạm đáy này mới c�
 # hơi đầu câu vào rất nhẹ nên phải chừa khoảng an toàn rộng.
 TI_LE_DAU_CUOI = 0.04
 
+# Ngưỡng cắt lặng, TÁCH RIÊNG hai đầu. Tính theo RMS đỉnh của chính mảnh.
+#
+# ĐẦU mảnh giữ thấp: phụ âm bật hơi ("kh", "th", "ph") vào rất nhẹ, cắt sát là
+# mất luôn tiếng đầu.
+TI_LE_DAU = 0.04
+#
+# ĐUÔI phải cao hơn hẳn. Bên A nghe ra tiếng "hợp" rất nhẹ sau mỗi vế (bộ kiểm
+# Lần 9, 17-08-2026). Máy nhận dạng không ra chữ nào - nội dung đúng hoàn toàn.
+# Đo mức dB từng 20ms mới thấy F5 để lại ĐUÔI THỞ ~200ms:
+#
+#     sau "giảm dần,"  -27 -30 -31 -33 -38 -36 -37 -37 -37 -41  rồi mới tới im
+#     giữa mảnh        không có đoạn nào như vậy
+#
+# Ngưỡng cũ 0.04 không bắt được: 4% RMS ĐỈNH, mà RMS đỉnh thấp hơn biên độ đỉnh
+# chừng 12dB, nên sàn cắt thực tế rơi vào ~-40dB - cả đuôi thở lọt qua. Khách
+# nghe thành: chữ -> hơi thở -> quãng nghỉ code chèn -> vế sau.
+TI_LE_DUOI = 0.12
+#
+# Vuốt nhỏ dần ở chỗ cắt đuôi. Cắt thẳng vào chỗ còn -25dB nghe "cụt" - đúng lỗi
+# mà trim_silence từng gây ra khi cắt quá tay.
+VUOT_DUOI_MS = 30.0
+
 # GỘP LÔ: ĐANG TẮT. Đã thi công, đo, và bác bỏ ngày 2026-08-10.
 #
 # Ý tưởng: `infer_batch_process` nhận danh sách nhưng chỉ LẶP qua từng câu, còn
@@ -361,7 +383,8 @@ def cat_lang_bia(audio: np.ndarray, sr: int,
 
 def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
                  keep_ms: int = 25,
-                 ti_le: float = TI_LE_DAU_CUOI) -> np.ndarray:
+                 ti_le: float = TI_LE_DAU,
+                 ti_le_duoi: float = TI_LE_DUOI) -> np.ndarray:
     """Cắt khoảng lặng đầu/cuối của một mảnh TTS.
 
     Chừa lại 25ms hai đầu: phụ âm bật hơi đầu câu ("kh", "th", "ph") vào rất
@@ -384,13 +407,23 @@ def trim_silence(audio: np.ndarray, sr: int, thresh: float = 0.005,
         return audio
     khung = audio[: k * n].reshape(k, n).astype(np.float64)
     rms = np.sqrt((khung * khung).mean(axis=1))
-    co = np.nonzero(rms > max(float(rms.max()) * ti_le, thresh))[0]
+    dinh = float(rms.max())
+    co = np.nonzero(rms > max(dinh * ti_le, thresh))[0]
     if len(co) == 0:
         return audio            # cả mảnh im lặng - trả nguyên, đừng cắt thành rỗng
+    # Đuôi xét bằng ngưỡng CAO hơn để cắt được hơi thở; xem TI_LE_DUOI.
+    co_duoi = np.nonzero(rms > max(dinh * ti_le_duoi, thresh))[0]
+    cuoi = int(co_duoi[-1]) if len(co_duoi) else int(co[-1])
     keep = int(sr * keep_ms / 1000)
     start = max(0, int(co[0]) * n - keep)
-    end = min(len(audio), (int(co[-1]) + 1) * n + keep)
-    return audio[start:end]
+    end = min(len(audio), (cuoi + 1) * n + keep)
+    ra = audio[start:end]
+    # Vuốt nhỏ dần ở mép cắt để không nghe "cụt".
+    v = min(int(sr * VUOT_DUOI_MS / 1000), len(ra))
+    if v > 1:
+        ra = ra.copy()
+        ra[-v:] = (ra[-v:] * np.linspace(1.0, 0.0, v)).astype(ra.dtype)
+    return ra
 
 
 class F5TTSService:
