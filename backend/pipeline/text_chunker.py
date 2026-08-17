@@ -475,6 +475,28 @@ TRAN_CHO_CUM_SO_SAU = TRAN_CHO_CUM_SO_DAU
 NGHI_PHAY_MS = 180.0
 NGHI_CHAM_MS = 320.0
 
+# Nghỉ sau vế KẾT BẰNG TIỂU TỪ ("...trong hẻm ạ.", "...anh nhé.").
+#
+# Bên A nghe ra (17-08): *"chữ ạ nó cứ nặng kiểu gì á, ạ nặng cái rồi mới nói"*.
+#
+# BỐN THƯỚC ĐO TRƯỚC ĐỀU SAI CHỖ. Máy nhận dạng báo chữ "ạ" dài 480ms nên tôi đi
+# tìm lỗi ngân dài rồi lỗi âm sắc, qua bốn thước đo, không cái nào tách được bản
+# bị chê khỏi bản được khen. Đo lại bằng NĂNG LƯỢNG thì hoá ra:
+#
+#     "ạ" thật   120ms CÓ TIẾNG
+#     rồi        320ms IM LẶNG TUYỆT ĐỐI  <- quãng nghỉ chính code này chèn
+#
+# Máy nhận dạng gộp quãng im vào chữ. Chữ "ạ" KHÔNG ngân - nó ngắn. Cái nghe
+# "nặng" là âm tắc thanh hầu của dấu nặng bị cắt cụt ngay vào khoảng im, rồi
+# phải đợi 320ms mới nói tiếp.
+#
+# 320ms là nghỉ của DẤU CHẤM - đúng cho chỗ hết ý. Nhưng tiểu từ lễ phép không
+# kết thúc ý, nó chỉ đánh dấu thái độ, nên người thật đi tiếp nhanh hơn nhiều.
+#
+# Không hạ về 0: bỏ hẳn thì chữ sau dính vào đuôi "ạ" - đúng lỗi bên A báo trước
+# đó khi bản gộp mảnh xoá mất quãng nghỉ (đo được khe hở còn 190ms là đã dính).
+NGHI_TIEU_TU_MS = 180.0
+
 # Nghỉ ở ranh giới mảnh KHÔNG có dấu câu. Trước để 0 - và đó là chỗ hở.
 #
 # Đo F5 sinh cả câu một lần (19,32s, scripts/xem_nghi_tu_nhien.py): nó tự nghỉ ở
@@ -503,7 +525,8 @@ def nhip_nghi_sau(chunk_text: str) -> float:
         # tin rằng F5 tự nghỉ ở phẩy - đo ra thì nó LỜ hẳn, xem `TACH_O_PHAY`.
         t = chunk_text.rstrip()
         if t.endswith(DAU_KET_CAU):
-            return NGHI_CHAM_MS
+            # Kết bằng tiểu từ thì nghỉ ngắn hơn - xem `NGHI_TIEU_TU_MS`.
+            return NGHI_TIEU_TU_MS if _ket_bang_tieu_tu(t) else NGHI_CHAM_MS
         if TACH_O_PHAY and t.endswith(DAU_NGAT_Y):
             return NGHI_PHAY_MS
         return 0.0

@@ -205,7 +205,8 @@ def _dat_seed(_t, text: str, voice: str, toc: float) -> None:
     _t.manual_seed((settings.f5tts_seed + zlib.crc32(khoa.encode("utf-8"))) & 0x7FFFFFFF)
 
 
-def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float) -> float | None:
+def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float,
+                  he_so_bu: float | None = None) -> float | None:
     """Thời lượng nên ép cho mảnh này, hoặc None nếu để F5 tự tính.
 
     Trả về TỔNG thời lượng (đoạn mẫu + phần sinh), đúng thứ `fix_duration` cần.
@@ -214,7 +215,8 @@ def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float) -> float | None:
     if n < TOI_THIEU_AM_TIET_DE_EP or dai_ref_giay <= 0 or speed <= 0:
         return None
     nhip = NHIP_CHUAN_AM_TIET_PHUT * (speed / SPEED_CHUAN)
-    return dai_ref_giay + n / (nhip / 60.0) * HE_SO_BU_LANG
+    return dai_ref_giay + n / (nhip / 60.0) * (
+        HE_SO_BU_LANG if he_so_bu is None else float(he_so_bu))
 
 
 # Bóp quãng lặng GIỮA mảnh. Ngưỡng KHÔNG chọn cho đẹp mà lấy từ hai phép đo:
@@ -837,7 +839,7 @@ class F5TTSService:
 
     def _synthesize_sync(
         self, text: str, voice: str, nfe_step: int | None = None,
-        speed: float | None = None,
+        speed: float | None = None, he_so_bu: float | None = None,
     ) -> tuple[np.ndarray, int]:
         """Synchronous TTS synthesis (runs in thread executor).
 
@@ -879,7 +881,8 @@ class F5TTSService:
                     # Ép thời lượng theo ÂM TIẾT thay vì để F5 chia theo BYTE -
                     # xem khối chú thích ở `thoi_luong_ep`. None thì F5 tự tính
                     # như cũ (mảnh quá ngắn, hoặc tính ra không hợp lệ).
-                    fix_duration=thoi_luong_ep(text, ref_wave.shape[-1] / ref_sr, toc),
+                    fix_duration=thoi_luong_ep(text, ref_wave.shape[-1] / ref_sr, toc,
+                                               he_so_bu),
                     device=DEVICE,
                 )
             )
@@ -1066,6 +1069,9 @@ class F5TTSService:
         use_cache: bool = True,
         nfe_step: int | None = None,
         speed: float | None = None,
+        # NÚM THỬ NGHIỆM: thắt/nới ngân sách thời lượng cho riêng lượt này.
+        # None = dùng `HE_SO_BU_LANG`. Xem `thoi_luong_ep`.
+        he_so_bu: float | None = None,
     ) -> bytes:
         """
         Synthesize text to WAV bytes (async).
@@ -1107,7 +1113,8 @@ class F5TTSService:
 
         with Timer("TTS", logger) as t:
             audio, sr = await loop.run_in_executor(
-                self._executor, self._synthesize_sync, text, voice, nfe, speed
+                self._executor, self._synthesize_sync, text, voice, nfe, speed,
+                he_so_bu
             )
 
         # F5-TTS trả về mỗi mảnh kèm khoảng lặng riêng: đo được 224-607ms ở ĐẦU

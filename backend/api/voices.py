@@ -130,7 +130,8 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
                              toc: float, fast: bool, bu_duoi: bool = False,
                              nen_duoi: bool = False,
                              gop_sau: bool = False,
-                             gop_phay: bool = False) -> bytes:
+                             gop_phay: bool = False,
+                             he_so_bu: float | None = None) -> bytes:
     """Sinh từng mảnh rồi ghép, chèn lặng đúng lượng `nhip_nghi_sau` cho.
 
     Chèn vào ĐẦU mảnh sau chứ không nối vào cuối mảnh trước - giống hệt
@@ -179,7 +180,8 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
             pcm = await _sinh_co_bu_duoi(tts, m, voice_name, toc, fast and i == 0)
         else:
             b = await tts.synthesize(m, voice=voice_name, use_cache=False,
-                                     speed=toc, fast=(fast and i == 0))
+                                     speed=toc, fast=(fast and i == 0),
+                                     he_so_bu=he_so_bu)
             pcm = np.frombuffer(b[44:], dtype=np.int16)
         # Nén phần ngân ở đuôi - CHỈ cho mảnh không phải mảnh cuối. Mảnh cuối
         # kéo dài là kết câu THẬT, nghe tự nhiên; đụng vào là làm hỏng.
@@ -204,6 +206,7 @@ async def test_tts(
     nen_duoi: bool = Form(False),
     gop_sau: bool = Form(False),
     gop_phay: bool = Form(False),
+    he_so_bu: float | None = Form(None),
 ):
     """Synthesize text with a specific voice and return audio + timing.
 
@@ -261,6 +264,7 @@ async def test_tts(
         wav_bytes = await _ghep_nhu_pipeline(
             app_state.tts, manh, voice_name, toc, fast, bu_duoi=bu_duoi,
             nen_duoi=nen_duoi, gop_sau=gop_sau, gop_phay=gop_phay,
+            he_so_bu=he_so_bu,
         )
     except Exception as e:
         logger.warning(f"test-tts failed for voice '{voice_name}': {e}")

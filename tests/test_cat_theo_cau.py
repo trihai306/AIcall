@@ -224,9 +224,17 @@ def test_dem_rong():
 
 def test_chen_nghi_sau_moi_cau():
     """trim_silence vừa dọn sạch lặng hai đầu mảnh; không trả lại thì hai câu
-    dính vào nhau."""
+    dính vào nhau.
+
+    Câu mẫu KHÔNG kết bằng tiểu từ: từ 17-08-2026 vế kết bằng "ạ"/"nhé" nghỉ
+    ngắn hơn (`NGHI_TIEU_TU_MS`) - xem `tests/test_nghi_sau_tieu_tu.py`. Trước
+    đây câu mẫu ở đây là "...anh chị ạ." nên test này khoá luôn cả ca tiểu từ mà
+    không có ý đó.
+    """
     from backend.pipeline.text_chunker import NGHI_CHAM_MS, nhip_nghi_sau
-    assert nhip_nghi_sau("Em xin phép báo anh chị ạ.") == NGHI_CHAM_MS
+    assert nhip_nghi_sau("Em xin phép báo lại anh chị sau.") == NGHI_CHAM_MS
+    # vẫn phải có nghỉ ở ca tiểu từ, chỉ là ngắn hơn
+    assert nhip_nghi_sau("Em xin phép báo anh chị ạ.") > 0
 
 
 def test_khong_chen_nghi_khi_cat_cuong_buc():
