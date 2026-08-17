@@ -310,6 +310,36 @@ _SO_RE = re.compile(
 )
 
 
+# KHOẢNG PHẦN TRĂM: "70% đến 75%" -> đọc đơn vị MỘT lần ở cuối.
+#
+# Bên A báo "đọc sai 'phần trăm'" (bộ kiểm Lần 9, câu 5). Cho máy nhận dạng nghe
+# lại đúng chỗ đó:
+#
+#     kịch bản   "...tối đa khoảng 70% đến 75% giá trị tài sản..."
+#     máy nghe   "...bảy mươi phần trăm đến bảy mươi lăm phần TRÁ TRỊ..."
+#
+# Lần thứ hai, "trăm" và "giá" dính vào nhau thành "trá" - mất cả hai chữ. Chuẩn
+# hoá vốn ĐÚNG, lỗi ở khâu phát âm: "phần trăm giá trị" có chuỗi /tr/-/gi/ liền
+# nhau nên F5 trượt.
+#
+# Bỏ đơn vị ở mốc ĐẦU cũng đúng cách người Việt nói: "bảy mươi đến bảy mươi lăm
+# phần trăm". Vừa bớt một chỗ trượt, vừa tự nhiên hơn.
+#
+# Phải chạy TRƯỚC `doc_so_trong_cau`: sau đó "70" đã thành chữ, không còn chữ số
+# cạnh dấu % để nhận ra.
+_KHOANG_PT_RE = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s*%\s*(đến|tới|-|–)\s*(\d+(?:[.,]\d+)?)\s*%"
+)
+
+
+def gop_khoang_phan_tram(text: str) -> str:
+    """Hai mốc phần trăm nối bằng "đến" thì chỉ giữ dấu % ở mốc SAU."""
+    def _thay(m: re.Match) -> str:
+        noi = "đến" if m.group(2) in ("-", "\u2013") else m.group(2)
+        return f"{m.group(1)} {noi} {m.group(3)}%"
+    return _KHOANG_PT_RE.sub(_thay, text or "")
+
+
 def _doc_khop(m: re.Match) -> str:
     nguyen, thap_phan, phan_tram = m.group(1), m.group(2), m.group(3)
     # bỏ dấu phân cách nghìn
@@ -1080,6 +1110,8 @@ def normalize_for_tts(text: str) -> str:
     # Không bỏ hẳn dấu gạch: "hai mươi hai-sáu mươi tuổi" đọc lên nghe dính,
     # phải thành "từ hai mươi hai ĐẾN sáu mươi tuổi".
     text = _KHOANG_GACH_RE.sub(r"\1 đến \2", text)
+    # Gộp đơn vị của khoảng phần trăm - xem `gop_khoang_phan_tram`.
+    text = gop_khoang_phan_tram(text)
     # Ngày tháng TRƯỚC khi đọc số: sau `doc_so_trong_cau` thì "15" đã thành chữ
     # và không còn dạng d/m/y để nhận ra nữa. Cũng phải trước `doc_dau_xien`,
     # không thì dấu "/" đã thành " hoặc ".

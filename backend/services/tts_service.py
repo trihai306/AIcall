@@ -12,7 +12,8 @@ import soundfile as sf
 
 from backend.config import settings
 from backend.pipeline.text_normalizer import dong_dau_cuoi, normalize_for_tts
-from backend.services.audio_utils import float32_to_int16, resample_audio, pcm_to_wav
+from backend.services.audio_utils import (float32_to_int16, gioi_han_mem,
+                                          pcm_to_wav, resample_audio)
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
 from backend.services.filler_store import CauDuoi, Kho, van_tay
@@ -300,24 +301,27 @@ VUOT_DUOI_MS = 30.0
 # hai đường thì tiếng mới giống nhau.
 MUC_DICH_DBFS = -16.0
 
-# Trần HẠ. Mảnh nói nhỏ THẬT (buông cuối câu) mà ép hết cỡ thì mất sắc thái -
-# cân là để bớt chênh, không phải san phẳng.
+# Trần kéo, cho CẢ HAI chiều. Mảnh nói nhỏ THẬT (buông cuối câu) mà ép hết cỡ thì
+# mất sắc thái - cân là để bớt chênh, không phải san phẳng.
 GIOI_HAN_KEO_DB = 6.0
 
 
 def can_do_to(audio: np.ndarray, sr: int,
               muc_dich: float = MUC_DICH_DBFS,
               gioi_han: float = GIOI_HAN_KEO_DB) -> np.ndarray:
-    """Hạ độ to của mảnh về gần `muc_dich`. CHỈ HẠ, không nâng.
+    """Kéo độ to của mảnh về gần `muc_dich`, tối đa `gioi_han` dB mỗi chiều.
 
-    VÌ SAO CHỈ HẠ. Mọi mảnh F5 sinh ra đều chạm trần 0 dBFS trong khi RMS chỉ
-    -12…-19dB, tức hệ số đỉnh 10-19dB và KHÔNG còn chỗ trống. Nâng thêm dù chỉ
-    1dB là vỡ tiếng.
+    NÂNG ĐƯỢC nhờ `gioi_han_mem`. Trước đây hàm này chỉ HẠ, vì tưởng đã hết chỗ:
+    mảnh nào cũng chạm đúng 0 dBFS. Nhưng con số 0 tròn trịa ấy là do
+    `ha_muc_neu_qua` CHIA CHO ĐỈNH - chính nó vừa là nguồn của "tiếng lúc to lúc
+    bé" mà bên A báo: cùng đỉnh mà hệ số đỉnh lệch 10-19dB thì độ to nghe được
+    lệch tới 5dB.
 
-    Bản đầu có nâng, kèm chốt `he_so = 1/đỉnh` để khỏi vỡ - và chốt đó nuốt gần
-    hết phần nâng, nên hàm gần như không làm gì. Test không bắt được vì dựng
-    bằng sóng sin, hệ số đỉnh chỉ 3dB, còn tiếng thật thì 12-19dB. Test nay đã
-    đổi sang dùng hệ số đỉnh thật.
+    Nay chuẩn theo ĐỘ TO, còn vài cái gai biên độ thì bẻ mềm thay vì lấy chúng
+    làm chuẩn. Gai rất thưa (khoảng một phần nghìn số mẫu) nên bẻ không nghe ra.
+
+    ĐO LẠI trên câu 3 của bộ kiểm Lần 9 (-14,5 / -16,4 / -19,5 dB) - đúng câu mà
+    bản "chỉ hạ" không chữa được.
     """
     if audio is None or len(audio) == 0:
         return audio
@@ -331,10 +335,11 @@ def can_do_to(audio: np.ndarray, sr: int,
     if len(co) < 10:
         return audio
     hien = 20 * np.log10(np.sqrt((co ** 2).mean()) + 1e-12)
-    if hien <= muc_dich:
-        return audio                      # đã nhỏ hơn đích - để yên, nâng là vỡ
-    keo = max(muc_dich - hien, -gioi_han)  # luôn âm: chỉ hạ
-    return (x * (10 ** (keo / 20))).astype(np.asarray(audio).dtype)
+    keo = float(np.clip(muc_dich - hien, -gioi_han, gioi_han))
+    if abs(keo) < 0.1:
+        return audio
+    ra = x * (10 ** (keo / 20))
+    return gioi_han_mem(ra).astype(np.asarray(audio).dtype)
 
 # GỘP LÔ: ĐANG TẮT. Đã thi công, đo, và bác bỏ ngày 2026-08-10.
 #

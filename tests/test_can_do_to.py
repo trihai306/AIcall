@@ -52,10 +52,13 @@ def dbfs(x):
     return 20 * np.log10(np.sqrt((x ** 2).mean()) + 1e-12)
 
 
-def test_manh_NHO_thi_DE_YEN():
-    """Mảnh F5 nào cũng chạm trần 0 dBFS - nâng thêm là vỡ tiếng, nên chỉ hạ."""
-    x = tieng(500, MUC_DICH_DBFS - 4.0)
-    assert np.array_equal(can_do_to(x, SR), x)
+def test_manh_NHO_duoc_NANG_len():
+    """Nâng được nhờ `gioi_han_mem` bẻ mềm mấy cái gai biên độ.
+
+    Bản trước chỉ hạ, nên câu 3 của bộ kiểm (-14,5/-16,4/-19,5) không chữa được.
+    """
+    ra = can_do_to(tieng(500, MUC_DICH_DBFS - 4.0), SR)
+    assert dbfs(ra) > MUC_DICH_DBFS - 4.0 + 1.5, "mảnh nhỏ vẫn không được nâng"
 
 
 def test_manh_TO_duoc_ha_xuong():
@@ -69,7 +72,11 @@ def test_ve_dung_MUC_DICH_khi_trong_tam_keo():
 
 
 def test_KHONG_ha_qua_gioi_han():
-    goc = MUC_DICH_DBFS + 20.0
+    """Mức phải THẬT: RMS -8 dBFS là mảnh to nhất từng đo được (câu 4, -11.7dB
+    còn là mức thường). Dựng tín hiệu RMS trên 0 dBFS thì bộ hạn biên phải bẻ
+    rất mạnh, và phép thử trở thành thử `gioi_han_mem` chứ không phải thử trần
+    kéo của hàm này."""
+    goc = -8.0
     ra = can_do_to(tieng(500, goc), SR)
     assert dbfs(ra) >= goc - GIOI_HAN_KEO_DB - 0.6, "hạ quá giới hạn đã chốt"
 
@@ -82,11 +89,11 @@ def test_thu_hep_BUOC_NHAY_giua_hai_manh():
     assert sau < truoc / 2, f"bước nhảy {truoc:.1f}dB -> {sau:.1f}dB, chưa đủ"
 
 
-def test_khong_lam_vo_bien_do():
-    """Tiếng thật đỉnh chạm 0 dBFS - sau khi cân KHÔNG được to hơn trước."""
-    x = tieng(500, -10.0)
-    ra = can_do_to(x, SR)
-    assert np.abs(ra).max() <= np.abs(x).max() + 1e-6
+def test_khong_vuot_tran_du_co_nang():
+    """Nâng xong vẫn phải nằm dưới trần - `gioi_han_mem` lo phần đó."""
+    from backend.services.audio_utils import TRAN_MEM
+    ra = can_do_to(tieng(500, MUC_DICH_DBFS - 6.0), SR)
+    assert np.abs(ra).max() <= TRAN_MEM + 1e-6
 
 
 def test_manh_im_thi_giu_nguyen():

@@ -172,3 +172,43 @@ def dai_wav_ms(wav_bytes: bytes) -> float:
     if nhip <= 0:
         return 0.0
     return len(wav_bytes[i + 8:]) / nhip * 1000.0
+
+
+# --- Hạn biên MỀM ------------------------------------------------------------
+#
+# Ngưỡng bắt đầu bẻ. Dưới mức này tín hiệu đi qua NGUYÊN VĂN.
+#
+# 0.5 chọn theo hệ số đỉnh đo được của mảnh F5 (10-19dB): với RMS ~0.16 thì phần
+# mẫu vượt 0.5 chỉ khoảng một phần nghìn, nên bẻ mềm gần như không nghe ra.
+NGUONG_MEM = 0.5
+
+# Trần cuối. Chừa một chút dưới 1.0 để khâu đổi tần số phía sau không đẩy vượt.
+TRAN_MEM = 0.97
+
+
+def gioi_han_mem(audio: np.ndarray) -> np.ndarray:
+    """Bẻ mềm các gai biên độ về dưới `TRAN_MEM`, giữ nguyên phần còn lại.
+
+    VÌ SAO CẦN. `ha_muc_neu_qua` chia cả mảnh cho đỉnh, nên mọi mảnh ra đúng
+    0 dBFS - và đó là nguồn của "tiếng lúc to lúc bé" mà bên A báo: cùng đỉnh
+    nhưng hệ số đỉnh lệch nhau 10-19dB thì độ to NGHE ĐƯỢC lệch tới 5dB.
+
+    Muốn chuẩn theo ĐỘ TO thì phải có chỗ cho mảnh nhỏ nâng lên, tức không được
+    lấy vài cái gai làm trần. Hàm này bẻ riêng mấy cái gai đó.
+
+    KHÔNG dùng `np.clip`: clip cắt phẳng ngọn sóng nên sinh méo hài, nghe gắt -
+    đúng lý do `ha_muc_neu_qua` ra đời. `tanh` bẻ cong mượt và giữ cho các đỉnh
+    còn phân biệt được với nhau.
+    """
+    if audio is None or len(audio) == 0:
+        return audio
+    x = np.asarray(audio, dtype=np.float64)
+    bien = np.abs(x)
+    tren = bien > NGUONG_MEM
+    if not tren.any():
+        return audio
+    ra = x.astype(np.float64).copy()
+    du = (bien[tren] - NGUONG_MEM) / (TRAN_MEM - NGUONG_MEM)
+    moi = NGUONG_MEM + (TRAN_MEM - NGUONG_MEM) * np.tanh(du)
+    ra[tren] = np.sign(x[tren]) * moi
+    return ra.astype(np.asarray(audio).dtype)
