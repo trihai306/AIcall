@@ -838,7 +838,27 @@ def sap_cum_gop(dau: tuple[str, float], cho: list, het_luot: bool):
     # nghỉ của nó phải chuyển sang mảnh đầu - bỏ luôn là mảnh sau mất chỗ ngắt.
     nghi_rong = max([n for t, n in cho if not co_chu(t)] or [0.0])
 
-    lay = gom_thanh_mot_luot([dau[0]] + [t for t, _ in thuc])
+    # CHỈ GỘP QUA DẤU PHẨY.
+    #
+    # Bên A nghe ra (17-08, tệp 4 bộ Lần 9): *"chữ 'ạ' - cái đã đọc từ luôn rồi
+    # mà 'ạ' còn chưa ngắt xong"*. Đo khe nghỉ thật sau "ạ":
+    #
+    #     bộ cũ bên A gửi   410ms
+    #     gộp HẾT           190ms   <- dính chữ, đúng chỗ bên A chỉ
+    #     không gộp         360ms
+    #     gộp PHẨY          360ms
+    #
+    # Gộp xoá quãng nghỉ mà `nhip_nghi_sau` chèn, còn F5 tự cho chỉ ~190ms ở dấu
+    # chấm - không đủ sau tiểu từ. Nên chỉ gộp chỗ dấu PHẨY: chỗ đó vốn không
+    # đáng nghỉ dài, và cũng chính là chỗ chữ ngân rơi vào GIỮA câu.
+    #
+    # Không có dấu câu ở cuối mảnh (mảnh bị cắt vì chạm trần từ) thì KHÔNG gộp:
+    # đoán bừa ở đó dễ bỏ mất chỗ ngắt thật.
+    chuoi = [dau[0]] + [t for t, _ in thuc]
+    qua_phay = 1
+    while qua_phay < len(chuoi) and chuoi[qua_phay - 1].rstrip().endswith(","):
+        qua_phay += 1
+    lay = min(qua_phay, gom_thanh_mot_luot(chuoi))
     dan = [(dau[0], max(dau[1], nghi_rong))] + thuc[:lay - 1]
     tra_lai = list(thuc[lay - 1:])
     if het_luot:
