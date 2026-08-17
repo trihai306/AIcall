@@ -281,6 +281,61 @@ TI_LE_DUOI = 0.12
 # mà trim_silence từng gây ra khi cắt quá tay.
 VUOT_DUOI_MS = 30.0
 
+# --- Cân độ to giữa các mảnh ------------------------------------------------
+#
+# Bên A nghe "tiếng lúc to lúc bé" (bộ kiểm Lần 9, câu 2 và 3). Đo RMS từng mảnh
+# trên chính hai tệp đó:
+#
+#     câu 2   -12.1  -17.2  -12.8  -11.7  -12.7   tụt 5,1dB NGAY SAU "Dạ vâng,"
+#     câu 3   -14.5  -16.4  -19.5                 tụt dần đều, nghe như lịm đi
+#
+# Câu 2 khớp đúng chỗ bên A viết: *"sau chữ 'dạ vâng' bị cắt tiếng, cảm giác
+# không liên mạch"* - không phải mất tiếng, mà mảnh kế to nhỏ lệch hẳn.
+#
+# ĐỪNG dùng "độ chênh lớn nhất trong lượt" làm thước đo: câu 5 bên A KHEN là OK
+# lại chênh tới 6,3dB. Tai nghe ra BƯỚC NHẢY giữa hai mảnh LIỀN NHAU.
+#
+# Kéo về một mức cố định chứ không về trung vị của lượt: đường thoại sinh từng
+# mảnh một, lúc sinh mảnh 2 chưa biết mảnh 5 to bao nhiêu. Cùng công thức cho cả
+# hai đường thì tiếng mới giống nhau.
+MUC_DICH_DBFS = -16.0
+
+# Trần HẠ. Mảnh nói nhỏ THẬT (buông cuối câu) mà ép hết cỡ thì mất sắc thái -
+# cân là để bớt chênh, không phải san phẳng.
+GIOI_HAN_KEO_DB = 6.0
+
+
+def can_do_to(audio: np.ndarray, sr: int,
+              muc_dich: float = MUC_DICH_DBFS,
+              gioi_han: float = GIOI_HAN_KEO_DB) -> np.ndarray:
+    """Hạ độ to của mảnh về gần `muc_dich`. CHỈ HẠ, không nâng.
+
+    VÌ SAO CHỈ HẠ. Mọi mảnh F5 sinh ra đều chạm trần 0 dBFS trong khi RMS chỉ
+    -12…-19dB, tức hệ số đỉnh 10-19dB và KHÔNG còn chỗ trống. Nâng thêm dù chỉ
+    1dB là vỡ tiếng.
+
+    Bản đầu có nâng, kèm chốt `he_so = 1/đỉnh` để khỏi vỡ - và chốt đó nuốt gần
+    hết phần nâng, nên hàm gần như không làm gì. Test không bắt được vì dựng
+    bằng sóng sin, hệ số đỉnh chỉ 3dB, còn tiếng thật thì 12-19dB. Test nay đã
+    đổi sang dùng hệ số đỉnh thật.
+    """
+    if audio is None or len(audio) == 0:
+        return audio
+    x = np.asarray(audio, dtype=np.float64)
+    # Chỉ tính trên phần CÓ TIẾNG: đuôi lặng kéo RMS xuống, làm mảnh nào nhiều
+    # lặng cũng bị hiểu nhầm là nói nhỏ.
+    dinh = float(np.abs(x).max())
+    if dinh <= 0:
+        return audio                      # im hoàn toàn - đừng chia cho 0
+    co = x[np.abs(x) > dinh * 0.02]
+    if len(co) < 10:
+        return audio
+    hien = 20 * np.log10(np.sqrt((co ** 2).mean()) + 1e-12)
+    if hien <= muc_dich:
+        return audio                      # đã nhỏ hơn đích - để yên, nâng là vỡ
+    keo = max(muc_dich - hien, -gioi_han)  # luôn âm: chỉ hạ
+    return (x * (10 ** (keo / 20))).astype(np.asarray(audio).dtype)
+
 # GỘP LÔ: ĐANG TẮT. Đã thi công, đo, và bác bỏ ngày 2026-08-10.
 #
 # Ý tưởng: `infer_batch_process` nhận danh sách nhưng chỉ LẶP qua từng câu, còn
@@ -948,6 +1003,7 @@ class F5TTSService:
         ra = []
         for x in song:
             x = cat_lang_bia(trim_silence(x, sr), sr)
+            x = can_do_to(x, sr)          # cân độ to - xem MUC_DICH_DBFS
             if sr != target_sr:
                 x = resample_audio(x, sr, target_sr)
             ra.append(pcm_to_wav(float32_to_int16(x), sample_rate=target_sr))
@@ -1055,6 +1111,7 @@ class F5TTSService:
         # Lặng đầu của mảnh ĐẦU TIÊN còn cộng thẳng vào thời gian khách chờ:
         # TTFA 816ms nhưng phải 1150ms mới thực sự nghe thấy tiếng.
         audio = trim_silence(audio, sr)
+        audio = can_do_to(audio, sr)     # cân độ to - xem MUC_DICH_DBFS
         # F5 còn tự chèn quãng dừng vào GIỮA mảnh, thứ mà trim_silence không
         # đụng tới. Bóp trước khi đổi tần số: đổi tần rồi mới bóp thì phải đo
         # lại theo tần số đích, dễ lệch ngưỡng mà không ai thấy.
