@@ -237,6 +237,28 @@ def _ket_bang_tieu_tu(manh: str) -> bool:
     tu = manh.rstrip(",;: ").split()
     return bool(tu) and tu[-1].strip(".,!?:;\"'").lower() in TIEU_TU_CUOI_VE
 
+def nen_duoi_manh_nay(manh: str) -> bool:
+    """Có nên nén đuôi mảnh này không? CHỈ khi nó kết bằng tiểu từ.
+
+    Bên A nghe ra (17-08): *"chữ ạ nó cứ nặng kiểu gì á, ạ nặng cái rồi mới
+    nói"*. Đo trên tệp 4 bộ Lần 9: chữ "ạ" cuối mảnh dài **480ms, tức 2,4 lần**
+    âm tiết thường - F5 kéo dài âm cuối mảnh, và ở tiểu từ thì nghe thành một
+    tiếng nặng trịch rồi mới đi tiếp.
+
+    ĐÃ LOẠI: bốn thước đo về CHẤT giọng đều không tách được bản bên A chê khỏi
+    bản bên A khen - độ dài tuyệt đối (380ms chê / 600ms khen), đường cao độ (cả
+    hai đi lên), cao độ so với giọng câu (+22% / +30%), và độ rè (9,2% chê /
+    14,4% khen, tức bản KHEN còn rè hơn). Nên vấn đề không phải âm sắc mà là
+    NHỊP: tiểu từ bị kéo quá dài.
+
+    VÌ SAO CHỈ TIỂU TỪ. Nén mọi đuôi mảnh thì WER 0,94% -> 1,79% mà tổng chỗ
+    ngân chỉ giảm 17 -> 15. Tiểu từ ("ạ", "nhé"...) không mang nội dung nên nén
+    an toàn; còn từ nội dung ở cuối câu thì kéo dài là ngữ điệu ĐÚNG, đụng vào
+    là vừa mất tự nhiên vừa mất chữ.
+    """
+    return _ket_bang_tieu_tu(manh)
+
+
 # NGẮT MỀM: TẮT. Giữ code lại vì lý do bên dưới đáng ghi hơn là xoá.
 #
 # Bật ngày 13-08 rồi TẮT cùng ngày. Nó được quyết định trên số đo lấy từ một bản

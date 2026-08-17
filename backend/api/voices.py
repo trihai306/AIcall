@@ -142,7 +142,8 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
     """
     import numpy as np
 
-    from backend.pipeline.text_chunker import nhip_nghi_sau
+    from backend.pipeline.text_chunker import (nen_duoi_manh_nay,
+                                                nhip_nghi_sau)
     from backend.services.audio_utils import pcm_to_wav
     from backend.services.nen_duoi_manh import nen_duoi as _nen
 
@@ -182,7 +183,9 @@ async def _ghep_nhu_pipeline(tts, manh: list[str], voice_name: str,
             pcm = np.frombuffer(b[44:], dtype=np.int16)
         # Nén phần ngân ở đuôi - CHỈ cho mảnh không phải mảnh cuối. Mảnh cuối
         # kéo dài là kết câu THẬT, nghe tự nhiên; đụng vào là làm hỏng.
-        if nen_duoi and i < len(manh) - 1:
+        # Nén đuôi CHỈ khi mảnh kết bằng tiểu từ - xem `nen_duoi_manh_nay`.
+        # Nén mọi đuôi thì WER 0,94% -> 1,79% mà chỗ ngân chỉ giảm 17 -> 15.
+        if nen_duoi and i < len(manh) - 1 and nen_duoi_manh_nay(m):
             pcm = _nen(pcm, SR)
         if nghi_ms > 0:
             khuc.append(np.zeros(int(SR * nghi_ms / 1000), dtype=np.int16))
