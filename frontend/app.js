@@ -1193,6 +1193,7 @@ function switchPage(name) {
   if (name === 'devices') { checkAllDevices().catch(() => loadDevices()); scanAdb(); napTocThoai(); }
   if (name === 'contacts') loadCampaigns().then(() => loadContacts());
   if (name === 'sessions') { loadSessionStats(); loadSessionHistory(); }
+  if (name === 'voice') loadNguon();
   if (name === 'voice-test') initVoiceTest();
   if (name === 'voice-training') initVoiceTraining();
   // Trang Training LLM trước đây không có hook nào - mở lên là bảng trống cho
@@ -1454,6 +1455,8 @@ async function uploadVoice() {
     document.getElementById('voiceUploadName').value = '';
     document.getElementById('voiceUploadFile').value = '';
     document.getElementById('voiceUploadText').value = '';
+    // Bản ghi dài không thành giọng ngay - nó vào kho nguồn chờ tách đoạn mẫu.
+    if (data.nguon) { alert(data.thong_bao); loadNguon(); return; }
     loadVoiceList();
     loadVoices();
   } catch (err) { alert('Upload lỗi: ' + err.message); }
@@ -2918,6 +2921,7 @@ window.addEventListener('load', () => {
   loadVoices();
   checkHealth().finally(() => theoDoiTTSNap());
   loadVoiceList();
+  loadNguon();
   loadDatasets();
 });
 
@@ -3964,4 +3968,146 @@ async function ngheThuThoai(quaDienThoai) {
     phatTiengThu('data:audio/wav;base64,' + d.audio);
     tt.textContent = `${d.duration_ms || d.elapsed_ms}ms · ${quaDienThoai ? 'qua kênh 8kHz' : 'bản gốc 24kHz'}`;
   } catch (e) { tt.textContent = 'Lỗi: ' + e.message; }
+}
+
+// ============================================================
+// Bản ghi dài -> gợi ý đoạn mẫu
+// ============================================================
+//
+// F5 chép giọng từ một đoạn mẫu ngắn, nên chọn đoạn nào quyết định chất lượng
+// ngang với model. Chọn tay mất ~2 giờ mỗi giọng. Máy chấm nhanh hơn nhiều
+// nhưng KHÔNG tự lắp: số đo chỉ để loại thứ chắc chắn hỏng, tai người quyết.
+
+let hengioNguon = null;      // hẹn giờ hỏi tiến độ
+let ungVienDangNghe = null;
+
+async function loadNguon() {
+  const hop = document.getElementById('nguonList');
+  if (!hop) return;
+  try {
+    const d = await (await fetch('/api/voices/nguon')).json();
+    if (!d.nguon || !d.nguon.length) {
+      hop.innerHTML = '<div class="text-xs text-gray-600 text-center py-6">Chưa có bản ghi dài nào. Tải một file WAV dài hơn 30 giây ở ô Upload phía trên.</div>';
+      return;
+    }
+    hop.innerHTML = d.nguon.map(n => {
+      const chay = n.trang_thai === 'dang_chay';
+      return `
+      <div class="flex items-center justify-between p-3 bg-void/50 rounded-lg gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-white truncate">${escapeHtml(n.ten)}</span>
+            <span class="text-[10px] font-mono text-gray-600">${n.mb} MB</span>
+            ${n.so_ung_vien ? `<span class="tag" style="background:rgba(16,185,129,.12);color:#34d399">${n.so_ung_vien} ứng viên</span>` : ''}
+          </div>
+          <div class="text-[10px] text-gray-500 mt-0.5">
+            ${chay ? `Đang nghe... ${n.tien}%` : (n.so_ung_vien ? 'Đã phân tích — bấm Xem để nghe và chọn' : 'Chưa phân tích')}
+          </div>
+          ${chay ? `<div class="h-1 bg-slate-750 rounded mt-1.5 overflow-hidden"><div class="h-full bg-amber-400 transition-all" style="width:${n.tien}%"></div></div>` : ''}
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          ${n.so_ung_vien ? `<button onclick="xemUngVien('${escapeHtml(n.ten)}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20">Xem</button>` : ''}
+          <button onclick="phanTichNguon('${escapeHtml(n.ten)}')" ${chay ? 'disabled' : ''}
+                  class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-[11px] font-semibold hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
+            ${chay ? 'Đang chạy' : (n.so_ung_vien ? 'Phân tích lại' : 'Phân tích')}
+          </button>
+          <button onclick="xoaNguon('${escapeHtml(n.ten)}')" class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10" title="Xoá bản ghi nguồn">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Còn việc đang chạy thì hỏi lại; hết thì thôi, đừng để hẹn giờ chạy mãi.
+    const conChay = d.nguon.some(n => n.trang_thai === 'dang_chay');
+    clearTimeout(hengioNguon);
+    if (conChay) hengioNguon = setTimeout(loadNguon, 2000);
+  } catch (e) {
+    hop.innerHTML = `<div class="text-xs text-red-400 text-center py-6">Không đọc được kho nguồn: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function phanTichNguon(ten) {
+  try {
+    const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/phan-tich`, { method: 'POST' })).json();
+    if (d.error) { alert(d.error); return; }
+    loadNguon();
+  } catch (e) { alert('Không chạy được phân tích: ' + e.message); }
+}
+
+async function xemUngVien(ten) {
+  const hop = document.getElementById('ungVienBox');
+  if (!hop) return;
+  hop.classList.remove('hidden');
+  hop.innerHTML = '<div class="text-xs text-gray-600 py-4">Đang tải...</div>';
+  const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/phan-tich`)).json();
+  if (d.trang_thai !== 'xong' || !d.ung_vien || !d.ung_vien.length) {
+    hop.innerHTML = '<div class="text-xs text-gray-500 py-4">Chưa có ứng viên nào đạt. Thử bản ghi khác, hoặc bản ghi này không có câu nào dài 3-5,5 giây kết trọn vẹn.</div>';
+    return;
+  }
+  hop.innerHTML = `
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h4 class="text-xs font-semibold text-white">Đoạn mẫu gợi ý cho <span class="text-amber-400">${escapeHtml(ten)}</span></h4>
+        <p class="text-[10px] text-gray-500 mt-0.5">Tách được ${d.tach_duoc} đoạn, giữ lại ${d.ung_vien.length}. Nghe rồi chọn — số đo chỉ để loại bớt.</p>
+      </div>
+      <button onclick="document.getElementById('ungVienBox').classList.add('hidden')" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
+    </div>
+    <div class="space-y-2">
+      ${d.ung_vien.map((u, k) => `
+        <div class="p-3 bg-void/50 rounded-lg">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="w-5 h-5 rounded bg-slate-750 text-[10px] font-mono text-gray-400 flex items-center justify-center shrink-0">${k + 1}</span>
+                <span class="text-[10px] font-mono text-gray-500">${u.dai.toFixed(2)}s</span>
+                ${u.co_tieu_tu ? '<span class="tag" style="background:rgba(16,185,129,.12);color:#34d399" title="Kết bằng tiểu từ — đây là thứ khan nhất và quan trọng nhất cho giọng tư vấn">kết bằng tiểu từ</span>' : ''}
+                ${u.le_phep ? '<span class="tag" style="background:rgba(139,92,246,.12);color:#a78bfa">lễ phép</span>' : ''}
+                <span class="text-[10px] font-mono text-gray-600" title="Cao độ trung vị / dải 10-90%">${u.f0_tv} Hz ±${u.f0_dai}</span>
+                <span class="text-[10px] font-mono text-gray-600" title="Độ thổi (H1-H2). Thấp = giọng chắc, ít hơi">thổi ${u.h1h2}dB</span>
+                <span class="text-[10px] font-mono text-gray-600" title="Sàn nhiễu">nền ${u.nen}dB</span>
+                <span class="text-[10px] font-mono text-gray-600" title="Nhịp gốc của đoạn / tốc đề xuất khi lắp">${u.nhip_goc} âm tiết/phút → tốc ${u.toc_de_xuat}</span>
+              </div>
+              <div class="text-[11px] text-gray-300 mt-1.5 leading-relaxed">${escapeHtml(u.loi_ghi)}</div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="ngheUngVien('${escapeHtml(ten)}',${u.i})" class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20" title="Nghe thử">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </button>
+              <button onclick="chonUngVien('${escapeHtml(ten)}',${u.i})" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20 whitespace-nowrap">Dùng đoạn này</button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function ngheUngVien(ten, i) {
+  if (typeof dungHetTieng === 'function') dungHetTieng();
+  if (ungVienDangNghe) { ungVienDangNghe.pause(); ungVienDangNghe = null; }
+  const a = new Audio(`/api/voices/nguon/${encodeURIComponent(ten)}/ung-vien/${i}.wav`);
+  ungVienDangNghe = a;
+  a.play().catch(() => {});
+}
+
+async function chonUngVien(ten, i) {
+  const giong = prompt('Đặt tên cho giọng mới (chỉ chữ, số, - và _):', ten);
+  if (!giong) return;
+  try {
+    const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/chon`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ i, ten_giong: giong, dat_toc: true }),
+    })).json();
+    if (d.error) { alert(d.error); return; }
+    alert(`Đã lắp giọng "${d.ten}" (${d.dai.toFixed(2)}s, tốc ${d.toc}).\n\n${d.loi}`);
+    loadVoiceList();
+    loadVoices();
+  } catch (e) { alert('Không lắp được: ' + e.message); }
+}
+
+async function xoaNguon(ten) {
+  if (!confirm(`Xoá bản ghi nguồn "${ten}" và kết quả phân tích của nó?`)) return;
+  await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}`, { method: 'DELETE' });
+  document.getElementById('ungVienBox')?.classList.add('hidden');
+  loadNguon();
 }

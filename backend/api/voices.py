@@ -68,6 +68,25 @@ async def upload_voice(
             "Kiểm tra lại micro khi thu rồi upload lại."
         )}
 
+    # Bản ghi dài KHÔNG phải đoạn mẫu. F5 chép nguyên tệp mẫu, nên để một bản
+    # ghi 20 phút vào đây là vừa vô nghĩa vừa chậm. Cho vào kho nguồn chờ tách,
+    # và KHÔNG đăng ký làm giọng - giọng chỉ ra đời khi người dùng chọn xong
+    # một đoạn ở trang Phân tích.
+    if probe["duration"] > NGUON_TOI_THIEU_S:
+        NGUON_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(wav_path), str(NGUON_DIR / f"{safe_name}.wav"))
+        logger.info("Nhận bản ghi nguồn %s (%.0fs) - chờ tách đoạn mẫu",
+                    safe_name, probe["duration"])
+        return {
+            "nguon": safe_name,
+            "duration": probe["duration"],
+            "size_kb": round(len(content) / 1024, 1),
+            "thong_bao": (
+                f"Bản ghi dài {probe['duration']:.0f}s đã vào kho nguồn. "
+                "Bấm \u201cPhân tích\u201d để máy tìm đoạn mẫu tốt nhất."
+            ),
+        }
+
     if ref_text.strip():
         txt_path.write_text(ref_text.strip(), encoding="utf-8")
 
@@ -582,3 +601,272 @@ def _mo_phong_kenh_thoai(wav: bytes) -> bytes:
         f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
         f.writeframes(lai.tobytes())
     return buf.getvalue()
+
+
+# =========================================================================
+# NGUỒN GHI ÂM DÀI -> gợi ý đoạn mẫu
+# =========================================================================
+#
+# F5 chép giọng từ một đoạn mẫu ngắn, nên chọn đoạn nào quyết định chất lượng
+# ngang với model. Chọn tay mất ~2 giờ mỗi giọng và rất dễ sai theo kiểu khó
+# truy: 17-08-2026 bên A báo chữ "ạ" nghe không tự nhiên, gốc là đoạn mẫu đang
+# dùng không có lấy một chữ "ạ" nào trong suốt 20 phút bản ghi.
+#
+# Luồng: tải bản ghi dài -> bấm Phân tích -> nghe danh sách ứng viên -> chọn.
+# KHÔNG tự lắp: con số chỉ để loại bớt, tai người quyết.
+
+NGUON_DIR = Path("models/tts/nguon")
+PHAN_TICH_DIR = NGUON_DIR / ".phan_tich"
+
+# Dài hơn thế thì coi là bản ghi nguồn cần tách, không phải đoạn mẫu đã cắt sẵn.
+NGUON_TOI_THIEU_S = 30.0
+
+# Chấm âm học thì rẻ, cho STT nghe lại thì đắt. Nên xếp hạng bằng số đo rẻ
+# trước, rồi chỉ kiểm lời cho tốp đầu.
+KIEM_LOI_N = 12
+TRA_VE_N = 8
+
+# Nhịp muốn AI nói, âm tiết/phút. Lấy từ `scripts/chon_doan_mau.py`: giọng
+# telesales tự nhiên ~190, còn giọng gốc trong bản ghi thường nhanh hơn nhiều.
+NHIP_MUON = 190.0
+
+_VIEC: dict[str, dict] = {}
+
+
+def _ten_sach(s: str) -> str:
+    return "".join(c for c in s if c.isalnum() or c in "-_").strip()
+
+
+def _doc_nguon(ten: str):
+    import numpy as np
+    import soundfile as sf
+
+    # KHÔNG dùng always_2d: với tệp mono nó trả (N,1) rồi `.mean` cấp thêm một
+    # mảng (N,) nữa - trên bản ghi 20 phút là thừa ra hơn 200MB.
+    x, sr = sf.read(str(NGUON_DIR / f"{ten}.wav"), dtype="float32")
+    x = np.asarray(x)
+    return (x.mean(axis=1) if x.ndim > 1 else x), sr
+
+
+def _wav_bytes(x, sr: int) -> bytes:
+    import io as _io
+
+    import soundfile as sf
+
+    b = _io.BytesIO()
+    sf.write(b, x, sr, format="WAV", subtype="PCM_16")
+    return b.getvalue()
+
+
+async def _nghe_lai(stt, x, sr: int) -> str:
+    """Cho STT nghe lại chính clip đã cắt.
+
+    Dùng `moc_tung_chu` chứ không `transcribe`: `transcribe` mồi từ vựng ngân
+    hàng, mà bản ghi nguồn nằm ngoài miền đó - mồi vào là nghe chệch đúng chỗ
+    ta đang cần kiểm.
+    """
+    try:
+        doan = await stt.moc_tung_chu(_wav_bytes(x, sr))
+    except Exception as e:
+        logger.warning("nghe lại ứng viên hỏng: %s", e)
+        return ""
+    return " ".join((d.get("text") or "").strip() for d in doan).strip()
+
+
+async def _khao_sat(ten: str):
+    """Chạy nền: nghe hết bản ghi, tách, đo, xếp hạng, ghi wav xem trước."""
+    import json
+
+    import numpy as np
+
+    from backend.main import app_state
+    from backend.services.chon_doan_mau import (cer, cham_diem, cua_so_ngat,
+                                                tach_don_vi, xep_hang)
+
+    viec = _VIEC[ten]
+    try:
+        x, sr = _doc_nguon(ten)
+        cs = cua_so_ngat(x, sr)
+        viec["tong"] = len(cs)
+
+        doan = []
+        for n, (a, b) in enumerate(cs):
+            segs = await app_state.stt.moc_tung_chu(_wav_bytes(x[a:b], sr))
+            lech = a / sr
+            for s in segs:                       # mốc trong cửa sổ -> mốc cả tệp
+                for w in s.get("words") or []:
+                    w["start"] = float(w.get("start", 0.0)) + lech
+                    w["end"] = float(w.get("end", 0.0)) + lech
+            doan.extend(segs)
+            viec["xong"] = n + 1
+            viec["tien"] = round((n + 1) / len(cs) * 90)
+
+        uv = tach_don_vi(doan)
+        viec["tach_duoc"] = len(uv)
+        for d in uv:
+            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
+            d.update(cham_diem(clip, sr, d["loi"], d["loi"]))   # lệch lời tính sau
+
+        tot = xep_hang(uv)[:KIEM_LOI_N]
+        for d in tot:
+            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
+            d["nghe_lai"] = await _nghe_lai(app_state.stt, clip, sr)
+            d["lech_loi"] = round(cer(d["loi"], d["nghe_lai"]), 4)
+        viec["tien"] = 95
+
+        cuoi = xep_hang(tot)[:TRA_VE_N]
+        ra = PHAN_TICH_DIR / ten
+        ra.mkdir(parents=True, exist_ok=True)
+        for i, d in enumerate(cuoi):
+            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
+            (ra / f"{i}.wav").write_bytes(_wav_bytes(clip, sr))
+            d["i"] = i
+            # Lời ghi vào .txt là thứ STT nghe được TRÊN CHÍNH CLIP ĐÃ CẮT, không
+            # phải lời suy ra từ lượt nghe cả tệp - như vậy lệch lời bằng 0 theo
+            # cấu tạo. Đây đúng là chỗ đã hỏng: clip lệch lời 12,5% cho WER 160%.
+            d["loi_ghi"] = d.get("nghe_lai") or d["loi"]
+            d["am_tiet"] = len([t for t in d["loi_ghi"].split() if t.strip()])
+            nhip = d["am_tiet"] / d["dai"] * 60 if d["dai"] else 0.0
+            d["nhip_goc"] = round(nhip)
+            d["toc_de_xuat"] = round(min(1.0, NHIP_MUON / nhip), 2) if nhip else 1.0
+
+        viec.update(trang_thai="xong", tien=100, ung_vien=cuoi,
+                    loai_bo=len(uv) - len(cuoi))
+        (PHAN_TICH_DIR / f"{ten}.json").write_text(
+            json.dumps({"ung_vien": cuoi, "tach_duoc": len(uv)},
+                       ensure_ascii=False), encoding="utf-8")
+        logger.info("Khảo sát %s: tách %d, giữ %d", ten, len(uv), len(cuoi))
+    except Exception as e:
+        logger.exception("Khảo sát nguồn %s hỏng", ten)
+        viec.update(trang_thai="hong", loi=str(e))
+
+
+@router.get("/nguon")
+async def ds_nguon():
+    """Bản ghi dài đang chờ tách."""
+    import json
+
+    NGUON_DIR.mkdir(parents=True, exist_ok=True)
+    ra = []
+    for w in sorted(NGUON_DIR.glob("*.wav")):
+        ten = w.stem
+        j = PHAN_TICH_DIR / f"{ten}.json"
+        viec = _VIEC.get(ten) or {}
+        ra.append({
+            "ten": ten,
+            "mb": round(w.stat().st_size / 1024 / 1024, 1),
+            "trang_thai": viec.get("trang_thai") or ("xong" if j.exists() else "chua"),
+            "tien": viec.get("tien", 100 if j.exists() else 0),
+            "so_ung_vien": len(json.loads(j.read_text(encoding="utf-8"))["ung_vien"])
+            if j.exists() else 0,
+        })
+    return {"nguon": ra}
+
+
+@router.post("/nguon/{ten}/phan-tich")
+async def phan_tich_nguon(ten: str):
+    """Bắt đầu khảo sát. Trả ngay, hỏi tiến độ bằng GET cùng đường dẫn.
+
+    Bản ghi 20 phút mất khoảng 2 phút để nghe hết - giữ nguyên một request HTTP
+    suốt thời gian đó là mời đứt kết nối.
+    """
+    import asyncio
+
+    ten = _ten_sach(ten)
+    if not (NGUON_DIR / f"{ten}.wav").exists():
+        return {"error": f"Không thấy bản ghi nguồn '{ten}'"}
+    if (_VIEC.get(ten) or {}).get("trang_thai") == "dang_chay":
+        return {"trang_thai": "dang_chay", "tien": _VIEC[ten].get("tien", 0)}
+
+    _VIEC[ten] = {"trang_thai": "dang_chay", "tien": 0}
+    asyncio.create_task(_khao_sat(ten))
+    return {"trang_thai": "dang_chay", "tien": 0}
+
+
+@router.get("/nguon/{ten}/phan-tich")
+async def xem_phan_tich(ten: str):
+    """Tiến độ, hoặc kết quả nếu đã xong."""
+    import json
+
+    ten = _ten_sach(ten)
+    viec = _VIEC.get(ten)
+    if viec and viec.get("trang_thai") == "dang_chay":
+        return {"trang_thai": "dang_chay", "tien": viec.get("tien", 0),
+                "xong": viec.get("xong", 0), "tong": viec.get("tong", 0)}
+    if viec and viec.get("trang_thai") == "hong":
+        return {"trang_thai": "hong", "error": viec.get("loi", "")}
+
+    j = PHAN_TICH_DIR / f"{ten}.json"
+    if not j.exists():
+        return {"trang_thai": "chua"}
+    d = json.loads(j.read_text(encoding="utf-8"))
+    return {"trang_thai": "xong", "tien": 100, **d}
+
+
+@router.get("/nguon/{ten}/ung-vien/{i}.wav")
+async def nghe_ung_vien(ten: str, i: int):
+    p = PHAN_TICH_DIR / _ten_sach(ten) / f"{int(i)}.wav"
+    if not p.exists():
+        return {"error": "Chưa có ứng viên này - chạy Phân tích trước"}
+    return FileResponse(str(p), media_type="audio/wav")
+
+
+class ChonUngVien(BaseModel):
+    i: int
+    ten_giong: str
+    dat_toc: bool = True
+
+
+@router.post("/nguon/{ten}/chon")
+async def chon_ung_vien(ten: str, body: ChonUngVien):
+    """Lắp ứng viên đã chọn thành một giọng dùng được."""
+    import json
+    import shutil
+
+    from backend.main import app_state
+
+    ten = _ten_sach(ten)
+    giong = _ten_sach(body.ten_giong)
+    if not giong:
+        return {"error": "Tên giọng không hợp lệ"}
+
+    j = PHAN_TICH_DIR / f"{ten}.json"
+    wav = PHAN_TICH_DIR / ten / f"{int(body.i)}.wav"
+    if not (j.exists() and wav.exists()):
+        return {"error": "Chưa có kết quả phân tích cho bản ghi này"}
+
+    ds = json.loads(j.read_text(encoding="utf-8"))["ung_vien"]
+    u = next((z for z in ds if z.get("i") == int(body.i)), None)
+    if u is None:
+        return {"error": f"Không có ứng viên số {body.i}"}
+
+    VOICES_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy(str(wav), str(VOICES_DIR / f"{giong}.wav"))
+    (VOICES_DIR / f"{giong}.txt").write_text(u["loi_ghi"].strip() + "\n",
+                                             encoding="utf-8")
+
+    # Sổ giọng chốt lời đoạn mẫu MỘT LẦN lúc khởi động. Ghi .txt xong mà không
+    # dọn thì giọng vẫn giữ lời cũ -> lệch lời -> F5 đọc ra rác. Đã gặp thật:
+    # mảnh "Dạ vâng," ra "dự báo tổng thống chuẩn bị thành phố đà nẵng...",
+    # 8/8 lần, tất định. `upload_voice` cũng dọn đúng kiểu này (xem trên).
+    app_state.tts.drop_voice(giong)
+    if body.dat_toc and u.get("toc_de_xuat"):
+        app_state.tts.dat_toc_do(giong, float(u["toc_de_xuat"]))
+    await app_state.tts.ensure_voice(giong)
+
+    logger.info("Lắp giọng %s từ %s ứng viên #%s (%.2fs, tốc %.2f)",
+                giong, ten, body.i, u.get("dai", 0.0), u.get("toc_de_xuat", 1.0))
+    return {"ten": giong, "dai": u.get("dai"), "loi": u["loi_ghi"],
+            "toc": u.get("toc_de_xuat")}
+
+
+@router.delete("/nguon/{ten}")
+async def xoa_nguon(ten: str):
+    import shutil
+
+    ten = _ten_sach(ten)
+    (NGUON_DIR / f"{ten}.wav").unlink(missing_ok=True)
+    (PHAN_TICH_DIR / f"{ten}.json").unlink(missing_ok=True)
+    shutil.rmtree(PHAN_TICH_DIR / ten, ignore_errors=True)
+    _VIEC.pop(ten, None)
+    return {"ok": True}
