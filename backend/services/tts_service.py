@@ -124,7 +124,20 @@ SPEED_CHUAN = 1.20
 HE_SO_BU_LANG = 0.95
 # Dưới ngưỡng này thì để F5 tự lo: mảnh 1 âm tiết mà ép thời lượng thì sai số
 # một âm tiết đã là 100%.
-TOI_THIEU_AM_TIET_DE_EP = 3
+# 3 -> 2 ngày 18-08-2026. Lý do gốc của ngưỡng vẫn nguyên ("mảnh 1 âm tiết mà ép
+# thời lượng thì sai số một âm tiết đã là 100%") và mảnh 1 âm tiết vẫn để F5 tự
+# lo. Hạ xuống 2 là để với tới đúng mảnh "Dạ vâng," - trước đó nó trượt ngưỡng,
+# không được ép, và F5 bóp "vâng" còn 120ms nên khách nghe ra "dạ vân".
+TOI_THIEU_AM_TIET_DE_EP = 2
+
+# Mảnh ngắn được cấp thời lượng DƯ hơn hẳn, tính trên mỗi âm tiết. F5 chia sai
+# thời lượng trong cụm ngắn: dồn cho "dạ" rồi bỏ đói "vâng" còn 120ms, mất đuôi
+# ngân mũi nên nghe ra "dạ vân". Quét hệ số thì 1.60 là chỗ máy nhận dạng nghe
+# lại đúng "vâng" - 0.95 nghe ra "vẫn", 2.80 nghe ra "như", tức cấp dư quá cũng
+# hỏng chứ không phải càng dư càng tốt.
+HE_SO_BU_MANH_NGAN = 1.60
+# Mảnh từ ngần này âm tiết trở xuống thì dùng hệ số trên.
+TRAN_AM_TIET_MANH_NGAN = 2
 
 _CHU_SO_RE = re.compile(r"\d")
 
@@ -231,8 +244,11 @@ def thoi_luong_ep(text: str, dai_ref_giay: float, speed: float,
     if n < TOI_THIEU_AM_TIET_DE_EP or dai_ref_giay <= 0 or speed <= 0:
         return None
     nhip = NHIP_CHUAN_AM_TIET_PHUT * (speed / SPEED_CHUAN)
-    return dai_ref_giay + n / (nhip / 60.0) * (
-        HE_SO_BU_LANG if he_so_bu is None else float(he_so_bu))
+    if he_so_bu is not None:
+        he = float(he_so_bu)
+    else:
+        he = HE_SO_BU_MANH_NGAN if n <= TRAN_AM_TIET_MANH_NGAN else HE_SO_BU_LANG
+    return dai_ref_giay + n / (nhip / 60.0) * he
 
 
 # Bóp quãng lặng GIỮA mảnh. Ngưỡng KHÔNG chọn cho đẹp mà lấy từ hai phép đo:

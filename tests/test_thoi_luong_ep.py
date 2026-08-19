@@ -78,8 +78,30 @@ def test_chuoi_rong():
 def test_tra_none_khi_manh_qua_ngan():
     """Mảnh 1-2 âm tiết thì sai số một âm tiết đã là 50-100% - để F5 tự lo."""
     assert thoi_luong_ep("dạ", REF, 1.20) is None
-    assert thoi_luong_ep("dạ vâng", REF, 1.20) is None
+    # 18-08-2026: mảnh 2 âm tiết GIỜ CÓ ép, và ép DƯ hơn hẳn - xem
+    # `HE_SO_BU_MANH_NGAN`. Trước đó nó trả None, và đó chính là lý do "Dạ vâng,"
+    # bị F5 bóp "vâng" còn 120ms rồi khách nghe ra "dạ vân".
+    assert thoi_luong_ep("dạ vâng", REF, 1.20) is not None
     assert thoi_luong_ep("dạ vâng ạ", REF, 1.20) is not None
+
+
+def test_manh_hai_am_tiet_duoc_cap_du_hon():
+    """Mảnh 2 âm tiết được cấp thời lượng DƯ hơn mảnh dài, tính trên mỗi âm tiết.
+
+    Vì sao: F5 chia sai thời lượng trong cụm "Dạ vâng," - dồn cho "dạ" rồi bỏ
+    đói "vâng" còn 120ms, mất đuôi ngân mũi nên nghe ra "dạ vân". Quét hệ số thì
+    1.60 là chỗ máy nhận dạng nghe lại đúng "vâng" (0.95 nghe ra "vẫn", 2.80
+    nghe ra "như" - cấp dư quá cũng hỏng).
+    """
+    from backend.services.tts_service import (HE_SO_BU_LANG,
+                                              HE_SO_BU_MANH_NGAN, so_am_tiet)
+
+    assert HE_SO_BU_MANH_NGAN > HE_SO_BU_LANG
+    assert so_am_tiet("dạ vâng") == 2
+
+    ngan = thoi_luong_ep("dạ vâng", REF, 1.20) - REF
+    dai = thoi_luong_ep("dạ vâng ạ em nghe", REF, 1.20) - REF
+    assert ngan / 2 > dai / 5          # mỗi âm tiết của mảnh ngắn được nhiều hơn
 
 
 def test_bao_gom_ca_doan_mau():
@@ -163,7 +185,16 @@ def test_cung_so_am_tiet_thi_cung_thoi_luong_du_khac_dau():
 
 
 def test_nguong_toi_thieu_dung_nhu_khai_bao():
-    assert TOI_THIEU_AM_TIET_DE_EP == 3
+    """3 -> 2 ngày 18-08-2026.
+
+    Lý do gốc của ngưỡng vẫn nguyên: "mảnh 1 âm tiết mà ép thời lượng thì sai số
+    một âm tiết đã là 100%" - và `n < 2` vẫn trả None nên mảnh 1 âm tiết vẫn để
+    F5 tự lo. Hạ xuống 2 là để với tới đúng mảnh "Dạ vâng," (xem
+    `HE_SO_BU_MANH_NGAN`): trước đó nó trượt ngưỡng, không được ép, và F5 bóp
+    "vâng" còn 120ms nên khách nghe ra "dạ vân".
+    """
+    assert TOI_THIEU_AM_TIET_DE_EP == 2
+    assert thoi_luong_ep("dạ", REF, 1.20) is None       # 1 âm tiết: vẫn để F5 tự lo
 
 
 # --- bỏ dấu câu khỏi chữ đưa vào F5 --------------------------------------
