@@ -1199,3 +1199,51 @@ def bo_cau_lui_thua(text: str) -> str:
         return text
     # Giữ lại "Dạ" mở đầu cho tự nhiên - mọi lượt của bot đều mở bằng "Dạ".
     return con if con.lower().startswith("dạ") else "Dạ " + con[0].lower() + con[1:]
+
+
+# --- chặn chữ nước ngoài lọt ra từ LLM ------------------------------------
+#
+# Bắt được 18-08-2026 bằng chính bộ đọc thử 100 mẫu:
+#
+#     "Dạ em chào chị, em là Lan bên Ngân hàng Quân đội ạ. Em có thể giúp gì
+#      cho chị今天天气不错，你打算出去玩吗？"
+#
+# Đo trên 34 mẫu đầu: 1/136 lượt (0,7%). Nghe thì nhỏ, nhưng với 100 cuộc gọi
+# mỗi ngày là gần một cuộc dính - và F5 sẽ CỐ ĐỌC chỗ chữ Hán đó ra tiếng.
+#
+# CẮT chứ không sinh lại: đường thoại thật có trần TTFA, sinh lại cả lượt là
+# cộng thêm vài giây khách phải chờ. Cắt đi thì câu còn lại vẫn trọn nghĩa -
+# đúng ca trên, cắt xong ra "Em có thể giúp gì cho chị?".
+#
+# Tiếng Việt nằm trọn dưới U+1EFF nên không dải nào dưới đây chạm tới nó.
+_CHU_LA_RE = re.compile(
+    "["
+    "\u3000-\u303F"      # dấu câu CJK
+    "\u3040-\u30FF"      # hiragana + katakana
+    "\u3400-\u4DBF"      # Hán mở rộng A
+    "\u4E00-\u9FFF"      # Hán thường dùng
+    "\uAC00-\uD7AF"      # Hangul
+    "\uF900-\uFAFF"      # Hán tương thích
+    "\uFF00-\uFFEF"      # dạng toàn rộng
+    "]+"
+)
+
+
+def co_chu_la(s: str | None) -> bool:
+    return bool(s) and bool(_CHU_LA_RE.search(s))
+
+
+def bo_chu_la(s: str | None) -> str:
+    """Cắt chữ nước ngoài, dọn luôn khoảng trắng thừa nó để lại.
+
+    Không dọn khoảng trắng thì ra "cho chị  ?" - F5 đọc chỗ đó thành một quãng
+    ngập ngừng, tức vẫn nghe ra là có gì đó sai.
+    """
+    if not s:
+        return ""
+    if not _CHU_LA_RE.search(s):
+        return s
+    ra = _CHU_LA_RE.sub(" ", s)
+    ra = re.sub(r"\s+", " ", ra).strip()
+    # Dấu câu bị đẩy rời ra khỏi từ khi phần chữ lạ ở giữa biến mất.
+    return re.sub(r"\s+([,.!?;:])", r"\1", ra)

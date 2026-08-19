@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 import httpx
 import ollama
 from backend.config import settings
+from backend.pipeline.text_normalizer import bo_chu_la, co_chu_la
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
@@ -244,12 +245,26 @@ class LLMService:
 
     @staticmethod
     def _extract_content(msg) -> str:
-        """Extract text content from an Ollama message (handles both dict and object)."""
+        """Lấy chữ từ một message của Ollama, và CẮT chữ nước ngoài tại đây.
+
+        Đây là chỗ nghẽn DUY NHẤT mà mọi đường lấy chữ từ LLM đều đi qua
+        (`stream_response` lẫn `generate_simple`), nên chặn ở đây là chặn cho
+        cả đường gọi thật lẫn đường nghe thử - không phải nhớ lắp ở từng nơi.
+
+        Vì sao cần: bộ đọc thử 100 mẫu ngày 18-08-2026 bắt được mô hình trả ra
+        *"Em có thể giúp gì cho chị今天天气不错，你打算出去玩吗？"* - 1/136 lượt
+        (0,7%). F5 sẽ CỐ ĐỌC chỗ chữ Hán đó ra tiếng, khách nghe được một tràng
+        vô nghĩa giữa cuộc tư vấn.
+        """
         if msg is None:
             return ""
-        if isinstance(msg, dict):
-            return msg.get("content", "") or ""
-        return getattr(msg, "content", "") or ""
+        chu = (msg.get("content", "") if isinstance(msg, dict)
+               else getattr(msg, "content", "")) or ""
+        if co_chu_la(chu):
+            sach = bo_chu_la(chu)
+            logger.warning("LLM trả ra chữ nước ngoài, đã cắt: %r -> %r", chu, sach)
+            return sach
+        return chu
 
     @staticmethod
     def _doc_tool_calls(msg) -> list[dict]:
