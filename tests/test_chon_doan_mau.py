@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 
-from backend.services.chon_doan_mau import (DAI_MAX, DAI_MIN, LECH_LOI_TRAN,
+from backend.services.chon_doan_mau import (DAI_MAX, DAI_MIN, LECH_GIUA_TRAN,
                                             cer, cham_diem, tach_don_vi,
                                             xep_hang)
 
@@ -129,15 +129,28 @@ def test_qua_NGAN_cung_bi_loai():
 # F5 canh chữ theo ref_text rồi sinh tiếp trên nền ref_audio; chỗ lệch không
 # biến mất mà rò sang phần sinh.
 
-def test_LECH_LOI_qua_nguong_thi_bi_loai():
-    ra = xep_hang([_ung_vien(lech_loi=0.125), _ung_vien(lech_loi=0.0)])
-    assert len(ra) == 1, "clip lệch lời 12,5% vẫn được xếp hạng"
+def test_ca_heu_a6_50_bi_day_XUONG_DUOI():
+    """Ca hỏng thật: clip cắt cụt nên STT nghe thêm chữ "không" ở ĐẦU.
+
+    Ngày xưa nó cho WER 160%, nhưng vì `.txt` khi đó ghi lời SAI. Giờ `.txt` lấy
+    từ chính STT nghe clip nên khớp tiếng theo cấu tạo - lỗi ấy không tái diễn
+    được. Còn lại chỉ là cắt cụt âm: đáng xếp dưới, chưa đủ bằng chứng để vứt.
+    """
+    xau = _ung_vien(loi="em thấy tự ti và bản thân mình tệ quá chị ạ")
+    xau["nghe_lai"] = "không em thấy tự ti và bản thân mình tệ quá chị ạ"
+    xau["lech_loi"] = 0.125
+    tot = _ung_vien(loi="em thấy tự ti và bản thân mình tệ quá chị ạ")
+    tot["nghe_lai"] = "em thấy tự ti và bản thân mình tệ quá chị ạ"
+    ra = xep_hang([xau, tot])
     assert ra[0]["lech_loi"] == 0.0
 
 
-def test_nguong_lech_loi_dung_hang_so_da_chot():
-    assert xep_hang([_ung_vien(lech_loi=LECH_LOI_TRAN)]), "đúng ngưỡng phải ĐẠT"
-    assert not xep_hang([_ung_vien(lech_loi=LECH_LOI_TRAN + 0.001)])
+def test_nguong_lech_GIUA_dung_hang_so_da_chot():
+    u = _ung_vien(loi="a b c d e", lech_loi=LECH_GIUA_TRAN)
+    u["nghe_lai"] = "a b x d e"                      # lệch ở GIỮA
+    assert xep_hang([u]), "đúng ngưỡng phải ĐẠT"
+    u2 = dict(u, lech_loi=LECH_GIUA_TRAN + 0.001)
+    assert not xep_hang([u2])
 
 
 def test_cer_do_dung_ti_le_ky_tu_sai():
@@ -259,7 +272,7 @@ def _ung_vien(dai=3.5, lech_loi=0.0, h1h2=4.0, nen=-60.0, f0_tv=200.0,
 
 def test_hang_so_dung_nhu_da_chot():
     assert (DAI_MIN, DAI_MAX) == (3.0, 5.5)
-    assert LECH_LOI_TRAN == 0.05
+    assert LECH_GIUA_TRAN == 0.25
 
 
 # --- chia cửa sổ gửi STT -----------------------------------------------
@@ -511,3 +524,82 @@ def test_dep_trung_sap_theo_DIEM_GIAM():
 def test_dep_trung_rong():
     from backend.services.chon_doan_mau import dep_de_len
     assert dep_de_len([]) == []
+
+
+# --- lệch ở ĐÂU quan trọng hơn lệch BAO NHIÊU ------------------------------
+#
+# Đo 24 ứng viên trên bản ghi thật (18-08): phân bố lệch lời LIÊN TỤC từ 0% tới
+# 48%, khe rộng nhất nằm ở 34%->48% - vô dụng làm mốc cắt. Nên mọi ngưỡng phần
+# trăm đều tuỳ tiện như nhau.
+#
+# Nhưng nhìn LÝ DO lệch thì có quy luật rõ:
+#
+#   tách ra                              STT nghe lại                  bản chất
+#   ...thông báo từ TÁP khác nhé         ...từ TAB khác nhé            chính tả
+#   HÔM NAY cũng là hơn ba năm           ĐẾN hôm nay cũng là...        mất từ ĐẦU
+#   ...mở điện thoại LÊN MỖI SÁNG THÌ    ...lên mỗi sáng               thừa từ CUỐI
+#
+# 9/24 cái lệch 6-24% đều là mất/thừa đúng một từ ở BIÊN, tức cắt hỏng - đó mới
+# là đường dẫn tới WER 160%. Lệch ở GIỮA chỉ là STT nghe nhoè, vô hại.
+
+def test_mat_tu_o_DAU_bi_bat():
+    from backend.services.chon_doan_mau import lech_o_bien
+    assert lech_o_bien("hôm nay cũng là hơn ba năm rồi mọi người ạ",
+                       "đến hôm nay cũng là hơn ba năm rồi mọi người ạ")
+
+
+def test_thua_tu_o_CUOI_bi_bat():
+    from backend.services.chon_doan_mau import lech_o_bien
+    assert lech_o_bien("nào đó khi ở mình mở điện thoại lên mỗi sáng thì",
+                       "khi ở mình mở điện thoại lên mỗi sáng")
+
+
+def test_nhoe_CHINH_TA_o_giua_thi_KHONG_bat():
+    """"táp"/"tab" là STT nghe nhoè, không phải cắt hỏng - đừng loại oan."""
+    from backend.services.chon_doan_mau import lech_o_bien
+    assert not lech_o_bien("bạn có thể lờ đi những thông báo từ táp khác nhé",
+                           "bạn có thể lờ đi những thông báo từ tab khác nhé")
+
+
+def test_khop_hoan_toan_thi_khong_bat():
+    from backend.services.chon_doan_mau import lech_o_bien
+    assert not lech_o_bien("dạ vâng em nghe anh ạ", "dạ vâng em nghe anh ạ.")
+
+
+def test_nghe_lai_RONG_thi_coi_nhu_hong():
+    from backend.services.chon_doan_mau import lech_o_bien
+    assert lech_o_bien("dạ vâng em nghe anh ạ", "")
+
+
+def test_cut_bien_thi_TRU_DIEM_chu_khong_loai():
+    """Loại thẳng thì trên bản ghi thật chỉ còn ĐÚNG MỘT ứng viên - không đủ để
+    nghe so, mà cả tính năng sinh ra là để đưa danh sách cho tai người chọn."""
+    cut = _ung_vien(loi="hôm nay cũng là hơn ba năm rồi mọi người ạ")
+    cut["nghe_lai"] = "đến hôm nay cũng là hơn ba năm rồi mọi người ạ"
+    cut["lech_loi"] = 0.03
+    gon_ = _ung_vien(loi="hôm nay cũng là hơn ba năm rồi mọi người ạ")
+    gon_["nghe_lai"] = "hôm nay cũng là hơn ba năm rồi mọi người ạ"
+    ra = xep_hang([cut, gon_])
+    assert len(ra) == 2, "clip cắt cụt biên bị vứt thay vì trừ điểm"
+    assert ra[0]["nghe_lai"] == gon_["nghe_lai"], "clip cắt gọn không được xếp trên"
+
+
+def test_xep_hang_GIU_clip_chi_nhoe_o_giua():
+    """Nhoè giữa câu 8% thì giữ - ngưỡng cũ 5% loại oan đúng loại này."""
+    u = _ung_vien(loi="bạn có thể lờ đi những thông báo từ táp khác nhé")
+    u["nghe_lai"] = "bạn có thể lờ đi những thông báo từ tab khác nhé"
+    u["lech_loi"] = 0.08
+    assert len(xep_hang([u])) == 1
+
+
+def test_van_loai_khi_lech_giua_QUA_TO():
+    """Nhoè vài chữ thì tha, chứ nghe ra nửa câu khác thì không."""
+    u = _ung_vien(loi="bạn có thể lờ đi những thông báo từ táp khác nhé")
+    u["nghe_lai"] = "bạn hoàn toàn sai rồi mọi thứ đã thay đổi hết từ táp khác nhé"
+    u["lech_loi"] = 0.42
+    assert xep_hang([u]) == []
+
+
+def test_chua_nghe_lai_thi_van_qua_duoc():
+    """Vòng chấm đầu chưa cho STT nghe lại - đừng loại sạch ở đó."""
+    assert len(xep_hang([_ung_vien()])) == 1

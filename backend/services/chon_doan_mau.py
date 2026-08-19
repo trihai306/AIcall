@@ -33,7 +33,23 @@ DAI_MIN, DAI_MAX = 3.0, 5.5
 # `heu_a6_50` lệch 12,5% -> WER đầu ra 160%, tiếng vỡ hoàn toàn: F5 canh chữ
 # theo ref_text rồi sinh tiếp trên nền ref_audio, chỗ lệch không biến mất mà rò
 # sang phần sinh.
-LECH_LOI_TRAN = 0.05
+#
+# NHƯNG NGƯỠNG PHẦN TRĂM LÀ THƯỚC ĐO SAI. Đo 24 ứng viên trên bản ghi thật
+# (18-08): phân bố liên tục từ 0% tới 48%, khe rộng nhất nằm ở 34%->48% - vô
+# dụng làm mốc cắt, nên chọn 5% hay 8% hay 10% đều tuỳ tiện như nhau.
+#
+# Thứ có quy luật là VỊ TRÍ lệch. 9/24 cái lệch 6-24% đều là mất hoặc thừa đúng
+# một từ ở BIÊN, tức cắt hỏng - đó mới là đường dẫn tới WER 160%. Còn lệch ở
+# GIỮA thì chỉ là STT nghe nhoè chính tả ("táp"/"tab", "nó"/"nói"), hoàn toàn
+# dùng được mà ngưỡng 5% đang loại oan.
+#
+# Nên: lệch ở biên -> loại bất kể tỉ lệ; lệch ở giữa -> tha tới trần rộng hơn.
+# (Hằng `LECH_LOI_TRAN = 0.05` cũ đã bỏ hẳn - giữ lại một ngưỡng không ai dùng
+# là mời người sau tưởng nó còn hiệu lực.)
+#
+# Trần cho lệch nằm GIỮA câu. Rộng hơn hẳn vì nhoè chính tả vô hại, nhưng vẫn
+# phải có trần: nhoè vài chữ thì tha, nghe ra nửa câu khác thì không.
+LECH_GIUA_TRAN = 0.25
 
 # Khe im giữa hai từ. Rộng hơn thế thì đó là chỗ ngắt/lấy hơi - cắt ở đó, đừng
 # nuốt cả khoảng lặng vào clip.
@@ -64,6 +80,9 @@ TRONG_SO = {
     "h1h2": 3.0,
     "nen": 2.0,
     "le_phep": 2.0,
+    # Trừ, không phải cộng: clip cắt cụt một âm ở đầu/cuối thì vẫn nghe được
+    # nhưng kém hơn hẳn clip cắt gọn. Đủ nặng để đẩy xuống dưới, không đủ để vứt.
+    "cut_bien": -4.0,
 }
 
 _KHUNG_MS = 40.0
@@ -314,9 +333,34 @@ def _thang(v: float, tot: float, te: float) -> float:
     return float(np.clip((te - v) / (te - tot), 0.0, 1.0))
 
 
+def lech_o_bien(loi: str, nghe_lai: str) -> bool:
+    """Chỗ lệch có nằm ở TỪ ĐẦU hoặc TỪ CUỐI không.
+
+    Lệch ở biên nghĩa là mốc cắt ăn cụt một từ hoặc ăn lẹm sang từ bên cạnh -
+    clip mở đầu (hoặc kết thúc) bằng một âm dở dang. Đó là thứ làm F5 vỡ tiếng.
+    Lệch ở giữa thì chỉ là STT nghe nhoè, clip vẫn tốt.
+    """
+    a, b = gon(loi).split(), gon(nghe_lai).split()
+    if not a or not b:
+        return True
+    return a[0] != b[0] or a[-1] != b[-1]
+
+
 def _dat(u: dict) -> bool:
+    """Loại thứ CHẮC CHẮN hỏng. Cắt cụt biên thì trừ điểm, không loại.
+
+    Đã thử loại thẳng khi lệch ở biên: trên bản ghi thật chỉ còn ĐÚNG MỘT ứng
+    viên (luật cũ giữ 3) - không đủ để nghe so, mà mục đích của cả tính năng là
+    đưa ra danh sách để tai người chọn.
+
+    Và loại thẳng là sai chỗ: `.txt` KHÔNG lấy từ khâu tách mà lấy từ chính STT
+    nghe lại clip đã cắt, nên nó khớp tiếng theo cấu tạo. "Lệch biên" ở đây chỉ
+    còn nói lên clip cắt cụt một âm - đáng trừ điểm, chưa có bằng chứng là đủ
+    hỏng để vứt. Ca WER 160% ngày xưa lệch vì `.txt` ghi sai lời, một chuyện
+    khác hẳn, không còn xảy ra được nữa.
+    """
     return (DAI_MIN <= u.get("dai", 0.0) <= DAI_MAX
-            and u.get("lech_loi", 1.0) <= LECH_LOI_TRAN)
+            and u.get("lech_loi", 1.0) <= LECH_GIUA_TRAN)
 
 
 def diem(u: dict) -> float:
@@ -324,7 +368,10 @@ def diem(u: dict) -> float:
         TRONG_SO["tieu_tu"] * bool(u.get("co_tieu_tu"))
         + TRONG_SO["h1h2"] * _thang(u.get("h1h2", H1H2_TE), H1H2_TOT, H1H2_TE)
         + TRONG_SO["nen"] * _thang(u.get("nen", NEN_TE), NEN_TOT, NEN_TE)
-        + TRONG_SO["le_phep"] * bool(u.get("le_phep")), 4)
+        + TRONG_SO["le_phep"] * bool(u.get("le_phep"))
+        + TRONG_SO["cut_bien"] * bool(
+            u.get("nghe_lai") is not None
+            and lech_o_bien(u.get("loi", ""), u["nghe_lai"])), 4)
 
 
 def xep_hang(ung_vien: list[dict]) -> list[dict]:
