@@ -306,3 +306,92 @@ def test_quet_nang_luong_theo_LO_khong_lech_o_ranh_gioi():
     for a, b in cs[:-1]:
         quanh = x[max(0, b - int(SR * 0.05)):b + int(SR * 0.05)]
         assert np.abs(quanh).max() < 0.05, f"cắt tại {b/SR:.2f}s rơi vào giữa tiếng"
+
+
+# --- đo cao độ ---------------------------------------------------------
+
+def _chuoi_xung(f0, ms, sr=SR):
+    """Chuỗi xung tần số `f0` - dạng sóng thô nhưng cao độ thì biết chắc."""
+    n = int(sr * ms / 1000)
+    x = np.zeros(n, dtype=np.float32)
+    x[:: max(1, int(sr / f0))] = 1.0
+    return x * 0.5
+
+
+def test_do_dung_CAO_DO_giong_nu():
+    """Giọng nữ ~200Hz. Sai quãng tám ở đây là bảng số đo thành vô nghĩa."""
+    d = cham_diem(_chuoi_xung(200, 3200), SR, "a", "a")
+    assert abs(d["f0_tv"] - 200) < 12, f"đo ra {d['f0_tv']}Hz thay vì 200Hz"
+
+
+def test_do_dung_CAO_DO_giong_nam_tram():
+    """Giọng nam trầm ~95Hz - phải không bị bắt nhầm thành bội 2 (190Hz)."""
+    d = cham_diem(_chuoi_xung(95, 3200), SR, "a", "a")
+    assert abs(d["f0_tv"] - 95) < 8, f"đo ra {d['f0_tv']}Hz thay vì 95Hz"
+
+
+def test_cao_do_KHONG_lech_khi_doi_tan_so_lay_mau():
+    """Bản ghi nguồn hay ở 44,1 hoặc 48kHz chứ không phải 24kHz."""
+    for sr in (16000, 44100, 48000):
+        d = cham_diem(_chuoi_xung(180, 3200, sr), sr, "a", "a")
+        assert abs(d["f0_tv"] - 180) < 12, f"{sr}Hz: đo ra {d['f0_tv']}Hz"
+
+
+# --- tiểu từ THẬT, không phải chữ trùng âm --------------------------------
+#
+# Chạy thật trên bản ghi 20 phút (18-08) tách được 349 đoạn nhưng cả 4 đoạn lọt
+# vào chung kết đều là NHẬN NHẦM:
+#
+#     "rất là nhiều lần mình những cái câu chuyện đó ấy"
+#     "kể cho mình nghe ... và nếu có thể thì bạn ấy"      <- cắt giữa mệnh đề
+#     "dạo này trong máy khác à đấy thì lúc đó ... rằng là à"
+#
+# "ấy" trong "bạn ấy" là đại từ chỉ định, "à" là tiếng ngập ngừng - không cái
+# nào cho ngữ điệu kết cả. Chúng chiếm hết suất kiểm lời nên đoạn tốt thật
+# ("...bản thân mình tệ quá chị ạ") bị đẩy ra ngoài.
+#
+# Bộ TIEU_TU_CUOI_VE bên `text_chunker` rộng hơn là ĐÚNG cho việc của nó (chèn
+# nhịp nghỉ - nhận rộng thì cùng lắm nghỉ thừa). Ở đây nhận rộng là hỏng.
+
+def test_AY_khong_phai_tieu_tu():
+    d = cham_diem(tieng(3200), SR, "mình thấy bạn ấy", "mình thấy bạn ấy")
+    assert not d["co_tieu_tu"], '"bạn ấy" bị nhận nhầm là tiểu từ lễ phép'
+
+
+def test_A_ngap_ngung_khong_phai_tieu_tu():
+    d = cham_diem(tieng(3200), SR, "lúc đó mình mới nhận ra rằng là à",
+                  "lúc đó mình mới nhận ra rằng là à")
+    assert not d["co_tieu_tu"], '"à" ngập ngừng bị nhận nhầm là tiểu từ'
+
+
+def test_A_LE_PHEP_van_duoc_nhan():
+    d = cham_diem(tieng(3200), SR, "bản thân mình tệ quá chị ạ",
+                  "bản thân mình tệ quá chị ạ")
+    assert d["co_tieu_tu"], 'mất luôn "ạ" thật - siết quá tay'
+
+
+def test_KHONG_thuong_cho_cat_giua_menh_de():
+    """Kết bằng tiểu từ chỉ đáng thưởng khi chỗ đó THẬT SỰ hết câu.
+
+    Nếu không, bộ tách đi tìm chữ trùng âm ở giữa câu để cắt vào - đúng thứ đã
+    xảy ra với "và nếu có thể thì bạn ấy".
+    """
+    from backend.services.chon_doan_mau import _diem_ket
+    ws = deu(["a"] * 5) + [tu("ạ", 1.75, 2.05), tu("rồi", 2.05, 2.35)]
+    assert _diem_ket(ws, 5) == 0.0, "thưởng cho tiểu từ nằm giữa câu"
+
+
+def test_CO_thuong_khi_tieu_tu_o_cuoi_cau():
+    from backend.services.chon_doan_mau import _diem_ket
+    ws = deu(["a"] * 5) + [tu("ạ.", 1.75, 2.05), tu("Dạ", 2.6, 2.9)]
+    assert _diem_ket(ws, 5) > 0.0
+
+
+def test_tach_chon_HET_CAU_chu_khong_chon_chu_trung_am():
+    """Trong cùng một cửa sổ có cả hai chỗ kết - phải lấy chỗ hết câu thật."""
+    ws = (deu(["m%d" % i for i in range(10)])                    # 0,00-3,50
+          + [tu("ấy", 3.50, 3.80)]                               # giữa mệnh đề
+          + [tu("nữa", 3.80, 4.10), tu("ạ.", 4.10, 4.40)]        # hết câu thật
+          + [tu("Dạ", 5.00, 5.30)])
+    dv = tach_don_vi(doan(*ws))
+    assert dv and dv[0]["b"] == 4.40, f"cắt ở {dv[0]['b'] if dv else '?'} thay vì 4.40"

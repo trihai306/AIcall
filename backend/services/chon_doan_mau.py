@@ -39,7 +39,12 @@ LECH_LOI_TRAN = 0.05
 # nuốt cả khoảng lặng vào clip.
 KHE_TOI_DA = 0.6
 
-TIEU_TU = frozenset({"ạ", "nhé", "nha", "nhá", "nhỉ", "à", "ấy"})
+# CHỈ tiểu từ lễ phép thật. `text_chunker.TIEU_TU_CUOI_VE` nhận rộng hơn (có
+# "à", "ấy") và với việc CỦA NÓ - chèn nhịp nghỉ - nhận rộng thì cùng lắm nghỉ
+# thừa, vô hại. Ở đây nhận rộng là hỏng: chạy thật trên bản ghi 20 phút, cả 4
+# đoạn lọt chung kết đều là nhận nhầm ("bạn ấy", "câu chuyện đó ấy", "rằng là
+# à"), chúng chiếm hết suất kiểm lời nên đoạn tốt thật bị đẩy ra ngoài.
+TIEU_TU = frozenset({"ạ", "nhé", "nha", "nhá", "nhỉ"})
 LE_PHEP = frozenset({"dạ", "vâng", "em", "anh", "chị", "mình", "ạ"})
 KET_CAU = ".?!"
 
@@ -130,16 +135,15 @@ def _phang(doan_stt: list[dict]) -> list[dict]:
 def _diem_ket(ws: list[dict], j: int) -> float:
     """Kết ở đây có tự nhiên không. Cao hơn = chỗ ngắt đẹp hơn."""
     chu = ws[j]["word"]
-    d = 0.0
-    if gon(chu) in TIEU_TU:
-        d += 100.0
-    if chu.rstrip() and chu.rstrip()[-1] in KET_CAU:
-        d += 50.0
-    if j + 1 < len(ws) and ws[j + 1]["start"] - ws[j]["end"] > 0.25:
-        d += 30.0            # sau đó có chỗ lấy hơi -> nhiều khả năng hết câu
-    elif j + 1 >= len(ws):
-        d += 30.0
-    return d
+    # Hết câu THẬT hay chưa. Phải xét trước: thưởng cho tiểu từ ở bất kỳ đâu là
+    # dạy bộ tách đi săn chữ trùng âm giữa câu để cắt vào, và nó làm đúng thế -
+    # "kể cho mình nghe ... và nếu có thể thì bạn ấy" là một đoạn nó từng chọn.
+    het_cau = (bool(chu.rstrip()) and chu.rstrip()[-1] in KET_CAU) \
+        or j + 1 >= len(ws) \
+        or ws[j + 1]["start"] - ws[j]["end"] > 0.25      # có chỗ lấy hơi
+    if not het_cau:
+        return 0.0
+    return 150.0 if gon(chu) in TIEU_TU else 50.0
 
 
 def tach_don_vi(doan_stt: list[dict]) -> list[dict]:
@@ -192,7 +196,12 @@ def _f0_khung(k: np.ndarray, sr: int) -> float:
     k = k - k.mean()
     if not np.any(k):
         return 0.0
-    r = np.correlate(k, k, mode="full")[len(k) - 1:]
+    # Tự tương quan bằng FFT, KHÔNG dùng `np.correlate`: bản trực tiếp là O(n^2),
+    # mà một bản ghi 20 phút ở 48kHz có ~35 nghìn khung, mỗi khung 1920 mẫu ->
+    # gần 130 tỉ phép. Đo thử thì khâu này một mình ăn hơn 5 phút.
+    m = 1 << int(np.ceil(np.log2(2 * len(k))))
+    f = np.fft.rfft(k, m)
+    r = np.fft.irfft(f * np.conj(f), m)[:len(k)]
     if r[0] <= 0:
         return 0.0
     lo, hi = int(sr / _F0_MAX), min(int(sr / _F0_MIN), len(r) - 1)

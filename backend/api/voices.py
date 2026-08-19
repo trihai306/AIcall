@@ -623,7 +623,7 @@ NGUON_TOI_THIEU_S = 30.0
 
 # Chấm âm học thì rẻ, cho STT nghe lại thì đắt. Nên xếp hạng bằng số đo rẻ
 # trước, rồi chỉ kiểm lời cho tốp đầu.
-KIEM_LOI_N = 12
+KIEM_LOI_N = 24
 TRA_VE_N = 8
 
 # Nhịp muốn AI nói, âm tiết/phút. Lấy từ `scripts/chon_doan_mau.py`: giọng
@@ -673,8 +673,13 @@ async def _nghe_lai(stt, x, sr: int) -> str:
     return " ".join((d.get("text") or "").strip() for d in doan).strip()
 
 
-async def _khao_sat(ten: str):
-    """Chạy nền: nghe hết bản ghi, tách, đo, xếp hạng, ghi wav xem trước."""
+async def _khao_sat(ten: str, nghe_lai: bool = False):
+    """Chạy nền: nghe hết bản ghi, tách, đo, xếp hạng, ghi wav xem trước.
+
+    Kết quả NGHE được cất lại. Nghe hết bản ghi 20 phút mất ~4 phút, mà khâu hay
+    phải chỉnh lại là tách/chấm chứ không phải nghe - giữ bản nghe thì mỗi lần
+    chỉnh chỉ mất vài giây. `nghe_lai=True` để nghe lại từ đầu.
+    """
     import json
 
     import numpy as np
@@ -686,20 +691,27 @@ async def _khao_sat(ten: str):
     viec = _VIEC[ten]
     try:
         x, sr = _doc_nguon(ten)
-        cs = cua_so_ngat(x, sr)
-        viec["tong"] = len(cs)
+        PHAN_TICH_DIR.mkdir(parents=True, exist_ok=True)
+        kho = PHAN_TICH_DIR / f"{ten}.stt.json"
 
-        doan = []
-        for n, (a, b) in enumerate(cs):
-            segs = await app_state.stt.moc_tung_chu(_wav_bytes(x[a:b], sr))
-            lech = a / sr
-            for s in segs:                       # mốc trong cửa sổ -> mốc cả tệp
-                for w in s.get("words") or []:
-                    w["start"] = float(w.get("start", 0.0)) + lech
-                    w["end"] = float(w.get("end", 0.0)) + lech
-            doan.extend(segs)
-            viec["xong"] = n + 1
-            viec["tien"] = round((n + 1) / len(cs) * 90)
+        if kho.exists() and not nghe_lai:
+            doan = json.loads(kho.read_text(encoding="utf-8"))
+            viec.update(tong=0, xong=0, tien=90, dung_ban_nghe_cu=True)
+        else:
+            cs = cua_so_ngat(x, sr)
+            viec["tong"] = len(cs)
+            doan = []
+            for n, (a, b) in enumerate(cs):
+                segs = await app_state.stt.moc_tung_chu(_wav_bytes(x[a:b], sr))
+                lech = a / sr
+                for s in segs:                   # mốc trong cửa sổ -> mốc cả tệp
+                    for w in s.get("words") or []:
+                        w["start"] = float(w.get("start", 0.0)) + lech
+                        w["end"] = float(w.get("end", 0.0)) + lech
+                doan.extend(segs)
+                viec["xong"] = n + 1
+                viec["tien"] = round((n + 1) / len(cs) * 90)
+            kho.write_text(json.dumps(doan, ensure_ascii=False), encoding="utf-8")
 
         uv = tach_don_vi(doan)
         viec["tach_duoc"] = len(uv)
@@ -764,7 +776,7 @@ async def ds_nguon():
 
 
 @router.post("/nguon/{ten}/phan-tich")
-async def phan_tich_nguon(ten: str):
+async def phan_tich_nguon(ten: str, nghe_lai: bool = False):
     """Bắt đầu khảo sát. Trả ngay, hỏi tiến độ bằng GET cùng đường dẫn.
 
     Bản ghi 20 phút mất khoảng 2 phút để nghe hết - giữ nguyên một request HTTP
@@ -779,7 +791,7 @@ async def phan_tich_nguon(ten: str):
         return {"trang_thai": "dang_chay", "tien": _VIEC[ten].get("tien", 0)}
 
     _VIEC[ten] = {"trang_thai": "dang_chay", "tien": 0}
-    asyncio.create_task(_khao_sat(ten))
+    asyncio.create_task(_khao_sat(ten, nghe_lai))
     return {"trang_thai": "dang_chay", "tien": 0}
 
 
