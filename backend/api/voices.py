@@ -1303,3 +1303,122 @@ async def nghe_tep_loat(ten: str, tep: str):
     if not p.exists():
         return {"error": "Không có tệp này"}
     return FileResponse(str(p), media_type="audio/wav")
+
+
+# =========================================================================
+# ĐỌC THỬ HÀNG LOẠT MỘT ỨNG VIÊN — hiện dần, không đợi hết
+# =========================================================================
+#
+# Nghe một cuộc thoại không đủ để quyết một đoạn mẫu: F5 sinh tất định theo chữ,
+# nên mỗi nội dung khác nhau lại lộ ra một kiểu hỏng khác. Phải nghe nhiều.
+#
+# Nhưng 100 mẫu mất ~25 phút. Đợi xong hết rồi mới hiện là ngồi nhìn thanh tiến
+# độ suốt chừng ấy - nên cái nào xong thì đẩy lên ngay, nghe ngay trong lúc phần
+# còn lại vẫn đang dựng.
+
+DOC_THU_MAC_DINH = 100
+
+
+async def _doc_thu_loat(ten: str, i: int, tong: int, so_luot: int):
+    """Chạy nền: một ứng viên đọc `tong` cuộc thoại, ghi ra ngay từng cái."""
+    import json
+
+    import numpy as np
+
+    from backend.main import app_state
+    from backend.models import scenarios_db
+    from backend.services.audio_utils import pcm_to_wav
+
+    khoa = f"docthu:{ten}:{i}"
+    viec = _VIEC[khoa]
+    giong = None
+    try:
+        ds = await scenarios_db.list_scenarios()
+        kb = ds[0] if ds else {}
+        giong = await _giong_tam_tu_ung_vien(ten, i)
+        if not giong:
+            raise RuntimeError("Không thấy ứng viên này - chạy Phân tích trước")
+
+        ra = PHAN_TICH_DIR / ten / f"docthu{int(i)}"
+        ra.mkdir(parents=True, exist_ok=True)
+        for cu in ra.glob("*.wav"):
+            cu.unlink()
+
+        toc = app_state.tts.toc_nghe_thu(giong)
+        SR = 24000
+        viec.update(tong=tong, xong=0, muc=[])
+
+        for k in range(tong):
+            khach = _bo_khach_thu(k)[:so_luot - 1]
+            luot = await _sinh_cuoc_thoai_voi(app_state.llm, kb, khach)
+            cac = []
+            for n, cau in enumerate(luot):
+                manh = _cat_manh_nhu_pipeline(cau)
+                try:
+                    wav = await _ghep_nhu_pipeline(app_state.tts, manh, giong, toc, False)
+                except Exception as e:
+                    cac.append({"text": cau, "loi": str(e)})
+                    continue
+                (ra / f"{k}_{n}.wav").write_bytes(wav)
+                cac.append({"text": cau, "so_manh": len(manh), "tep": f"{k}_{n}.wav"})
+            # Đẩy lên NGAY sau mỗi mẫu - đó là cả điểm của việc này.
+            viec["muc"].append({"k": k, "luot": cac, "khach": khach})
+            viec.update(xong=k + 1, tien=round((k + 1) / tong * 100))
+            (PHAN_TICH_DIR / f"{ten}.docthu{int(i)}.json").write_text(
+                json.dumps({"muc": viec["muc"], "i": i}, ensure_ascii=False),
+                encoding="utf-8")
+
+        viec["trang_thai"] = "xong"
+        logger.info("Đọc thử ứng viên #%s của %s: %d mẫu", i, ten, tong)
+    except Exception as e:
+        logger.exception("Đọc thử ứng viên %s/%s hỏng", ten, i)
+        viec.update(trang_thai="hong", loi=str(e))
+    finally:
+        if giong:
+            for duoi in (".wav", ".txt", ".speed"):
+                (VOICES_DIR / f"{giong}{duoi}").unlink(missing_ok=True)
+            app_state.tts.drop_voice(giong)
+
+
+@router.post("/nguon/{ten}/doc-thu")
+async def bat_doc_thu(ten: str, i: int, tong: int = DOC_THU_MAC_DINH, so_luot: int = 4):
+    import asyncio
+
+    ten = _ten_sach(ten)
+    if not (PHAN_TICH_DIR / f"{ten}.json").exists():
+        return {"error": "Chạy Phân tích trước đã"}
+    khoa = f"docthu:{ten}:{int(i)}"
+    if (_VIEC.get(khoa) or {}).get("trang_thai") == "dang_chay":
+        return {"trang_thai": "dang_chay", "tien": _VIEC[khoa].get("tien", 0)}
+    _VIEC[khoa] = {"trang_thai": "dang_chay", "tien": 0, "muc": []}
+    asyncio.create_task(_doc_thu_loat(ten, int(i), max(1, min(int(tong), 300)),
+                                      max(2, min(int(so_luot), 6))))
+    return {"trang_thai": "dang_chay", "tien": 0}
+
+
+@router.get("/nguon/{ten}/doc-thu")
+async def xem_doc_thu(ten: str, i: int):
+    """Tiến độ KÈM phần đã xong - để giao diện hiện dần chứ không đợi hết."""
+    import json
+
+    ten = _ten_sach(ten)
+    viec = _VIEC.get(f"docthu:{ten}:{int(i)}")
+    if viec:
+        return {"trang_thai": viec.get("trang_thai", "dang_chay"),
+                "tien": viec.get("tien", 0), "xong": viec.get("xong", 0),
+                "tong": viec.get("tong", 0), "muc": viec.get("muc", []),
+                "error": viec.get("loi", "")}
+    j = PHAN_TICH_DIR / f"{ten}.docthu{int(i)}.json"
+    if not j.exists():
+        return {"trang_thai": "chua", "muc": []}
+    return {"trang_thai": "xong", "tien": 100,
+            **json.loads(j.read_text(encoding="utf-8"))}
+
+
+@router.get("/nguon/{ten}/doc-thu/{i}/{tep}")
+async def nghe_doc_thu(ten: str, i: int, tep: str):
+    p = (PHAN_TICH_DIR / _ten_sach(ten) / f"docthu{int(i)}"
+         / (_ten_sach(tep.replace(".wav", "")) + ".wav"))
+    if not p.exists():
+        return {"error": "Không có tệp này"}
+    return FileResponse(str(p), media_type="audio/wav")

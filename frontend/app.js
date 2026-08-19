@@ -4197,6 +4197,12 @@ function dongHoiThoai(d) {
        </div>`).join('');
 }
 
+let hengioDocThu = null;
+
+// Bấm vào một ứng viên = sinh 100 mẫu, HIỆN DẦN. Nghe một cuộc thoại không đủ
+// để quyết một đoạn mẫu: F5 sinh tất định theo chữ, nên mỗi nội dung lại lộ ra
+// một kiểu hỏng khác. Mà 100 mẫu mất ~25 phút, đợi xong hết mới hiện thì ngồi
+// nhìn thanh tiến độ suốt chừng ấy.
 async function testHoiThoaiUngVien(nguon, i) {
   const cha = document.getElementById('ungVienBox');
   let o = document.getElementById('htUngVienBox');
@@ -4206,23 +4212,61 @@ async function testHoiThoaiUngVien(nguon, i) {
     o.className = 'mt-4 pt-4 border-t border-slate-750';
     cha?.appendChild(o);
   }
+  o.innerHTML = `
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-xs font-semibold text-white">Ứng viên #${i + 1} đọc thử <span id="dtSo" class="text-gray-500 font-normal">đang bắt đầu...</span></span>
+      <button onclick="clearTimeout(hengioDocThu); document.getElementById('htUngVienBox').remove()" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
+    </div>
+    <div class="h-1 bg-slate-750 rounded mb-2 overflow-hidden"><div id="dtThanh" class="h-full bg-violet-400 transition-all" style="width:0%"></div></div>
+    <p class="text-[10px] text-gray-500 mb-2">Nghe được ngay, không phải đợi đủ 100 — cái nào xong là hiện lên.</p>
+    <div id="dtDanhSach" class="space-y-1"></div>`;
   o.scrollIntoView({ block: 'nearest' });
-  o.innerHTML = `<div class="text-xs text-gray-400">Đang cho AI sinh hội thoại rồi đọc bằng ứng viên #${i + 1}... <span class="text-gray-600">(mất khoảng 20-30 giây)</span></div>`;
   try {
-    const d = await goiTestHoiThoai({ nguon, i });
+    const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(nguon)}/doc-thu?i=${i}&tong=100`, { method: 'POST' })).json();
     if (d.error) { o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(d.error)}</div>`; return; }
-    // KHÔNG tự phát: bên A bấm rồi chỉ nghe thấy tiếng, tưởng nút hỏng vì không
-    // thấy danh sách đâu. Hiện chữ trước, bấm nghe sau.
-    o.innerHTML = `
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-semibold text-white">Ứng viên #${i + 1} đọc thử một cuộc tư vấn</span>
-        <button onclick="document.getElementById('htUngVienBox').remove()" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
-      </div>
-      <div class="text-[10px] text-gray-500 mb-2">${escapeHtml(tomTatHoiThoai(d))}</div>
-      <div class="text-[11px] text-gray-300 leading-relaxed font-mono">${dongHoiThoai(d)}</div>`;
-  } catch (e) {
-    o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(e.message)}</div>`;
+    theoDoiDocThu(nguon, i);
+  } catch (e) { o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(e.message)}</div>`; }
+}
+
+async function theoDoiDocThu(nguon, i) {
+  const ds = document.getElementById('dtDanhSach');
+  if (!ds) return;                       // người dùng đã đóng khối
+  let d;
+  try {
+    d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(nguon)}/doc-thu?i=${i}`)).json();
+  } catch { clearTimeout(hengioDocThu); hengioDocThu = setTimeout(() => theoDoiDocThu(nguon, i), 4000); return; }
+
+  const so = document.getElementById('dtSo');
+  const thanh = document.getElementById('dtThanh');
+  if (d.trang_thai === 'hong') { if (so) so.textContent = 'hỏng: ' + (d.error || ''); return; }
+  if (so) so.textContent = `${(d.muc || []).length}/${d.tong || 100} mẫu`
+    + (d.trang_thai === 'xong' ? ' — xong' : ' — đang dựng tiếp');
+  if (thanh) thanh.style.width = `${d.tien || 0}%`;
+
+  // CHỈ THÊM dòng mới. Vẽ lại cả danh sách thì cứ mỗi vòng dò là tiếng đang
+  // nghe bị ngắt giữa chừng - đúng thứ làm cả tính năng thành vô dụng.
+  for (const m of (d.muc || []).slice(ds.children.length)) {
+    const e = document.createElement('details');
+    e.className = 'bg-void/40 rounded-lg';
+    e.innerHTML = `
+      <summary class="cursor-pointer select-none px-3 py-1.5 text-[11px] text-gray-400 flex items-center gap-2">
+        <span class="w-6 text-[10px] font-mono text-gray-600 shrink-0">${m.k + 1}</span>
+        <span class="truncate">${escapeHtml((m.luot[1]?.text || m.luot[0]?.text || '').slice(0, 90))}</span>
+      </summary>
+      <div class="px-3 pb-2 text-[11px] leading-relaxed">
+        ${m.luot.map((l, n) => l.loi
+          ? `<div class="text-red-400">${n + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
+          : `<div class="mb-1.5">
+               ${n ? `<div class="text-gray-600 italic">khách: ${escapeHtml(m.khach[n - 1] || '')}</div>` : ''}
+               <div class="text-gray-300">${escapeHtml(l.text)} <span class="text-gray-700">(${l.so_manh} mảnh)</span></div>
+               <audio controls preload="none" class="w-full h-7 mt-0.5" src="/api/voices/nguon/${encodeURIComponent(nguon)}/doc-thu/${i}/${l.tep}"></audio>
+             </div>`).join('')}
+      </div>`;
+    ds.appendChild(e);
   }
+
+  clearTimeout(hengioDocThu);
+  if (d.trang_thai === 'dang_chay') hengioDocThu = setTimeout(() => theoDoiDocThu(nguon, i), 3000);
 }
 
 
