@@ -83,9 +83,40 @@ function Start-Detached($Name, $Body) {
         "cd /d `"$PROJECT`"",
         $Body
     ) | Set-Content -Path $bat -Encoding ascii
-    $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create `
-         -Arguments @{ CommandLine = "cmd.exe /c `"$bat`""; CurrentDirectory = $PROJECT }
-    return $r.ProcessId
+    # Chay AN cua so console. BAT BUOC, khong phai cho dep.
+    #
+    # Khong an thi moi dich vu mo mot CUA SO CONSOLE DEN tren desktop. Python
+    # chay ben trong bam vao console do, nen NGUOI DUNG DONG CUA SO LA GIET DICH
+    # VU: Windows gui CTRL_CLOSE_EVENT, runtime Fortran cua numpy/torch in
+    # "forrtl: error (200): program aborting due to window-CLOSE event" roi thoat.
+    # Da xay ra that toi 19-08-2026: nguoi dung dong hai cua so den tuong la rac,
+    # ca backend lan PhoWhisper chet trong 2 giay, app con chay nhung khong noi
+    # chuyen duoc voi gi ca - nhin ra giong het "app hong".
+    #
+    # PHAI dung ShowWindow=0 (SW_HIDE) qua duong WMI cu. Da thu va BI TU CHOI:
+    #   - CreateFlags = CREATE_NO_WINDOW, ca qua CIM lan WMI -> ReturnValue 21
+    #     (tham so khong hop le); Win32_Process.Create khong nhan co nay.
+    #   - Invoke-CimMethod voi ProcessStartupInformation la CimInstance -ClientOnly
+    #     -> cung ReturnValue 21.
+    # Chi ShowWindow=0 qua [wmiclass] moi tra ve 0 kem ProcessId that.
+    #
+    # Duong lui: [wmiclass] chi co trong Windows PowerShell 5.1. Neu ai chay
+    # script bang pwsh 7 thi ro nhanh nay, roi tao tien trinh kieu cu - hien cua
+    # so nhung VAN CHAY, con hon khong co dich vu nao.
+    $pid_moi = $null
+    try {
+        $kt = ([wmiclass]"Win32_ProcessStartup").CreateInstance()
+        $kt.ShowWindow = [uint16]0
+        $r = ([wmiclass]"Win32_Process").Create("cmd.exe /c `"$bat`"", $PROJECT, $kt)
+        if ($r.ReturnValue -eq 0) { $pid_moi = $r.ProcessId }
+    } catch { }
+    if (-not $pid_moi) {
+        Write-Host "[!!] Khong an duoc cua so console - dich vu se hien cua so den. DUNG DONG NO."
+        $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create `
+             -Arguments @{ CommandLine = "cmd.exe /c `"$bat`""; CurrentDirectory = $PROJECT }
+        $pid_moi = $r.ProcessId
+    }
+    return $pid_moi
 }
 
 # --- phat hien code moi hon tien trinh dang chay -----------------------------
