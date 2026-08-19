@@ -1282,7 +1282,10 @@ async function loadVoices() {
   try {
     const res = await fetch('/api/voices');
     const data = await res.json();
-    const selectors = ['voiceSelect', 'contactVoiceSelect'].map(id => document.getElementById(id)).filter(Boolean);
+    // `msgVoiceSelect` là ô giọng của trang Nhắn tin (nút "nghe thử"). Nhét vào
+    // đây chứ không tự nạp riêng: đoạn chọn giọng mặc định bên dưới đã phải chữa
+    // lỗi chọn nhầm giọng một lần rồi, viết lại lần hai là mời lỗi đó quay lại.
+    const selectors = ['voiceSelect', 'contactVoiceSelect', 'msgVoiceSelect'].map(id => document.getElementById(id)).filter(Boolean);
     selectors.forEach(sel => { sel.innerHTML = ''; });
     // Ưu tiên: 1) giọng đã lưu trong localStorage, 2) giọng mặc định từ server.
     const savedVoice = localStorage.getItem('selectedVoice');
@@ -2222,6 +2225,7 @@ async function loadContacts(page) {
     contactTotal = data.total || 0;
     fillStatusFilter(data.statuses || []);
     renderContactTable();
+    doiChieuCuocDangGoi();
     document.getElementById('contactPageInfo').textContent = contactTotal
       ? `${contactTotal} số · trang ${contactPage}/${Math.max(1, Math.ceil(contactTotal / 50))}`
       : 'Chưa có số nào';
@@ -2230,6 +2234,36 @@ async function loadContacts(page) {
     document.getElementById('contactTableBody').innerHTML =
       `<tr><td colspan="9" class="text-center text-xs text-red-400 py-12">Lỗi tải danh bạ: ${escapeHtml(err.message)}</td></tr>`;
   }
+}
+
+/** Khách cúp máy thì tự xoá thanh "đang gọi", đừng bắt người ta bấm nút.
+ *
+ * Backend đã tự chốt kết quả khi máy về rảnh (`_theo_doi_cuoc_goi_tay`), nhưng
+ * frontend chỉ xoá `activeCall` trong `finishCall` - tức chỉ khi CÓ NGƯỜI BẤM
+ * nút kết quả. Khách cúp xong thanh vẫn nằm đó.
+ *
+ * Không chỉ xấu: thanh còn đó thì rất dễ bấm "Gọi" chồng lên, và cuộc mới báo
+ * "Máy này đã có phiên tiếng đang chạy" rồi chạy KHÔNG CÓ ĐƯỜNG TIẾNG - đúng
+ * dòng cảnh báo người dùng chụp lại ngày 14-08-2026.
+ *
+ * Bám vào `loadContacts` (đã tự nạp mỗi 2,5s ở trang này) thay vì dựng hẹn giờ
+ * riêng: dữ liệu vốn đã tươi, thêm một vòng lặp nữa là thừa.
+ */
+function doiChieuCuocDangGoi() {
+  if (!activeCall) return;
+  const moi = contacts.find(c => c.contact_id === activeCall.contact_id);
+  // Không thấy số trong trang hiện tại (đổi bộ lọc, sang trang khác) thì KHÔNG
+  // kết luận - vắng mặt ở đây không có nghĩa là cuộc gọi đã xong.
+  if (!moi || moi.status === 'calling') return;
+
+  const nhan = (CONTACT_STATUS[moi.status] || {}).label || moi.status;
+  const ct = document.getElementById('activeCallDetail');
+  if (ct) ct.textContent = `Cuộc gọi đã kết thúc — kết quả: ${nhan}`;
+  activeCall = null;
+  setTimeout(() => {
+    const bar = document.getElementById('activeCallBar');
+    if (bar && !activeCall) bar.classList.add('hidden');
+  }, 2000);
 }
 
 function fillStatusFilter(statuses) {
@@ -2911,10 +2945,94 @@ function initVoiceTest() {
     vtestInited = true;
   }
   loadVoiceTestVoices();
+  napBoTest();                                     // bộ 200 câu, nạp một lần rồi nhớ
 }
 
 function useVoiceTestPreset(i) {
   document.getElementById('vtestText').value = VTEST_PRESETS[i][1];
+}
+
+// ---- Bộ 200 câu hội thoại dài ----------------------------------------
+//
+// Mỗi câu gắn sẵn NHÓM BẪY nó nhắm tới, nên khi một bản vá làm hỏng chỗ khác
+// thì nhìn báo cáo là biết hỏng ở nhóm nào, khỏi nghe lại cả bộ.
+
+let BO_TEST = null;
+let boTestDangChay = false;
+
+async function napBoTest() {
+  if (BO_TEST) return BO_TEST;
+  const d = await fetch('/api/voices/bo-test').then(r => r.json()).catch(() => null);
+  if (!d || d.error) {
+    document.getElementById('boTestNhom').innerHTML =
+      `<span class="text-[11px] text-amber-400">${escapeHtml(d?.error || 'Không nạp được bộ câu')}</span>`;
+    return null;
+  }
+  BO_TEST = d;
+  const nhom = Object.keys(d.nhom || {});
+  document.getElementById('boTestNhom').innerHTML =
+    [`<button onclick="layCauBoTest('')" title="Lấy ngẫu nhiên trong cả bộ ${d.so_cau} câu"
+        class="px-3 py-1.5 rounded-lg bg-void border border-cyan-500/30 text-[11px] text-cyan-400 hover:border-cyan-500/60 transition-colors">Cả bộ (${d.so_cau})</button>`]
+      .concat(nhom.map(n =>
+        `<button onclick="layCauBoTest('${n}')" title="${escapeHtml(d.nhom[n])}"
+           class="px-3 py-1.5 rounded-lg bg-void border border-slate-750 text-[11px] text-gray-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">${escapeHtml(n)}</button>`))
+      .join('');
+  return d;
+}
+
+/** Đổ một câu ngẫu nhiên của nhóm vào ô chữ. Ngẫu nhiên chứ không lấy câu đầu:
+ *  bấm hai lần phải ra hai câu khác nhau thì mới nghe được nhiều ca. */
+async function layCauBoTest(nhom) {
+  const d = await napBoTest();
+  if (!d) return;
+  const ds = nhom ? d.cau.filter(c => c.nhom === nhom) : d.cau;
+  if (!ds.length) return;
+  const c = ds[Math.floor(Math.random() * ds.length)];
+  document.getElementById('vtestText').value = c.text;
+  document.getElementById('boTestGhiChu').textContent = `câu #${c.id} — nhóm ${c.nhom}`;
+}
+
+async function chayBoTest() {
+  if (boTestDangChay) return;                      // chặn bấm hai lần, mỗi lượt vài phút
+  const btn = document.getElementById('boTestChayBtn');
+  const out = document.getElementById('boTestKetQua');
+  const nhom = document.getElementById('boTestNhomChay').value;
+  const gioiHan = document.getElementById('boTestGioiHan').value;
+  const voice = document.getElementById('vtestVoiceA')?.value || 'default';
+
+  boTestDangChay = true;
+  btn.disabled = true;
+  btn.textContent = 'Đang chạy…';
+  out.classList.remove('hidden');
+  out.innerHTML = `<span class="text-gray-500">Đang tổng hợp, mỗi câu khoảng 2 giây trên GPU…</span>`;
+  try {
+    const fd = new FormData();
+    fd.append('voice_name', voice);
+    fd.append('nhom', nhom);
+    fd.append('gioi_han', gioiHan);
+    const d = await fetch('/api/voices/bo-test/chay', { method: 'POST', body: fd }).then(r => r.json());
+    if (d.error) { out.innerHTML = `<span class="text-rose-400">${escapeHtml(d.error)}</span>`; return; }
+    const t = d.tong_ket;
+    const xau = d.chi_tiet.filter(r => r.manh_xau && r.manh_xau.length);
+    out.innerHTML = `
+      <div class="text-gray-300 font-semibold mb-1">Đã chạy ${d.da_chay} câu bằng giọng ${escapeHtml(d.voice)} — ${(d.elapsed_ms/1000).toFixed(1)}s</div>
+      <div class="grid grid-cols-2 gap-x-6 gap-y-0.5 text-gray-500">
+        <div>Tổng mảnh: <span class="text-gray-300">${t.tong_manh}</span></div>
+        <div>Quãng lặng nghe ra được: <span class="text-gray-300">${t.tong_quang_lang}</span></div>
+        <div>Câu có mảnh cụt: <span class="${t.cau_co_manh_xau ? 'text-amber-400' : 'text-emerald-400'}">${t.cau_co_manh_xau}</span></div>
+        <div>Mảnh cụt: <span class="${t.so_manh_xau ? 'text-amber-400' : 'text-emerald-400'}">${t.so_manh_xau}</span></div>
+      </div>
+      ${xau.length ? `<div class="mt-2 text-gray-600 font-mono text-[11px] leading-relaxed">`
+        + xau.slice(0, 12).map(r => `#${r.id} ${escapeHtml(r.manh_xau.join(' | '))}`).join('<br>')
+        + (xau.length > 12 ? `<br>… còn ${xau.length - 12} câu nữa` : '') + `</div>`
+        : `<div class="mt-2 text-emerald-400">Không mảnh nào bị cắt cụt sau tiểu từ.</div>`}`;
+  } catch (e) {
+    out.innerHTML = `<span class="text-rose-400">Lỗi: ${escapeHtml(String(e))}</span>`;
+  } finally {
+    boTestDangChay = false;
+    btn.disabled = false;
+    btn.textContent = 'Chạy bộ câu';
+  }
 }
 
 async function loadVoiceTestVoices() {
@@ -3824,8 +3942,12 @@ async function luuTocThoai(v) {
   } catch (e) { tt.textContent = 'Lỗi: ' + e.message; }
 }
 
-/** Nghe thử. `quaDienThoai=true` hạ 24kHz->8kHz rồi nâng lại, tức nghe ĐÚNG
- *  thứ khách nghe. Chỉnh trên bản 24kHz rồi ra cuộc gọi lại khác là vô ích. */
+/** Nghe thử. `quaDienThoai=true` hạ 24kHz->8kHz rồi nâng lại.
+ *
+ *  CẢ HAI bản đều đọc ở NHỊP CUỘC GỌI, nên đây là phép so sánh sạch: chỉ khác
+ *  đúng một biến là băng thông. Trước 13-08-2026 hai nút này khác nhau cả nhịp
+ *  lẫn băng thông, nên nhãn "bản gốc 24kHz" nói không hết - nó còn chậm hơn
+ *  cuộc gọi 28% mà không ai thấy. */
 async function ngheThuThoai(quaDienThoai) {
   const tt = document.getElementById('tocThoaiTrangThai');
   const giong = (document.getElementById('tocThoaiGiong') || {}).value || 'default';
