@@ -66,6 +66,13 @@ def test_tieng_dap_mo_dau_van_duoc_mien_nguong():
     assert manh[1] == "em là Dương chuyên viên tư vấn."
 
 
+def test_da_vang_a_van_giu_nguyen_mot_manh():
+    """"Dạ vâng ạ," KHÔNG tách - nó kết bằng tiểu từ, tách ra là lỗi "chữ ạ bị
+    tách" quay lại (xem TIEU_TU_CUOI_VE)."""
+    manh = _cat_het("Dạ vâng ạ, em xin phép kiểm tra lại hồ sơ của anh chị nhé. ")
+    assert manh[0].startswith("Dạ vâng ạ,")
+
+
 def test_ve_sau_chua_du_dai_thi_doi_them():
     """Đang nhận token dở: sau phẩy mới có 1 từ thì CHƯA được cắt, không thì vế
     sau thành mẩu cụt."""
