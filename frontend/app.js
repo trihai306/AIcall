@@ -4361,3 +4361,38 @@ function ngheBanLoat(nut, ten, tep) {
   nut.classList.add('bg-cyan-500/30', 'text-cyan-200');
   nutLoatDangNghe = nut;
 }
+
+// Tải bản ghi dài thẳng từ khối "Bản ghi dài". Cùng endpoint với ô Upload phía
+// trên - server tự phân loại theo ĐỘ DÀI, dài hơn 30 giây thì vào kho nguồn.
+async function taiNguonLen() {
+  const ten = document.getElementById('nguonTen')?.value.trim();
+  const tep = document.getElementById('nguonFile')?.files[0];
+  const bao = document.getElementById('nguonBao');
+  const nut = document.getElementById('nutTaiNguon');
+  if (!ten || !tep) { if (bao) bao.textContent = 'Cần nhập tên và chọn tệp.'; return; }
+
+  const mb = (tep.size / 1024 / 1024).toFixed(1);
+  if (nut) { nut.disabled = true; nut.textContent = 'Đang tải...'; }
+  // Bản ghi cả buổi thường 200-300MB, tải mất một lúc - im lặng là người dùng
+  // tưởng bấm hụt rồi bấm lại, thành hai lần tải cùng một tệp.
+  if (bao) bao.textContent = `Đang tải ${escapeHtml(tep.name)} (${mb} MB)...`;
+  try {
+    const fd = new FormData();
+    fd.append('file', tep); fd.append('name', ten); fd.append('ref_text', '');
+    const d = await (await fetch('/api/voices/upload', { method: 'POST', body: fd })).json();
+    if (d.error) { if (bao) bao.textContent = 'Lỗi: ' + d.error; return; }
+    if (bao) {
+      bao.textContent = d.nguon
+        ? d.thong_bao
+        : `Tệp chỉ dài ${d.duration || '?'}s nên đã thành GIỌNG "${d.name}" luôn, không cần tách.`;
+    }
+    document.getElementById('nguonTen').value = '';
+    document.getElementById('nguonFile').value = '';
+    loadNguon();
+    if (!d.nguon) { loadVoiceList(); loadVoices(); }
+  } catch (e) {
+    if (bao) bao.textContent = 'Lỗi: ' + e.message;
+  } finally {
+    if (nut) { nut.disabled = false; nut.textContent = 'Tải bản ghi lên'; }
+  }
+}
