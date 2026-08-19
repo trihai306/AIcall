@@ -331,7 +331,12 @@ async function deleteScenario() {
 }
 
 async function testScenario() {
-  const cau = prompt('Khách nói gì?', 'Lãi suất bao nhiêu?');
+  const cau = await hoiChu({
+    tieuDe: 'Chạy thử kịch bản',
+    nhan: 'Khách nói gì?',
+    macDinh: 'Lãi suất bao nhiêu?',
+    nutOK: 'Chạy thử',
+  });
   if (cau === null) return;
   o('scTestResult').innerHTML = '<div class="text-xs text-gray-500 mt-2">Đang chạy thử…</div>';
   const data = await apiSend(`/api/scenarios/${scenarioDangSua}/test`, { cau_khach: cau });
@@ -1092,15 +1097,26 @@ async function importFromCampaign() {
   const khac = (ds.campaigns || []).filter(c => c.campaign_id !== cpId);
   if (!khac.length) { alert('Không có chiến dịch nào khác để lấy số'); return; }
 
-  const chon = prompt(
-    'Lấy số từ chiến dịch nào? Nhập số thứ tự:\n\n' +
-    khac.map((c, i) => `${i + 1}. ${c.name} (${c.total} số)`).join('\n'));
-  if (!chon) return;
-  const nguon = khac[parseInt(chon) - 1];
-  if (!nguon) { alert('Số thứ tự không hợp lệ'); return; }
+  // Ô chọn thật, thay cho việc in danh sách ra rồi bắt người dùng gõ số thứ tự
+  // - cách cũ vừa dễ gõ nhầm vừa không dùng được trong app (Electron không có
+  // window.prompt).
+  const nguonId = await hoiChu({
+    tieuDe: 'Lấy số từ chiến dịch khác',
+    nhan: 'Chiến dịch nguồn',
+    chonTu: khac.map(c => ({ giaTri: c.campaign_id, nhan: `${c.name} — ${c.total} số` })),
+    nutOK: 'Tiếp',
+  });
+  if (!nguonId) return;
+  const nguon = khac.find(c => c.campaign_id === nguonId);
+  if (!nguon) return;
 
-  const tt = prompt('Lấy các số có trạng thái nào? (cách nhau bởi dấu phẩy)',
-    'busy,no_answer');
+  const tt = await hoiChu({
+    tieuDe: `Lấy số từ "${nguon.name}"`,
+    nhan: 'Chỉ lấy số có trạng thái',
+    macDinh: 'busy,no_answer',
+    moTa: 'Cách nhau bởi dấu phẩy. Thường dùng: busy, no_answer, refused, pending.',
+    nutOK: 'Chuyển số',
+  });
   if (!tt) return;
 
   const data = await apiSend(`/api/phones/campaigns/${cpId}/import-from`, {

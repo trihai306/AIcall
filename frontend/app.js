@@ -1329,6 +1329,79 @@ async function loadVoices() {
 
 // ---- Utilities ----
 function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+/**
+ * Hộp thoại hỏi MỘT giá trị, thay cho window.prompt().
+ *
+ * Vì sao phải tự viết: **Electron KHÔNG cài đặt window.prompt()**. Trong app nó
+ * không hiện gì và trả về undefined, nên mọi luồng kiểu
+ * `const x = prompt(...); if (!x) return;` chết im lặng — bấm nút xong không có
+ * phản ứng gì, không lỗi nào trong console. alert() và confirm() thì Electron
+ * VẪN chạy, nên lỗi chỉ lộ ra ở đúng những chỗ dùng prompt và rất dễ tưởng là
+ * nút hỏng hoặc backend không trả lời.
+ *
+ * Trả về Promise<string|null>; null nghĩa là người dùng huỷ.
+ *
+ * Hai dạng:
+ *   hoiChu({ tieuDe, nhan, macDinh })            -> ô nhập chữ
+ *   hoiChu({ tieuDe, nhan, chonTu: [{giaTri, nhan}] }) -> ô chọn
+ */
+function hoiChu({ tieuDe, nhan = '', macDinh = '', moTa = '', chonTu = null, nutOK = 'OK' }) {
+  return new Promise((resolve) => {
+    const nen = document.createElement('div');
+    // z-[60]: phải nằm trên các hộp thoại sẵn có (z-50), vì có chỗ hỏi thêm
+    // giá trị trong lúc một hộp khác đang mở.
+    nen.className = 'fixed inset-0 z-[60] bg-black/70 backdrop-blur-[2px] '
+                  + 'flex items-center justify-center p-6';
+
+    const oNhap = chonTu
+      ? `<select id="hoiChuO" class="inp">`
+        + chonTu.map(c => `<option value="${escapeHtml(String(c.giaTri))}">${escapeHtml(c.nhan)}</option>`).join('')
+        + `</select>`
+      : `<input id="hoiChuO" type="text" class="inp" value="${escapeHtml(macDinh)}">`;
+
+    nen.innerHTML = `
+      <div class="bg-deep border border-slate-750 rounded-xl w-full max-w-md shadow-2xl">
+        <div class="px-5 py-3.5 border-b border-slate-750">
+          <h3 class="text-sm font-semibold text-white">${escapeHtml(tieuDe)}</h3>
+        </div>
+        <div class="p-5 space-y-2">
+          ${nhan ? `<label class="fld" for="hoiChuO">${escapeHtml(nhan)}</label>` : ''}
+          ${oNhap}
+          ${moTa ? `<div class="text-[10px] text-gray-600 leading-relaxed pt-0.5">${escapeHtml(moTa)}</div>` : ''}
+        </div>
+        <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-750">
+          <button class="btn btn-ghost" data-huy>Huỷ</button>
+          <button class="btn btn-primary" data-ok>${escapeHtml(nutOK)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(nen);
+    const o = nen.querySelector('#hoiChuO');
+
+    let xong = false;
+    const dong = (kq) => {
+      if (xong) return;          // chặn resolve hai lần khi bấm rồi nhấn Enter
+      xong = true;
+      document.removeEventListener('keydown', phim, true);
+      nen.remove();
+      resolve(kq);
+    };
+    // Bắt ở pha capture: hộp soạn tài liệu cũng nghe Escape, không chặn thì
+    // một phím Escape đóng cả hai.
+    const phim = (ev) => {
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); dong(null); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); dong(o.value); }
+    };
+    document.addEventListener('keydown', phim, true);
+
+    nen.addEventListener('mousedown', (ev) => { if (ev.target === nen) dong(null); });
+    nen.querySelector('[data-huy]').onclick = () => dong(null);
+    nen.querySelector('[data-ok]').onclick = () => dong(o.value);
+
+    o.focus();
+    if (o.select) o.select();    // chọn sẵn chữ mặc định để gõ đè luôn
+  });
+}
+
 function arrayBufferToBase64(buf) {
   const b = new Uint8Array(buf); let s = '';
   for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
@@ -2581,7 +2654,12 @@ function selectCampaign(id) {
 }
 
 async function addCampaign() {
-  const name = prompt('Tên chiến dịch:');
+  const name = await hoiChu({
+    tieuDe: 'Thêm chiến dịch',
+    nhan: 'Tên chiến dịch',
+    moTa: 'Ví dụ: Vay tín chấp tháng 8, Khách cũ chưa nghe máy.',
+    nutOK: 'Tạo',
+  });
   if (!name || !name.trim()) return;
   await fetch('/api/phones/campaigns', {
     method: 'POST',
@@ -4496,7 +4574,13 @@ function ngheUngVien(ten, i) {
 }
 
 async function chonUngVien(ten, i) {
-  const giong = prompt('Đặt tên cho giọng mới (chỉ chữ, số, - và _):', ten);
+  const giong = await hoiChu({
+    tieuDe: 'Lắp đoạn này thành giọng',
+    nhan: 'Tên giọng mới',
+    macDinh: ten,
+    moTa: 'Chỉ chữ, số, dấu - và _. Tên này hiện trong ô chọn giọng lúc gọi khách.',
+    nutOK: 'Lắp giọng',
+  });
   if (!giong) return;
   try {
     const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/chon`, {
