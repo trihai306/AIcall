@@ -424,6 +424,184 @@ select.status-select {
   position: relative;
 }
 
+/* ===========================================================================
+   Tri thức AI — các thành phần riêng của trang tài liệu
+   ===========================================================================
+   Trang này là chỗ người vận hành sửa CON SỐ bot đọc cho khách, nên ưu tiên
+   nhìn-là-biết: trạng thái nạp phải thành nhãn có màu, thao tác phải luôn thấy
+   được (không giấu sau rê chuột), và báo kết quả không dùng alert() của trình
+   duyệt vì hộp đó chặn cả màn hình lại. */
+
+/* Vùng kéo-thả file. Thay <input type=file> gốc — ô đó hiện chuỗi hệ thống
+   ("Không có tệp nào được chọn") không đổi được, lạc hẳn khỏi phần còn lại. */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 22px 18px;
+  border: 1.5px dashed #1e293b;
+  border-radius: 12px;
+  background: #06080f;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dropzone:hover { border-color: #2d3a4f; }
+.dropzone:focus-visible {
+  outline: 2px solid rgba(6, 182, 212, 0.5);
+  outline-offset: 2px;
+}
+/* Đang rê file qua: phải đổi rõ rệt, vì con trỏ lúc đó là icon file của hệ
+   điều hành chứ không phải chuột — người dùng cần tín hiệu "thả được ở đây". */
+.dropzone.dang-keo {
+  border-color: rgba(6, 182, 212, 0.55);
+  background: rgba(6, 182, 212, 0.06);
+}
+.dropzone.co-file {
+  border-style: solid;
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.035);
+}
+
+/* Nhãn trạng thái nạp: dùng lại .pill nhưng thêm bảng màu của trang này */
+.st-daNap    { color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
+.st-chuaNap  { color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); }
+
+/* Nút nhỏ trong bảng. Không dùng .row-actions (opacity 0.45) vì Sửa/Xoá ở đây
+   là thao tác chính của trang, giấu đi thì người mới không biết bấm vào đâu. */
+.btn-xs {
+  padding: 4px 9px;
+  font-size: 10.5px;
+  border-radius: 7px;
+}
+
+/* Nút phá huỷ có nền. Khác .btn-danger (nút biểu tượng mờ trong bảng): cái này
+   là lối thoát chính khỏi dữ liệu mẫu nên phải đọc được ngay, không giấu.
+   Viết thành class thật chứ không ghép utility Tailwind: style.css nạp SAU
+   tailwind.css, mà `.btn` đặt `border: 1px solid transparent` cùng độ cụ thể —
+   `border-red-500/30` sẽ thua và nút mất viền. */
+.btn-do {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+.btn-do:hover { background: rgba(239, 68, 68, 0.18); }
+
+/* Xoá trong bảng: vẫn có viền để nhìn thấy được, nhưng KHÔNG tô đỏ sẵn. Đỏ ở
+   mọi dòng thì mắt bị kéo thẳng vào thao tác nguy hiểm nhất trang, và đặt cạnh
+   "Sửa" rất dễ bấm nhầm. Chỉ đỏ lên khi con trỏ đã ở trên nút. */
+.btn-xoa:hover {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Nút mũi tên mở rộng dòng để xem trước nội dung */
+.kn-nut-mo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.kn-nut-mo:hover { color: #22d3ee; background: rgba(6, 182, 212, 0.1); }
+.kn-nut-mo svg { transition: transform 0.18s ease; }
+.kn-nut-mo.mo svg { transform: rotate(90deg); }
+
+/* Khung xem trước nội dung, hiện ngay dưới dòng của tài liệu */
+.kn-xem-truoc {
+  background: #06080f;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  margin: 4px 0 10px;
+  padding: 11px 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow: auto;
+}
+
+/* Khung xám nhấp nháy lúc đang tải. Đặt keyframes riêng chứ không mượn
+   `shimmer` của Tailwind: Tailwind chỉ sinh @keyframes khi có utility dùng tới,
+   mà trang này không dùng utility đó nên tên kia có thể không tồn tại. */
+.skel {
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #17202f 0%, #232f45 50%, #17202f 100%);
+  background-size: 200% 100%;
+  animation: knShimmer 1.4s linear infinite;
+}
+@keyframes knShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Thông báo trượt góc màn hình, thay alert(). alert() chặn cả luồng JS lại và
+   trông như hộp thoại lỗi của trình duyệt — đúng thứ làm app trông chưa xong. */
+.toast-wrap {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 250px;
+  max-width: 400px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+  background: #111827;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  animation: toastVao 0.18s ease-out;
+}
+.toast .cham {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+  background: #64748b;
+}
+.toast.xong { border-color: rgba(16, 185, 129, 0.35); }
+.toast.xong .cham { background: #34d399; }
+.toast.loi  { border-color: rgba(239, 68, 68, 0.35); }
+.toast.loi .cham { background: #f87171; }
+.toast.tat { animation: toastRa 0.2s ease-in forwards; }
+@keyframes toastVao {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes toastRa {
+  to { opacity: 0; transform: translateY(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel, .toast { animation: none; }
+  .kn-nut-mo svg, .dropzone { transition: none; }
+}
+
 /* ---------------------------------------------------------------------------
    `hidden` phải thắng mọi class component đặt `display`.
 

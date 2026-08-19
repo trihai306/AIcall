@@ -46,10 +46,16 @@ function phutGiay(giay) {
 
 function o(id) { return document.getElementById(id); }
 
-/** Báo lỗi cho người dùng. Luôn tiếng Việt, luôn kèm cách xử lý nếu biết. */
+/** Báo lỗi cho người dùng. Luôn tiếng Việt, luôn kèm cách xử lý nếu biết.
+ *
+ *  Đẩy qua thongBao() (khay trượt góc màn hình, định nghĩa trong app.js) thay
+ *  cho alert(): alert() chặn cả luồng JS lại cho tới khi bấm OK, và trông như
+ *  thông báo lỗi của trình duyệt chứ không phải phản hồi của app. Hàm này là
+ *  đường báo lỗi dùng chung của mọi trang trong file, nên đổi ở đây là đổi hết.
+ *  thongBao() tự rơi về alert() nếu khay chưa có trong DOM. */
 function baoLoi(data, mac_dinh = 'Có lỗi xảy ra') {
-  if (data && data.error) { alert(data.error); return true; }
-  if (!data) { alert(mac_dinh); return true; }
+  if (data && data.error) { thongBao(data.error, 'loi'); return true; }
+  if (!data) { thongBao(mac_dinh, 'loi'); return true; }
   return false;
 }
 
@@ -75,6 +81,16 @@ window.switchPage = function (name) {
   if (name === 'datasources') loadDataSources();
   if (name === 'settings') { loadNotifyChannels(); loadRecordingStats(); }
   if (name === 'contacts') setTimeout(initCampaignRunner, 60);
+  // Trang Nhắn tin xếp theo cột như trang Hội thoại, mà danh sách `flex` nằm
+  // trong app.js. Bật ở đây thay vì sửa app.js - đúng lý do file này bọc
+  // switchPage chứ không sửa nó.
+  if (name === 'messaging') {
+    document.getElementById('page-messaging').classList.add('flex');
+    initMessaging();
+  } else if (typeof msgDungTieng === 'function') {
+    // Rời trang mà tiếng vẫn chạy thì không còn nút nào để tắt nó.
+    msgDungTieng();
+  }
 };
 
 // =====================================================================
@@ -562,33 +578,109 @@ function exportReport() {
 
 let dataSources = [];
 let dsDangSua = null;
+let dsCheDoLoc = '';   // '' = tất cả | 'rag' | 'lookup' | 'loi'
 
 async function loadDataSources() {
-  const data = await apiGet('/api/data-sources');
-  dataSources = data.sources || [];
-  o('dsRows').innerHTML = dataSources.length ? dataSources.map(s => `
+  o('dsRows').innerHTML = dsHangCho();
+  ganVungKeoThaNguon();
+  try {
+    const data = await apiGet('/api/data-sources');
+    dataSources = data.sources || [];
+    veThongKeNguon();
+    veChipNguon();
+    veBangNguon();
+  } catch (e) {
+    o('dsRows').innerHTML = '<tr><td colspan="8" class="text-center text-red-400 py-8 text-xs">'
+      + 'Không đọc được danh sách nguồn: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function veThongKeNguon() {
+  const bat = dataSources.filter(s => s.enabled).length;
+  const dong = dataSources.reduce((t, s) => t + (s.row_count || 0), 0);
+  const loi = dataSources.filter(s => s.last_error).length;
+  o('dsStats').innerHTML = statStrip([
+    ['Nguồn dữ liệu', dataSources.length, 'text-white'],
+    ['Đang bật', bat, 'text-emerald-400'],
+    ['Tổng số dòng', dong.toLocaleString('vi-VN'), 'text-cyan-400'],
+    ['Có lỗi', loi, loi ? 'text-red-400' : 'text-gray-600'],
+  ]);
+}
+
+function veChipNguon() {
+  const dem = ma => {
+    if (!ma) return dataSources.length;
+    if (ma === 'loi') return dataSources.filter(s => s.last_error).length;
+    return dataSources.filter(s => s.mode === ma).length;
+  };
+  const cai = [['', 'Tất cả'], ['rag', 'Tri thức chung'], ['lookup', 'Tra theo khách'], ['loi', 'Có lỗi']];
+  o('dsChips').innerHTML = cai.map(([ma, nhan]) =>
+    `<button class="chip ${dsCheDoLoc === ma ? 'active' : ''}" onclick="locCheDoNguon('${ma}')">`
+    + `${nhan}<span class="font-mono opacity-55">${dem(ma)}</span></button>`).join('');
+}
+
+function locCheDoNguon(ma) {
+  dsCheDoLoc = ma;
+  veChipNguon();
+  veBangNguon();
+}
+
+function veBangNguon() {
+  if (!dataSources.length) { o('dsRows').innerHTML = dsTrangRong(); return; }
+
+  const tu = (o('dsTim')?.value || '').trim().toLowerCase();
+  const ds = dataSources.filter(s => {
+    const hop = !dsCheDoLoc
+      || (dsCheDoLoc === 'loi' ? !!s.last_error : s.mode === dsCheDoLoc);
+    return hop && (!tu || (s.name || '').toLowerCase().includes(tu));
+  });
+
+  if (!ds.length) {
+    o('dsRows').innerHTML = '<tr><td colspan="8" class="text-center text-gray-600 py-10 text-xs">'
+      + 'Không có nguồn nào khớp. Thử xoá bớt từ khoá hoặc chọn "Tất cả".</td></tr>';
+    return;
+  }
+
+  o('dsRows').innerHTML = ds.map(s => `
     <tr>
-      <td class="text-white">${esc(s.name)}</td>
+      <td class="text-white font-medium">${esc(s.name)}</td>
       <td class="text-gray-500">${esc(s.kind)}</td>
       <td><span class="tag ${s.mode === 'rag' ? 'tag-cyan' : ''}">
         ${s.mode === 'rag' ? 'Tri thức chung' : 'Tra theo khách'}</span></td>
       <td class="font-mono text-[11px] text-gray-500 max-w-[280px] truncate"
           title="${esc(s.config.path || '')}">${esc(s.config.path || '—')}</td>
-      <td>${s.row_count || 0}</td>
-      <td class="text-gray-500">${s.sync_at ? gio(s.sync_at) : '—'}</td>
+      <td class="font-mono text-[11px] text-gray-400">${(s.row_count || 0).toLocaleString('vi-VN')}</td>
+      <td class="text-gray-500 text-[11px]">${s.sync_at ? gio(s.sync_at) : '—'}</td>
       <td>${s.last_error
-        ? `<span class="pill st-error" title="${esc(s.last_error)}">lỗi</span>`
-        : `<span class="pill ${s.enabled ? 'st-online' : 'st-offline'}">${s.enabled ? 'bật' : 'tắt'}</span>`}</td>
-      <td class="row-actions">
-        <button onclick="previewDataSource('${s.source_id}')" class="text-[10px] text-gray-400 hover:text-white">Xem trước</button>
+        ? `<span class="pill st-error" title="${esc(s.last_error)}"><span class="dot"></span>lỗi</span>`
+        : `<span class="pill ${s.enabled ? 'st-online' : 'st-offline'}"><span class="dot"></span>${s.enabled ? 'bật' : 'tắt'}</span>`}</td>
+      <td class="text-right whitespace-nowrap">
+        <button onclick="previewDataSource('${s.source_id}')" class="btn btn-ghost btn-xs">Xem trước</button>
         ${s.mode === 'rag'
-          ? `<button onclick="syncDataSource('${s.source_id}')" class="text-[10px] text-cyan-400 hover:text-cyan-300">Nạp lại</button>`
-          : `<button onclick="testLookup('${s.source_id}')" class="text-[10px] text-cyan-400 hover:text-cyan-300">Tra thử</button>`}
-        <button onclick="editDataSource('${s.source_id}')" class="text-[10px] text-gray-400 hover:text-white">Sửa</button>
-        <button onclick="deleteDataSource('${s.source_id}')" class="text-[10px] text-gray-500 hover:text-red-400">Xoá</button>
+          ? `<button onclick="syncDataSource('${s.source_id}')" class="btn btn-soft btn-xs">Nạp lại</button>`
+          : `<button onclick="moTraThu('${s.source_id}')" class="btn btn-soft btn-xs">Tra thử</button>`}
+        <button onclick="editDataSource('${s.source_id}')" class="btn btn-ghost btn-xs">Sửa</button>
+        <button onclick="deleteDataSource('${s.source_id}')" class="btn btn-ghost btn-xs btn-xoa">Xoá</button>
       </td>
-    </tr>`).join('')
-    : '<tr><td colspan="8" class="text-center text-gray-600 py-6">Chưa có nguồn dữ liệu nào.</td></tr>';
+    </tr>`).join('');
+}
+
+function dsHangCho() {
+  const c = w => `<td><div class="skel" style="width:${w}px"></div></td>`;
+  return Array.from({ length: 3 }, () =>
+    `<tr>${c(110)}${c(44)}${c(90)}${c(180)}${c(50)}${c(96)}${c(44)}<td></td></tr>`).join('');
+}
+
+function dsTrangRong() {
+  return `<tr><td colspan="8" class="py-12">
+    <div class="flex flex-col items-center gap-3 text-center">
+      <svg class="w-8 h-8 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.4"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.657 3.582 3 8 3s8-1.343 8-3V5M4 12c0 1.657 3.582 3 8 3s8-1.343 8-3"/></svg>
+      <div>
+        <div class="text-xs text-gray-300 font-medium">Chưa nối nguồn dữ liệu nào</div>
+        <div class="text-[11px] text-gray-600 mt-1">Tải file Excel/CSV/SQLite lên rồi chọn bảng để bot tra cứu.</div>
+      </div>
+      <button onclick="newDataSource()" class="btn btn-soft btn-xs">+ Thêm nguồn đầu tiên</button>
+    </div></td></tr>`;
 }
 
 function newDataSource() {
@@ -623,6 +715,16 @@ function veDsForm(s) {
         <input id="dsLookupKey" class="inp" placeholder="so_dien_thoai" value="${esc(s.lookup_key)}">
       </div>
     </div>
+    <!-- Giải thích hai chế độ đặt ngay dưới chỗ CHỌN chế độ. Trước đây nó nằm
+         thường trực trên đầu bảng — xa chỗ ra quyết định, và chiếm chỗ mãi dù
+         chỉ cần đọc một lần. -->
+    <div class="text-[11px] text-gray-500 leading-relaxed -mt-1">
+      <span class="tag tag-cyan">Tri thức chung</span>
+      Bảng giá, biểu phí, danh mục sản phẩm. Nạp vào kho tri thức, bot tìm gần đúng theo nghĩa.
+      <br>
+      <span class="tag">Tra theo khách</span>
+      Dư nợ, đơn hàng. Khớp CHÍNH XÁC theo cột khoá (ví dụ số điện thoại), đọc thẳng từ file mỗi lần tra.
+    </div>
     <div><label class="fld">Đường dẫn file trên máy này</label>
       <input id="dsPath" class="inp font-mono" placeholder="/Users/ban/bang_gia.xlsx" value="${esc(cfg.path || '')}">
       <div class="text-[10px] text-gray-600 mt-1">
@@ -642,11 +744,27 @@ function veDsForm(s) {
       <label class="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer ml-2">
         <input type="checkbox" id="dsEnabled" class="accent-cyan-500" ${s.enabled ? 'checked' : ''}> Đang bật</label>
     </div>
+    <div id="dsTraThuKhung" class="${s.mode === 'lookup' ? '' : 'hidden'} rounded-lg border border-slate-750 bg-void p-3">
+      <label class="fld" for="dsTraGiaTri">Tra thử</label>
+      ${dsDangSua ? `
+        <div class="flex gap-2">
+          <input id="dsTraGiaTri" class="inp" placeholder="ví dụ: 0912345678"
+                 onkeydown="if(event.key==='Enter')traThuNguon()">
+          <button onclick="traThuNguon()" class="btn btn-soft">Tra</button>
+        </div>
+        <div class="text-[10px] text-gray-600 mt-1.5">
+          Gõ đúng giá trị nằm ở cột khoá. Đây là thứ bot dùng để nhận ra khách khi gọi.
+        </div>
+        <div id="dsTraKetQua" class="mt-2"></div>`
+        : '<div class="text-[11px] text-gray-600">Lưu nguồn này lại rồi mới tra thử được.</div>'}
+    </div>
     <div id="dsPreview"></div>`;
 }
 
 function dsToggleMode() {
-  o('dsLookupKeyWrap').classList.toggle('hidden', o('dsMode').value !== 'lookup');
+  const laTra = o('dsMode').value === 'lookup';
+  o('dsLookupKeyWrap').classList.toggle('hidden', !laTra);
+  o('dsTraThuKhung').classList.toggle('hidden', !laTra);
 }
 
 async function saveDataSource() {
@@ -662,11 +780,20 @@ async function saveDataSource() {
     lookup_key: o('dsLookupKey') ? o('dsLookupKey').value.trim() : '',
     enabled: o('dsEnabled').checked,
   };
-  if (!payload.name) { alert('Nguồn dữ liệu phải có tên'); return; }
+  if (!payload.name) {
+    thongBao('Nguồn dữ liệu phải có tên.', 'loi');
+    o('dsName').focus();
+    return;
+  }
   const data = await apiSend('/api/data-sources', payload);
   if (baoLoi(data)) return;
   dsDangSua = data.source.source_id;
+  thongBao(`Đã lưu nguồn "${payload.name}".`, 'xong');
   await loadDataSources();
+  // Vẽ lại form từ bản vừa lưu. Không vẽ lại thì tiêu đề panel vẫn là "Thêm
+  // nguồn dữ liệu" và khung Tra thử vẫn báo "Lưu nguồn này lại rồi mới tra thử
+  // được" — cả hai đều sai ngay sau khi vừa lưu xong.
+  veDsForm(data.source);
   previewDataSource(dsDangSua);
 }
 
@@ -696,25 +823,52 @@ async function previewDataSource(id) {
 async function syncDataSource(id) {
   const data = await apiSend(`/api/data-sources/${id}/sync`);
   if (baoLoi(data)) return;
-  alert(`Đã nạp ${data.so_dong} dòng vào kho tri thức (xoá ${data.da_xoa_cu} mảnh cũ của nguồn này).`);
+  thongBao(`Đã nạp ${data.so_dong} dòng vào kho tri thức `
+    + `(gỡ ${data.da_xoa_cu} mảnh cũ của nguồn này).`, 'xong');
   loadDataSources();
 }
 
-async function testLookup(id) {
-  const gt = prompt('Tra thử giá trị nào? (ví dụ: số điện thoại khách)');
-  if (!gt) return;
-  const data = await apiSend(`/api/data-sources/${id}/lookup`, { gia_tri: gt });
-  if (baoLoi(data)) return;
-  alert(data.tim_thay
-    ? Object.entries(data.du_lieu).map(([k, v]) => `${k}: ${v}`).join('\n')
-    : data.ghi_chu);
+// Mở form của nguồn rồi đưa con trỏ vào ô tra thử. Trước đây việc này dùng
+// prompt() rồi alert() — hai hộp của trình duyệt, không thấy được cột khoá đang
+// đặt là gì, và kết quả biến mất ngay khi bấm OK nên không đối chiếu được.
+function moTraThu(id) {
+  editDataSource(id);
+  const inp = o('dsTraGiaTri');
+  if (inp) { inp.focus(); inp.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+
+async function traThuNguon() {
+  const inp = o('dsTraGiaTri');
+  const kq = o('dsTraKetQua');
+  if (!inp || !kq) return;
+  const gt = inp.value.trim();
+  if (!gt) { thongBao('Nhập giá trị cần tra đã.', 'loi'); inp.focus(); return; }
+
+  kq.innerHTML = '<div class="text-[11px] text-gray-500">Đang tra…</div>';
+  const data = await apiSend(`/api/data-sources/${dsDangSua}/lookup`, { gia_tri: gt });
+  if (data.error) {
+    kq.innerHTML = `<div class="text-[11px] text-red-400">${esc(data.error)}</div>`;
+    return;
+  }
+  if (!data.tim_thay) {
+    kq.innerHTML = `<div class="text-[11px] text-amber-300">${esc(data.ghi_chu || 'Không tìm thấy dòng nào khớp.')}</div>`;
+    return;
+  }
+  kq.innerHTML = '<div class="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.04] p-3">'
+    + '<div class="text-[10px] text-emerald-400 uppercase tracking-wider mb-2">Tìm thấy</div>'
+    + '<div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-[11px]">'
+    + Object.entries(data.du_lieu).map(([k, v]) =>
+        `<div class="text-gray-500 font-mono">${esc(k)}</div><div class="text-gray-200">${esc(v)}</div>`).join('')
+    + '</div></div>';
 }
 
 async function deleteDataSource(id) {
-  if (!confirm('Xoá nguồn này? Dữ liệu nó đã nạp vào kho tri thức cũng bị gỡ theo.')) return;
+  const s = dataSources.find(x => x.source_id === id);
+  if (!confirm(`Xoá nguồn "${s ? s.name : id}"? Dữ liệu nó đã nạp vào kho tri thức cũng bị gỡ theo.`)) return;
   const data = await apiSend('/api/data-sources/' + id, undefined, 'DELETE');
   if (baoLoi(data)) return;
   closeDataSource();
+  thongBao(`Đã xoá nguồn "${s ? s.name : id}".`, 'xong');
   loadDataSources();
 }
 
@@ -1117,3 +1271,377 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 });
+
+// =====================================================================
+// NHẮN TIN - kiểm thử tư vấn bằng chữ
+// =====================================================================
+//
+// Đường đi: gõ chữ -> {type:'text_soi'} -> process_text_turn(soi=True). Chế độ
+// soi đi trọn vòng nghiệp vụ (lượt thường gặp, tra hồ sơ, RAG, LLM, lưới chặn
+// số) nhưng BỎ câu đệm và BỎ sinh tiếng, đổi lại `metrics` mang thêm dấu vết
+// chẩn đoán: nguồn RAG kèm điểm khớp, cờ đường đi, lưới chặn đã bắt gì.
+//
+// WebSocket RIÊNG, KHÔNG dùng chung `ws` của app.js. Dùng chung là hai trang đổ
+// vào cùng một CallSession: lịch sử lẫn nhau và AI coi lượt gõ với lượt nói là
+// một cuộc trò chuyện. Trang Hội thoại cố ý bỏ ô gõ chữ để số đo ở đó là số
+// thật của đường thoại - tách hẳn phiên là cách duy nhất giữ được điều đó.
+
+let msgWs = null;
+let msgSessionId = null;
+let msgLuot = 0;
+let msgDangCho = false;
+let msgOTraLoi = null;        // <div> câu trả lời đang chảy về
+let msgChuoiTraLoi = '';
+let msgDaGanPhim = false;
+
+function msgTrangThai(chu, mau = 'text-gray-600') {
+  const el = document.getElementById('msgTrangThai');
+  if (el) { el.textContent = chu; el.className = `text-[10px] font-mono ${mau}`; }
+}
+
+function initMessaging() {
+  msgNoi();
+  msgNapToc();
+  if (!msgDaGanPhim) {
+    const o = document.getElementById('msgInput');
+    o.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); msgGui(); }
+    });
+    msgDaGanPhim = true;
+  }
+  setTimeout(() => document.getElementById('msgInput')?.focus(), 50);
+}
+
+function msgNoi() {
+  if (msgWs && (msgWs.readyState === WebSocket.OPEN || msgWs.readyState === WebSocket.CONNECTING)) return;
+  const giaoThuc = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  // Nối lại bằng ĐÚNG session cũ: mất mạng giữa chừng mà xin phiên mới thì AI
+  // quên sạch mấy lượt vừa rồi, còn người soi thì không nhận ra vì khung chat
+  // vẫn còn nguyên chữ trên màn hình.
+  msgWs = new WebSocket(`${giaoThuc}//${location.host}/ws/call/${msgSessionId || 'new'}`);
+
+  msgWs.onopen = () => { msgTrangThai('đã nối', 'text-emerald-400'); msgGuiCauHinh(); };
+  msgWs.onmessage = (e) => msgNhan(JSON.parse(e.data));
+  msgWs.onclose = () => {
+    msgTrangThai('mất kết nối - đang nối lại', 'text-amber-400');
+    msgHienCho(false);
+    setTimeout(msgNoi, 3000);
+  };
+  msgWs.onerror = () => msgTrangThai('lỗi kết nối', 'text-red-400');
+}
+
+function msgGuiCauHinh() {
+  if (!msgWs || msgWs.readyState !== WebSocket.OPEN) return;
+  msgWs.send(JSON.stringify({
+    type: 'set_session',
+    customer_name: document.getElementById('msgCustomerName').value,
+    product: document.getElementById('msgProduct').value,
+  }));
+}
+
+function msgHienCho(bat) {
+  msgDangCho = bat;
+  document.getElementById('msgTyping').classList.toggle('hidden', !bat);
+  document.getElementById('msgSend').disabled = bat;
+}
+
+function msgCuonXuong() {
+  const l = document.getElementById('msgList');
+  l.scrollTop = l.scrollHeight;
+}
+
+function msgGui() {
+  const o = document.getElementById('msgInput');
+  const chu = o.value.trim();
+  if (!chu || msgDangCho) return;
+  if (!msgWs || msgWs.readyState !== WebSocket.OPEN) {
+    msgTrangThai('chưa nối - thử lại sau giây lát', 'text-amber-400');
+    return;
+  }
+
+  document.getElementById('msgWelcome')?.remove();
+  msgThemBongKhach(chu);
+  msgLuot += 1;
+  msgWs.send(JSON.stringify({ type: 'text_soi', text: chu, turn_id: msgLuot }));
+  o.value = '';
+  msgChuoiTraLoi = '';
+  msgOTraLoi = null;
+  msgHienCho(true);
+}
+
+function msgXoaHoiThoai() {
+  msgDungTieng();
+  document.getElementById('msgList').innerHTML =
+    '<div class="text-xs text-gray-600 text-center py-4">Đã xóa. Lịch sử phía AI vẫn giữ - mở lại trang hoặc tải lại app để bắt đầu phiên mới.</div>';
+  msgChuoiTraLoi = '';
+  msgOTraLoi = null;
+}
+
+function msgThemBongKhach(chu) {
+  const d = document.createElement('div');
+  d.className = 'flex animate-fade-up';
+  d.innerHTML = `<div class="ml-auto max-w-2xl bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap break-words">${esc(chu)}</div>`;
+  document.getElementById('msgList').appendChild(d);
+  msgCuonXuong();
+}
+
+function msgBatDauTraLoi() {
+  const boc = document.createElement('div');
+  boc.className = 'animate-fade-up';
+  boc.innerHTML =
+    '<div class="max-w-2xl bg-deep border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-200 whitespace-pre-wrap break-words" data-vaitro="loi"></div>' +
+    '<div class="max-w-2xl mt-1.5" data-vaitro="soi"></div>';
+  document.getElementById('msgList').appendChild(boc);
+  msgOTraLoi = boc;
+  return boc;
+}
+
+function msgNhan(m) {
+  switch (m.type) {
+    case 'connected':
+      msgSessionId = m.session_id;
+      break;
+
+    case 'response_chunk':
+      // Dùng `response_chunk` chứ không dùng `token`: đây là chữ ĐÃ qua bộ lọc
+      // xưng hô, tức đúng thứ khách sẽ nghe. Token thô còn "chúng tôi" chưa đổi.
+      if (!msgOTraLoi) msgBatDauTraLoi();
+      msgChuoiTraLoi += (msgChuoiTraLoi ? ' ' : '') + (m.text || '');
+      msgOTraLoi.querySelector('[data-vaitro="loi"]').textContent = msgChuoiTraLoi;
+      msgCuonXuong();
+      break;
+
+    case 'turn_complete': {
+      msgHienCho(false);
+      if (!msgOTraLoi && !m.full_response) break;
+      const boc = msgOTraLoi || msgBatDauTraLoi();
+      const cau = m.full_response || msgChuoiTraLoi;
+      boc.querySelector('[data-vaitro="loi"]').textContent = cau;
+      boc.querySelector('[data-vaitro="soi"]').innerHTML = msgPhieuSoi(m.metrics || {}, cau);
+      msgOTraLoi = null;
+      msgChuoiTraLoi = '';
+      msgCuonXuong();
+      break;
+    }
+
+    case 'error': {
+      msgHienCho(false);
+      const d = document.createElement('div');
+      d.className = 'text-xs text-red-400 bg-red-500/10 border border-slate-750 rounded-lg px-3 py-2';
+      d.textContent = m.message || 'Lỗi không rõ';
+      document.getElementById('msgList').appendChild(d);
+      msgCuonXuong();
+      break;
+    }
+  }
+}
+
+// ---------- phiếu soi ----------
+
+function msgChip(chu, mau = 'text-gray-400') {
+  return `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 ${mau}">${chu}</span>`;
+}
+
+function msgPhieuSoi(m, cau) {
+  const chips = [];
+
+  // --- đường đi: câu này do ĐÂU trả lời ---
+  // Không có mấy cờ này thì rất dễ tưởng model vừa nghĩ ra câu trả lời, trong
+  // khi thực ra nó lấy từ bảng cứng - sửa prompt cả buổi không đổi được gì.
+  if (m.luot_thuong_gap) chips.push(msgChip(`bảng sẵn: ${esc(m.luot_thuong_gap)}`, 'text-amber-400'));
+  if (m.tra_tu_ho_so) chips.push(msgChip(`hồ sơ: ${esc(m.tra_tu_ho_so)}`, 'text-amber-400'));
+  if (m.cong_cu) chips.push(msgChip(`công cụ: ${esc(m.cong_cu)}`, 'text-violet-400'));
+  if (m.llm_nghi_san) chips.push(msgChip('bản nghĩ sẵn', 'text-violet-400'));
+  if (m.rag_doan_truoc) chips.push(msgChip('RAG đoán trước', 'text-violet-400'));
+  if (!m.luot_thuong_gap && !m.tra_tu_ho_so) chips.push(msgChip('RAG → LLM'));
+
+  // --- số đo ---
+  if (m.rag_ms != null) chips.push(msgChip(`RAG ${m.rag_ms}ms`));
+  if (m.llm_ttft_ms != null) chips.push(msgChip(`LLM đầu ${m.llm_ttft_ms}ms`));
+  if (m.total_ms != null) chips.push(msgChip(`tổng ${m.total_ms}ms`));
+  if (m.llm_tokens != null) chips.push(msgChip(`${m.llm_tokens} token`));
+
+  // --- lưới chặn ---
+  if (m.chan_so_sai) chips.push(msgChip(`chặn số: ${esc(m.chan_so_sai)}`, 'text-red-400'));
+  if (m.chan_tien_sai) chips.push(msgChip(`chặn tiền: ${esc(m.chan_tien_sai)}`, 'text-red-400'));
+
+  let html = `<div class="flex flex-wrap gap-1.5 items-center">${chips.join('')}` +
+    `<button class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 text-cyan-400" ` +
+    `onclick="msgNgheThu(this)" data-cau="${esc(cau)}">▶ nghe thử</button></div>`;
+
+  // --- nguồn RAG ---
+  const nguon = m.rag_nguon || [];
+  if (nguon.length) {
+    const dong = nguon.map(n => {
+      const mau = n.bi_loc ? 'text-gray-600 opacity-50' : 'text-gray-400';
+      const nhan = n.bi_loc ? msgChip('ĐÃ LỌC', 'text-amber-300') : '';
+      const diem = n.diem == null ? '—' : n.diem;
+      const trich = (n.doan || '').replace(/\s+/g, ' ').slice(0, 140);
+      return `<div class="border-l border-slate-750 px-2 py-1 ${mau}">` +
+        `<div class="flex flex-wrap gap-1.5 items-center mb-1">` +
+        `<span class="text-[10px] font-mono text-violet-400">${esc(n.nguon || 'không rõ nguồn')}</span>` +
+        `<span class="text-[10px] font-mono text-gray-600">khớp ${diem}</span>${nhan}</div>` +
+        `<div class="text-[10px] font-mono">${esc(trich)}${(n.doan || '').length > 140 ? '…' : ''}</div></div>`;
+    }).join('');
+    html += `<div class="mt-1.5 space-y-1">` +
+      `<div class="text-[10px] font-mono text-gray-600">truy vấn RAG: ${esc(m.rag_truy_van || '—')}</div>` +
+      dong + `</div>`;
+  }
+
+  return html;
+}
+
+async function msgNgheThu(btn) {
+  const cau = btn.getAttribute('data-cau') || '';
+  if (!cau) return;
+  const cu = btn.textContent;
+  btn.textContent = '… đang đọc';
+  btn.disabled = true;
+  // Bấm nút này cũng phải cắt tiếng đang phát: bấm hai câu liền nhau mà không
+  // cắt là hai câu chồng lên nhau.
+  const luot = ++msgLuotPhat;
+  msgDungTieng();
+  try {
+    const fd = new FormData();
+    fd.append('text', cau);
+    fd.append('voice_name', document.getElementById('msgVoiceSelect')?.value || 'default');
+    // Cắt mảnh y như cuộc gọi: nghe thử mà đọc nguyên câu một phát thì nhịp
+    // lệch ~10% so với thứ khách thật sự nghe, tức nghe xong vẫn không biết gì.
+    fd.append('cat_manh', 'true');
+    const d = await (await fetch('/api/voices/test-tts', { method: 'POST', body: fd })).json();
+    if (d.error) { btn.textContent = '✗ ' + d.error.slice(0, 40); return; }
+    await msgPhatTieng(d.audio, luot);
+    btn.textContent = cu;
+  } catch (e) {
+    btn.textContent = '✗ lỗi phát';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- tốc đọc của giọng đang chọn ----------
+//
+// Tốc là thuộc tính của GIỌNG, không phải của phiên: backend ghi vào tệp
+// `<giọng>.speed` nằm cạnh file wav. Nên kéo thanh này là đổi luôn cho CUỘC GỌI
+// THẬT, không riêng trang Nhắn tin. Tiêu đề của khối đã ghi rõ điều đó.
+//
+// Còn một hệ số THỨ HAI nhân chồng lên khi gọi điện (`/api/voices/phone-speed`).
+// Nút "nghe thử" ở trang này CÓ áp hệ số đó, nên nhịp nghe ở đây đúng bằng nhịp
+// khách nghe - chỉ khác ở chỗ chưa hạ băng thông xuống 8kHz.
+//
+// Trước 13-08-2026 thì không: hệ số chỉ được nhân khi `qua_dien_thoai=true`, mà
+// cờ đó đồng thời hạ băng thông. Kết quả là nghe ở 24kHz ra 283 âm tiết/phút
+// còn cuộc gọi đọc 347, và chú thích cũ ở đây chỉ đi CẢNH BÁO điều đó thay vì
+// sửa. Nay `qua_dien_thoai` chỉ còn nghĩa "hạ băng thông".
+
+let msgTocGiong = {};   // tên giọng -> { toc, rieng }
+
+// MỘT thẻ Audio dùng chung cho cả trang, và một số thứ tự lượt phát.
+//
+// Vì sao cần cả hai: bản đầu tạo `new Audio().play()` mới mỗi lần, không dừng
+// cái đang chạy. Kéo thanh tốc vài nhịp là mấy bản tiếng chồng lên nhau, và
+// người nghe tưởng "chỉnh tốc không ăn, vẫn ra tốc cũ" - thật ra tiếng tốc cũ
+// vẫn đang phát đè lên tiếng tốc mới.
+//
+// Số lượt lo nốt trường hợp còn lại: yêu cầu cũ chạy chậm về SAU yêu cầu mới thì
+// vẫn là tiếng tốc cũ, dừng thẻ Audio không cứu được vì lúc đó nó chưa phát.
+let msgTieng = null;
+let msgLuotPhat = 0;
+
+function msgDungTieng() {
+  if (msgTieng) {
+    msgTieng.pause();
+    msgTieng.currentTime = 0;
+    msgTieng = null;
+  }
+}
+
+/** Phát một bản WAV base64, cắt hẳn thứ đang phát. `luot` là số thứ tự lấy
+ *  trước khi gọi mạng; khác `msgLuotPhat` nghĩa là đã có yêu cầu mới hơn -> bỏ. */
+async function msgPhatTieng(b64, luot) {
+  if (luot !== msgLuotPhat) return;
+  msgDungTieng();
+  msgTieng = new Audio('data:audio/wav;base64,' + b64);
+  try {
+    await msgTieng.play();
+  } catch { /* trình duyệt chặn tự phát khi không có thao tác người dùng */ }
+}
+
+async function msgNapToc() {
+  try {
+    const d = await (await fetch('/api/voices')).json();
+    msgTocGiong = {};
+    (d.voices || []).forEach(v => {
+      msgTocGiong[v.name] = { toc: +(v.speed ?? 1), rieng: !!v.speed_rieng };
+    });
+    msgVeToc();
+  } catch { /* chưa nạp được thì giữ nguyên thanh trượt */ }
+}
+
+function msgVeToc() {
+  const ten = document.getElementById('msgVoiceSelect')?.value;
+  const t = msgTocGiong[ten];
+  const thanh = document.getElementById('msgToc');
+  const so = document.getElementById('msgTocSo');
+  const nutBo = document.getElementById('msgTocBo');
+  if (!thanh || !so || !nutBo) return;
+  // Chưa biết tốc của giọng này thì KHOÁ thanh lại thay vì hiện 1.00 - hiện số
+  // bịa rồi người dùng kéo từ đó là ghi đè tốc thật bằng một số vô căn cứ.
+  if (!t) {
+    thanh.disabled = true;
+    so.textContent = '—';
+    nutBo.classList.add('hidden');
+    return;
+  }
+  thanh.disabled = false;
+  thanh.value = t.toc;
+  so.textContent = t.toc.toFixed(2);
+  so.className = `text-[10px] font-mono w-8 ${t.rieng ? 'text-violet-400' : 'text-gray-500'}`;
+  nutBo.classList.toggle('hidden', !t.rieng);
+}
+
+async function msgDatToc(toc) {
+  const ten = document.getElementById('msgVoiceSelect').value;
+  if (!msgTocGiong[ten]) return;
+  // CẮT tiếng đang phát NGAY khi thả thanh trượt, trước cả khi gọi mạng: người
+  // dùng vừa đổi tốc thì bản tốc cũ không còn nghĩa gì, để nó chạy tiếp là vừa
+  // chồng tiếng vừa làm tưởng chỉnh tốc không ăn.
+  msgDungTieng();
+  try {
+    const d = await (await fetch(`/api/voices/${encodeURIComponent(ten)}/speed`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speed: parseFloat(toc) }),
+    })).json();
+    if (d.error) { alert(d.error); return; }
+    await msgNapToc();
+    msgNgheThuToc(ten);
+  } catch (e) { alert('Lỗi đặt tốc: ' + e.message); }
+}
+
+async function msgBoToc() {
+  const ten = document.getElementById('msgVoiceSelect').value;
+  msgDungTieng();
+  await fetch(`/api/voices/${encodeURIComponent(ten)}/speed`, { method: 'DELETE' });
+  await msgNapToc();
+}
+
+/** Đọc lại NGAY sau khi đổi tốc. Chỉnh tốc mà không nghe lại thì phải mò, và
+ *  tiếng cũ trong bộ nhớ đệm từng làm người dùng tưởng nút không ăn. Ưu tiên đọc
+ *  chính câu AI vừa trả lời - đó mới là văn bản đang cần nghe cho vừa tai. */
+async function msgNgheThuToc(ten) {
+  const cuoi = [...document.querySelectorAll('button[data-cau]')].pop();
+  const cau = cuoi?.getAttribute('data-cau')
+    || 'Dạ em chào anh chị, lãi suất vay tín chấp hiện tại là 7.9% một năm ạ.';
+  // Lấy số lượt TRƯỚC khi gọi mạng. Kéo thanh nhanh vài nhịp thì các yêu cầu về
+  // không theo thứ tự gửi; bản nào không phải lượt mới nhất là tiếng TỐC CŨ,
+  // `msgPhatTieng` sẽ bỏ nó thay vì phát đè.
+  const luot = ++msgLuotPhat;
+  try {
+    const fd = new FormData();
+    fd.append('text', cau);
+    fd.append('voice_name', ten);
+    fd.append('cat_manh', 'true');
+    const d = await (await fetch('/api/voices/test-tts', { method: 'POST', body: fd })).json();
+    if (d.audio) await msgPhatTieng(d.audio, luot);
+  } catch { /* nghe thử hỏng thì thôi, tốc vẫn đã lưu */ }
+}

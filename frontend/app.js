@@ -3650,6 +3650,10 @@ async function cancelVoiceTrainJob() {
 // đổi). Ở đây là tài liệu tĩnh của hệ thống — mô tả sản phẩm, điều kiện — và
 // người vận hành cần SỬA ĐƯỢC TRỰC TIẾP, vì đây là chỗ duy nhất quyết định con
 // số bot đọc cho khách.
+//
+// Lọc và tìm kiếm chạy hẳn trên máy: /api/knowledge trả cả danh sách trong một
+// lần gọi, số tài liệu ở đây tính bằng chục chứ không phải nghìn. Gọi lại API
+// mỗi lần gõ phím chỉ làm ô tìm kiếm giật mà không đổi kết quả.
 
 const KN_NHAN_NHOM = {
   products: 'Sản phẩm',
@@ -3657,70 +3661,307 @@ const KN_NHAN_NHOM = {
   chinh_sach: 'Chính sách',
 };
 
+// Tài liệu mẫu của "Ngân hàng ABC" đi kèm bản cài. Lãi suất trong đó là số bịa
+// — phải nêu đích danh thì mới cảnh báo được, và mới xoá gọn được.
+const KN_TEN_MAU = ['vay_tin_chap', 'vay_mua_nha', 'the_tin_dung', 'faq_banking'];
+const KN_DUOI_NHAN = ['md', 'txt', 'csv', 'xlsx', 'xls'];
+const KN_LOC_MAU = '__mau';
+
+let knDanhSach = [];        // nguyên danh sách từ API, chưa lọc
+let knNhomDangLoc = '';     // '' = tất cả, hoặc mã nhóm, hoặc KN_LOC_MAU
+let knDangMo = new Set();   // 'nhom/ten' của các dòng đang mở xem trước
+let knNoiDungCache = {};    // 'nhom/ten' -> nội dung, khỏi gọi lại khi đóng/mở
+let knFileDangChon = null;  // file người dùng vừa kéo vào / vừa chọn
+let knGocNoiDung = '';      // nội dung lúc mở hộp soạn, để biết đã sửa gì chưa
+let knVuaTaiLen = false;    // vừa tải file xong? (xem chú thích trong loadTriThuc)
+
 function knByte(n) {
   return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB';
 }
 
+function knKhoa(nhom, ten) { return nhom + '/' + ten; }
+
+function knNgayGio(d) {
+  const s2 = n => String(n).padStart(2, '0');
+  return `${s2(d.getDate())}/${s2(d.getMonth() + 1)} ${s2(d.getHours())}:${s2(d.getMinutes())}`;
+}
+
+// ---------------------------------------------------------------------------
+// Thông báo trượt góc màn hình.
+//
+// Thay alert(): hộp của trình duyệt chặn cả luồng JS lại cho tới khi người dùng
+// bấm OK, và trông như thông báo lỗi hệ thống chứ không phải phản hồi của app.
+// Báo lỗi để lâu hơn báo thành công — lỗi là thứ người dùng cần đọc kỹ.
+// ---------------------------------------------------------------------------
+function thongBao(loi, kieu = '') {
+  const khay = document.getElementById('toastWrap');
+  if (!khay) { alert(loi); return; }
+  const o = document.createElement('div');
+  o.className = 'toast ' + kieu;
+  o.innerHTML = '<span class="cham"></span><span></span>';
+  o.lastChild.textContent = loi;
+  khay.appendChild(o);
+  setTimeout(() => {
+    o.classList.add('tat');
+    setTimeout(() => o.remove(), 240);
+  }, kieu === 'loi' ? 6500 : 3600);
+}
+
+// ---------------------------------------------------------------------------
+// Nạp danh sách và vẽ lại toàn trang
+// ---------------------------------------------------------------------------
 async function loadTriThuc() {
   const tb = document.getElementById('knRows');
   if (!tb) return;
+  ganVungKeoTha();
+  // Hộp kết quả tải lên mô tả MỘT file vừa thêm. Nạp lại vì bất kỳ lý do nào
+  // khác — xoá tài liệu, bấm Nạp lại, quay lại trang — thì nội dung trong đó
+  // hết đúng (đã bắt được: xoá file xong hộp vẫn khoe "Đã thêm <file>").
+  // Riêng lần nạp ngay sau khi tải lên thì giữ, vì đó là chỗ xem trước kết quả
+  // chuyển bảng Excel.
+  const kq = document.getElementById('knUpKetQua');
+  if (kq && !knVuaTaiLen) kq.classList.add('hidden');
+  knVuaTaiLen = false;
+
+  tb.innerHTML = knHangCho();
   try {
     const d = await fetch('/api/knowledge').then(r => r.json());
-    const ds = d.tai_lieu || [];
-    if (!ds.length) {
-      tb.innerHTML = '<tr><td colspan="6" class="text-center text-gray-600 py-8 text-xs">'
-        + 'Chưa có tài liệu nào. Bot sẽ không có gì để tư vấn.</td></tr>';
-    } else {
-      tb.innerHTML = ds.map(t => {
-        // so_manh = 0 nghĩa là file có trên đĩa nhưng RAG CHƯA đọc. Phải nói
-        // thẳng: người dùng sửa xong tưởng đã xong, mà bot vẫn trả lời bản cũ.
-        const doc = t.so_manh > 0
-          ? `<span class="text-emerald-400">${t.so_manh} mảnh</span>`
-          : '<span class="text-amber-400">chưa nạp</span>';
-        return `<tr>
-          <td class="font-medium text-white">${escapeHtml(t.ten)}</td>
-          <td class="text-gray-400">${escapeHtml(KN_NHAN_NHOM[t.nhom] || t.nhom)}</td>
-          <td class="text-gray-500 font-mono text-[11px]">${knByte(t.kich_thuoc)}</td>
-          <td class="text-[11px]">${doc}</td>
-          <td class="text-gray-500 text-[11px]">${new Date(t.sua_doi * 1000).toLocaleString('vi-VN')}</td>
-          <td class="text-right whitespace-nowrap">
-            <button onclick="soanTaiLieu('${escapeHtml(t.nhom)}','${escapeHtml(t.ten)}')"
-                    class="px-2 py-1 rounded-md text-[10px] text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10">Sửa</button>
-            <button onclick="xoaTaiLieu('${escapeHtml(t.nhom)}','${escapeHtml(t.ten)}')"
-                    class="px-2 py-1 rounded-md text-[10px] text-gray-500 hover:text-red-400 hover:bg-red-500/10">Xoá</button>
-          </td></tr>`;
-      }).join('');
-    }
-
-    // Cảnh báo dữ liệu mẫu: đây là lý do bot đọc lãi suất bịa cho khách. Ai mở
-    // trang này cũng phải thấy ngay, không phải đi tìm.
-    const cb = document.getElementById('knCanhBao');
-    if (cb) {
-      const mau = ds.filter(t => ['vay_tin_chap', 'vay_mua_nha', 'the_tin_dung', 'faq_banking']
-        .includes(t.ten)).length;
-      if (mau) {
-        cb.classList.remove('hidden');
-        cb.innerHTML = `Đang còn <b>${mau}</b> tài liệu MẪU của "Ngân hàng ABC" — `
-          + 'lãi suất, hạn mức trong đó là số bịa để chạy thử. Bot đang đọc chính '
-          + 'những số này cho khách. Sửa hoặc thay bằng dữ liệu thật trước khi gọi.';
-      } else {
-        cb.classList.add('hidden');
-      }
-    }
+    knDanhSach = d.tai_lieu || [];
+    knNoiDungCache = {};   // tài liệu có thể vừa bị sửa, đọc lại cho chắc
+    veThongKeTriThuc();
+    veCanhBaoMau();
+    veChipNhom();
+    veBangTriThuc();
   } catch (e) {
-    tb.innerHTML = `<tr><td colspan="6" class="text-center text-red-400 py-8 text-xs">Lỗi: ${escapeHtml(e.message)}</td></tr>`;
+    tb.innerHTML = '<tr><td colspan="7" class="text-center text-red-400 py-8 text-xs">'
+      + 'Không đọc được danh sách tài liệu: ' + escapeHtml(e.message) + '</td></tr>';
   }
 }
 
-async function uploadTriThuc() {
-  const inp = document.getElementById('knFile');
-  const box = document.getElementById('knUpKetQua');
-  if (!inp.files.length) { alert('Chọn file trước đã'); return; }
+function veThongKeTriThuc() {
+  const o = document.getElementById('knStats');
+  if (!o) return;
+  const manh = knDanhSach.reduce((s, t) => s + (t.so_manh || 0), 0);
+  const chua = knDanhSach.filter(t => !t.so_manh).length;
+  const moi = knDanhSach.reduce((m, t) => Math.max(m, t.sua_doi || 0), 0);
+  // Ghép tay thay vì toLocaleString: bộ vi-VN đẩy giờ lên trước ngày ("10:16
+  // 16-08") — đọc ngược với mọi chỗ khác trong app.
+  const gio = moi ? knNgayGio(new Date(moi * 1000)) : '—';
+  o.innerHTML =
+    statCell('Tài liệu', knDanhSach.length, 'text-white')
+    + statCell('Mảnh AI đã đọc', manh, 'text-cyan-400')
+    + statCell('Chưa nạp', chua, chua ? 'text-amber-400' : 'text-gray-600')
+    + `<div class="stat-cell"><div class="k">Sửa gần nhất</div>
+         <div class="v stat-name text-gray-300">${escapeHtml(gio)}</div></div>`;
+}
 
+function veCanhBaoMau() {
+  const cb = document.getElementById('knCanhBao');
+  if (!cb) return;
+  const mau = knDanhSach.filter(t => KN_TEN_MAU.includes(t.ten));
+  if (!mau.length) { cb.classList.add('hidden'); return; }
+  cb.classList.remove('hidden');
+  document.getElementById('knCanhBaoChiTiet').innerHTML =
+    `Còn <b>${mau.length}</b> tài liệu mẫu của "Ngân hàng ABC". Lãi suất và hạn mức `
+    + 'trong đó là số bịa để chạy thử, và bot đang đọc chính những số đó cho khách. '
+    + 'Thay bằng tài liệu thật trước khi gọi.';
+}
+
+function veChipNhom() {
+  const o = document.getElementById('knChips');
+  if (!o) return;
+  const dem = ma => ma ? knDanhSach.filter(t => t.nhom === ma).length : knDanhSach.length;
+  let h = [['', 'Tất cả'], ...Object.entries(KN_NHAN_NHOM)].map(([ma, nhan]) =>
+    `<button class="chip ${knNhomDangLoc === ma ? 'active' : ''}" onclick="locNhomTriThuc('${ma}')">`
+    + `${nhan}<span class="font-mono opacity-55">${dem(ma)}</span></button>`).join('');
+  // Chip này chỉ hiện khi người dùng bấm "Xem các tài liệu này" ở thẻ cảnh báo:
+  // nó là bộ lọc tạm, không phải một nhóm thật.
+  if (knNhomDangLoc === KN_LOC_MAU) {
+    h += `<button class="chip active" onclick="locNhomTriThuc('')">Tài liệu mẫu`
+       + `<span class="chip-x">&times;</span></button>`;
+  }
+  o.innerHTML = h;
+}
+
+function locNhomTriThuc(ma) {
+  knNhomDangLoc = ma;
+  veChipNhom();
+  veBangTriThuc();
+}
+
+function locTaiLieuMau() {
+  const tim = document.getElementById('knTim');
+  if (tim) tim.value = '';
+  locNhomTriThuc(KN_LOC_MAU);
+}
+
+function veBangTriThuc() {
+  const tb = document.getElementById('knRows');
+  if (!tb) return;
+
+  if (!knDanhSach.length) { tb.innerHTML = knTrangRong(); return; }
+
+  const tu = (document.getElementById('knTim')?.value || '').trim().toLowerCase();
+  const ds = knDanhSach.filter(t => {
+    const hopNhom = knNhomDangLoc === KN_LOC_MAU
+      ? KN_TEN_MAU.includes(t.ten)
+      : (!knNhomDangLoc || t.nhom === knNhomDangLoc);
+    return hopNhom && (!tu || t.ten.toLowerCase().includes(tu));
+  });
+
+  if (!ds.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="text-center text-gray-600 py-10 text-xs">'
+      + 'Không có tài liệu nào khớp. Thử xoá bớt từ khoá hoặc chọn "Tất cả".</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = ds.map(t => {
+    const khoa = knKhoa(t.nhom, t.ten);
+    const mo = knDangMo.has(khoa);
+    // so_manh = 0 nghĩa là file có trên đĩa nhưng RAG CHƯA đọc. Phải nói thẳng:
+    // người dùng sửa xong tưởng đã xong, mà bot vẫn trả lời bản cũ.
+    const nap = t.so_manh > 0
+      ? `<span class="pill st-daNap"><span class="dot"></span>${t.so_manh} mảnh</span>`
+      : '<span class="pill st-chuaNap"><span class="dot"></span>Chưa nạp</span>';
+    const n = escapeHtml(t.nhom), e = escapeHtml(t.ten);
+    return `<tr>
+      <td class="pr-0">
+        <button class="kn-nut-mo ${mo ? 'mo' : ''}" aria-expanded="${mo}"
+                aria-label="Xem trước nội dung ${e}" onclick="moXemTruoc('${n}','${e}')">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </td>
+      <td class="font-medium text-white">${e}</td>
+      <td class="text-gray-400">${escapeHtml(KN_NHAN_NHOM[t.nhom] || t.nhom)}</td>
+      <td class="text-gray-500 font-mono text-[11px]">${knByte(t.kich_thuoc)}</td>
+      <td>${nap}</td>
+      <td class="text-gray-500 text-[11px]">${new Date(t.sua_doi * 1000).toLocaleString('vi-VN')}</td>
+      <td class="text-right whitespace-nowrap">
+        <button onclick="soanTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs">Sửa</button>
+        <button onclick="xoaTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs btn-xoa">Xoá</button>
+      </td></tr>`
+      + (mo ? `<tr><td colspan="7" style="padding-top:0;padding-bottom:0;border-bottom:none">
+          <div class="kn-xem-truoc" data-xt="${khoa}">Đang đọc…</div></td></tr>` : '');
+  }).join('');
+
+  // Vẽ lại bảng là mất nội dung xem trước đã đổ vào DOM — đổ lại từ cache, gần
+  // như tức thì, chỉ gọi API cho dòng chưa từng mở.
+  knDangMo.forEach(khoa => {
+    const [nhom, ...con] = khoa.split('/');
+    napXemTruoc(nhom, con.join('/'));
+  });
+}
+
+function knHangCho() {
+  const o = w => `<td><div class="skel" style="width:${w}px"></div></td>`;
+  return Array.from({ length: 3 }, () =>
+    `<tr><td></td>${o(130)}${o(74)}${o(46)}${o(62)}${o(104)}<td></td></tr>`).join('');
+}
+
+function knTrangRong() {
+  return `<tr><td colspan="7" class="py-12">
+    <div class="flex flex-col items-center gap-3 text-center">
+      <svg class="w-8 h-8 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.4"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      <div>
+        <div class="text-xs text-gray-300 font-medium">Chưa có tài liệu nào</div>
+        <div class="text-[11px] text-gray-600 mt-1">Bot chưa có gì để tư vấn cho khách.</div>
+      </div>
+      <button onclick="soanTaiLieu()" class="btn btn-soft btn-xs">+ Soạn tài liệu đầu tiên</button>
+    </div></td></tr>`;
+}
+
+// ---------------------------------------------------------------------------
+// Xem trước nội dung ngay tại dòng, khỏi mở hộp soạn thảo chỉ để liếc xem
+// ---------------------------------------------------------------------------
+function moXemTruoc(nhom, ten) {
+  const khoa = knKhoa(nhom, ten);
+  if (knDangMo.has(khoa)) knDangMo.delete(khoa); else knDangMo.add(khoa);
+  veBangTriThuc();
+}
+
+async function napXemTruoc(nhom, ten) {
+  const khoa = knKhoa(nhom, ten);
+  const o = document.querySelector(`[data-xt="${CSS.escape(khoa)}"]`);
+  if (!o) return;   // dòng đang bị bộ lọc giấu đi
+  if (knNoiDungCache[khoa] !== undefined) {
+    o.textContent = knNoiDungCache[khoa] || '(tài liệu rỗng)';
+    return;
+  }
+  try {
+    const d = await fetch(`/api/knowledge/noi-dung?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`)
+      .then(r => r.json());
+    if (d.error) { o.textContent = 'Không đọc được: ' + d.error; return; }
+    knNoiDungCache[khoa] = d.noi_dung || '';
+    o.textContent = d.noi_dung || '(tài liệu rỗng)';
+  } catch (e) {
+    o.textContent = 'Không đọc được: ' + e.message;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tải file lên
+// ---------------------------------------------------------------------------
+function ganVungKeoTha() {
+  const dz = document.getElementById('knDropzone');
+  const inp = document.getElementById('knFile');
+  if (!dz || !inp || dz.dataset.daGan) return;
+  dz.dataset.daGan = '1';
+
+  dz.addEventListener('click', () => inp.click());
+  dz.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); inp.click(); }
+  });
+  inp.addEventListener('change', () => { if (inp.files.length) nhanFileTriThuc(inp.files[0]); });
+
+  ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, ev => {
+    ev.preventDefault();
+    dz.classList.add('dang-keo');
+  }));
+  // Kiểm relatedTarget: dragleave còn bắn ra khi con trỏ đi qua các thẻ con bên
+  // trong vùng, không kiểm thì khung nhấp nháy suốt lúc rê file.
+  dz.addEventListener('dragleave', ev => {
+    if (!dz.contains(ev.relatedTarget)) dz.classList.remove('dang-keo');
+  });
+  dz.addEventListener('drop', ev => {
+    ev.preventDefault();
+    dz.classList.remove('dang-keo');
+    if (ev.dataTransfer.files.length) nhanFileTriThuc(ev.dataTransfer.files[0]);
+  });
+}
+
+function nhanFileTriThuc(f) {
+  const duoi = (f.name.split('.').pop() || '').toLowerCase();
+  // Chặn ngay tại chỗ thay vì tải lên rồi đợi server trả lỗi: nhanh hơn, và nói
+  // rõ được lối đi thay thế cho file Word/PDF.
+  if (!KN_DUOI_NHAN.includes(duoi)) {
+    thongBao(`Không nhận file .${duoi}. Chỉ nhận `
+      + KN_DUOI_NHAN.map(x => '.' + x).join(' ')
+      + ' — file Word/PDF thì lưu thành .txt rồi tải lên.', 'loi');
+    return;
+  }
+  knFileDangChon = f;
+  document.getElementById('knFileTen').textContent = f.name;
+  document.getElementById('knFileCo').textContent = knByte(f.size);
+  document.getElementById('knFileDaChon').classList.remove('hidden');
+  document.getElementById('knDropzone').classList.add('co-file');
+  document.getElementById('knUpKetQua').classList.add('hidden');
+}
+
+function boFileTriThuc() {
+  knFileDangChon = null;
+  document.getElementById('knFile').value = '';
+  document.getElementById('knFileDaChon').classList.add('hidden');
+  document.getElementById('knDropzone').classList.remove('co-file');
+}
+
+async function uploadTriThuc() {
+  if (!knFileDangChon) { thongBao('Chọn file trước đã.', 'loi'); return; }
+  const box = document.getElementById('knUpKetQua');
   const btn = document.getElementById('knUpBtn');
   btn.disabled = true; btn.textContent = 'Đang tải…';
+
   const fd = new FormData();
-  fd.append('file', inp.files[0]);
+  fd.append('file', knFileDangChon);
   fd.append('nhom', document.getElementById('knNhom').value);
   try {
     const d = await fetch('/api/knowledge/upload', { method: 'POST', body: fd }).then(r => r.json());
@@ -3733,7 +3974,9 @@ async function uploadTriThuc() {
       box.innerHTML = `Đã ${d.ghi_de ? 'ghi đè' : 'thêm'} <b>${escapeHtml(d.ten)}</b> — `
         + `${d.so_dong} dòng, AI đọc được ${d.so_manh} mảnh.`
         + `<pre class="mt-2 text-[10px] text-gray-500 bg-void/50 rounded p-2 overflow-x-auto">${escapeHtml(d.xem_truoc || '')}</pre>`;
-      inp.value = '';
+      thongBao(`Đã ${d.ghi_de ? 'ghi đè' : 'thêm'} ${d.ten} — AI đọc được ${d.so_manh} mảnh.`, 'xong');
+      boFileTriThuc();
+      knVuaTaiLen = true;
       loadTriThuc();
     }
   } catch (e) {
@@ -3745,6 +3988,9 @@ async function uploadTriThuc() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Soạn / sửa tài liệu
+// ---------------------------------------------------------------------------
 async function soanTaiLieu(nhom, ten) {
   const kh = document.getElementById('knEditor');
   document.getElementById('knEditTitle').textContent = ten ? 'Sửa: ' + ten : 'Soạn tài liệu mới';
@@ -3752,21 +3998,44 @@ async function soanTaiLieu(nhom, ten) {
   document.getElementById('knEditNhom').value = nhom || 'products';
   const ta = document.getElementById('knEditNoiDung');
   ta.value = ten ? 'Đang tải…' : '';
+  knGocNoiDung = ta.value;
   kh.classList.remove('hidden');
+  demChuTriThuc();
   if (ten) {
     const d = await fetch(`/api/knowledge/noi-dung?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`)
       .then(r => r.json());
     ta.value = d.error ? ('Lỗi: ' + d.error) : (d.noi_dung || '');
+    knGocNoiDung = ta.value;
+    demChuTriThuc();
   }
+  ta.focus();
 }
 
-function dongSoanTaiLieu() {
+// Đếm dòng/ký tự và bật cờ "chưa lưu". Cờ này là thứ duy nhất cho người dùng
+// biết đóng hộp bây giờ thì mất gì.
+function demChuTriThuc() {
+  const ta = document.getElementById('knEditNoiDung');
+  const dem = document.getElementById('knEditDem');
+  if (!ta || !dem) return;
+  const v = ta.value;
+  dem.textContent = `${v ? v.split('\n').length : 0} dòng · ${v.length} ký tự`;
+  document.getElementById('knChuaLuu').classList.toggle('hidden', v === knGocNoiDung);
+}
+
+function dongSoanTaiLieu(ep) {
+  const ta = document.getElementById('knEditNoiDung');
+  if (!ep && ta && ta.value !== knGocNoiDung
+      && !confirm('Đóng mà chưa lưu? Phần vừa sửa sẽ mất.')) return;
   document.getElementById('knEditor').classList.add('hidden');
 }
 
 async function luuTaiLieu() {
   const ten = document.getElementById('knEditTen').value.trim();
-  if (!ten) { alert('Đặt tên file đã'); return; }
+  if (!ten) {
+    thongBao('Đặt tên file trước đã.', 'loi');
+    document.getElementById('knEditTen').focus();
+    return;
+  }
   const btn = document.getElementById('knLuuBtn');
   btn.disabled = true; btn.textContent = 'Đang lưu…';
   const fd = new FormData();
@@ -3775,49 +4044,167 @@ async function luuTaiLieu() {
   fd.append('noi_dung', document.getElementById('knEditNoiDung').value);
   try {
     const d = await fetch('/api/knowledge/luu', { method: 'POST', body: fd }).then(r => r.json());
-    if (d.error) { alert(d.error); return; }
-    dongSoanTaiLieu();
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    knGocNoiDung = document.getElementById('knEditNoiDung').value;
+    dongSoanTaiLieu(true);
+    thongBao(`Đã lưu ${d.ten || ten} và nạp cho AI.`, 'xong');
     loadTriThuc();
   } catch (e) {
-    alert('Lỗi: ' + e.message);
+    thongBao('Lỗi: ' + e.message, 'loi');
   } finally {
     btn.disabled = false; btn.textContent = 'Lưu và nạp cho AI';
   }
 }
 
+// Phím tắt chỉ ăn khi hộp soạn đang mở, để không giẫm lên Esc của các hộp khác.
+document.addEventListener('keydown', ev => {
+  const kh = document.getElementById('knEditor');
+  if (!kh || kh.classList.contains('hidden')) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); dongSoanTaiLieu(); }
+  else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') {
+    ev.preventDefault();
+    luuTaiLieu();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Xoá và nạp lại
+// ---------------------------------------------------------------------------
 async function xoaTaiLieu(nhom, ten) {
   if (!confirm(`Xoá tài liệu "${ten}"? Bot sẽ không còn tra được nội dung này.`)) return;
-  const d = await fetch(`/api/knowledge?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`,
-                        { method: 'DELETE' }).then(r => r.json());
-  if (d.error) { alert(d.error); return; }
+  try {
+    const d = await fetch(`/api/knowledge?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`,
+                          { method: 'DELETE' }).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    knDangMo.delete(knKhoa(nhom, ten));
+    thongBao(`Đã xoá ${ten}.`, 'xong');
+    loadTriThuc();
+  } catch (e) {
+    thongBao('Lỗi: ' + e.message, 'loi');
+  }
+}
+
+// Xoá gọn cả bộ tài liệu mẫu. API chỉ xoá được từng cái, nên gọi lần lượt và
+// đếm lỗi — báo "xong 3/4" vẫn hơn là im lặng coi như trót lọt.
+async function xoaTaiLieuMau() {
+  const mau = knDanhSach.filter(t => KN_TEN_MAU.includes(t.ten));
+  if (!mau.length) return;
+  if (!confirm(`Xoá ${mau.length} tài liệu mẫu?\n\n`
+      + mau.map(t => '  • ' + t.ten).join('\n')
+      + '\n\nBot sẽ hết đọc số bịa, nhưng cũng không còn gì để tư vấn cho tới khi '
+      + 'bạn tải tài liệu thật lên.')) return;
+
+  const btn = document.getElementById('knXoaMauBtn');
+  btn.disabled = true; btn.textContent = 'Đang xoá…';
+  let loi = 0;
+  for (const t of mau) {
+    try {
+      const d = await fetch(`/api/knowledge?nhom=${encodeURIComponent(t.nhom)}&ten=${encodeURIComponent(t.ten)}`,
+                            { method: 'DELETE' }).then(r => r.json());
+      if (d.error) loi++; else knDangMo.delete(knKhoa(t.nhom, t.ten));
+    } catch { loi++; }
+  }
+  btn.disabled = false; btn.textContent = 'Xoá hết tài liệu mẫu';
+  knNhomDangLoc = '';
+  thongBao(loi
+    ? `Xoá được ${mau.length - loi}/${mau.length} tài liệu, ${loi} cái lỗi.`
+    : `Đã xoá ${mau.length} tài liệu mẫu.`, loi ? 'loi' : 'xong');
   loadTriThuc();
 }
 
 async function napLaiTriThuc() {
   if (!confirm('Nạp lại toàn bộ tài liệu vào kho tri thức của AI?')) return;
-  const d = await fetch('/api/knowledge/nap-lai', { method: 'POST' }).then(r => r.json());
-  if (d.error) { alert(d.error); return; }
-  alert(`Đã nạp lại ${d.so_tai_lieu} tài liệu trong ${d.ms}ms.`);
-  loadTriThuc();
+  const btn = document.getElementById('knNapBtn');
+  btn.disabled = true; btn.textContent = 'Đang nạp…';
+  try {
+    const d = await fetch('/api/knowledge/nap-lai', { method: 'POST' }).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    thongBao(`Đã nạp lại ${d.so_tai_lieu} tài liệu trong ${d.ms}ms.`, 'xong');
+    loadTriThuc();
+  } catch (e) {
+    thongBao('Lỗi: ' + e.message, 'loi');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Nạp lại toàn bộ';
+  }
 }
 
 // ---- Upload cho Nguồn dữ liệu ----------------------------------------------
+//
+// Dùng lại đúng vùng kéo-thả của trang Tri thức AI (class .dropzone) thay cho
+// <input type=file> gốc: hai trang cùng làm một việc "đưa file vào máy chủ" thì
+// phải trông và thao tác giống nhau.
+
+const DS_DUOI_NHAN = ['db', 'sqlite', 'sqlite3', 'db3', 'csv', 'xlsx', 'xls'];
+let dsFileDangChon = null;
+
+function ganVungKeoThaNguon() {
+  const dz = document.getElementById('dsDropzone');
+  const inp = document.getElementById('dsFile');
+  if (!dz || !inp || dz.dataset.daGan) return;
+  dz.dataset.daGan = '1';
+
+  dz.addEventListener('click', () => inp.click());
+  dz.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); inp.click(); }
+  });
+  inp.addEventListener('change', () => { if (inp.files.length) nhanFileNguon(inp.files[0]); });
+
+  ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, ev => {
+    ev.preventDefault();
+    dz.classList.add('dang-keo');
+  }));
+  dz.addEventListener('dragleave', ev => {
+    if (!dz.contains(ev.relatedTarget)) dz.classList.remove('dang-keo');
+  });
+  dz.addEventListener('drop', ev => {
+    ev.preventDefault();
+    dz.classList.remove('dang-keo');
+    if (ev.dataTransfer.files.length) nhanFileNguon(ev.dataTransfer.files[0]);
+  });
+}
+
+function nhanFileNguon(f) {
+  const duoi = (f.name.split('.').pop() || '').toLowerCase();
+  if (!DS_DUOI_NHAN.includes(duoi)) {
+    thongBao(`Không nhận file .${duoi}. Chỉ nhận `
+      + DS_DUOI_NHAN.map(x => '.' + x).join(' ') + '.', 'loi');
+    return;
+  }
+  // Chặn ngay tại chỗ: file 200 MB tải lên rồi mới bị từ chối là mất vài phút
+  // của người dùng cho một câu trả lời biết trước.
+  if (f.size > 200 * 1024 * 1024) {
+    thongBao(`File ${knByte(f.size)} — vượt mức 200 MB.`, 'loi');
+    return;
+  }
+  dsFileDangChon = f;
+  document.getElementById('dsFileTen').textContent = f.name;
+  document.getElementById('dsFileCo').textContent = knByte(f.size);
+  document.getElementById('dsFileDaChon').classList.remove('hidden');
+  document.getElementById('dsDropzone').classList.add('co-file');
+}
+
+function boFileNguon() {
+  dsFileDangChon = null;
+  document.getElementById('dsFile').value = '';
+  document.getElementById('dsFileDaChon').classList.add('hidden');
+  document.getElementById('dsDropzone').classList.remove('co-file');
+}
 
 async function uploadNguonDuLieu() {
-  const inp = document.getElementById('dsFile');
+  if (!dsFileDangChon) { thongBao('Chọn file trước đã.', 'loi'); return; }
   const box = document.getElementById('dsUpKetQua');
-  if (!inp.files.length) { alert('Chọn file trước đã'); return; }
-
   const btn = document.getElementById('dsUpBtn');
   btn.disabled = true; btn.textContent = 'Đang tải…';
+
   const fd = new FormData();
-  fd.append('file', inp.files[0]);
+  fd.append('file', dsFileDangChon);
   try {
     const d = await fetch('/api/data-sources/upload', { method: 'POST', body: fd }).then(r => r.json());
     box.classList.remove('hidden');
     if (d.error) {
       box.className = 'mt-3 text-[11px] text-red-300';
       box.textContent = d.error;
+      thongBao(d.error, 'loi');
       return;
     }
     const ct = d.cau_truc || {};
@@ -3840,10 +4227,12 @@ async function uploadNguonDuLieu() {
             <span class="text-gray-500"> · ${b.so_dong == null ? '?' : b.so_dong} dòng</span>
             <div class="text-gray-600 text-[10px] mt-0.5">${escapeHtml((b.cot || []).slice(0, 12).join(', ')) || 'không đọc được cột'}</div>
           </button>`).join('') + '</div>';
+      thongBao(`Đã tải ${d.ten_tep} — dò được ${bang.length} `
+        + (d.kind === 'sqlite' ? 'bảng' : 'sheet') + '. Bấm chọn một cái để dùng.', 'xong');
     }
     box.className = 'mt-3 text-[11px]';
     box.innerHTML = html;
-    inp.value = '';
+    boFileNguon();
   } catch (e) {
     box.classList.remove('hidden');
     box.className = 'mt-3 text-[11px] text-red-300';
