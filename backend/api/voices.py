@@ -10,6 +10,7 @@ from backend.config import settings
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/voices", tags=["voices"])
 
+
 VOICES_DIR = Path("models/tts/ref_voices")
 
 
@@ -27,7 +28,9 @@ async def list_voices():
     from backend.main import app_state
 
     mac_dinh = app_state.tts.default_voice_name()
-    ds = app_state.tts.list_voices()
+    from backend.services.tts_service import an_giong_tam
+
+    ds = an_giong_tam(app_state.tts.list_voices())
     for v in ds:
         v["mac_dinh"] = (v.get("name") == mac_dinh)
     return {"voices": ds, "mac_dinh": mac_dinh}

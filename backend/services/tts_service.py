@@ -24,6 +24,22 @@ logger = logging.getLogger(__name__)
 # Below this peak amplitude a reference clip is treated as an empty recording.
 SILENCE_PEAK = 1e-3
 
+# Tiền tố của giọng LẮP TẠM khi nghe thử ứng viên đoạn mẫu. Chúng sống vài phút
+# rồi bị dọn, nhưng trong lúc đó vẫn nằm trong sổ giọng - mà danh sách giọng
+# CHÍNH LÀ chỗ người dùng chọn giọng cho cuộc gọi thật. Chọn nhầm một cái sắp bị
+# xoá là cuộc gọi mất giọng giữa chừng.
+TIEN_TO_TAM = "thu_"
+
+
+def an_giong_tam(ds: list[dict]) -> list[dict]:
+    """Lọc giọng lắp tạm ra khỏi danh sách cho người dùng chọn.
+
+    Đặt ở đây chứ không chép vào từng route: `/api/voices` được phục vụ bởi
+    `api/calls.py` chứ không phải `api/voices.py` (xem chú thích ở đó), nên hai
+    bản chép rất dễ lệch nhau mà không có gì báo.
+    """
+    return [v for v in ds or [] if not (v.get("name") or "").startswith(TIEN_TO_TAM)]
+
 # Tiếng câu đệm cất ở đây để khởi động không phải gọi F5 lại. Tên file mang vân
 # tay: đổi nfe/speed/giọng là vân tay lệch -> dựng lại đúng câu đó.
 THU_MUC_FILLER = Path("data/fillers_wav")
