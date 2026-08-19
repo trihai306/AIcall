@@ -686,6 +686,7 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
 
     from backend.main import app_state
     from backend.services.chon_doan_mau import (cer, cham_diem, cua_so_ngat,
+                                                dep_de_len, nan_moc,
                                                 tach_don_vi, xep_hang)
 
     viec = _VIEC[ten]
@@ -715,14 +716,24 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
 
         uv = tach_don_vi(doan)
         viec["tach_duoc"] = len(uv)
+        # Nắn mốc cắt về chỗ lặng thật trong SÓNG ÂM. Mốc chữ của Whisper là kết
+        # quả căn chữ chứ không phải ranh giới âm - cắt đúng vào đó là cắt giữa
+        # một phụ âm, clip mở đầu bằng âm cụt, STT nghe lại ra khác, và ứng viên
+        # trượt khâu kiểm lời dù nội dung tốt. Đúng là cách đoạn hay nhất của
+        # bản ghi ("em thấy tự ti...") bị loại ở lần chạy 18-08.
         for d in uv:
-            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
+            d["m_a"] = nan_moc(x, sr, int(d["a"] * sr))
+            d["m_b"] = nan_moc(x, sr, int(d["b"] * sr))
+            clip = x[d["m_a"]:d["m_b"]]
             d.update(cham_diem(clip, sr, d["loi"], d["loi"]))   # lệch lời tính sau
 
-        tot = xep_hang(uv)[:KIEM_LOI_N]
+        # Dẹp trùng TRƯỚC khi kiểm lời: cho phép bắt đầu ở nhiều chỗ thì cùng
+        # một câu đẻ ra chục biến thể lệch vài từ, và chúng chiếm hết suất của
+        # khâu đắt nhất. Đo được: 1520 ứng viên mà hai cái đứng đầu là cùng một
+        # câu, nên đoạn hay nhất của bản ghi không tới lượt kiểm.
+        tot = dep_de_len(xep_hang(uv))[:KIEM_LOI_N]
         for d in tot:
-            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
-            d["nghe_lai"] = await _nghe_lai(app_state.stt, clip, sr)
+            d["nghe_lai"] = await _nghe_lai(app_state.stt, x[d["m_a"]:d["m_b"]], sr)
             d["lech_loi"] = round(cer(d["loi"], d["nghe_lai"]), 4)
         viec["tien"] = 95
 
@@ -730,8 +741,7 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
         ra = PHAN_TICH_DIR / ten
         ra.mkdir(parents=True, exist_ok=True)
         for i, d in enumerate(cuoi):
-            clip = x[int(d["a"] * sr):int(d["b"] * sr)]
-            (ra / f"{i}.wav").write_bytes(_wav_bytes(clip, sr))
+            (ra / f"{i}.wav").write_bytes(_wav_bytes(x[d["m_a"]:d["m_b"]], sr))
             d["i"] = i
             # Lời ghi vào .txt là thứ STT nghe được TRÊN CHÍNH CLIP ĐÃ CẮT, không
             # phải lời suy ra từ lượt nghe cả tệp - như vậy lệch lời bằng 0 theo
@@ -882,3 +892,205 @@ async def xoa_nguon(ten: str):
     shutil.rmtree(PHAN_TICH_DIR / ten, ignore_errors=True)
     _VIEC.pop(ten, None)
     return {"ok": True}
+
+
+# =========================================================================
+# TEST HỘI THOẠI — nghe giọng chạy trọn một cuộc tư vấn
+# =========================================================================
+#
+# Nghe một câu rời không nói lên được điều gì về thứ khách thật sự nghe. Mọi lỗi
+# bên A báo suốt tháng 8 đều là lỗi GIỮA CÁC LƯỢT chứ không nằm trong một câu:
+# tông lạc quẻ giữa các mảnh, "ạ" chưa ngắt xong đã đọc từ sau, tiếng lúc to lúc
+# bé. Muốn bắt được thì phải nghe liền mạch nhiều lượt.
+#
+# Và với đoạn mẫu thì càng đúng: nghe mẩu gốc do NGƯỜI nói không cho biết F5 sẽ
+# đọc ra sao. Muốn so hai ứng viên thì phải nghe chính chúng đọc cùng một cuộc
+# thoại.
+
+HOI_THOAI_LUOT = 4
+KHE_LUOT_MS = 900          # chỗ trống cho lượt của khách
+
+
+# Lượt của KHÁCH viết sẵn, không nhờ LLM sinh. Hai lý do:
+#
+#  1. Mô hình đã tinh chỉnh (LoRA) để trả lời MỘT lượt với tư cách nhân viên.
+#     Bảo nó viết cả kịch bản là đi ngược huấn luyện - thử thật thì nó trả về
+#     đúng 1 dòng rồi dừng, dù prompt xin 4 lượt.
+#  2. Lượt khách cố định thì hai giọng nghe thử trên CÙNG một cuộc thoại, mới so
+#     được với nhau. Sinh ngẫu nhiên là mỗi lần một nội dung, không so nổi.
+#
+# Nội dung bám sát thứ khách thật hay nói: hỏi lãi, đắn đo, hỏi thủ tục, chốt.
+LUOT_KHACH = [
+    "Ừ em nói đi.",
+    "Lãi suất bên em bao nhiêu vậy?",
+    "Anh đang bận, để anh suy nghĩ thêm đã.",
+    "Thế thủ tục cần giấy tờ gì em?",
+    "Ừ vậy em gửi thông tin cho anh nhé.",
+    "Được rồi em, cảm ơn em.",
+]
+
+
+def _tach_luot_ai(van: str, so_luot: int) -> list[str]:
+    """Giữ lại để tương thích; đường chính không dùng nữa."""
+    ra = []
+    for dong in (van or "").splitlines():
+        d = dong.strip().lstrip("*-\u2022 ").strip()
+        for dau in ("AI:", "AI :", "NHANVIEN:", "NHÂN VIÊN:"):
+            if d.upper().startswith(dau.upper()):
+                cau = d[len(dau):].strip().strip("*").strip()
+                if cau:
+                    ra.append(cau)
+                break
+    return ra[:so_luot]
+
+
+async def _sinh_cuoc_thoai(llm, kb: dict, so_luot: int) -> list[str]:
+    """Chạy ĐÚNG vòng thoại của cuộc gọi thật: khách nói -> AI đáp -> lặp.
+
+    Không dùng `generate_simple`: nó chặn cứng ở 100 token và chuỗi dừng cắt
+    ngay khi gặp nhãn lượt khách, nên chỉ ra được một dòng.
+
+    Lượt đầu là câu mở đầu của kịch bản - y như cuộc gọi thật, câu đó do code
+    đọc chứ không do mô hình sinh.
+    """
+    ra = [(kb.get("opening_line") or "Dạ em chào anh chị ạ.").strip()]
+    lich_su: list[dict] = [{"role": "assistant", "content": ra[0]}]
+    mo_ta = llm.build_system_prompt(scenario=kb)
+
+    for n in range(so_luot - 1):
+        lich_su.append({"role": "user", "content": LUOT_KHACH[n % len(LUOT_KHACH)]})
+        chu = []
+        try:
+            async for t in llm.stream_response(lich_su, mo_ta):
+                chu.append(t)
+        except Exception as e:
+            logger.warning("lượt %d của AI hỏng: %s", n + 2, e)
+            break
+        cau = "".join(chu).strip()
+        if not cau:
+            break
+        ra.append(cau)
+        lich_su.append({"role": "assistant", "content": cau})
+    return ra
+
+
+async def _giong_tam_tu_ung_vien(nguon: str, i: int) -> str | None:
+    """Lắp tạm một ứng viên thành giọng để nghe thử, trả về tên giọng tạm."""
+    import json
+    import shutil
+
+    from backend.main import app_state
+
+    j = PHAN_TICH_DIR / f"{nguon}.json"
+    wav = PHAN_TICH_DIR / nguon / f"{int(i)}.wav"
+    if not (j.exists() and wav.exists()):
+        return None
+    ds = json.loads(j.read_text(encoding="utf-8"))["ung_vien"]
+    u = next((z for z in ds if z.get("i") == int(i)), None)
+    if u is None:
+        return None
+
+    ten = f"thu_{nguon}_{int(i)}"
+    VOICES_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy(str(wav), str(VOICES_DIR / f"{ten}.wav"))
+    (VOICES_DIR / f"{ten}.txt").write_text(u["loi_ghi"].strip() + "\n", encoding="utf-8")
+    app_state.tts.drop_voice(ten)                 # xem chú thích ở `chon_ung_vien`
+    if u.get("toc_de_xuat"):
+        app_state.tts.dat_toc_do(ten, float(u["toc_de_xuat"]))
+    await app_state.tts.ensure_voice(ten)
+    return ten
+
+
+@router.post("/test-hoi-thoai")
+async def test_hoi_thoai(
+    voice_name: str = Form("default"),
+    nguon: str = Form(""),
+    i: int = Form(-1),
+    so_luot: int = Form(HOI_THOAI_LUOT),
+    qua_dien_thoai: bool = Form(False),
+    kich_ban_id: str = Form(""),
+):
+    """Cho AI sinh một cuộc thoại rồi đọc trọn bằng giọng đang chọn.
+
+    Đọc qua ĐÚNG đường của cuộc gọi thật (`_cat_manh_nhu_pipeline` +
+    `_ghep_nhu_pipeline`) chứ không đưa cả đoạn cho F5 một phát - nếu không thì
+    nghe ra một thứ không tồn tại, và đúng những lỗi cần bắt (tông lạc giữa
+    mảnh, dính chữ sau tiểu từ) lại biến mất khỏi bản nghe.
+    """
+    import base64
+    import time
+
+    import numpy as np
+
+    from backend.main import app_state
+    from backend.models import scenarios_db
+    from backend.services.audio_utils import pcm_to_wav
+
+    if not app_state.tts._is_loaded:
+        return {"error": "TTS chưa được tải."}
+
+    so_luot = max(1, min(int(so_luot), 8))
+    tam = None
+    if nguon and i >= 0:
+        tam = await _giong_tam_tu_ung_vien(_ten_sach(nguon), i)
+        if not tam:
+            return {"error": "Không thấy ứng viên này - chạy Phân tích trước"}
+        voice_name = tam
+
+    try:
+        ds = await scenarios_db.list_scenarios()
+        kb = next((k for k in ds if k.get("scenario_id") == kich_ban_id), None) \
+            or (ds[0] if ds else {})
+
+        t0 = time.perf_counter()
+        try:
+            luot = await _sinh_cuoc_thoai(app_state.llm, kb, so_luot)
+        except Exception as e:
+            return {"error": f"LLM không sinh được hội thoại: {e}"}
+        lui = len(luot) < so_luot          # LLM tắt giữa chừng -> nói rõ, đừng im
+        ms_llm = round((time.perf_counter() - t0) * 1000)
+
+        toc = app_state.tts.toc_nghe_thu(voice_name)
+        if qua_dien_thoai:
+            toc *= app_state.tts.he_so_thoai()
+
+        SR = 24000
+        khe = np.zeros(int(SR * KHE_LUOT_MS / 1000), dtype=np.int16)
+        cac_luot, pcm = [], []
+        for n, cau in enumerate(luot):
+            manh = _cat_manh_nhu_pipeline(cau)
+            try:
+                wav = await _ghep_nhu_pipeline(app_state.tts, manh, voice_name, toc, False)
+            except Exception as e:
+                cac_luot.append({"text": cau, "loi": str(e)})
+                continue
+            x = np.frombuffer(wav[44:], dtype=np.int16)
+            if n:
+                pcm.append(khe)
+            pcm.append(x)
+            cac_luot.append({"text": cau, "so_manh": len(manh), "manh": manh,
+                             "ms": round(len(x) / SR * 1000)})
+
+        if not pcm:
+            return {"error": "Không đọc được lượt nào."}
+        ca_bai = np.concatenate(pcm)
+        return {
+            "voice": voice_name,
+            "tam": bool(tam),
+            "kich_ban": kb.get("name", ""),
+            "thieu_luot": lui,
+            "ms_llm": ms_llm,
+            "tong_ms": round(len(ca_bai) / SR * 1000),
+            "luot": cac_luot,
+            "khach": LUOT_KHACH[:max(0, len(luot) - 1)],
+            "audio": base64.b64encode(pcm_to_wav(ca_bai.tobytes(), SR)).decode(),
+        }
+    finally:
+        # Giọng tạm phải dọn ngay, không thì mỗi lần nghe thử lại đẻ một giọng
+        # rác trong danh sách - mà danh sách giọng chính là chỗ người dùng chọn
+        # giọng cho cuộc gọi thật.
+        if tam:
+            (VOICES_DIR / f"{tam}.wav").unlink(missing_ok=True)
+            (VOICES_DIR / f"{tam}.txt").unlink(missing_ok=True)
+            (VOICES_DIR / f"{tam}.speed").unlink(missing_ok=True)
+            app_state.tts.drop_voice(tam)

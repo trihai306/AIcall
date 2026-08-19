@@ -39,6 +39,9 @@ LECH_LOI_TRAN = 0.05
 # nuốt cả khoảng lặng vào clip.
 KHE_TOI_DA = 0.6
 
+# Cứ mấy từ lại thử bắt đầu một ứng viên mới, ngoài các chỗ có dấu chấm.
+BUOC_DAU = 3
+
 # CHỈ tiểu từ lễ phép thật. `text_chunker.TIEU_TU_CUOI_VE` nhận rộng hơn (có
 # "à", "ấy") và với việc CỦA NÓ - chèn nhịp nghỉ - nhận rộng thì cùng lắm nghỉ
 # thừa, vô hại. Ở đây nhận rộng là hỏng: chạy thật trên bản ghi 20 phút, cả 4
@@ -132,16 +135,42 @@ def _phang(doan_stt: list[dict]) -> list[dict]:
     return ra
 
 
+def _het_cau(ws: list[dict], j: int) -> bool:
+    """Sau từ thứ j có phải ranh giới câu không.
+
+    Ba dấu hiệu: dấu kết câu do Whisper đặt, hết chuỗi, hoặc có chỗ lấy hơi.
+    """
+    chu = ws[j]["word"].rstrip()
+    return (bool(chu) and chu[-1] in KET_CAU) \
+        or j + 1 >= len(ws) \
+        or ws[j + 1]["start"] - ws[j]["end"] > 0.25
+
+
+def _dau_cau(ws: list[dict]) -> list[int]:
+    """Các vị trí được phép bắt đầu một ứng viên.
+
+    Mốc chữ của Whisper KHÔNG có khe - đo trên bản ghi thật thì chữ nào cũng nối
+    liền chữ sau, đúng 0ms - nên dấu chấm là tín hiệu ranh giới DUY NHẤT. Chỉ
+    nhận chỗ có dấu chấm đứng trước thì rơi từ 355 xuống 84 đơn vị và mất luôn
+    đoạn tốt nhất của cả bản ghi ("em thấy tự ti và bản thân mình tệ quá chị ạ"),
+    vì trước chữ "em" không hề có dấu chấm.
+
+    Nên nhận CẢ chuỗi bước đều: cứ vài từ lại cho phép bắt đầu một ứng viên. Chỗ
+    bắt đầu xấu không lọt được xa - khâu cho STT nghe lại clip đã cắt sẽ loại nó.
+    """
+    if not ws:
+        return []
+    sau_cham = [0] + [j + 1 for j in range(len(ws) - 1) if _het_cau(ws, j)]
+    return sorted(set(sau_cham) | set(range(0, len(ws), BUOC_DAU)))
+
+
 def _diem_ket(ws: list[dict], j: int) -> float:
     """Kết ở đây có tự nhiên không. Cao hơn = chỗ ngắt đẹp hơn."""
     chu = ws[j]["word"]
     # Hết câu THẬT hay chưa. Phải xét trước: thưởng cho tiểu từ ở bất kỳ đâu là
     # dạy bộ tách đi săn chữ trùng âm giữa câu để cắt vào, và nó làm đúng thế -
     # "kể cho mình nghe ... và nếu có thể thì bạn ấy" là một đoạn nó từng chọn.
-    het_cau = (bool(chu.rstrip()) and chu.rstrip()[-1] in KET_CAU) \
-        or j + 1 >= len(ws) \
-        or ws[j + 1]["start"] - ws[j]["end"] > 0.25      # có chỗ lấy hơi
-    if not het_cau:
+    if not _het_cau(ws, j):
         return 0.0
     return 150.0 if gon(chu) in TIEU_TU else 50.0
 
@@ -154,8 +183,8 @@ def tach_don_vi(doan_stt: list[dict]) -> list[dict]:
     đoạn mẫu thì F5 đọc ra đúng chữ sai ấy (WER 160%).
     """
     ws = _phang(doan_stt)
-    ra, i = [], 0
-    while i < len(ws):
+    ra, da_co = [], set()
+    for i in _dau_cau(ws):
         tot, j = None, i
         while j < len(ws):
             if j > i and ws[j]["start"] - ws[j - 1]["end"] > KHE_TOI_DA:
@@ -170,16 +199,18 @@ def tach_don_vi(doan_stt: list[dict]) -> list[dict]:
                     tot = (d, j)
             j += 1
         if tot is None:
-            i += 1
             continue
         j = tot[1]
+        khoa = (ws[i]["start"], ws[j]["end"])
+        if khoa in da_co:
+            continue
+        da_co.add(khoa)
         ra.append({
-            "a": ws[i]["start"],
-            "b": ws[j]["end"],
-            "dai": round(ws[j]["end"] - ws[i]["start"], 3),
+            "a": khoa[0],
+            "b": khoa[1],
+            "dai": round(khoa[1] - khoa[0], 3),
             "loi": " ".join(w["word"] for w in ws[i:j + 1]).strip(),
         })
-        i = j + 1
     return ra
 
 
@@ -370,4 +401,63 @@ def cua_so_ngat(x, sr: int, dai_toi_da: float = CUA_SO_S) -> list[tuple[int, int
         ket = int(hop[-1]) if len(hop) else het
         ra.append((i, ket))
         i = ket
+    return ra
+
+
+# --- nắn mốc cắt ----------------------------------------------------------
+
+NAN_CUA_MS = 150.0
+
+
+def nan_moc(x, sr: int, moc: int, cua_ms: float = NAN_CUA_MS) -> int:
+    """Kéo mốc cắt về chỗ LẶNG NHẤT trong sóng âm, quanh mốc chữ.
+
+    Mốc chữ của Whisper là kết quả căn chữ, không phải ranh giới âm thật - cắt
+    đúng vào đó là cắt giữa một phụ âm. Clip mở đầu bằng âm cụt thì STT nghe lại
+    ra khác, và ứng viên trượt khâu kiểm lời dù nội dung hoàn toàn tốt. Đó đúng
+    là cách đoạn hay nhất của bản ghi bị loại.
+
+    Chỉ được nắn trong cửa sổ hẹp: đi xa là ăn sang từ bên cạnh hoặc cụt mất từ.
+    """
+    x = np.asarray(x).squeeze()
+    if not len(x):
+        return 0
+    moc = int(np.clip(moc, 0, len(x)))
+    cua = int(sr * cua_ms / 1000)
+    lo, hi = max(0, moc - cua), min(len(x), moc + cua)
+    if hi - lo < 2:
+        return moc
+    b = max(1, int(sr * 0.005))                      # khung 5ms
+    k = (hi - lo) // b
+    if k < 2:
+        return moc
+    nl = (x[lo:lo + k * b].astype(np.float64).reshape(k, b) ** 2).mean(axis=1)
+    return lo + int(np.argmin(nl)) * b + b // 2
+
+
+# --- dẹp ứng viên đè lên nhau ---------------------------------------------
+
+# Đè nhau quá tỉ lệ này thì coi là một - giữ cái điểm cao hơn.
+DE_LEN_TRAN = 0.5
+
+
+def dep_de_len(uv: list[dict], tran: float = DE_LEN_TRAN) -> list[dict]:
+    """Bỏ ứng viên trùng chỗ, giữ cái điểm cao nhất mỗi vùng.
+
+    Cho phép bắt đầu ở nhiều chỗ thì cùng một câu đẻ ra chục biến thể lệch nhau
+    vài từ. Chạy thật trên bản ghi 20 phút: 1520 ứng viên, mà hai cái đứng đầu
+    là CÙNG MỘT CÂU chỉ khác chỗ vào - chúng chiếm hết suất kiểm lời (khâu đắt
+    nhất) nên đoạn hay nhất của cả bản ghi không tới lượt.
+    """
+    ra = []
+    for u in sorted(uv or [], key=lambda z: -z.get("diem", 0.0)):
+        a, b = u.get("a", 0.0), u.get("b", 0.0)
+        trum = False
+        for v in ra:
+            chung = min(b, v["b"]) - max(a, v["a"])
+            if chung > 0 and chung / max(1e-9, min(b - a, v["b"] - v["a"])) > tran:
+                trum = True
+                break
+        if not trum:
+            ra.append(u)
     return ra

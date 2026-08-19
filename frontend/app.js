@@ -4074,6 +4074,9 @@ async function xemUngVien(ten) {
               <button onclick="ngheUngVien('${escapeHtml(ten)}',${u.i})" class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20" title="Nghe thử">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </button>
+              <button onclick="testHoiThoai('${escapeHtml(ten)}',${u.i})" class="p-1.5 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20" title="Cho AI sinh một cuộc tư vấn rồi nghe CHÍNH ứng viên này đọc — nghe mẩu gốc của người không cho biết F5 sẽ đọc ra sao">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              </button>
               <button onclick="chonUngVien('${escapeHtml(ten)}',${u.i})" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20 whitespace-nowrap">Dùng đoạn này</button>
             </div>
           </div>
@@ -4110,4 +4113,60 @@ async function xoaNguon(ten) {
   await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}`, { method: 'DELETE' });
   document.getElementById('ungVienBox')?.classList.add('hidden');
   loadNguon();
+}
+
+// ============================================================
+// Test hội thoại — nghe giọng chạy trọn một cuộc tư vấn
+// ============================================================
+//
+// Nghe một câu rời không nói lên được gì về thứ khách thật sự nghe. Mọi lỗi bên
+// A báo suốt tháng 8 đều nằm GIỮA CÁC LƯỢT: tông lạc quẻ giữa các mảnh, "ạ"
+// chưa ngắt xong đã đọc từ sau, tiếng lúc to lúc bé.
+//
+// Với đoạn mẫu thì càng đúng: nghe mẩu gốc do NGƯỜI nói không cho biết F5 sẽ
+// đọc ra sao. Muốn so hai ứng viên phải nghe chính chúng đọc cùng một cuộc thoại.
+
+async function testHoiThoai(nguon, i) {
+  const tuUngVien = !!nguon;
+  const nut = tuUngVien ? null : document.getElementById('btnHoiThoai');
+  const hop = document.getElementById('ttsTestResult');
+  const bao = document.getElementById('ttsTestMsg');
+  const manhEl = document.getElementById('ttsTestManh');
+  const am = document.getElementById('ttsTestAudio');
+  const chu = nut ? nut.textContent : '';
+  if (nut) { nut.disabled = true; nut.textContent = 'Đang sinh...'; }
+  hop?.classList.remove('hidden');
+  if (bao) bao.textContent = tuUngVien
+    ? `Đang cho AI sinh hội thoại rồi đọc bằng ứng viên #${i + 1}...`
+    : 'Đang cho AI sinh hội thoại rồi đọc...';
+  if (manhEl) manhEl.textContent = '';
+
+  try {
+    const fd = new FormData();
+    fd.append('voice_name', document.getElementById('ttsTestVoice')?.value || 'default');
+    fd.append('qua_dien_thoai', document.getElementById('ttsTestCatManh')?.checked ? 'true' : 'false');
+    if (tuUngVien) { fd.append('nguon', nguon); fd.append('i', i); }
+    const d = await (await fetch('/api/voices/test-hoi-thoai', { method: 'POST', body: fd })).json();
+    if (d.error) { if (bao) bao.textContent = 'Lỗi: ' + d.error; return; }
+
+    if (bao) {
+      bao.textContent = `${d.luot.length} lượt · ${(d.tong_ms / 1000).toFixed(1)}s · `
+        + `giọng ${d.voice}${d.tam ? ' (ứng viên, lắp tạm)' : ''} · `
+        + `kịch bản "${d.kich_ban}" · LLM ${d.ms_llm}ms`
+        + (d.thieu_luot ? ' · LLM tắt sớm, thiếu lượt' : '');
+    }
+    // In từng lượt để đối chiếu tai nghe với chữ - không có nó thì nghe thấy lạ
+    // mà không biết lạ ở chữ nào.
+    if (manhEl) {
+      manhEl.innerHTML = d.luot.map((l, k) => l.loi
+        ? `<div class="text-red-400">${k + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
+        : `<div>${k ? `<div class="text-gray-600 italic">khách: ${escapeHtml(d.khach[k-1]||'')}</div>` : ''}<span class="text-gray-500">${k + 1}.</span> ${escapeHtml(l.text)} `
+          + `<span class="text-gray-700">(${l.so_manh} mảnh, ${l.ms}ms)</span></div>`).join('');
+    }
+    if (am) { am.src = 'data:audio/wav;base64,' + d.audio; am.play().catch(() => {}); }
+  } catch (e) {
+    if (bao) bao.textContent = 'Lỗi: ' + e.message;
+  } finally {
+    if (nut) { nut.disabled = false; nut.textContent = chu; }
+  }
 }

@@ -77,11 +77,27 @@ def test_moc_cat_luon_roi_dung_RANH_GIOI_TU():
         assert dv["b"] in cuoi, f"mốc cuối {dv['b']} không phải cuối một từ nào"
 
 
-def test_khong_don_vi_nao_DE_LEN_NHAU():
-    ws = deu(["t%d" % i for i in range(40)])
+def test_moi_don_vi_deu_bat_dau_o_MOT_TU():
+    """Không đòi phải là đầu câu.
+
+    Bản đầu bắt buộc đầu câu, và trên bản ghi thật nó rơi từ 355 xuống 84 đơn vị
+    rồi mất luôn đoạn hay nhất - vì mốc chữ của Whisper không có khe nào, dấu
+    chấm là tín hiệu duy nhất, mà giữa dòng nói liên tục thì rất ít dấu chấm.
+    Chỗ bắt đầu xấu để khâu cho STT nghe lại clip loại, đừng loại từ khâu tách.
+    """
+    ws = deu(["m%d" % i for i in range(30)])
+    dau = {w["start"] for w in ws}
+    for d in tach_don_vi(doan(*ws)):
+        assert d["a"] in dau, f"bắt đầu ở {d['a']}s - không trùng đầu từ nào"
+
+
+def test_co_de_len_nhau_thi_KHONG_TRUNG_HET_khoa():
+    """Ứng viên được phép chồng lấn (mỗi chỗ bắt đầu cho một clip khác nhau),
+    nhưng không được có hai cái y hệt nhau."""
+    ws = deu(["m%d" % i for i in range(30)])
     dv = tach_don_vi(doan(*ws))
-    for x, y in zip(dv, dv[1:]):
-        assert y["a"] >= x["b"], "hai đơn vị chồng lấn -> nghe lặp chữ"
+    khoa = [(d["a"], d["b"]) for d in dv]
+    assert len(khoa) == len(set(khoa)), "có ứng viên trùng khít nhau"
 
 
 # --- BẪY 2: độ dài ----------------------------------------------------
@@ -395,3 +411,103 @@ def test_tach_chon_HET_CAU_chu_khong_chon_chu_trung_am():
           + [tu("Dạ", 5.00, 5.30)])
     dv = tach_don_vi(doan(*ws))
     assert dv and dv[0]["b"] == 4.40, f"cắt ở {dv[0]['b'] if dv else '?'} thay vì 4.40"
+
+
+# --- mốc chữ của Whisper KHÔNG có khe -------------------------------------
+#
+# Đổ mốc từng chữ của bản ghi thật (18-08) ra xem thì mọi chữ đều nối liền nhau,
+# khe đúng 0ms:
+#
+#     533.49-534.03  nào.    khe sau 0ms
+#     534.03-534.81  chỉ     khe sau 0ms
+#     536.87-537.21  em      khe sau 0ms
+#
+# Tức phép dò "hết câu bằng quãng nghỉ" CHƯA BAO GIỜ chạy trong một đoạn STT -
+# chỉ dấu chấm là tín hiệu thật. Siết chỗ bắt đầu chỉ theo dấu chấm thì rơi từ
+# 355 xuống 84 đơn vị và mất luôn đoạn tốt nhất ("em thấy tự ti..."), vì trước
+# chữ "em" không có dấu chấm nào.
+
+def test_van_tach_duoc_khi_moc_chu_KHONG_CO_KHE():
+    """Bản ghi thật nối liền chữ - đừng bắt phải có quãng nghỉ mới cho bắt đầu."""
+    ws, t = [], 0.0
+    for c in "chỉ là mỗi ngày khá là giống nhau em thấy tự ti và bản thân mình tệ quá chị ạ.".split():
+        ws.append(tu(c, round(t, 2), round(t + 0.28, 2)))
+        t += 0.28                                   # khe 0ms, y như thật
+    dv = tach_don_vi(doan(*ws))
+    assert dv, "không tách được đơn vị nào khi mốc chữ không có khe"
+    assert any(d["loi"].rstrip().endswith("ạ.") for d in dv), \
+        "bỏ mất câu kết bằng tiểu từ"
+
+
+# --- nắn mốc cắt về chỗ lặng THẬT trong sóng âm ---------------------------
+#
+# Cắt đúng mốc chữ của Whisper là cắt vào giữa âm: clip mở đầu bằng một phụ âm
+# cụt, STT nghe lại ra khác, và ứng viên trượt khâu kiểm lời. Đó chính là cách
+# đoạn "em thấy tự ti..." bị loại dù nó là đoạn tốt nhất trong cả bản ghi.
+
+def test_nan_moc_ve_cho_LANG_nhat():
+    from backend.services.chon_doan_mau import nan_moc
+    x = np.concatenate([tieng(500, hat=1), np.zeros(int(SR * 0.12), np.float32),
+                        tieng(500, hat=2)])
+    goc = int(SR * 0.70)                            # nằm giữa TIẾNG, khe ở 0,50-0,62
+    ra = nan_moc(x, SR, goc, cua_ms=150)
+    assert abs(ra / SR - 0.70) > 0.02, "không nắn gì cả"
+    assert np.abs(x[ra - 240:ra + 240]).max() < 0.05, "nắn vào chỗ vẫn có tiếng"
+
+
+def test_nan_moc_KHONG_di_qua_xa():
+    from backend.services.chon_doan_mau import nan_moc
+    x = tieng(2000)
+    goc = int(SR * 1.0)
+    ra = nan_moc(x, SR, goc, cua_ms=150)
+    assert abs(ra - goc) <= int(SR * 0.150) + 1, "nắn vượt quá cửa sổ cho phép"
+
+
+def test_nan_moc_giu_trong_bien():
+    from backend.services.chon_doan_mau import nan_moc
+    x = tieng(400)
+    assert 0 <= nan_moc(x, SR, 0, cua_ms=150) <= len(x)
+    assert 0 <= nan_moc(x, SR, len(x), cua_ms=150) <= len(x)
+
+
+# --- dẹp ứng viên đè lên nhau ---------------------------------------------
+#
+# Cho phép bắt đầu ở nhiều chỗ thì cùng một câu đẻ ra chục biến thể lệch nhau
+# vài từ. Chạy thật (18-08): 1520 ứng viên, nhưng hai đoạn đứng đầu là CÙNG MỘT
+# CÂU ("...góp ý ở dưới phần comment cho mình biết với nhé") chỉ khác chỗ vào.
+# Chúng chiếm hết 24 suất kiểm lời nên đoạn hay nhất của cả bản ghi không tới
+# lượt - đúng lỗi cũ, chỉ đổi nguyên nhân.
+
+def test_dep_trung_giu_cai_DIEM_CAO_hon():
+    from backend.services.chon_doan_mau import dep_de_len
+    a = {"a": 30.5, "b": 35.8, "diem": 9.9}
+    b = {"a": 31.8, "b": 35.8, "diem": 10.2}        # gần trùng, điểm cao hơn
+    ra = dep_de_len([a, b])
+    assert len(ra) == 1 and ra[0]["diem"] == 10.2
+
+
+def test_dep_trung_GIU_doan_o_cho_khac():
+    from backend.services.chon_doan_mau import dep_de_len
+    ra = dep_de_len([{"a": 30.0, "b": 34.0, "diem": 9.0},
+                     {"a": 500.0, "b": 504.0, "diem": 8.0}])
+    assert len(ra) == 2, "dẹp nhầm cả đoạn ở chỗ khác trong bản ghi"
+
+
+def test_dep_trung_de_len_IT_thi_giu_ca_hai():
+    from backend.services.chon_doan_mau import dep_de_len
+    ra = dep_de_len([{"a": 0.0, "b": 4.0, "diem": 9.0},
+                     {"a": 3.5, "b": 7.5, "diem": 8.0}])   # đè 0,5/4,0 = 12%
+    assert len(ra) == 2
+
+
+def test_dep_trung_sap_theo_DIEM_GIAM():
+    from backend.services.chon_doan_mau import dep_de_len
+    ra = dep_de_len([{"a": 0.0, "b": 4.0, "diem": 5.0},
+                     {"a": 100.0, "b": 104.0, "diem": 9.0},
+                     {"a": 200.0, "b": 204.0, "diem": 7.0}])
+    assert [u["diem"] for u in ra] == [9.0, 7.0, 5.0]
+
+
+def test_dep_trung_rong():
+    from backend.services.chon_doan_mau import dep_de_len
+    assert dep_de_len([]) == []

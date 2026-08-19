@@ -1041,6 +1041,11 @@
             </select>
             <input type="text" id="ttsTestText" value="Xin chào anh chị, em là nhân viên tư vấn ngân hàng ABC" class="flex-1 bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-emerald-500/40">
             <button onclick="testTTS()" id="ttsTestBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/20">Phát thử</button>
+            <!-- Nghe một câu rời không nói lên được gì về thứ khách thật sự
+                 nghe: mọi lỗi bên A báo suốt tháng 8 đều nằm GIỮA CÁC LƯỢT
+                 (tông lạc quẻ giữa mảnh, "ạ" chưa ngắt xong đã đọc từ sau,
+                 tiếng lúc to lúc bé), phải nghe liền mạch mới bắt được. -->
+            <button onclick="testHoiThoai()" id="btnHoiThoai" class="px-4 py-2 rounded-lg bg-violet-500/10 text-violet-400 text-xs font-bold hover:bg-violet-500/20 whitespace-nowrap" title="Cho AI sinh một cuộc tư vấn rồi đọc trọn bằng giọng đang chọn, qua đúng đường của cuộc gọi thật">Đọc cả cuộc thoại</button>
           </div>
           <!-- KHÔNG ghi cứng luật cắt vào nhãn: luật đổi nhiều lần (5 từ -> 16 ->
                tăng dần 5/10/20 -> theo nguyên câu) và nhãn cũ hoá sai lặng lẽ.
