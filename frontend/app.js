@@ -4051,7 +4051,10 @@ async function xemUngVien(ten) {
         <h4 class="text-xs font-semibold text-white">Đoạn mẫu gợi ý cho <span class="text-amber-400">${escapeHtml(ten)}</span></h4>
         <p class="text-[10px] text-gray-500 mt-0.5">Tách được ${d.tach_duoc} đoạn, giữ lại ${d.ung_vien.length}. Nghe rồi chọn — số đo chỉ để loại bớt.</p>
       </div>
-      <button onclick="document.getElementById('ungVienBox').classList.add('hidden')" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
+      <div class="flex items-center gap-2">
+        <button onclick="ngheLoat('${escapeHtml(ten)}')" id="btnNgheLoat" class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-[11px] font-semibold hover:bg-amber-500/20 whitespace-nowrap" title="Cho MỌI ứng viên đọc CÙNG một bộ hội thoại do AI sinh, rồi nghe so — nghe từng cái một câu thì không quyết được">Nghe hàng loạt</button>
+        <button onclick="document.getElementById('ungVienBox').classList.add('hidden')" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
+      </div>
     </div>
     <div class="space-y-2">
       ${d.ung_vien.map((u, k) => `
@@ -4169,4 +4172,69 @@ async function testHoiThoai(nguon, i) {
   } finally {
     if (nut) { nut.disabled = false; nut.textContent = chu; }
   }
+}
+
+
+// --- nghe hàng loạt: so các ứng viên trên CÙNG một bộ hội thoại -----------
+//
+// Nghe từng ứng viên một câu thì không quyết được. Và mỗi ứng viên đọc nội dung
+// riêng cũng không so nổi - phải cùng nội dung, chỉ khác đoạn mẫu.
+
+let hengioLoat = null;
+
+async function ngheLoat(ten) {
+  const nut = document.getElementById('btnNgheLoat');
+  if (nut) { nut.disabled = true; nut.textContent = 'Đang chạy...'; }
+  try {
+    const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/nghe-loat`, { method: 'POST' })).json();
+    if (d.error) { alert(d.error); return; }
+    theoDoiNgheLoat(ten);
+  } catch (e) { alert('Không chạy được: ' + e.message); }
+  finally { if (nut) nut.disabled = false; }
+}
+
+async function theoDoiNgheLoat(ten) {
+  const hop = document.getElementById('ungVienBox');
+  let o = document.getElementById('ngheLoatBox');
+  if (!o) {
+    o = document.createElement('div');
+    o.id = 'ngheLoatBox';
+    o.className = 'mt-4 pt-4 border-t border-slate-750';
+    hop?.appendChild(o);
+  }
+  const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/nghe-loat`)).json();
+
+  if (d.trang_thai === 'dang_chay') {
+    o.innerHTML = `<div class="text-xs text-gray-400">Đang sinh hội thoại và đọc... ${d.tien}% <span class="text-gray-600">(${d.xong}/${d.tong} bản)</span></div>
+      <div class="h-1 bg-slate-750 rounded mt-2 overflow-hidden"><div class="h-full bg-amber-400 transition-all" style="width:${d.tien}%"></div></div>`;
+    clearTimeout(hengioLoat);
+    hengioLoat = setTimeout(() => theoDoiNgheLoat(ten), 3000);
+    return;
+  }
+  if (d.trang_thai === 'hong') { o.innerHTML = `<div class="text-xs text-red-400">Hỏng: ${escapeHtml(d.error || '')}</div>`; return; }
+  if (d.trang_thai !== 'xong') { o.innerHTML = '<div class="text-xs text-gray-500">Chưa chạy lần nào.</div>'; return; }
+
+  // Gom theo ỨNG VIÊN: nghe hết một ứng viên rồi sang cái khác thì tai còn nhớ
+  // để so; nhảy qua nhảy lại là không nhớ nổi cái trước nghe thế nào.
+  const nhom = {};
+  d.muc.forEach(m => { (nhom[m.i] = nhom[m.i] || []).push(m); });
+  o.innerHTML = `
+    <div class="text-xs font-semibold text-white mb-1">Nghe so ${d.so_ung_vien} ứng viên trên ${d.so_bien} bộ hội thoại <span class="text-gray-500 font-normal">(${d.muc.length} bản)</span></div>
+    <p class="text-[10px] text-gray-500 mb-3">Mọi ứng viên đọc CÙNG một nội dung — chênh nhau chỗ nào là do đoạn mẫu, không phải do câu chữ.</p>
+    ${Object.keys(nhom).map(i => {
+      const m0 = nhom[i][0];
+      return `<div class="mb-3">
+        <div class="text-[11px] text-gray-300 mb-1">
+          <span class="w-5 h-5 rounded bg-slate-750 text-[10px] font-mono text-gray-400 inline-flex items-center justify-center mr-1">${Number(i) + 1}</span>
+          ${m0.co_tieu_tu ? '<span class="tag" style="background:rgba(16,185,129,.12);color:#34d399">tiểu từ</span> ' : ''}
+          <span class="text-gray-500">${(m0.dai_mau || 0).toFixed(2)}s —</span> ${escapeHtml((m0.loi_mau || '').slice(0, 66))}
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          ${nhom[i].map(m => `<div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono text-gray-600 w-10">bộ ${m.bo + 1}</span>
+            <audio controls preload="none" class="h-7 flex-1" src="/api/voices/nguon/${encodeURIComponent(ten)}/nghe/${m.tep}"></audio>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}`;
 }

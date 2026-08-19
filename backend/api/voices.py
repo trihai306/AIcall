@@ -1094,3 +1094,194 @@ async def test_hoi_thoai(
             (VOICES_DIR / f"{tam}.txt").unlink(missing_ok=True)
             (VOICES_DIR / f"{tam}.speed").unlink(missing_ok=True)
             app_state.tts.drop_voice(tam)
+
+
+# =========================================================================
+# NGHE HÀNG LOẠT — so các ứng viên đoạn mẫu trên cùng một bộ hội thoại
+# =========================================================================
+#
+# Nghe từng ứng viên một câu thì không quyết được. Cách duy nhất chọn đúng là
+# nghe CHÍNH chúng đọc nhiều cuộc thoại khác nhau, và các ứng viên phải đọc
+# CÙNG một bộ nội dung - khác nội dung thì không so nổi.
+#
+# Sinh lại cùng một câu bằng cùng một giọng cho ra tệp Y HỆT (hạt giống suy từ
+# chữ). Nên biến thiên phải nằm ở NỘI DUNG và ở ỨNG VIÊN, không phải ở số lần.
+
+NGHE_LOAT_MAC_DINH = 100
+
+# Mỗi bộ là một kiểu khách. Đủ khác nhau để lộ ra chỗ giọng đuối: khách xuôi
+# theo, khách hỏi dồn, khách gắt, khách lơ đãng.
+BO_KHACH = [
+    ["Ừ em nói đi.", "Lãi suất bao nhiêu em?", "Ừ vậy em gửi thông tin nhé."],
+    ["Alo ai đấy?", "Anh không có nhu cầu.", "Thôi em nhé, anh bận."],
+    ["Vay được bao nhiêu em?", "Thủ tục cần gì?", "Bao lâu thì giải ngân?"],
+    ["Em gọi có việc gì?", "Anh đang lái xe.", "Gọi lại anh sau nhé."],
+    ["Bên em là ngân hàng nào?", "Có phí gì ẩn không em?", "Ừ để anh xem đã."],
+    ["Chị nghe đây.", "Lãi thế cao quá em.", "Có giảm được không?"],
+]
+
+
+def _bo_khach_thu(k: int) -> list[str]:
+    return BO_KHACH[k % len(BO_KHACH)]
+
+
+async def _sinh_cuoc_thoai_voi(llm, kb: dict, khach: list[str]) -> list[str]:
+    """Như `_sinh_cuoc_thoai` nhưng nhận sẵn bộ lượt khách."""
+    ra = [(kb.get("opening_line") or "Dạ em chào anh chị ạ.").strip()]
+    lich_su = [{"role": "assistant", "content": ra[0]}]
+    mo_ta = llm.build_system_prompt(scenario=kb)
+    for cau_khach in khach:
+        lich_su.append({"role": "user", "content": cau_khach})
+        chu = []
+        try:
+            async for t in llm.stream_response(lich_su, mo_ta):
+                chu.append(t)
+        except Exception as e:
+            logger.warning("lượt AI hỏng: %s", e)
+            break
+        cau = "".join(chu).strip()
+        if not cau:
+            break
+        ra.append(cau)
+        lich_su.append({"role": "assistant", "content": cau})
+    return ra
+
+
+async def _nghe_hang_loat(ten: str, tong: int, so_luot: int):
+    """Chạy nền: sinh hội thoại rồi cho TỪNG ứng viên đọc CÙNG bộ nội dung."""
+    import json
+
+    import numpy as np
+
+    from backend.main import app_state
+    from backend.models import scenarios_db
+    from backend.services.audio_utils import pcm_to_wav
+
+    viec = _VIEC[f"nghe:{ten}"]
+    try:
+        j = PHAN_TICH_DIR / f"{ten}.json"
+        if not j.exists():
+            raise RuntimeError("Chưa phân tích bản ghi này")
+        uv = json.loads(j.read_text(encoding="utf-8"))["ung_vien"]
+        if not uv:
+            raise RuntimeError("Không có ứng viên nào")
+
+        ds = await scenarios_db.list_scenarios()
+        kb = ds[0] if ds else {}
+
+        so_bien = max(1, -(-tong // len(uv)))          # làm tròn LÊN
+        viec.update(tong=so_bien * len(uv), xong=0)
+
+        # 1. Sinh nội dung TRƯỚC, dùng chung cho mọi ứng viên. Mỗi ứng viên tự
+        #    sinh nội dung riêng là không so được với nhau.
+        thoai = []
+        for k in range(so_bien):
+            luot = await _sinh_cuoc_thoai_voi(app_state.llm, kb,
+                                              _bo_khach_thu(k)[:so_luot - 1])
+            thoai.append(luot)
+            viec["tien"] = round((k + 1) / so_bien * 30)
+        viec["so_bien"] = len(thoai)
+
+        # 2. Từng ứng viên đọc từng bộ nội dung.
+        ra = PHAN_TICH_DIR / ten / "nghe"
+        ra.mkdir(parents=True, exist_ok=True)
+        for cu in ra.glob("*.wav"):
+            cu.unlink()
+
+        SR = 24000
+        khe = np.zeros(int(SR * KHE_LUOT_MS / 1000), dtype=np.int16)
+        muc = []
+        xong = 0
+        for u in uv:
+            giong = await _giong_tam_tu_ung_vien(ten, u["i"])
+            if not giong:
+                continue
+            try:
+                toc = app_state.tts.toc_nghe_thu(giong)
+                for k, luot in enumerate(thoai):
+                    pcm = []
+                    for n, cau in enumerate(luot):
+                        try:
+                            wav = await _ghep_nhu_pipeline(
+                                app_state.tts, _cat_manh_nhu_pipeline(cau),
+                                giong, toc, False)
+                        except Exception as e:
+                            logger.warning("ứng viên %s bộ %d lượt %d hỏng: %s",
+                                           u["i"], k, n, e)
+                            continue
+                        if n:
+                            pcm.append(khe)
+                        pcm.append(np.frombuffer(wav[44:], dtype=np.int16))
+                    xong += 1
+                    viec.update(xong=xong,
+                                tien=30 + round(xong / max(1, viec["tong"]) * 70))
+                    if not pcm:
+                        continue
+                    ca = np.concatenate(pcm)
+                    ten_tep = f"uv{u['i']}_bo{k}.wav"
+                    (ra / ten_tep).write_bytes(pcm_to_wav(ca.tobytes(), SR))
+                    muc.append({
+                        "tep": ten_tep, "i": u["i"], "bo": k,
+                        "ms": round(len(ca) / SR * 1000),
+                        "dai_mau": u.get("dai"), "loi_mau": u.get("loi_ghi", ""),
+                        "co_tieu_tu": u.get("co_tieu_tu", False),
+                        "luot": luot,
+                    })
+            finally:
+                for duoi in (".wav", ".txt", ".speed"):
+                    (VOICES_DIR / f"{giong}{duoi}").unlink(missing_ok=True)
+                app_state.tts.drop_voice(giong)
+
+        (PHAN_TICH_DIR / f"{ten}.nghe.json").write_text(
+            json.dumps({"muc": muc, "so_bien": len(thoai),
+                        "so_ung_vien": len(uv)}, ensure_ascii=False),
+            encoding="utf-8")
+        viec.update(trang_thai="xong", tien=100, so_tep=len(muc))
+        logger.info("Nghe hàng loạt %s: %d tệp (%d ứng viên x %d bộ)",
+                    ten, len(muc), len(uv), len(thoai))
+    except Exception as e:
+        logger.exception("Nghe hàng loạt %s hỏng", ten)
+        viec.update(trang_thai="hong", loi=str(e))
+
+
+@router.post("/nguon/{ten}/nghe-loat")
+async def bat_nghe_loat(ten: str, tong: int = NGHE_LOAT_MAC_DINH, so_luot: int = 3):
+    import asyncio
+
+    ten = _ten_sach(ten)
+    if not (PHAN_TICH_DIR / f"{ten}.json").exists():
+        return {"error": "Chạy Phân tích trước đã"}
+    khoa = f"nghe:{ten}"
+    if (_VIEC.get(khoa) or {}).get("trang_thai") == "dang_chay":
+        return {"trang_thai": "dang_chay", "tien": _VIEC[khoa].get("tien", 0)}
+    _VIEC[khoa] = {"trang_thai": "dang_chay", "tien": 0}
+    asyncio.create_task(_nghe_hang_loat(ten, max(1, min(int(tong), 400)),
+                                        max(2, min(int(so_luot), 6))))
+    return {"trang_thai": "dang_chay", "tien": 0}
+
+
+@router.get("/nguon/{ten}/nghe-loat")
+async def xem_nghe_loat(ten: str):
+    import json
+
+    ten = _ten_sach(ten)
+    viec = _VIEC.get(f"nghe:{ten}")
+    if viec and viec.get("trang_thai") == "dang_chay":
+        return {"trang_thai": "dang_chay", "tien": viec.get("tien", 0),
+                "xong": viec.get("xong", 0), "tong": viec.get("tong", 0)}
+    if viec and viec.get("trang_thai") == "hong":
+        return {"trang_thai": "hong", "error": viec.get("loi", "")}
+    j = PHAN_TICH_DIR / f"{ten}.nghe.json"
+    if not j.exists():
+        return {"trang_thai": "chua"}
+    return {"trang_thai": "xong", "tien": 100,
+            **json.loads(j.read_text(encoding="utf-8"))}
+
+
+@router.get("/nguon/{ten}/nghe/{tep}")
+async def nghe_tep_loat(ten: str, tep: str):
+    p = PHAN_TICH_DIR / _ten_sach(ten) / "nghe" / _ten_sach(tep.replace(".wav", "")) 
+    p = p.with_suffix(".wav")
+    if not p.exists():
+        return {"error": "Không có tệp này"}
+    return FileResponse(str(p), media_type="audio/wav")
