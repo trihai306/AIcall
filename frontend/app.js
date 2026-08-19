@@ -4157,12 +4157,14 @@ async function testHoiThoai(nguon, i) {
   hop?.classList.remove('hidden');
   if (bao) bao.textContent = 'Đang cho AI sinh hội thoại rồi đọc...';
   if (manhEl) manhEl.textContent = '';
+  // Trình phát dùng chung của ô "Phát thử" còn giữ tiếng lần trước - để nguyên
+  // là người dùng bấm nhầm vào nó rồi tưởng đó là hội thoại vừa sinh.
+  if (am) { am.pause(); am.removeAttribute('src'); am.load(); }
   try {
     const d = await goiTestHoiThoai({});
     if (d.error) { if (bao) bao.textContent = 'Lỗi: ' + d.error; return; }
     if (bao) bao.textContent = tomTatHoiThoai(d);
     if (manhEl) manhEl.innerHTML = dongHoiThoai(d);
-    if (am) { am.src = 'data:audio/wav;base64,' + d.audio; am.play().catch(() => {}); }
   } catch (e) { if (bao) bao.textContent = 'Lỗi: ' + e.message; }
   finally { if (nut) { nut.disabled = false; nut.textContent = chu; } }
 }
@@ -4176,8 +4178,8 @@ async function goiTestHoiThoai({ nguon, i }) {
 }
 
 function tomTatHoiThoai(d) {
-  return `${d.luot.length} lượt · ${(d.tong_ms / 1000).toFixed(1)}s · giọng ${d.voice}`
-    + `${d.tam ? ' (ứng viên, lắp tạm)' : ''} · kịch bản "${d.kich_ban}" · LLM ${d.ms_llm}ms`
+  return `${d.luot.length} lượt · giọng ${d.voice}`
+    + `${d.tam ? ' (ứng viên, lắp tạm)' : ''} · kịch bản "${d.kich_ban}"`
     + (d.thieu_luot ? ' · LLM tắt sớm, thiếu lượt' : '');
 }
 
@@ -4186,10 +4188,13 @@ function tomTatHoiThoai(d) {
 function dongHoiThoai(d) {
   const kh = d.khach || [];
   return d.luot.map((l, k) => l.loi
-    ? `<div class="text-red-400">${k + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
-    : `${k ? `<div class="text-gray-600 italic mt-1">khách: ${escapeHtml(kh[k - 1] || '')}</div>` : ''}`
-      + `<div><span class="text-gray-500">${k + 1}.</span> ${escapeHtml(l.text)} `
-      + `<span class="text-gray-700">(${l.so_manh} mảnh, ${l.ms}ms)</span></div>`).join('');
+    ? `<div class="text-red-400 mb-2">${k + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
+    : `<div class="mb-2">
+         ${k ? `<div class="text-gray-600 italic mb-0.5">khách: ${escapeHtml(kh[k - 1] || '')}</div>` : ''}
+         <div class="mb-1"><span class="text-gray-500">${k + 1}.</span> ${escapeHtml(l.text)}
+           <span class="text-gray-700">(${l.so_manh} mảnh)</span></div>
+         <audio controls preload="none" class="w-full h-7" src="data:audio/wav;base64,${l.audio}"></audio>
+       </div>`).join('');
 }
 
 async function testHoiThoaiUngVien(nguon, i) {
@@ -4214,7 +4219,6 @@ async function testHoiThoaiUngVien(nguon, i) {
         <button onclick="document.getElementById('htUngVienBox').remove()" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
       </div>
       <div class="text-[10px] text-gray-500 mb-2">${escapeHtml(tomTatHoiThoai(d))}</div>
-      <audio controls class="w-full h-8 mb-2" src="data:audio/wav;base64,${d.audio}"></audio>
       <div class="text-[11px] text-gray-300 leading-relaxed font-mono">${dongHoiThoai(d)}</div>`;
   } catch (e) {
     o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(e.message)}</div>`;

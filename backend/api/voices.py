@@ -1045,7 +1045,6 @@ async def test_hoi_thoai(
 
     from backend.main import app_state
     from backend.models import scenarios_db
-    from backend.services.audio_utils import pcm_to_wav
 
     if not app_state.tts._is_loaded:
         return {"error": "TTS chưa được tải."}
@@ -1076,9 +1075,11 @@ async def test_hoi_thoai(
             toc *= app_state.tts.he_so_thoai()
 
         SR = 24000
-        khe = np.zeros(int(SR * KHE_LUOT_MS / 1000), dtype=np.int16)
-        cac_luot, pcm = [], []
-        for n, cau in enumerate(luot):
+        # MỖI LƯỢT MỘT TỆP, không gộp thành một cục. Nghe cả cục thì muốn nghe
+        # lại đúng lượt thứ ba phải tua tay, mà việc cần làm ở đây là nghe đi
+        # nghe lại MỘT lượt để bắt chỗ lạ.
+        cac_luot = []
+        for cau in luot:
             manh = _cat_manh_nhu_pipeline(cau)
             try:
                 wav = await _ghep_nhu_pipeline(app_state.tts, manh, voice_name, toc, False)
@@ -1086,25 +1087,21 @@ async def test_hoi_thoai(
                 cac_luot.append({"text": cau, "loi": str(e)})
                 continue
             x = np.frombuffer(wav[44:], dtype=np.int16)
-            if n:
-                pcm.append(khe)
-            pcm.append(x)
             cac_luot.append({"text": cau, "so_manh": len(manh), "manh": manh,
-                             "ms": round(len(x) / SR * 1000)})
+                             "ms": round(len(x) / SR * 1000),
+                             "audio": base64.b64encode(wav).decode()})
 
-        if not pcm:
+        if not any("audio" in l for l in cac_luot):
             return {"error": "Không đọc được lượt nào."}
-        ca_bai = np.concatenate(pcm)
         return {
             "voice": voice_name,
             "tam": bool(tam),
             "kich_ban": kb.get("name", ""),
             "thieu_luot": lui,
             "ms_llm": ms_llm,
-            "tong_ms": round(len(ca_bai) / SR * 1000),
+            "tong_ms": sum(l.get("ms", 0) for l in cac_luot),
             "luot": cac_luot,
             "khach": LUOT_KHACH[:max(0, len(luot) - 1)],
-            "audio": base64.b64encode(pcm_to_wav(ca_bai.tobytes(), SR)).decode(),
         }
     finally:
         # Giọng tạm phải dọn ngay, không thì mỗi lần nghe thử lại đẻ một giọng
