@@ -694,7 +694,15 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
 
     viec = _VIEC[ten]
     try:
-        x, sr = _doc_nguon(ten)
+        # ĐỌC VÀ CHIA TRONG LUỒNG RIÊNG. Bản ghi 203MB đọc mất ~20 giây, và
+        # `sf.read` chặn cứng - để nó chạy thẳng trên vòng lặp sự kiện thì CẢ
+        # BACKEND đứng hình chừng ấy: không trả nổi một request nào, kể cả
+        # đường tiếng của cuộc gọi đang chạy. Triệu chứng nhìn ra ở giao diện là
+        # "bấm Phân tích lại mà mãi không thấy gì" - chính response của nút bấm
+        # cũng đang bị kẹt sau nó.
+        import asyncio as _aio
+
+        x, sr = await _aio.to_thread(_doc_nguon, ten)
         PHAN_TICH_DIR.mkdir(parents=True, exist_ok=True)
         kho = PHAN_TICH_DIR / f"{ten}.stt.json"
 
@@ -702,7 +710,7 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
             doan = json.loads(kho.read_text(encoding="utf-8"))
             viec.update(tong=0, xong=0, tien=90, dung_ban_nghe_cu=True)
         else:
-            cs = cua_so_ngat(x, sr)
+            cs = await _aio.to_thread(cua_so_ngat, x, sr)
             viec["tong"] = len(cs)
             doan = []
             for n, (a, b) in enumerate(cs):
@@ -724,11 +732,18 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
         # một phụ âm, clip mở đầu bằng âm cụt, STT nghe lại ra khác, và ứng viên
         # trượt khâu kiểm lời dù nội dung tốt. Đúng là cách đoạn hay nhất của
         # bản ghi ("em thấy tự ti...") bị loại ở lần chạy 18-08.
-        for d in uv:
-            d["m_a"] = nan_moc(x, sr, int(d["a"] * sr))
-            d["m_b"] = nan_moc(x, sr, int(d["b"] * sr))
-            clip = x[d["m_a"]:d["m_b"]]
-            d.update(cham_diem(clip, sr, d["loi"], d["loi"]))   # lệch lời tính sau
+        def _cham_het():
+            for k, d in enumerate(uv):
+                d["m_a"] = nan_moc(x, sr, int(d["a"] * sr))
+                d["m_b"] = nan_moc(x, sr, int(d["b"] * sr))
+                d.update(cham_diem(x[d["m_a"]:d["m_b"]], sr,
+                                   d["loi"], d["loi"]))        # lệch lời tính sau
+                if not k % 40:
+                    viec["tien"] = 90 + round(k / max(1, len(uv)) * 4)
+
+        # Cũng phải sang luồng riêng: 1520 ứng viên x (nắn mốc + đo phổ) là vài
+        # giây liền không nhả vòng lặp.
+        await _aio.to_thread(_cham_het)
 
         # Dẹp trùng TRƯỚC khi kiểm lời: cho phép bắt đầu ở nhiều chỗ thì cùng
         # một câu đẻ ra chục biến thể lệch vài từ, và chúng chiếm hết suất của
@@ -782,6 +797,9 @@ async def ds_nguon():
             "mb": round(w.stat().st_size / 1024 / 1024, 1),
             "trang_thai": viec.get("trang_thai") or ("xong" if j.exists() else "chua"),
             "tien": viec.get("tien", 100 if j.exists() else 0),
+            # Nói rõ đang NGHE hay đang CHẤM: có bản nghe cũ thì khâu nghe bị bỏ
+            # qua, thanh tiến độ nhảy thẳng lên 90% và nhãn "đang nghe" là sai.
+            "dung_ban_nghe_cu": bool(viec.get("dung_ban_nghe_cu")),
             "so_ung_vien": len(json.loads(j.read_text(encoding="utf-8"))["ung_vien"])
             if j.exists() else 0,
         })

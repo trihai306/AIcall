@@ -4001,13 +4001,14 @@ async function loadNguon() {
             ${n.so_ung_vien ? `<span class="tag" style="background:rgba(16,185,129,.12);color:#34d399">${n.so_ung_vien} ứng viên</span>` : ''}
           </div>
           <div class="text-[10px] text-gray-500 mt-0.5">
-            ${chay ? `Đang nghe... ${n.tien}%` : (n.so_ung_vien ? 'Đã phân tích — bấm Xem để nghe và chọn' : 'Chưa phân tích')}
+            ${chay ? `${n.dung_ban_nghe_cu ? 'Đang chấm điểm (dùng lại bản nghe cũ)' : 'Đang nghe bản ghi'}... ${n.tien}%`
+                   : (n.so_ung_vien ? 'Đã phân tích — bấm Xem để nghe và chọn' : 'Chưa phân tích')}
           </div>
           ${chay ? `<div class="h-1 bg-slate-750 rounded mt-1.5 overflow-hidden"><div class="h-full bg-amber-400 transition-all" style="width:${n.tien}%"></div></div>` : ''}
         </div>
         <div class="flex items-center gap-2 shrink-0">
           ${n.so_ung_vien ? `<button onclick="xemUngVien('${escapeHtml(n.ten)}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20">Xem</button>` : ''}
-          <button onclick="phanTichNguon('${escapeHtml(n.ten)}')" ${chay ? 'disabled' : ''}
+          <button onclick="phanTichNguon('${escapeHtml(n.ten)}', this)" ${chay ? 'disabled' : ''}
                   class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-[11px] font-semibold hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
             ${chay ? 'Đang chạy' : (n.so_ung_vien ? 'Phân tích lại' : 'Phân tích')}
           </button>
@@ -4027,12 +4028,22 @@ async function loadNguon() {
   }
 }
 
-async function phanTichNguon(ten) {
+async function phanTichNguon(ten, nut) {
+  // Phản hồi NGAY, đừng đợi server trả lời. Server còn phải đọc bản ghi 203MB
+  // trước khi response về tới nơi; trong lúc đó nút im re và người dùng tưởng
+  // bấm hụt rồi bấm lại. Đo được: lần vẽ lại đầu tiên đến sau 20,5 GIÂY.
+  if (nut) { nut.disabled = true; nut.textContent = 'Đang chạy'; }
+  // Và tự dò tiến độ luôn, không chờ POST: việc đã chạy bên server rồi.
+  clearTimeout(hengioNguon);
+  hengioNguon = setTimeout(loadNguon, 1200);
   try {
     const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/phan-tich`, { method: 'POST' })).json();
-    if (d.error) { alert(d.error); return; }
+    if (d.error) { alert(d.error); if (nut) { nut.disabled = false; nut.textContent = 'Phân tích'; } return; }
     loadNguon();
-  } catch (e) { alert('Không chạy được phân tích: ' + e.message); }
+  } catch (e) {
+    alert('Không chạy được phân tích: ' + e.message);
+    if (nut) { nut.disabled = false; nut.textContent = 'Phân tích'; }
+  }
 }
 
 async function xemUngVien(ten) {
