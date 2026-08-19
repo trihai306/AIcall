@@ -4214,27 +4214,55 @@ async function theoDoiNgheLoat(ten) {
   if (d.trang_thai === 'hong') { o.innerHTML = `<div class="text-xs text-red-400">Hỏng: ${escapeHtml(d.error || '')}</div>`; return; }
   if (d.trang_thai !== 'xong') { o.innerHTML = '<div class="text-xs text-gray-500">Chưa chạy lần nào.</div>'; return; }
 
-  // Gom theo ỨNG VIÊN: nghe hết một ứng viên rồi sang cái khác thì tai còn nhớ
-  // để so; nhảy qua nhảy lại là không nhớ nổi cái trước nghe thế nào.
+  // Gom theo ỨNG VIÊN, GẬP LẠI sẵn. 102 trình phát xếp dọc thì cuộn mãi không
+  // hết và không so được gì - mỗi ứng viên một dòng, bung ra mới thấy các bộ.
+  //
+  // Dùng NÚT SỐ + một trình phát dùng chung, không phải 102 thẻ <audio>: mỗi
+  // thẻ tự chiếm một dòng cao 40px, mà cái tai cần là bấm nhanh qua lại giữa
+  // các bộ để so, không phải 102 thanh tua.
   const nhom = {};
   d.muc.forEach(m => { (nhom[m.i] = nhom[m.i] || []).push(m); });
   o.innerHTML = `
-    <div class="text-xs font-semibold text-white mb-1">Nghe so ${d.so_ung_vien} ứng viên trên ${d.so_bien} bộ hội thoại <span class="text-gray-500 font-normal">(${d.muc.length} bản)</span></div>
-    <p class="text-[10px] text-gray-500 mb-3">Mọi ứng viên đọc CÙNG một nội dung — chênh nhau chỗ nào là do đoạn mẫu, không phải do câu chữ.</p>
+    <div class="flex items-center justify-between mb-2">
+      <div>
+        <span class="text-xs font-semibold text-white">Nghe so ${d.so_ung_vien} ứng viên trên ${d.so_bien} bộ hội thoại</span>
+        <span class="text-[10px] text-gray-600 ml-1">(${d.muc.length} bản)</span>
+      </div>
+      <button onclick="document.getElementById('ngheLoatBox').innerHTML=''" class="text-[10px] text-gray-500 hover:text-gray-300">Ẩn</button>
+    </div>
+    <p class="text-[10px] text-gray-500 mb-2">Mọi ứng viên đọc CÙNG một nội dung — chênh nhau chỗ nào là do đoạn mẫu, không phải do câu chữ.</p>
+    <audio id="ngheLoatAudio" controls class="w-full h-8 mb-3"></audio>
     ${Object.keys(nhom).map(i => {
       const m0 = nhom[i][0];
-      return `<div class="mb-3">
-        <div class="text-[11px] text-gray-300 mb-1">
-          <span class="w-5 h-5 rounded bg-slate-750 text-[10px] font-mono text-gray-400 inline-flex items-center justify-center mr-1">${Number(i) + 1}</span>
-          ${m0.co_tieu_tu ? '<span class="tag" style="background:rgba(16,185,129,.12);color:#34d399">tiểu từ</span> ' : ''}
-          <span class="text-gray-500">${(m0.dai_mau || 0).toFixed(2)}s —</span> ${escapeHtml((m0.loi_mau || '').slice(0, 66))}
+      return `<details class="mb-1.5 bg-void/40 rounded-lg">
+        <summary class="cursor-pointer select-none px-3 py-2 text-[11px] text-gray-300 flex items-center gap-2">
+          <span class="w-5 h-5 rounded bg-slate-750 text-[10px] font-mono text-gray-400 inline-flex items-center justify-center shrink-0">${Number(i) + 1}</span>
+          ${m0.co_tieu_tu ? '<span class="tag shrink-0" style="background:rgba(16,185,129,.12);color:#34d399">tiểu từ</span>' : ''}
+          <span class="text-gray-500 font-mono text-[10px] shrink-0">${(m0.dai_mau || 0).toFixed(2)}s</span>
+          <span class="truncate text-gray-400">${escapeHtml((m0.loi_mau || '').slice(0, 70))}</span>
+          <span class="ml-auto text-[10px] text-gray-600 shrink-0">${nhom[i].length} bộ</span>
+        </summary>
+        <div class="flex flex-wrap gap-1 px-3 pb-3">
+          ${nhom[i].map(m => `<button onclick="ngheBanLoat(this,'${escapeHtml(ten)}','${m.tep}')"
+            class="w-9 h-7 rounded bg-slate-750/60 text-[10px] font-mono text-gray-400 hover:bg-cyan-500/20 hover:text-cyan-300"
+            title="bộ ${m.bo + 1} — ${(m.ms / 1000).toFixed(1)}s">${m.bo + 1}</button>`).join('')}
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          ${nhom[i].map(m => `<div class="flex items-center gap-2">
-            <span class="text-[10px] font-mono text-gray-600 w-10">bộ ${m.bo + 1}</span>
-            <audio controls preload="none" class="h-7 flex-1" src="/api/voices/nguon/${encodeURIComponent(ten)}/nghe/${m.tep}"></audio>
-          </div>`).join('')}
-        </div>
-      </div>`;
+      </details>`;
     }).join('')}`;
+}
+
+
+let nutLoatDangNghe = null;
+
+function ngheBanLoat(nut, ten, tep) {
+  const a = document.getElementById('ngheLoatAudio');
+  if (!a) return;
+  if (nutLoatDangNghe) nutLoatDangNghe.classList.remove('bg-cyan-500/30', 'text-cyan-200');
+  // Bấm lại chính bản đang nghe thì DỪNG - không thì muốn im phải đi tìm nút
+  // tạm dừng của trình phát dùng chung.
+  if (nutLoatDangNghe === nut && !a.paused) { a.pause(); nutLoatDangNghe = null; return; }
+  a.src = `/api/voices/nguon/${encodeURIComponent(ten)}/nghe/${tep}`;
+  a.play().catch(() => {});
+  nut.classList.add('bg-cyan-500/30', 'text-cyan-200');
+  nutLoatDangNghe = nut;
 }
