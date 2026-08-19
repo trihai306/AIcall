@@ -4141,8 +4141,13 @@ async function xoaNguon(ten) {
 // đọc ra sao. Muốn so hai ứng viên phải nghe chính chúng đọc cùng một cuộc thoại.
 
 async function testHoiThoai(nguon, i) {
+  // Bấm từ MỘT ỨNG VIÊN thì kết quả phải hiện NGAY TẠI CHỖ. Bản đầu nhét xuống
+  // ô "Test giọng nói" tận cuối trang rồi tự phát, nên bên A chỉ nghe thấy
+  // tiếng mà không thấy hội thoại đâu - không đối chiếu được tai với chữ.
   const tuUngVien = !!nguon;
-  const nut = tuUngVien ? null : document.getElementById('btnHoiThoai');
+  if (tuUngVien) return testHoiThoaiUngVien(nguon, i);
+
+  const nut = document.getElementById('btnHoiThoai');
   const hop = document.getElementById('ttsTestResult');
   const bao = document.getElementById('ttsTestMsg');
   const manhEl = document.getElementById('ttsTestManh');
@@ -4150,38 +4155,69 @@ async function testHoiThoai(nguon, i) {
   const chu = nut ? nut.textContent : '';
   if (nut) { nut.disabled = true; nut.textContent = 'Đang sinh...'; }
   hop?.classList.remove('hidden');
-  if (bao) bao.textContent = tuUngVien
-    ? `Đang cho AI sinh hội thoại rồi đọc bằng ứng viên #${i + 1}...`
-    : 'Đang cho AI sinh hội thoại rồi đọc...';
+  if (bao) bao.textContent = 'Đang cho AI sinh hội thoại rồi đọc...';
   if (manhEl) manhEl.textContent = '';
-
   try {
-    const fd = new FormData();
-    fd.append('voice_name', document.getElementById('ttsTestVoice')?.value || 'default');
-    fd.append('qua_dien_thoai', document.getElementById('ttsTestCatManh')?.checked ? 'true' : 'false');
-    if (tuUngVien) { fd.append('nguon', nguon); fd.append('i', i); }
-    const d = await (await fetch('/api/voices/test-hoi-thoai', { method: 'POST', body: fd })).json();
+    const d = await goiTestHoiThoai({});
     if (d.error) { if (bao) bao.textContent = 'Lỗi: ' + d.error; return; }
-
-    if (bao) {
-      bao.textContent = `${d.luot.length} lượt · ${(d.tong_ms / 1000).toFixed(1)}s · `
-        + `giọng ${d.voice}${d.tam ? ' (ứng viên, lắp tạm)' : ''} · `
-        + `kịch bản "${d.kich_ban}" · LLM ${d.ms_llm}ms`
-        + (d.thieu_luot ? ' · LLM tắt sớm, thiếu lượt' : '');
-    }
-    // In từng lượt để đối chiếu tai nghe với chữ - không có nó thì nghe thấy lạ
-    // mà không biết lạ ở chữ nào.
-    if (manhEl) {
-      manhEl.innerHTML = d.luot.map((l, k) => l.loi
-        ? `<div class="text-red-400">${k + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
-        : `<div>${k ? `<div class="text-gray-600 italic">khách: ${escapeHtml(d.khach[k-1]||'')}</div>` : ''}<span class="text-gray-500">${k + 1}.</span> ${escapeHtml(l.text)} `
-          + `<span class="text-gray-700">(${l.so_manh} mảnh, ${l.ms}ms)</span></div>`).join('');
-    }
+    if (bao) bao.textContent = tomTatHoiThoai(d);
+    if (manhEl) manhEl.innerHTML = dongHoiThoai(d);
     if (am) { am.src = 'data:audio/wav;base64,' + d.audio; am.play().catch(() => {}); }
+  } catch (e) { if (bao) bao.textContent = 'Lỗi: ' + e.message; }
+  finally { if (nut) { nut.disabled = false; nut.textContent = chu; } }
+}
+
+async function goiTestHoiThoai({ nguon, i }) {
+  const fd = new FormData();
+  fd.append('voice_name', document.getElementById('ttsTestVoice')?.value || 'default');
+  fd.append('qua_dien_thoai', document.getElementById('ttsTestCatManh')?.checked ? 'true' : 'false');
+  if (nguon != null) { fd.append('nguon', nguon); fd.append('i', i); }
+  return (await fetch('/api/voices/test-hoi-thoai', { method: 'POST', body: fd })).json();
+}
+
+function tomTatHoiThoai(d) {
+  return `${d.luot.length} lượt · ${(d.tong_ms / 1000).toFixed(1)}s · giọng ${d.voice}`
+    + `${d.tam ? ' (ứng viên, lắp tạm)' : ''} · kịch bản "${d.kich_ban}" · LLM ${d.ms_llm}ms`
+    + (d.thieu_luot ? ' · LLM tắt sớm, thiếu lượt' : '');
+}
+
+// In từng lượt để đối chiếu TAI với CHỮ - nghe thấy lạ mà không biết lạ ở chữ
+// nào thì không sửa được gì.
+function dongHoiThoai(d) {
+  const kh = d.khach || [];
+  return d.luot.map((l, k) => l.loi
+    ? `<div class="text-red-400">${k + 1}. LỖI: ${escapeHtml(l.loi)}</div>`
+    : `${k ? `<div class="text-gray-600 italic mt-1">khách: ${escapeHtml(kh[k - 1] || '')}</div>` : ''}`
+      + `<div><span class="text-gray-500">${k + 1}.</span> ${escapeHtml(l.text)} `
+      + `<span class="text-gray-700">(${l.so_manh} mảnh, ${l.ms}ms)</span></div>`).join('');
+}
+
+async function testHoiThoaiUngVien(nguon, i) {
+  const cha = document.getElementById('ungVienBox');
+  let o = document.getElementById('htUngVienBox');
+  if (!o) {
+    o = document.createElement('div');
+    o.id = 'htUngVienBox';
+    o.className = 'mt-4 pt-4 border-t border-slate-750';
+    cha?.appendChild(o);
+  }
+  o.scrollIntoView({ block: 'nearest' });
+  o.innerHTML = `<div class="text-xs text-gray-400">Đang cho AI sinh hội thoại rồi đọc bằng ứng viên #${i + 1}... <span class="text-gray-600">(mất khoảng 20-30 giây)</span></div>`;
+  try {
+    const d = await goiTestHoiThoai({ nguon, i });
+    if (d.error) { o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(d.error)}</div>`; return; }
+    // KHÔNG tự phát: bên A bấm rồi chỉ nghe thấy tiếng, tưởng nút hỏng vì không
+    // thấy danh sách đâu. Hiện chữ trước, bấm nghe sau.
+    o.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-white">Ứng viên #${i + 1} đọc thử một cuộc tư vấn</span>
+        <button onclick="document.getElementById('htUngVienBox').remove()" class="text-[10px] text-gray-500 hover:text-gray-300">Đóng</button>
+      </div>
+      <div class="text-[10px] text-gray-500 mb-2">${escapeHtml(tomTatHoiThoai(d))}</div>
+      <audio controls class="w-full h-8 mb-2" src="data:audio/wav;base64,${d.audio}"></audio>
+      <div class="text-[11px] text-gray-300 leading-relaxed font-mono">${dongHoiThoai(d)}</div>`;
   } catch (e) {
-    if (bao) bao.textContent = 'Lỗi: ' + e.message;
-  } finally {
-    if (nut) { nut.disabled = false; nut.textContent = chu; }
+    o.innerHTML = `<div class="text-xs text-red-400">Lỗi: ${escapeHtml(e.message)}</div>`;
   }
 }
 
