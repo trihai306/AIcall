@@ -261,6 +261,27 @@ powershell -ExecutionPolicy Bypass -File C:\duan\chat-ai\scripts\start_services.
 Tiếng câu đệm dựng sẵn mang vân tay gồm cả câu mẫu và tốc, nên thay xong hệ
 thống **tự dựng lại toàn bộ 42 câu**. Không phải xoá tay.
 
+## Lời đoạn mẫu sai là hỏng câm — sửa ở đâu
+
+Tệp `<tên>.txt` không phải chú thích. F5 dùng nó để căn chữ với tiếng trong đoạn
+mẫu, nên **sai một chữ là đoạn mẫu lệch và giọng đọc hỏng, mà không có gì báo
+lỗi**. Đã gặp thật: mảnh "Dạ vâng," lệch lời ra `"dự báo tổng thống chuẩn bị
+thành phố đà nẵng..."`, 8/8 lần, tất định.
+
+Giọng tách từ **bản ghi dài** thì lời đó do STT nghe ra, và nó nghe sai thật:
+bản ghi nguồn nằm ngoài miền từ vựng ngân hàng nên tên riêng, số và tiểu từ cuối
+câu hay ra chệch. Vì thế nghe rồi phải sửa được:
+
+- **Trước khi lắp** — tab Giọng nói, khối *Bản ghi dài* → **Xem** → mỗi ứng viên
+  có nút **Sửa lời**. Nghe clip, gõ lại đúng từng chữ, bấm **Lưu lời**. Sửa xong
+  hệ thống đo lại số âm tiết, nhịp gốc và **tốc đề xuất** theo lời mới, đồng thời
+  dọn các bản đọc thử cũ (chúng đọc bằng lời cũ nên không còn nói lên được gì).
+- **Sau khi đã lắp** — trong danh sách giọng, bấm **Sửa** ngay cạnh dòng lời.
+  Không phải xoá giọng rồi upload lại nữa: làm thế là mất luôn đoạn mẫu đã chọn.
+
+Cả hai đường đều dọn sổ giọng của TTS rồi nạp lại, nên sửa xong là ăn ngay ở
+lượt đọc kế tiếp — không cần khởi động lại.
+
 ## Còn muốn giống hơn nữa?
 
 Đổi clip mẫu và tốc là hết mức của zero-shot. Muốn giọng ra thật sự là một người
