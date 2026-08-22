@@ -77,6 +77,11 @@ async def inference(
     response_format: str = Form("json"),
     temperature: str = Form("0"),
     word_timestamps: str = Form("0"),
+    # Câu mồi từ vựng. `stt_service` GỬI trường này từ lâu (`moi_tu_vung()`,
+    # có cả biến thể vùng miền), nhưng endpoint không khai nên FastAPI lặng
+    # lẽ vứt đi và `initial_prompt` chưa bao giờ tới được model. Bắt được
+    # 13-08-2026, mất lại khi gộp nhánh, tìm lại 22-08-2026 nhờ bộ test.
+    prompt: str = Form(""),
 ):
     """whisper.cpp-compatible inference endpoint."""
     if model is None:
@@ -92,6 +97,7 @@ async def inference(
     text, doan = await asyncio.to_thread(
         _transcribe_sync, audio_bytes, language, float(temperature or 0),
         str(word_timestamps).lower() in ("1", "true", "yes"),
+        prompt or None,
     )
 
     elapsed_ms = (time.perf_counter() - t0) * 1000
@@ -102,7 +108,8 @@ async def inference(
 
 
 def _transcribe_sync(audio_bytes: bytes, language: str,
-                     temperature: float, moc_chu: bool = False) -> tuple[str, list[dict]]:
+                     temperature: float, moc_chu: bool = False,
+                     prompt: str | None = None) -> tuple[str, list[dict]]:
     """Trả (văn bản, danh sách đoạn kèm chỉ số tin cậy).
 
     Phải trả cả `no_speech_prob` và `avg_logprob`: Whisper BỊA CHỮ khi đầu vào
@@ -116,6 +123,12 @@ def _transcribe_sync(audio_bytes: bytes, language: str,
         language=language,
         temperature=temperature,
         beam_size=BEAM_SIZE,
+        # Nghiêng bộ giải mã về từ vựng ngân hàng. Không "dạy" model từ mới
+        # - chỉ đổi xác suất tiên nghiệm, nên chỉ giúp với từ model VỐN
+        # BIẾT mà đang đoán lệch. Cần vì kênh thoại 8kHz làm mất phụ âm:
+        # "lãi suất" bị nghe thành "lãnh xuất" - đúng từ khoá quan trọng
+        # nhất của kịch bản bán hàng.
+        initial_prompt=prompt or None,
         # BẬT VAD Silero của faster-whisper. Chú thích cũ nói "VAD đã làm ở phía
         # client" - đúng với đường TRÌNH DUYỆT (Silero chạy trong trang), nhưng
         # SAI với đường THOẠI: ở đó VAD chỉ là ngưỡng RMS thô. Không có VAD ở
