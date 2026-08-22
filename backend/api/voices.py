@@ -530,6 +530,42 @@ async def dat_toc_giong(voice_name: str, req: DatToc):
     return {"ok": True, "voice": voice_name, "speed": toc}
 
 
+class SuaLoi(BaseModel):
+    loi: str
+
+
+@router.post("/{voice_name}/loi")
+async def sua_loi_giong(voice_name: str, req: SuaLoi):
+    """Sửa lại LỜI của đoạn mẫu một giọng đã lắp.
+
+    Lời này là thứ F5 dùng để căn chữ với tiếng trong đoạn mẫu, nên sai một chữ
+    là hỏng cả giọng chứ không chỉ là một dòng chú thích lệch. Mà lời của giọng
+    tách từ bản ghi dài đều do STT nghe ra - nghe sai tên riêng, sai số, nuốt
+    một tiếng là chuyện thường. Trước đây không có đường nào sửa: phải xoá giọng
+    rồi upload lại kèm ref_text, tức là mất luôn đoạn mẫu đã chọn.
+    """
+    from backend.main import app_state
+
+    ten = _ten_sach(voice_name)
+    if not (VOICES_DIR / f"{ten}.wav").exists():
+        return {"error": f"Không có giọng '{voice_name}'"}
+    loi = " ".join((req.loi or "").split())
+    if not loi:
+        return {"error": "Lời đoạn mẫu không được để trống"}
+
+    (VOICES_DIR / f"{ten}.txt").write_text(loi + "\n", encoding="utf-8")
+
+    # Sổ giọng chốt lời MỘT LẦN lúc nạp. Ghi .txt xong mà không dọn thì giọng
+    # vẫn chạy bằng lời cũ và người dùng thấy "sửa xong không ăn gì" - đúng cái
+    # bẫy đã ghi ở `chon_ung_vien`.
+    if app_state.tts is not None:
+        app_state.tts.drop_voice(ten)
+        await app_state.tts.ensure_voice(ten)
+
+    logger.info("Sửa lời đoạn mẫu giọng %s: %r", ten, loi[:60])
+    return {"ok": True, "voice": ten, "loi": loi}
+
+
 @router.delete("/{voice_name}/speed")
 async def bo_toc_rieng(voice_name: str):
     """Bỏ tốc riêng, quay về tốc chung trong .env."""
@@ -651,6 +687,23 @@ def _doc_nguon(ten: str):
     return (x.mean(axis=1) if x.ndim > 1 else x), sr
 
 
+def _do_nhip(loi: str, dai: float) -> dict:
+    """Số âm tiết, nhịp gốc và tốc đề xuất, đếm từ LỜI của đoạn mẫu.
+
+    Tách riêng vì lời có thể sửa lại sau khi khảo sát xong - STT nghe sai tên
+    riêng hay nuốt một tiếng là chuyện thường. Cả ba số này đều đếm từ chính
+    lời đó, nên sửa lời mà giữ số cũ là để tốc đề xuất tính trên một câu không
+    còn tồn tại.
+    """
+    am_tiet = len([t for t in (loi or "").split() if t.strip()])
+    nhip = am_tiet / dai * 60 if dai else 0.0
+    return {
+        "am_tiet": am_tiet,
+        "nhip_goc": round(nhip),
+        "toc_de_xuat": round(min(1.0, NHIP_MUON / nhip), 2) if nhip else 1.0,
+    }
+
+
 def _wav_bytes(x, sr: int) -> bytes:
     import io as _io
 
@@ -765,10 +818,7 @@ async def _khao_sat(ten: str, nghe_lai: bool = False):
             # phải lời suy ra từ lượt nghe cả tệp - như vậy lệch lời bằng 0 theo
             # cấu tạo. Đây đúng là chỗ đã hỏng: clip lệch lời 12,5% cho WER 160%.
             d["loi_ghi"] = d.get("nghe_lai") or d["loi"]
-            d["am_tiet"] = len([t for t in d["loi_ghi"].split() if t.strip()])
-            nhip = d["am_tiet"] / d["dai"] * 60 if d["dai"] else 0.0
-            d["nhip_goc"] = round(nhip)
-            d["toc_de_xuat"] = round(min(1.0, NHIP_MUON / nhip), 2) if nhip else 1.0
+            d.update(_do_nhip(d["loi_ghi"], d["dai"]))
 
         viec.update(trang_thai="xong", tien=100, ung_vien=cuoi,
                     loai_bo=len(uv) - len(cuoi))
@@ -852,6 +902,79 @@ async def nghe_ung_vien(ten: str, i: int):
     if not p.exists():
         return {"error": "Chưa có ứng viên này - chạy Phân tích trước"}
     return FileResponse(str(p), media_type="audio/wav")
+
+
+class SuaLoiUngVien(BaseModel):
+    loi: str
+
+
+@router.post("/nguon/{ten}/ung-vien/{i}/loi")
+async def sua_loi_ung_vien(ten: str, i: int, req: SuaLoiUngVien):
+    """Sửa lại lời của một ứng viên trước khi lắp thành giọng.
+
+    Lời ứng viên là thứ STT nghe được trên chính clip đã cắt, và STT nghe SAI
+    thật: bản ghi nguồn nằm ngoài miền từ vựng ngân hàng nên tên riêng, số và
+    tiểu từ cuối câu hay ra chệch. Mà F5 dùng đúng lời này để căn chữ với tiếng
+    trong đoạn mẫu - sai một chữ là đoạn mẫu lệch, giọng lắp ra đọc hỏng, và
+    không có gì báo lỗi. Trước đây người nghe ra chỗ sai cũng không sửa được:
+    lời chỉ do máy ghi, giao diện chỉ hiện chứ không cho sửa.
+
+    Sửa xong là đo lại nhịp và tốc đề xuất (đếm theo số tiếng của lời mới), và
+    dọn các bản đọc thử cũ - chúng được đọc bằng lời cũ nên không còn nói lên
+    được gì về ứng viên này nữa.
+    """
+    import json
+    import shutil
+
+    from backend.main import app_state
+
+    ten = _ten_sach(ten)
+    i = int(i)
+    j = PHAN_TICH_DIR / f"{ten}.json"
+    if not j.exists():
+        return {"error": "Chưa có kết quả phân tích cho bản ghi này"}
+
+    loi = " ".join((req.loi or "").split())
+    if not loi:
+        return {"error": "Lời đoạn mẫu không được để trống"}
+
+    d = json.loads(j.read_text(encoding="utf-8"))
+    u = next((z for z in d.get("ung_vien", []) if z.get("i") == i), None)
+    if u is None:
+        return {"error": f"Không có ứng viên số {i}"}
+
+    u["loi_ghi"] = loi
+    u["sua_tay"] = True                 # để giao diện nói rõ số đo lệch lời đã cũ
+    u.update(_do_nhip(loi, u.get("dai", 0.0)))
+    j.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+    # Giọng tạm `thu_<nguồn>_<i>` được dựng lại từ tệp .json này ở mỗi lượt nghe
+    # thử, nhưng sổ giọng của TTS chốt lời một lần lúc nạp - còn giữ bản cũ thì
+    # lần nghe thử tới vẫn chạy bằng lời sai.
+    if app_state.tts is not None:
+        app_state.tts.drop_voice(f"thu_{ten}_{i}")
+
+    # Bản đọc thử cũ đọc bằng lời cũ. Giữ lại là mời người dùng nghe rồi kết
+    # luận về một ứng viên không còn tồn tại ở dạng đó.
+    if (_VIEC.get(f"docthu:{ten}:{i}") or {}).get("trang_thai") != "dang_chay":
+        _VIEC.pop(f"docthu:{ten}:{i}", None)
+        (PHAN_TICH_DIR / f"{ten}.docthu{i}.json").unlink(missing_ok=True)
+        shutil.rmtree(PHAN_TICH_DIR / ten / f"docthu{i}", ignore_errors=True)
+
+    # Cùng lẽ đó cho bản nghe hàng loạt - nhưng chỉ dọn phần của ứng viên NÀY,
+    # các ứng viên khác trong cùng lượt nghe vẫn còn nguyên giá trị so sánh.
+    if (_VIEC.get(f"nghe:{ten}") or {}).get("trang_thai") != "dang_chay":
+        for cu_tep in (PHAN_TICH_DIR / ten / "nghe").glob(f"uv{i}_bo*.wav"):
+            cu_tep.unlink(missing_ok=True)
+        jn = PHAN_TICH_DIR / f"{ten}.nghe.json"
+        if jn.exists():
+            dn = json.loads(jn.read_text(encoding="utf-8"))
+            dn["muc"] = [m for m in dn.get("muc", []) if m.get("i") != i]
+            jn.write_text(json.dumps(dn, ensure_ascii=False), encoding="utf-8")
+
+    logger.info("Sửa lời ứng viên #%d của %s: %r", i, ten, loi[:60])
+    return {"ok": True, "i": i, "loi_ghi": loi,
+            **_do_nhip(loi, u.get("dai", 0.0))}
 
 
 class ChonUngVien(BaseModel):

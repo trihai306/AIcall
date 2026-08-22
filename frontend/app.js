@@ -1420,6 +1420,27 @@ setInterval(() => {
 }, 1000);
 
 // ---- Voice Management ----
+// Giọng tách từ bản ghi dài mang theo lời do máy nghe ra, và máy nghe sai thật.
+// Lời đó không phải chú thích: F5 dùng nó để căn chữ với tiếng trong đoạn mẫu,
+// sai một chữ là đọc hỏng. Trước đây muốn sửa phải xoá giọng rồi upload lại kèm
+// transcript - tức là mất luôn đoạn mẫu đã chọn công phu.
+async function suaLoiGiong(ten, k) {
+  const cu = (document.getElementById(`loiGiong${k}`)?.textContent || '').trim();
+  const loi = prompt(`Lời đoạn mẫu của giọng "${ten}" — gõ đúng từng chữ trong file WAV:`,
+                     cu === 'Không có transcript' ? '' : cu);
+  if (loi === null) return;
+  if (!loi.trim()) { alert('Lời đoạn mẫu không được để trống.'); return; }
+  try {
+    const d = await (await fetch(`/api/voices/${encodeURIComponent(ten)}/loi`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loi: loi.trim() }),
+    })).json();
+    if (d.error) { alert(d.error); return; }
+    loadVoiceList();
+  } catch (e) { alert('Không sửa được lời: ' + e.message); }
+}
+
 async function loadVoiceList() {
   try {
     const res = await fetch('/api/voices');
@@ -1433,7 +1454,7 @@ async function loadVoiceList() {
       return;
     }
 
-    list.innerHTML = data.voices.map(v => `
+    list.innerHTML = data.voices.map((v, k) => `
       <div class="flex items-center justify-between p-3 bg-void/50 rounded-lg group">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
@@ -1448,7 +1469,10 @@ async function loadVoiceList() {
             <div class="text-[10px] ${v.silent ? 'text-red-400/80' : 'text-gray-500'}">
               ${v.silent
                 ? 'Thu lại 5-10 giây rồi upload đè lên giọng này'
-                : escapeHtml(v.ref_text || 'Không có transcript')}
+                : `<span id="loiGiong${k}">${escapeHtml(v.ref_text || 'Không có transcript')}</span>
+                   <button onclick="suaLoiGiong('${escapeHtml(v.name)}',${k})"
+                           class="ml-1 text-gray-600 hover:text-amber-400"
+                           title="Sửa lời đoạn mẫu. Lời sai — nhất là giọng tách từ bản ghi dài, do máy nghe ra — là F5 căn chữ lệch và giọng đọc hỏng">Sửa</button>`}
             </div>
           </div>
         </div>
@@ -4548,8 +4572,14 @@ async function xemUngVien(ten) {
                 <span class="text-[10px] font-mono text-gray-600" title="Độ thổi (H1-H2). Thấp = giọng chắc, ít hơi">thổi ${u.h1h2}dB</span>
                 <span class="text-[10px] font-mono text-gray-600" title="Sàn nhiễu">nền ${u.nen}dB</span>
                 <span class="text-[10px] font-mono text-gray-600" title="Nhịp gốc của đoạn / tốc đề xuất khi lắp">${u.nhip_goc} âm tiết/phút → tốc ${u.toc_de_xuat}</span>
+                ${u.sua_tay ? '<span class="tag" style="background:rgba(56,189,248,.12);color:#38bdf8" title="Lời đã sửa tay — số đo lệch lời tính từ lời máy nghe, nay chỉ còn để tham khảo">lời đã sửa</span>' : ''}
               </div>
-              <div class="text-[11px] text-gray-300 mt-1.5 leading-relaxed">${escapeHtml(u.loi_ghi)}</div>
+              <div id="uvLoi${u.i}" class="mt-1.5 flex items-start gap-2">
+                <div data-loi class="text-[11px] text-gray-300 leading-relaxed">${escapeHtml(u.loi_ghi)}</div>
+                <button onclick="suaLoiUngVien('${escapeHtml(ten)}',${u.i})"
+                        class="shrink-0 text-[10px] text-gray-600 hover:text-amber-400"
+                        title="Lời này do máy nghe ra và nó nghe sai thật. F5 dùng đúng lời này để căn chữ với tiếng — sai một chữ là giọng lắp ra đọc hỏng, nên nghe thấy sai thì sửa ngay ở đây">Sửa lời</button>
+              </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <button onclick="ngheUngVien('${escapeHtml(ten)}',${u.i})" class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20" title="Nghe thử">
@@ -4563,6 +4593,48 @@ async function xemUngVien(ten) {
           </div>
         </div>`).join('')}
     </div>`;
+}
+
+// Lời của ứng viên là thứ STT nghe được trên clip đã cắt, và bản ghi nguồn nằm
+// ngoài miền từ vựng ngân hàng nên nó nghe sai tên riêng, sai số, nuốt tiểu từ
+// cuối câu. F5 lại dùng ĐÚNG lời đó để căn chữ với tiếng trong đoạn mẫu: sai
+// một chữ là đoạn mẫu lệch, giọng lắp ra đọc hỏng, mà không có gì báo lỗi. Nghe
+// thử xong thấy sai thì phải sửa được ngay tại đây, trước khi bấm "Dùng đoạn này".
+function suaLoiUngVien(ten, i) {
+  const hop = document.getElementById(`uvLoi${i}`);
+  if (!hop || hop.querySelector('textarea')) return;
+  const cu = (hop.querySelector('[data-loi]')?.textContent || '').trim();
+  hop.classList.remove('flex', 'items-start', 'gap-2');
+  hop.innerHTML = `
+    <textarea id="uvO${i}" rows="2"
+              class="w-full bg-void border border-slate-750 rounded-lg px-2 py-1.5 text-[11px] text-gray-200 leading-relaxed focus:outline-none focus:border-amber-500/60"
+              placeholder="Gõ đúng từng chữ NGƯỜI trong clip đã nói">${escapeHtml(cu)}</textarea>
+    <div class="flex items-center gap-2 mt-1">
+      <button onclick="luuLoiUngVien('${escapeHtml(ten)}',${i})" class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-semibold hover:bg-amber-500/20">Lưu lời</button>
+      <button onclick="xemUngVien('${escapeHtml(ten)}')" class="text-[10px] text-gray-500 hover:text-gray-300">Huỷ</button>
+      <span class="text-[10px] text-gray-600">Nghe lại clip rồi gõ đúng từng chữ — kể cả “ạ”, “dạ”, “nhé”.</span>
+    </div>`;
+  const o = document.getElementById(`uvO${i}`);
+  if (o) { o.focus(); o.setSelectionRange(o.value.length, o.value.length); }
+}
+
+async function luuLoiUngVien(ten, i) {
+  const o = document.getElementById(`uvO${i}`);
+  if (!o) return;
+  const loi = o.value.trim();
+  if (!loi) { alert('Lời đoạn mẫu không được để trống.'); return; }
+  o.disabled = true;
+  try {
+    const d = await (await fetch(`/api/voices/nguon/${encodeURIComponent(ten)}/ung-vien/${i}/loi`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loi }),
+    })).json();
+    if (d.error) { alert(d.error); o.disabled = false; return; }
+    // Vẽ lại cả danh sách: sửa lời là đổi luôn số âm tiết, nhịp gốc và tốc đề
+    // xuất của ứng viên đó - giữ lại các số cũ trên màn hình là nói dối.
+    await xemUngVien(ten);
+  } catch (e) { alert('Không lưu được lời: ' + e.message); o.disabled = false; }
 }
 
 function ngheUngVien(ten, i) {
