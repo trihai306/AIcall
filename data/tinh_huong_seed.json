@@ -1,0 +1,265 @@
+{
+  "tinh_huong": [
+    {
+      "id": "hoi_lai_suat",
+      "ten": "Khách hỏi lãi suất",
+      "vi_du": [
+        "lãi suất bao nhiêu",
+        "vay thì lãi thế nào",
+        "một tháng trả bao nhiêu tiền lãi",
+        "lãi có cao không"
+      ],
+      "tu_khoa": ["lãi suất", "lãi", "phần trăm", "tiền lãi"],
+      "mo_dau": ["Dạ về lãi suất thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_han_muc",
+      "ten": "Khách hỏi hạn mức vay",
+      "vi_du": [
+        "cho vay tối đa bao nhiêu",
+        "vay được bao nhiêu tiền",
+        "hạn mức vay tối đa là bao nhiêu",
+        "cho vay được mấy trăm triệu"
+      ],
+      "tu_khoa": ["hạn mức", "tối đa", "bao nhiêu tiền", "mấy triệu", "vay bao nhiêu"],
+      "mo_dau": ["Dạ về hạn mức vay thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_ho_so",
+      "ten": "Khách hỏi hồ sơ cần thiết",
+      "vi_du": [
+        "cần giấy tờ gì",
+        "hồ sơ vay gồm những gì",
+        "phải chuẩn bị gì để vay",
+        "cần những gì để làm hồ sơ"
+      ],
+      "tu_khoa": ["giấy tờ", "hồ sơ", "chuẩn bị", "tài liệu", "giấy tờ gì"],
+      "mo_dau": ["Dạ về hồ sơ cần chuẩn bị thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_dieu_kien",
+      "ten": "Khách hỏi điều kiện vay",
+      "vi_du": [
+        "điều kiện để vay là gì",
+        "cần đáp ứng điều kiện gì",
+        "tôi có đủ điều kiện vay không",
+        "yêu cầu vay là gì"
+      ],
+      "tu_khoa": ["điều kiện", "yêu cầu", "đủ điều kiện", "tiêu chuẩn"],
+      "mo_dau": ["Dạ về điều kiện vay thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_thoi_han",
+      "ten": "Khách hỏi thời hạn vay",
+      "vi_du": [
+        "vay được bao nhiêu năm",
+        "thời hạn vay tối đa là bao lâu",
+        "cho vay mấy năm",
+        "tối đa được vay bao lâu"
+      ],
+      "tu_khoa": ["thời hạn", "bao lâu", "bao nhiêu năm", "mấy năm"],
+      "mo_dau": ["Dạ về thời hạn vay thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_thoi_gian_duyet",
+      "ten": "Khách hỏi thời gian duyệt hồ sơ",
+      "vi_du": [
+        "bao lâu thì được duyệt",
+        "mấy ngày mới có tiền",
+        "thẩm định hồ sơ mất bao lâu",
+        "khi nào giải ngân được"
+      ],
+      "tu_khoa": ["duyệt", "thẩm định", "giải ngân", "bao lâu duyệt", "mấy ngày duyệt"],
+      "mo_dau": ["Dạ về thời gian duyệt hồ sơ thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_tra_truoc_han",
+      "ten": "Khách hỏi trả nợ trước hạn",
+      "vi_du": [
+        "trả nợ trước hạn có bị phạt không",
+        "tất toán sớm có mất phí không",
+        "muốn trả hết trước hạn được không",
+        "tất toán trước hạn tính phí thế nào"
+      ],
+      "tu_khoa": ["trả trước hạn", "tất toán", "tất toán sớm", "phạt tất toán", "phí trả trước"],
+      "mo_dau": ["Dạ về trả nợ trước hạn thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_uu_dai",
+      "ten": "Khách hỏi ưu đãi",
+      "vi_du": [
+        "có ưu đãi gì không",
+        "đang có chương trình khuyến mãi gì",
+        "ưu đãi hiện tại bên em là gì",
+        "có giảm lãi suất không"
+      ],
+      "tu_khoa": ["ưu đãi", "khuyến mãi", "giảm lãi", "chương trình ưu đãi"],
+      "mo_dau": ["Dạ về ưu đãi hiện tại thì,"],
+      "speed": null
+    },
+    {
+      "id": "hoi_tinh_toan",
+      "ten": "Khách muốn tính toán khoản vay",
+      "vi_du": [
+        "vay 200 triệu thì mỗi tháng trả bao nhiêu",
+        "tính giúp tôi xem trả hàng tháng bao nhiêu",
+        "vay 500 triệu 5 năm thì góp bao nhiêu một tháng",
+        "muốn biết trả góp hàng tháng bao nhiêu"
+      ],
+      "tu_khoa": ["tính", "tính toán", "trả hàng tháng", "góp hàng tháng", "ví dụ tính"],
+      "mo_dau": ["Dạ về phần tính toán thì,"],
+      "speed": null
+    },
+    {
+      "id": "the_khac_ghi_no",
+      "ten": "Khách hỏi thẻ tín dụng khác gì thẻ ghi nợ",
+      "vi_du": [
+        "thẻ tín dụng khác thẻ thường thế nào",
+        "thẻ tín dụng và thẻ ghi nợ khác gì nhau",
+        "dùng thẻ tín dụng thì tiền đâu ra",
+        "thẻ tín dụng là thẻ gì"
+      ],
+      "tu_khoa": ["thẻ tín dụng", "thẻ ghi nợ", "khác nhau", "thẻ thường"],
+      "mo_dau": ["Dạ về thẻ tín dụng bên em thì,"],
+      "speed": null
+    },
+    {
+      "id": "the_quen_tra_no",
+      "ten": "Khách hỏi quên trả nợ thẻ tín dụng",
+      "vi_du": [
+        "quên trả nợ thẻ thì sao",
+        "lỡ không trả đúng hạn thẻ tín dụng thì bị gì",
+        "chậm thanh toán thẻ có sao không",
+        "trả trễ thẻ tín dụng bị phạt bao nhiêu"
+      ],
+      "tu_khoa": ["quên trả", "trả trễ", "chậm thanh toán", "quá hạn thẻ"],
+      "mo_dau": ["Dạ nếu chậm thanh toán thẻ thì,"],
+      "speed": null
+    },
+    {
+      "id": "the_tang_han_muc",
+      "ten": "Khách hỏi tăng hạn mức thẻ",
+      "vi_du": [
+        "làm sao tăng hạn mức thẻ",
+        "muốn nâng hạn mức thẻ tín dụng",
+        "tăng hạn mức thẻ phải làm gì",
+        "đề nghị nâng hạn mức thì làm thế nào"
+      ],
+      "tu_khoa": ["tăng hạn mức", "nâng hạn mức", "hạn mức thẻ", "đề nghị tăng"],
+      "mo_dau": ["Dạ để tăng hạn mức thẻ thì,"],
+      "speed": null
+    },
+    {
+      "id": "tu_choi_dang_ban",
+      "ten": "Khách từ chối vì đang bận",
+      "vi_du": [
+        "bận lắm",
+        "tôi đang bận",
+        "không có thời gian",
+        "bận không nghe được"
+      ],
+      "tu_khoa": ["bận", "không có thời gian", "đang bận"],
+      "mo_dau": ["Dạ em xin lỗi đã làm phiền,"],
+      "speed": null
+    },
+    {
+      "id": "tu_choi_khong_can",
+      "ten": "Khách từ chối vì không có nhu cầu",
+      "vi_du": [
+        "không cần vay",
+        "tôi không có nhu cầu",
+        "không quan tâm",
+        "không cần thiết"
+      ],
+      "tu_khoa": ["không cần", "không quan tâm", "không có nhu cầu"],
+      "mo_dau": ["Dạ em ghi nhận lại,"],
+      "speed": null
+    },
+    {
+      "id": "hen_goi_lai",
+      "ten": "Khách đề nghị gọi lại sau",
+      "vi_du": [
+        "gọi lại sau đi",
+        "bây giờ không tiện",
+        "lúc khác gọi lại nhé",
+        "để sau gọi lại"
+      ],
+      "tu_khoa": ["gọi lại", "gọi sau", "lúc khác", "sau này"],
+      "mo_dau": ["Dạ anh chị cho em xin lịch gọi lại,"],
+      "speed": null
+    },
+    {
+      "id": "nghi_ngo_lua_dao",
+      "ten": "Khách nghi ngờ lừa đảo",
+      "vi_du": [
+        "có phải lừa đảo không",
+        "ai cho phép gọi số tôi",
+        "làm sao biết bạn là ngân hàng thật",
+        "ngân hàng gì mà gọi điện thế"
+      ],
+      "tu_khoa": ["lừa đảo", "ngân hàng thật", "ai cho phép", "tin tưởng"],
+      "mo_dau": ["Dạ để em xác nhận với anh chị,"],
+      "speed": null
+    },
+    {
+      "id": "buc_xuc_bi_goi_nhieu",
+      "ten": "Khách bực xúc vì bị gọi nhiều lần",
+      "vi_du": [
+        "sao cứ gọi hoài vậy",
+        "tôi đã nói không rồi",
+        "đừng gọi cho tôi nữa",
+        "gọi mãi phiền quá"
+      ],
+      "tu_khoa": ["gọi hoài", "đừng gọi", "phiền", "liên tục gọi"],
+      "mo_dau": ["Dạ em rất xin lỗi vì điều này,"],
+      "speed": null
+    },
+    {
+      "id": "no_xau_lo_khong_vay_duoc",
+      "ten": "Khách lo về nợ xấu",
+      "vi_du": [
+        "tôi có nợ xấu vay được không",
+        "bị nợ xấu có duyệt không",
+        "trước đây có nợ ngân hàng ảnh hưởng không",
+        "lịch sử tín dụng không tốt có vay được không"
+      ],
+      "tu_khoa": ["nợ xấu", "lịch sử tín dụng", "CIC", "nợ cũ"],
+      "mo_dau": ["Dạ về trường hợp có nợ xấu thì,"],
+      "speed": null
+    },
+    {
+      "id": "xin_noi_chuyen_vien",
+      "ten": "Khách muốn gặp chuyên viên",
+      "vi_du": [
+        "cho tôi gặp người thật",
+        "kết nối cho tôi với nhân viên tư vấn",
+        "tôi muốn nói chuyện với chuyên viên",
+        "cho tôi gặp người tư vấn trực tiếp"
+      ],
+      "tu_khoa": ["người thật", "chuyên viên", "nhân viên tư vấn", "nối máy"],
+      "mo_dau": ["Dạ để em kết nối với chuyên viên,"],
+      "speed": null
+    },
+    {
+      "id": "khach_noi_khong_ro",
+      "ten": "Khách nói không rõ, hỏi lại",
+      "vi_du": [
+        "a lô em nói to lên anh không nghe rõ",
+        "anh nghe không rõ em nói lại được không",
+        "em nói to hơn đi anh không nghe thấy gì",
+        "nghe không rõ lắm bị nhiễu máy",
+        "không nghe thấy gì cả"
+      ],
+      "tu_khoa": ["a lô", "alo", "gì cơ", "nói lại", "nghe không rõ"],
+      "mo_dau": ["Dạ em xin phép nhắc lại,"],
+      "speed": 1.0
+    }
+  ]
+}
