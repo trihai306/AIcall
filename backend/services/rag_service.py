@@ -355,6 +355,36 @@ class RAGService:
         except Exception:
             return 0
 
+    def lay_theo_nguon(self, source: str) -> list[str]:
+        """Nội dung các mảnh kho ĐANG giữ cho nguồn này, theo đúng thứ tự tài liệu.
+
+        Đọc từ kho chứ không cắt lại từ file trên đĩa: cắt lại luôn ra kết quả
+        đẹp kể cả khi kho còn giữ bản cũ - đúng cái bẫy mà `dem_theo_nguon` sinh
+        ra để cảnh báo.
+
+        Sắp theo SỐ trong id `<doc_id>_chunk_<i>`. `get()` của Chroma không hứa
+        giữ thứ tự thêm vào, mà sắp theo chuỗi thì mảnh 10 đứng trước mảnh 2 và
+        người đọc tưởng tài liệu bị đảo lộn.
+        """
+        if not self._is_loaded:
+            self.load()
+        if not source:
+            return []
+        try:
+            co = self._collection.get(where={"source": source},
+                                      include=["documents"]) or {}
+            ids = co.get("ids") or []
+            docs = co.get("documents") or []
+        except Exception as e:
+            logger.warning(f"Không đọc được mảnh RAG của nguồn '{source}': {e}")
+            return []
+
+        def _so(ma: str) -> int:
+            m = re.search(r"_chunk_(\d+)$", ma or "")
+            return int(m.group(1)) if m else 0
+
+        return [d for _, d in sorted(zip(ids, docs), key=lambda c: _so(c[0]))]
+
     def clear(self):
         """Clear the entire knowledge base."""
         if self._collection:

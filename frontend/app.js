@@ -3832,6 +3832,7 @@ async function loadTriThuc() {
     knNoiDungCache = {};   // tài liệu có thể vừa bị sửa, đọc lại cho chắc
     veThongKeTriThuc();
     veCanhBaoMau();
+    veChonSanPham();
     veChipNhom();
     veBangTriThuc();
   } catch (e) {
@@ -3939,6 +3940,7 @@ function veBangTriThuc() {
       <td>${nap}</td>
       <td class="text-gray-500 text-[11px]">${new Date(t.sua_doi * 1000).toLocaleString('vi-VN')}</td>
       <td class="text-right whitespace-nowrap">
+        <button onclick="moXemManh('${n}','${e}')" class="btn btn-ghost btn-xs">Mảnh</button>
         <button onclick="soanTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs">Sửa</button>
         <button onclick="xoaTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs btn-xoa">Xoá</button>
       </td></tr>`
@@ -3999,6 +4001,157 @@ async function napXemTruoc(nhom, ten) {
     o.textContent = 'Không đọc được: ' + e.message;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Hỏi thử — sửa tài liệu xong kiểm được ngay, khỏi gọi hẳn một cuộc
+//
+// Chạy đúng truy vấn mà đường thoại chạy, nhưng giữ lại phần đường thoại vứt đi:
+// điểm khớp, tên tài liệu, và mảnh bị lưới lọc bỏ. Chính mảnh bị bỏ mới là thứ
+// đáng nhìn — thấy mảnh "vay mua nhà" bị loại khi đang tư vấn vay tín chấp là
+// biết lưới đang ăn; thấy nó KHÔNG bị loại là biết lưới đang hở và bot sắp đọc
+// lãi suất sản phẩm khác cho khách.
+// ---------------------------------------------------------------------------
+function veChonSanPham() {
+  const dl = document.getElementById('knThuDsSanPham');
+  if (!dl) return;
+  dl.innerHTML = knDanhSach.filter(t => t.nhom === 'products')
+    .map(t => `<option value="${escapeHtml(t.ten)}">`).join('');
+}
+
+async function hoiThuTriThuc() {
+  const oCau = document.getElementById('knThuCauHoi');
+  const o = document.getElementById('knThuKetQua');
+  const btn = document.getElementById('knThuBtn');
+  if (!oCau || !o) return;
+
+  const cauHoi = oCau.value.trim();
+  if (!cauHoi) { thongBao('Nhập câu khách hay hỏi trước đã', 'loi'); oCau.focus(); return; }
+
+  o.classList.remove('hidden');
+  o.innerHTML = '<div class="text-[11px] text-gray-500">Đang tra tài liệu…</div>';
+  btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('cau_hoi', cauHoi);
+    fd.append('san_pham', (document.getElementById('knThuSanPham')?.value || '').trim());
+    const d = await fetch('/api/knowledge/hoi-thu', { method: 'POST', body: fd })
+      .then(r => r.json());
+    veKetQuaThu(d);
+  } catch (e) {
+    o.innerHTML = '<div class="text-[11px] text-red-400">Không hỏi được: '
+      + escapeHtml(e.message) + '</div>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function veKetQuaThu(d) {
+  const o = document.getElementById('knThuKetQua');
+  if (!o) return;
+  if (d.error) {
+    o.innerHTML = '<div class="text-[11px] text-red-400">' + escapeHtml(d.error) + '</div>';
+    return;
+  }
+  if (!d.manh || !d.manh.length) {
+    // Không lấy được mảnh nào nghĩa là bot sẽ trả lời chay. Nói thẳng chứ đừng
+    // để trống, vì trống trông như "chưa bấm".
+    o.innerHTML = '<div class="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5 '
+      + 'text-[11px] text-amber-200/80">Không tìm được mảnh nào khớp. Bot sẽ trả lời '
+      + 'mà không có tài liệu nào đỡ — thêm tài liệu cho ý này, hoặc thử hỏi bằng '
+      + 'chữ giống trong tài liệu hơn.</div>';
+    return;
+  }
+
+  const tomTat = `<div class="flex items-center gap-2 flex-wrap mb-2 text-[10px]">
+      <span class="pill st-daNap"><span class="dot"></span>${d.so_lay} mảnh AI dùng</span>
+      ${d.so_bi_loc ? `<span class="pill st-chuaNap"><span class="dot"></span>${d.so_bi_loc} mảnh bị lưới lọc bỏ</span>` : ''}
+      <span class="text-gray-600 font-mono">${d.ms} ms</span>
+      ${d.san_pham ? `<span class="text-gray-600">đang tư vấn: <span class="text-gray-400">${escapeHtml(d.san_pham)}</span></span>` : ''}
+    </div>`;
+
+  const manh = d.manh.map((m, i) => {
+    const diem = m.diem === null || m.diem === undefined
+      ? '' : `<span class="kn-manh-so">khớp ${Math.round(m.diem * 100)}%</span>`;
+    return `<div class="kn-manh ${m.bi_loc ? 'co-loi' : ''}">
+      <div class="kn-manh-dau">
+        <span class="kn-manh-so">#${i + 1}</span>
+        <span class="text-[11px] text-gray-300 font-medium">${escapeHtml(m.nguon || '(không rõ nguồn)')}</span>
+        ${diem}
+        ${m.bi_loc ? '<span class="kn-canh kn-canh-loc">bị loại — khác sản phẩm đang tư vấn</span>' : ''}
+      </div>
+      <div class="kn-manh-noi">${escapeHtml(m.doan)}</div>
+    </div>`;
+  }).join('');
+
+  o.innerHTML = tomTat + '<div class="space-y-2">' + manh + '</div>';
+}
+
+// ---------------------------------------------------------------------------
+// Xem tài liệu bị cắt thành mảnh nào
+//
+// Cắt theo ký tự (500 một mảnh) nên bảng lãi suất hay bị chặt làm đôi: nửa sau
+// mất dòng tiêu đề, AI đọc được số mà không biết số của cột nào. Nhìn nguyên
+// tài liệu thì không thấy được chỗ cắt, phải xem đúng mảnh trong kho.
+// ---------------------------------------------------------------------------
+async function moXemManh(nhom, ten) {
+  const hop = document.getElementById('knHopManh');
+  const than = document.getElementById('knManhThan');
+  if (!hop || !than) return;
+  hop.classList.remove('hidden');
+  document.getElementById('knManhTitle').textContent = ten;
+  document.getElementById('knManhPhu').textContent = 'Đang đọc…';
+  than.innerHTML = '';
+
+  try {
+    const d = await fetch(`/api/knowledge/manh?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`)
+      .then(r => r.json());
+    if (d.error) {
+      document.getElementById('knManhPhu').textContent = '';
+      than.innerHTML = '<div class="text-[11px] text-red-400">' + escapeHtml(d.error) + '</div>';
+      return;
+    }
+    if (d.chua_nap) {
+      document.getElementById('knManhPhu').textContent = 'AI chưa đọc tài liệu này';
+      than.innerHTML = `<div class="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-3 text-[11px] text-amber-200/80">
+        Tài liệu có trên đĩa nhưng kho của AI chưa có mảnh nào — bot đang tư vấn mà
+        không biết gì về nội dung này. Bấm <b>Nạp lại toàn bộ</b> rồi xem lại.</div>`;
+      return;
+    }
+
+    const loi = d.manh.filter(m => m.cat_ngang_bang || m.bat_dau_giua_cau).length;
+    document.getElementById('knManhPhu').textContent =
+      `AI đang giữ ${d.so_manh} mảnh` + (loi ? ` · ${loi} mảnh cắt vào giữa ý` : '');
+
+    than.innerHTML = d.manh.map(m => {
+      const canh = [];
+      if (m.cat_ngang_bang) canh.push('mất dòng tiêu đề bảng — AI không biết số thuộc cột nào');
+      if (m.bat_dau_giua_cau) canh.push('bắt đầu từ giữa câu');
+      return `<div class="kn-manh ${canh.length ? 'co-loi' : ''}">
+        <div class="kn-manh-dau">
+          <span class="kn-manh-so">Mảnh ${m.stt}/${d.so_manh}</span>
+          <span class="kn-manh-so">${m.so_chu} ký tự</span>
+          ${canh.map(c => `<span class="kn-canh">${c}</span>`).join('')}
+        </div>
+        <div class="kn-manh-noi">${escapeHtml(m.doan)}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('knManhPhu').textContent = '';
+    than.innerHTML = '<div class="text-[11px] text-red-400">Không đọc được: '
+      + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function dongXemManh() {
+  document.getElementById('knHopManh')?.classList.add('hidden');
+}
+
+// Esc chỉ ăn khi hộp mảnh đang mở, để không giẫm lên Esc của hộp soạn tài liệu.
+document.addEventListener('keydown', ev => {
+  const hop = document.getElementById('knHopManh');
+  if (!hop || hop.classList.contains('hidden')) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); dongXemManh(); }
+});
 
 // ---------------------------------------------------------------------------
 // Tải file lên

@@ -532,6 +532,51 @@ select.status-select {
   overflow: auto;
 }
 
+/* Một mảnh RAG: khung riêng để nhìn ra chỗ CẮT. Cắt theo ký tự nên bảng lãi
+   suất hay bị chặt làm đôi, mà nhìn nguyên tài liệu thì không thấy được. */
+.kn-manh {
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  background: #06080f;
+  padding: 10px 12px;
+}
+.kn-manh-dau {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+.kn-manh-so {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #64748b;
+}
+.kn-manh-noi {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 190px;
+  overflow: auto;
+}
+/* Mảnh có vấn đề: viền hổ phách, không phải đỏ — tài liệu vẫn dùng được, chỉ là
+   chỗ cắt làm AI đọc thiếu ngữ cảnh. */
+.kn-manh.co-loi { border-color: rgba(245, 158, 11, 0.35); }
+.kn-canh {
+  font-size: 10px;
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.kn-canh-loc {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 /* Khung xám nhấp nháy lúc đang tải. Đặt keyframes riêng chứ không mượn
    `shimmer` của Tailwind: Tailwind chỉ sinh @keyframes khi có utility dùng tới,
    mà trang này không dùng utility đó nên tên kia có thể không tồn tại. */

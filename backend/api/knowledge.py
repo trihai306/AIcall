@@ -196,6 +196,125 @@ async def doc(nhom: str, ten: str):
     }
 
 
+# --- thử -----------------------------------------------------------------------
+#
+# Sửa tài liệu xong phải THỬ được ngay tại đây. Trước đây muốn biết AI có lấy
+# đúng tài liệu không thì phải mở tab Chat gọi hẳn một lượt - nên hầu như không
+# ai thử, và tài liệu sai chỉ lộ ra khi khách đã nghe nhầm số.
+
+
+def _cat_ngang_bang(doan: str) -> bool:
+    """Mảnh có dòng bảng nhưng MẤT dòng tiêu đề.
+
+    Cắt theo ký tự (`chunk_size=500`) chặt bảng lãi suất làm đôi là chuyện
+    thường. Nửa sau mất tên cột, AI đọc được số mà không biết số của cột nào.
+    """
+    dong = [d.strip() for d in doan.splitlines() if d.strip()]
+    co_bang = any(d.startswith("|") for d in dong)
+    co_tieu_de = any("-" in d and set(d) <= set("|-: ") for d in dong)
+    return co_bang and not co_tieu_de
+
+
+def _bat_dau_giua_cau(doan: str) -> bool:
+    """Mảnh mở đầu bằng nửa câu của mảnh trước - dấu hiệu chỗ cắt rơi vào giữa ý.
+
+    Số đứng đầu KHÔNG mặc nhiên là đầu ý: chỉ số thứ tự danh sách ("3." hay
+    "3)") mới là. Bắt được trên máy thật - vay_tin_chap.md cắt ngay giữa "sao kê
+    lương 3 tháng gần nhất", nửa sau mở đầu bằng "3 tháng gần nhất".
+    """
+    d = doan.lstrip()
+    if not d:
+        return False
+    if d[0] in "#-*|>([":
+        return False
+    if re.match(r"\d+[.)]\s", d):
+        return False
+    return d[0].islower() or d[0].isdigit()
+
+
+async def hoi_thu(cau_hoi: str, san_pham: str = "", top_k: int = 4) -> dict:
+    """Chạy đúng truy vấn mà đường thoại chạy, nhưng giữ lại phần bị vứt đi.
+
+    Tách khỏi hàm route vì route khai báo tham số bằng `Form(...)`: gọi thẳng
+    trong test thì các tham số không truyền sẽ mang object của FastAPI chứ không
+    phải giá trị mặc định.
+    """
+    cau_hoi = (cau_hoi or "").strip()
+    if not cau_hoi:
+        return {"error": "Nhập câu khách hay hỏi rồi bấm Hỏi thử"}
+
+    rag = _rag()
+    if rag is None:
+        return {"error": "RAG chưa sẵn sàng - đợi backend nạp xong rồi thử lại"}
+
+    t0 = time.perf_counter()
+    try:
+        _, chi_tiet = await rag.retrieve_chi_tiet(
+            cau_hoi, top_k=max(1, min(int(top_k or 4), 10)), san_pham=(san_pham or "").strip())
+    except Exception as e:
+        logger.warning("Tri thức: hỏi thử lỗi: %s", e)
+        return {"error": f"Không truy vấn được: {e}"}
+
+    manh = [{
+        "nguon": c.get("nguon") or "",
+        "diem": c.get("diem"),
+        "bi_loc": bool(c.get("bi_loc")),
+        "doan": c.get("doan") or "",
+    } for c in chi_tiet]
+
+    return {
+        "cau_hoi": cau_hoi,
+        "san_pham": (san_pham or "").strip(),
+        "manh": manh,
+        "so_lay": sum(1 for m in manh if not m["bi_loc"]),
+        # Đếm riêng: mảnh bị lưới lọc bỏ là dấu vết của lỗi "RAG lạc sản phẩm".
+        # Thấy mảnh vay_mua_nha bị loại khi đang tư vấn vay tín chấp thì biết
+        # lưới đang ăn; thấy nó KHÔNG bị loại thì biết lưới đang hở.
+        "so_bi_loc": sum(1 for m in manh if m["bi_loc"]),
+        "ms": round((time.perf_counter() - t0) * 1000),
+    }
+
+
+@router.post("/hoi-thu")
+async def hoi_thu_api(cau_hoi: str = Form(""), san_pham: str = Form(""),
+                      top_k: int = Form(4)):
+    return await hoi_thu(cau_hoi, san_pham, top_k)
+
+
+@router.get("/manh")
+async def xem_manh(nhom: str, ten: str):
+    """Các mảnh kho vector ĐANG giữ cho tài liệu này."""
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        return {"error": "Tên hoặc nhóm không hợp lệ"}
+    rag = _rag()
+    if rag is None:
+        return {"error": "RAG chưa sẵn sàng - đợi backend nạp xong rồi thử lại"}
+
+    doan_list: list[str] = []
+    for src in dict.fromkeys(_cac_dang_nguon(p)):
+        doan_list = rag.lay_theo_nguon(src)
+        if doan_list:
+            break
+
+    manh = [{
+        "stt": i,
+        "doan": d,
+        "so_chu": len(d),
+        "cat_ngang_bang": _cat_ngang_bang(d),
+        "bat_dau_giua_cau": _bat_dau_giua_cau(d),
+    } for i, d in enumerate(doan_list, 1)]
+
+    return {
+        "nhom": nhom, "ten": _ten_an_toan(ten), "tep": p.name,
+        "so_manh": len(manh),
+        # Có file trên đĩa mà kho trống nghĩa là AI CHƯA đọc bản này. Không nói
+        # thẳng thì người dùng sửa xong tưởng đã xong, mà bot vẫn đọc bản cũ.
+        "chua_nap": not manh,
+        "manh": manh,
+    }
+
+
 # --- ghi -----------------------------------------------------------------------
 
 @router.post("/luu")
