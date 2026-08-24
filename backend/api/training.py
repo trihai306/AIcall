@@ -34,6 +34,8 @@ SETUP_SCRIPT = TRAIN_DIR / "setup_env.py"
 MAKE_DATASET = TRAIN_DIR / "make_dataset.py"
 TRAIN_SCRIPT = TRAIN_DIR / "train_lora.py"
 DEPLOY_SCRIPT = TRAIN_DIR / "deploy_ollama.py"
+SINH_MAU_SCRIPT = TRAIN_DIR / "sinh_mau_tu_tri_thuc.py"
+THU_MUC_TRI_THUC = PROJECT_DIR / "knowledge"
 VENV_TRAIN = PROJECT_DIR / ".venv-train"
 MERGED = DATASET_DIR / "merged_dataset.jsonl"
 
@@ -286,6 +288,39 @@ async def generate_sample_dataset():
     return {"id": "banking_sample", "filename": "banking_sample.jsonl",
             "samples": len(samples),
             "message": "Dataset mẫu đã được tạo với 5 mẫu hội thoại ngân hàng"}
+
+
+# Xin bao nhiêu cặp một mảnh. Trên 40 thì model bắt đầu bịa ra hàng loạt câu
+# hỏi na ná nhau cho cùng một đoạn ngắn, và bộ lọc trùng bỏ gần hết - tốn thời
+# gian gọi model mà không thêm được mẫu nào.
+SO_CAP_TOI_DA = 40
+
+
+@router.post("/datasets/sinh-tu-tri-thuc")
+async def sinh_tu_tri_thuc(nhom: str = "", so_cap: int = 20):
+    """Sinh dataset từ chính tài liệu tri thức đang dùng để tư vấn.
+
+    Chạy qua JobRunner như mọi job khác: sinh vài trăm mẫu bằng model 7B mất
+    nhiều phút, chạy thẳng trong request là treo trình duyệt rồi đứt giữa chừng.
+    """
+    if runner.is_busy():
+        return {"error": "Đang có tiến trình khác chạy.", "job_id": runner.running_job_id}
+    if not SINH_MAU_SCRIPT.exists():
+        return {"error": f"Thiếu script: {SINH_MAU_SCRIPT.relative_to(PROJECT_DIR)}"}
+
+    co_tai_lieu = any(THU_MUC_TRI_THUC.rglob("*.md")) or any(THU_MUC_TRI_THUC.rglob("*.txt"))
+    if not co_tai_lieu:
+        return {"error": "Chưa có tài liệu nào trong Tri thức AI. "
+                         "Thêm tài liệu trước rồi sinh mẫu từ đó."}
+
+    so_cap = max(1, min(int(so_cap or 20), SO_CAP_TOI_DA))
+    lenh = [sys.executable, str(SINH_MAU_SCRIPT), "--so-cap", str(so_cap)]
+    if nhom:
+        lenh += ["--nhom", nhom]
+
+    job = runner.start("sinh-mau", [Step(command=lenh, label="Sinh mẫu từ tài liệu")],
+                       f"Sinh mẫu train từ tài liệu tri thức ({so_cap} cặp/mảnh)")
+    return job.to_dict()
 
 
 @router.delete("/datasets/{dataset_id}")

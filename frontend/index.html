@@ -1418,6 +1418,39 @@
                 </p>
                 <button onclick="generateSampleDataset()" class="w-full py-2 rounded-lg bg-deep border border-dashed border-slate-650 text-gray-500 text-xs hover:text-amber-400 hover:border-amber-500/30 transition-colors">Tạo dataset mẫu (5 samples)</button>
               </div>
+
+              <!-- Sinh mẫu từ chính tài liệu tri thức. Fine-tune đòi tối thiểu
+                   200 mẫu, mà soạn tay 200 cặp đúng luật phong cách là việc
+                   không ai làm nổi — trong khi knowledge/ đã có sẵn nội dung, và
+                   chính nó là thứ AI đọc lúc tư vấn thật. -->
+              <div class="border-t border-slate-750 pt-3 space-y-2">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 min-w-0">
+                    <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1" for="sinhSoCap">Số cặp mỗi đoạn</label>
+                    <input type="number" id="sinhSoCap" value="20" min="1" max="40"
+                           class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-violet-500/40">
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1" for="sinhNhom">Nhóm tài liệu</label>
+                    <select id="sinhNhom" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none focus:border-violet-500/40">
+                      <option value="">Tất cả</option>
+                      <option value="products">Sản phẩm</option>
+                      <option value="faq">Câu hỏi thường gặp</option>
+                      <option value="chinh_sach">Chính sách</option>
+                    </select>
+                  </div>
+                </div>
+                <button onclick="sinhMauTuTriThuc()" id="sinhMauBtn"
+                        class="w-full py-2 rounded-lg bg-violet-500/10 text-violet-300 text-xs font-semibold hover:bg-violet-500/20 transition-colors">
+                  Sinh mẫu từ tài liệu Tri thức AI
+                </button>
+                <p class="text-[11px] text-gray-600 leading-relaxed">
+                  Đọc tài liệu trong <span class="text-gray-400">Tri thức AI</span>, sinh cặp
+                  hỏi–đáp rồi tự loại cặp phạm luật phong cách. Mẫu ra là
+                  <span class="text-gray-400">nháp đã qua kiểm</span> — đọc lại các con số
+                  trước khi train.
+                </p>
+              </div>
               <div id="datasetCheck" class="hidden text-[11px] rounded-lg p-3 border"></div>
             </div>
           </div>

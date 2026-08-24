@@ -1814,6 +1814,28 @@ async function generateSampleDataset() {
   } catch (err) { alert('Lỗi: ' + err.message); }
 }
 
+// Sinh dataset từ chính tài liệu tri thức. Chạy qua JobRunner như fine-tune nên
+// dùng lại nguyên khung tiến độ + nút huỷ + vòng hỏi trạng thái đã có.
+async function sinhMauTuTriThuc() {
+  const btn = document.getElementById('sinhMauBtn');
+  const soCap = document.getElementById('sinhSoCap').value || 20;
+  const nhom = document.getElementById('sinhNhom').value || '';
+  btn.disabled = true;
+  try {
+    const q = `so_cap=${encodeURIComponent(soCap)}&nhom=${encodeURIComponent(nhom)}`;
+    const job = await fetch('/api/training/datasets/sinh-tu-tri-thuc?' + q,
+                            { method: 'POST' }).then(r => r.json());
+    if (job.error) { alert(job.error); return; }
+    trainJobId = job.id;
+    moKhungTienDo(job.label || 'Sinh mẫu từ tài liệu');
+    pollTrainJob();     // xong sẽ tự gọi loadDatasets()
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function deleteDataset(id) {
   if (!confirm(`Xóa dataset "${id}"?`)) return;
   await fetch(`/api/training/datasets/${id}`, { method: 'DELETE' });
