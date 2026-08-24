@@ -1203,6 +1203,7 @@ function switchPage(name) {
   // giữa chừng (đổi .env rồi khởi động lại dịch vụ).
   if (name === 'benchmark') napTenModelBenchmark();
   if (name === 'knowledge') loadTriThuc();
+  if (name === 'fillers') loadCauDem();
   batDauTuCapNhat(name);
 }
 
@@ -5388,3 +5389,275 @@ async function taiNguonLen() {
     if (nut) { nut.disabled = false; nut.textContent = 'Tải bản ghi lên'; }
   }
 }
+
+// ===========================================================================
+// CÂU ĐỆM — câu AI nói ngay khi khách vừa dứt lời
+//
+// Phát song song trong lúc LLM còn đang nghĩ, nên nó phải được chọn từ phiên âm
+// CÒN CỤT ("vay tín chấp", "bao lâu thì"). Vì thế một tình huống nghe rất hợp lý
+// vẫn có thể không bao giờ đạt ngưỡng — ô "Thử" ở trang này là cách duy nhất
+// biết trước điều đó thay vì phát hiện qua cuộc gọi thật.
+//
+// Số clip là TÍCH: tình huống × mẩu mở đầu × câu đuôi. Mẩu và đuôi ghép sẵn
+// thành clip liền chứ không phát nối hai clip rời, vì nối hai lần sinh khác nhau
+// thì lệch tông ngay giữa câu. Cái giá là mỗi mẩu thêm vào nhân lên 42 clip.
+// ===========================================================================
+let cdKho = { tinh_huong: [], cau_duoi: [], thong_ke: {}, nguong_diem: 0.75 };
+let cdDangSua = null;      // mã tình huống đang sửa, null = thêm mới
+let cdHenTienDo = null;
+
+async function loadCauDem() {
+  const tb = document.getElementById('cdRows');
+  if (!tb) return;
+  tb.innerHTML = '<tr><td colspan="5" class="text-center text-gray-600 py-8 text-xs">Đang đọc…</td></tr>';
+  try {
+    cdKho = await fetch('/api/fillers').then(r => r.json());
+    if (cdKho.error) throw new Error(cdKho.error);
+    veThongKeCauDem();
+    veBangTinhHuong();
+    veCauDuoi();
+    theoDoiDungTieng();
+  } catch (e) {
+    tb.innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8 text-xs">'
+      + 'Không đọc được kho câu đệm: ' + escapeHtml(e.message) + '</td></tr>';
+  }
+}
+
+function veThongKeCauDem() {
+  const o = document.getElementById('cdStats');
+  const t = cdKho.thong_ke || {};
+  const oCell = (nhan, gt, phu, mau) => `<div class="stat-cell">
+      <div class="text-[10px] text-gray-500 uppercase tracking-wider">${nhan}</div>
+      <div class="text-lg font-bold ${mau || 'text-white'} mt-0.5">${gt}</div>
+      <div class="text-[10px] text-gray-600">${phu}</div>
+    </div>`;
+  o.innerHTML = oCell('Tình huống', t.so_tinh_huong ?? 0, 'nhóm đang bật')
+    + oCell('Mẩu mở đầu', t.so_mau ?? 0, 'càng nhiều càng đỡ lặp')
+    + oCell('Câu đuôi', t.so_duoi ?? 0, 'dùng khi không nhận ra')
+    // Con số này phải nằm trên mặt bàn: mỗi mẩu thêm vào nhân lên 42 clip, và
+    // dựng năm nghìn clip là hai mươi phút GPU.
+    + oCell('Clip phải dựng', (t.so_clip ?? 0).toLocaleString('vi-VN'),
+            'mẩu × đuôi cho mỗi giọng', 'text-cyan-400');
+}
+
+function veBangTinhHuong() {
+  const tb = document.getElementById('cdRows');
+  if (!tb) return;
+  const tu = (document.getElementById('cdTim')?.value || '').trim().toLowerCase();
+  const ds = (cdKho.tinh_huong || []).filter(t =>
+    !tu || t.id.includes(tu) || (t.ten || '').toLowerCase().includes(tu));
+
+  if (!ds.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="text-center text-gray-600 py-10 text-xs">'
+      + 'Không có tình huống nào khớp.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = ds.map(t => {
+    const it = t.mo_dau.length < 2;
+    return `<tr>
+      <td><div class="font-medium text-white">${escapeHtml(t.ten || t.id)}</div>
+          <div class="text-[10px] text-gray-600 font-mono">${escapeHtml(t.id)}</div></td>
+      <td class="text-gray-400 text-[11px]">${t.vi_du.length} ví dụ</td>
+      <td class="text-[11px]">
+        <span class="${it ? 'text-amber-400' : 'text-gray-300'}">${t.mo_dau.length} mẩu</span>
+        ${it ? '<div class="text-[10px] text-amber-400/70">hỏi hai lần nghe y hệt</div>' : ''}
+        <div class="text-[10px] text-gray-600 truncate" style="max-width:260px">${escapeHtml(t.mo_dau[0] || '')}</div>
+      </td>
+      <td>${t.bat ? '<span class="pill st-daNap"><span class="dot"></span>Bật</span>'
+                  : '<span class="pill st-unknown"><span class="dot"></span>Tắt</span>'}</td>
+      <td class="text-right whitespace-nowrap">
+        <button onclick="thuNhanhTinhHuong('${escapeHtml(t.id)}')" class="btn btn-ghost btn-xs">Thử</button>
+        <button onclick="suaTinhHuong('${escapeHtml(t.id)}')" class="btn btn-ghost btn-xs">Sửa</button>
+        <button onclick="xoaTinhHuong('${escapeHtml(t.id)}')" class="btn btn-ghost btn-xs btn-xoa">Xoá</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function veCauDuoi() {
+  const o = document.getElementById('cdDuoi');
+  if (!o) return;
+  o.innerHTML = (cdKho.cau_duoi || []).map(d =>
+    `<span class="chip" title="${escapeHtml(d.id)}">${escapeHtml(d.text)}
+      <span class="chip-x" onclick="xoaCauDuoi('${escapeHtml(d.id)}')">&times;</span></span>`).join('')
+    || '<span class="text-[11px] text-red-400">Không có câu đuôi nào — khách sẽ nghe im lặng trọn quãng chờ.</span>';
+}
+
+// --- thử ---------------------------------------------------------------------
+function thuNhanhTinhHuong(ma) {
+  const t = (cdKho.tinh_huong || []).find(x => x.id === ma);
+  if (!t || !t.vi_du.length) return;
+  document.getElementById('cdThuCau').value = t.vi_du[0];
+  thuCauDem();
+  document.getElementById('cdThuCau').scrollIntoView({ block: 'center' });
+}
+
+async function thuCauDem() {
+  const o = document.getElementById('cdThuKetQua');
+  const cau = (document.getElementById('cdThuCau')?.value || '').trim();
+  if (!cau) { thongBao('Gõ một câu khách hay nói trước đã', 'loi'); return; }
+  o.classList.remove('hidden');
+  o.innerHTML = '<div class="text-[11px] text-gray-500">Đang chấm…</div>';
+  try {
+    const d = await fetch('/api/fillers/thu', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cau }),
+    }).then(r => r.json());
+    if (d.error) { o.innerHTML = '<div class="text-[11px] text-red-400">' + escapeHtml(d.error) + '</div>'; return; }
+
+    const pct = Math.round(d.diem * 100);
+    if (!d.dat_nguong) {
+      // Dưới ngưỡng KHÔNG phải hỏng: nói sai chủ đề tệ hơn nói "Dạ" trung tính.
+      o.innerHTML = `<div class="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5 text-[11px] text-amber-200/80 leading-relaxed">
+        Điểm cao nhất <b>${pct}%</b>, dưới ngưỡng ${Math.round(d.nguong * 100)}% — câu này sẽ dùng
+        câu đuôi chung ("Dạ", "Vâng ạ") chứ không dẫn vào chủ đề.
+        Đây là hành vi cố ý: nói trớt chủ đề tệ hơn nói trung tính.
+        Muốn bắt được thì thêm chính câu này vào ví dụ của tình huống phù hợp.</div>`;
+      return;
+    }
+    o.innerHTML = `<div class="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2.5">
+      <div class="flex items-center gap-2 flex-wrap text-[11px]">
+        <span class="pill st-daNap"><span class="dot"></span>${escapeHtml(d.ten || d.id)}</span>
+        <span class="text-gray-400">khớp ${pct}%</span>
+        <span class="text-gray-600">ngưỡng ${Math.round(d.nguong * 100)}%</span>
+      </div>
+      <div class="text-[11px] text-gray-300 mt-2">Sẽ phát một trong ${d.mo_dau.length} mẩu:</div>
+      <div class="text-[11px] text-gray-500 mt-1 leading-relaxed">${d.mo_dau.map(escapeHtml).join(' · ')}</div>
+    </div>`;
+  } catch (e) {
+    o.innerHTML = '<div class="text-[11px] text-red-400">Không thử được: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+// --- sửa ---------------------------------------------------------------------
+function suaTinhHuong(ma) {
+  const t = ma ? (cdKho.tinh_huong || []).find(x => x.id === ma) : null;
+  cdDangSua = ma || null;
+  document.getElementById('cdEditTitle').textContent = t ? 'Sửa: ' + (t.ten || t.id) : 'Tình huống mới';
+  document.getElementById('cdMa').value = t ? t.id : '';
+  document.getElementById('cdMa').disabled = !!t;   // đổi mã là tạo mục mới, không phải sửa
+  document.getElementById('cdTen').value = t ? (t.ten || '') : '';
+  document.getElementById('cdViDu').value = t ? t.vi_du.join('\n') : '';
+  document.getElementById('cdMoDau').value = t ? t.mo_dau.join('\n') : '';
+  document.getElementById('cdTuKhoa').value = t ? (t.tu_khoa || []).join('\n') : '';
+  document.getElementById('cdSpeed').value = t && t.speed != null ? t.speed : '';
+  document.getElementById('cdBat').checked = t ? !!t.bat : true;
+  document.getElementById('cdEditLoi').classList.add('hidden');
+  document.getElementById('cdEditor').classList.remove('hidden');
+}
+
+function dongSuaTinhHuong() {
+  document.getElementById('cdEditor').classList.add('hidden');
+  cdDangSua = null;
+}
+
+const cdDong = id => (document.getElementById(id).value || '')
+  .split('\n').map(s => s.trim()).filter(Boolean);
+
+async function luuTinhHuong() {
+  const btn = document.getElementById('cdLuuBtn');
+  const oLoi = document.getElementById('cdEditLoi');
+  const than = {
+    id: (document.getElementById('cdMa').value || '').trim(),
+    ten: (document.getElementById('cdTen').value || '').trim(),
+    vi_du: cdDong('cdViDu'),
+    mo_dau: cdDong('cdMoDau'),
+    tu_khoa: cdDong('cdTuKhoa'),
+    speed: document.getElementById('cdSpeed').value || null,
+    bat: document.getElementById('cdBat').checked,
+  };
+  btn.disabled = true;
+  try {
+    const d = await fetch('/api/fillers/tinh-huong', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(than),
+    }).then(r => r.json());
+    if (d.error) {
+      // Hiện HẾT lỗi ngay trong hộp: bắt sửa từng lỗi một là hành người dùng.
+      oLoi.innerHTML = (d.loi || [d.error]).map(l => '• ' + escapeHtml(l)).join('<br>');
+      oLoi.classList.remove('hidden');
+      return;
+    }
+    thongBao('Đã lưu tình huống. Mẩu mới cần dựng tiếng trước khi dùng được.');
+    dongSuaTinhHuong();
+    loadCauDem();
+  } catch (e) {
+    oLoi.textContent = 'Không lưu được: ' + e.message;
+    oLoi.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function xoaTinhHuong(ma) {
+  if (!confirm(`Xoá tình huống "${ma}"? Khách hỏi chủ đề này sẽ nghe câu đuôi chung.`)) return;
+  const d = await fetch('/api/fillers/tinh-huong/' + encodeURIComponent(ma),
+                        { method: 'DELETE' }).then(r => r.json());
+  if (d.error) { thongBao(d.error, 'loi'); return; }
+  thongBao('Đã xoá ' + ma);
+  loadCauDem();
+}
+
+async function themCauDuoi() {
+  const text = prompt('Câu đuôi mới (vd: "Dạ vâng ạ"):');
+  if (!text || !text.trim()) return;
+  const ma = 'duoi_' + Date.now().toString(36);
+  const d = await fetch('/api/fillers/cau-duoi', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: ma, text: text.trim() }),
+  }).then(r => r.json());
+  if (d.error) { thongBao(d.error, 'loi'); return; }
+  thongBao('Đã thêm câu đuôi');
+  loadCauDem();
+}
+
+async function xoaCauDuoi(ma) {
+  if (!confirm('Xoá câu đuôi này?')) return;
+  const d = await fetch('/api/fillers/cau-duoi/' + encodeURIComponent(ma),
+                        { method: 'DELETE' }).then(r => r.json());
+  if (d.error) { thongBao(d.error, 'loi'); return; }
+  loadCauDem();
+}
+
+// --- dựng tiếng ---------------------------------------------------------------
+async function dungTiengCauDem() {
+  const n = (cdKho.thong_ke || {}).so_clip || 0;
+  const phut = Math.max(1, Math.round(n * 0.25 / 60));
+  if (!confirm(`Dựng ${n.toLocaleString('vi-VN')} clip cho giọng đang dùng.\n\n`
+    + `Ước chừng ${phut} phút và chiếm GPU trong lúc đó. Clip đã có sẵn thì bỏ qua, `
+    + `nên lần chạy sau sẽ nhanh hơn nhiều.\n\nBắt đầu?`)) return;
+  const d = await fetch('/api/fillers/dung-tieng', { method: 'POST' }).then(r => r.json());
+  if (d.error) { thongBao(d.error, 'loi'); return; }
+  theoDoiDungTieng();
+}
+
+function theoDoiDungTieng() {
+  clearTimeout(cdHenTienDo);
+  const nhip = async () => {
+    const o = document.getElementById('cdTienDo');
+    if (!o) return;
+    try {
+      const d = await fetch('/api/fillers/dung-tieng').then(r => r.json());
+      if (!d.dang_chay && !d.ket_thuc) { o.classList.add('hidden'); return; }
+      o.classList.remove('hidden');
+      // Tiến độ đếm từ SỐ TỆP THẬT trên đĩa. Bịa một con số chạy đều là nói dối:
+      // người dùng đợi theo nó rồi tưởng treo khi nó đứng.
+      const pct = d.so_clip ? Math.min(100, Math.round(d.tren_dia / d.so_clip * 100)) : 0;
+      o.innerHTML = d.dang_chay
+        ? `<div class="text-xs font-semibold text-cyan-300">Đang dựng tiếng câu đệm — giọng ${escapeHtml(d.giong || '')}</div>
+           <div class="text-[11px] text-gray-400 mt-1">${d.tren_dia.toLocaleString('vi-VN')} / ${d.so_clip.toLocaleString('vi-VN')} clip trên đĩa · ${fmtThoiGian(d.giay)}</div>
+           <div class="h-1.5 bg-void rounded-full mt-2 overflow-hidden"><div class="h-full bg-cyan-400" style="width:${pct}%"></div></div>`
+        : (d.loi
+            ? `<div class="text-xs font-semibold text-red-400">Dựng tiếng hỏng: ${escapeHtml(d.loi)}</div>`
+            : `<div class="text-xs font-semibold text-emerald-400">Đã dựng xong ${d.tren_dia.toLocaleString('vi-VN')} clip · ${fmtThoiGian(d.giay)}</div>`);
+      if (d.dang_chay) cdHenTienDo = setTimeout(nhip, 3000);
+    } catch (e) { /* mất mạng thì thôi, lần sau vào trang hỏi lại */ }
+  };
+  nhip();
+}
+
+document.addEventListener('keydown', ev => {
+  const h = document.getElementById('cdEditor');
+  if (!h || h.classList.contains('hidden')) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); dongSuaTinhHuong(); }
+});

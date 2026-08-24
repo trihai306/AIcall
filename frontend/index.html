@@ -78,6 +78,10 @@
         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         <span>Tri thức AI</span>
       </button>
+      <button class="nav-btn" data-page="fillers" onclick="switchPage('fillers')">
+        <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Câu đệm</span>
+      </button>
       <button class="nav-btn" data-page="voice" onclick="switchPage('voice')">
         <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
         <span>Giọng nói</span>
@@ -960,6 +964,141 @@
     </div>
 
     <!-- ===== PAGE: VOICE ===== -->
+    <!-- ================= CÂU ĐỆM ================= -->
+    <div class="page hidden overflow-y-auto" id="page-fillers">
+      <div class="p-6 max-w-[1500px] mx-auto space-y-4">
+
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-lg font-bold text-white">Câu đệm</h2>
+            <p class="text-xs text-gray-500 mt-1 max-w-[620px] leading-relaxed">
+              Câu AI nói ngay khi khách vừa dứt lời, phát song song trong lúc máy còn
+              đang nghĩ câu trả lời. Không có nó thì khách nghe một quãng im.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="dungTiengCauDem()" class="btn btn-ghost" id="cdDungBtn">Dựng tiếng</button>
+            <button onclick="suaTinhHuong()" class="btn btn-primary">+ Tình huống</button>
+          </div>
+        </div>
+
+        <div class="stat-strip" style="grid-template-columns:repeat(4,1fr)" id="cdStats"></div>
+
+        <div id="cdTienDo" class="hidden rounded-xl px-4 py-3.5"
+     style="border:1px solid rgba(6,182,212,0.3);background:rgba(6,182,212,0.06)"></div>
+
+        <!-- Thử ngay: cosine chấm trên phiên âm CỤT lúc chạy thật, nên một tình
+             huống nghe rất hợp lý vẫn có thể không bao giờ đạt ngưỡng. -->
+        <div class="panel p-4">
+          <div class="text-xs font-semibold text-white mb-1">Thử một câu khách nói</div>
+          <p class="text-[10px] text-gray-600 mb-3 leading-relaxed">
+            Máy chấm điểm giống hệt lúc gọi thật — kể cả khi câu còn cụt, vì câu đệm
+            phải phát trước khi khách nói xong.
+          </p>
+          <div class="flex gap-2">
+            <input id="cdThuCau" class="inp flex-1" placeholder="lãi suất vay tín chấp bao nhiêu"
+                   onkeydown="if(event.key==='Enter')thuCauDem()">
+            <button onclick="thuCauDem()" id="cdThuBtn" class="btn btn-primary">Thử</button>
+          </div>
+          <div id="cdThuKetQua" class="hidden mt-3"></div>
+        </div>
+
+        <div class="panel">
+          <div class="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b border-slate-750">
+            <div class="text-xs font-semibold text-white">Tình huống</div>
+            <div class="relative w-[240px]">
+              <input id="cdTim" type="search" placeholder="Tìm tình huống…" class="inp"
+                     oninput="veBangTinhHuong()">
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table w-full">
+              <thead><tr>
+                <th>Tình huống</th><th>Ví dụ</th><th>Mẩu mở đầu</th>
+                <th>Trạng thái</th><th class="text-right">Thao tác</th>
+              </tr></thead>
+              <tbody id="cdRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b border-slate-750">
+            <div>
+              <div class="text-xs font-semibold text-white">Câu đuôi dùng chung</div>
+              <p class="text-[10px] text-gray-600 mt-0.5">
+                Dùng khi không nhận ra tình huống. Đây là đường xuống cấp cuối cùng —
+                rỗng nó là khách nghe im lặng trọn quãng chờ.
+              </p>
+            </div>
+            <button onclick="themCauDuoi()" class="btn btn-ghost btn-xs">+ Câu đuôi</button>
+          </div>
+          <div id="cdDuoi" class="p-4 flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Sửa tình huống -->
+      <div id="cdEditor" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-6">
+        <div class="bg-deep border border-slate-750 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+          <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-750">
+            <div class="min-w-0">
+              <h3 id="cdEditTitle" class="text-sm font-semibold text-white truncate">Tình huống</h3>
+              <p class="text-[10px] text-gray-600 mt-0.5">Esc để đóng</p>
+            </div>
+            <button onclick="dongSuaTinhHuong()" aria-label="Đóng"
+                    class="text-gray-500 hover:text-white text-xl leading-none px-1">&times;</button>
+          </div>
+          <div class="p-5 space-y-3 overflow-y-auto flex-1">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="fld" for="cdMa">Mã</label>
+                <input type="text" id="cdMa" placeholder="hoi_phi" class="inp font-mono">
+              </div>
+              <div>
+                <label class="fld" for="cdTen">Tên hiển thị</label>
+                <input type="text" id="cdTen" placeholder="Khách hỏi phí" class="inp">
+              </div>
+            </div>
+            <div>
+              <label class="fld" for="cdViDu">Ví dụ câu khách nói — mỗi dòng một câu, ít nhất 2</label>
+              <textarea id="cdViDu" rows="5" class="inp font-mono" style="font-size:11.5px"></textarea>
+              <p class="text-[10px] text-gray-600 mt-1 leading-relaxed">
+                Máy so câu khách với những ví dụ này. Nhóm nói về thái độ (đồng ý, từ
+                chối) đừng nhắc tên sản phẩm — đo được là nó kéo câu hỏi sản phẩm sang
+                nhầm nhóm.
+              </p>
+            </div>
+            <div>
+              <label class="fld" for="cdMoDau">Mẩu mở đầu — mỗi dòng một mẩu, phải kết bằng dấu phẩy</label>
+              <textarea id="cdMoDau" rows="5" class="inp font-mono" style="font-size:11.5px"></textarea>
+              <p class="text-[10px] text-gray-600 mt-1 leading-relaxed">
+                Thiếu dấu phẩy thì máy hạ giọng kết câu ngay giữa lượt. Đừng ghi con số
+                nào — mẩu này phát trước khi máy biết câu trả lời.
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="fld" for="cdTuKhoa">Từ khoá (mỗi dòng một từ)</label>
+                <textarea id="cdTuKhoa" rows="2" class="inp font-mono" style="font-size:11.5px"></textarea>
+              </div>
+              <div>
+                <label class="fld" for="cdSpeed">Tốc đọc riêng (trống = theo giọng)</label>
+                <input type="number" id="cdSpeed" step="0.05" min="0.5" max="1.5" class="inp">
+                <label class="flex items-center gap-2 mt-3 text-[11px] text-gray-400">
+                  <input type="checkbox" id="cdBat" checked> Đang bật
+                </label>
+              </div>
+            </div>
+            <div id="cdEditLoi" class="hidden text-[11px] text-red-400 leading-relaxed"></div>
+          </div>
+          <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-750">
+            <button onclick="dongSuaTinhHuong()" class="btn btn-ghost">Huỷ</button>
+            <button onclick="luuTinhHuong()" id="cdLuuBtn" class="btn btn-primary">Lưu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="page hidden overflow-y-auto" id="page-voice">
       <div class="p-6 max-w-5xl mx-auto">
         <div class="mb-6">

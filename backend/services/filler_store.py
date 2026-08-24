@@ -14,6 +14,12 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+# Thư mục clip câu đệm đã dựng sẵn. Đặt ở đây chứ không ở `tts_service`: trang
+# quản lý cần đếm clip trên đĩa, mà import `tts_service` chỉ để lấy một đường dẫn
+# là kéo cả soundfile lẫn torch theo - đúng thứ mà đầu tệp này dặn tránh.
+THU_MUC_FILLER = Path("data/fillers_wav")
+
+
 class LoiKho(ValueError):
     """Dữ liệu kho câu đệm sai. Nêu rõ câu nào sai để còn sửa được."""
 

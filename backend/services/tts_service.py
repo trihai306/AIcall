@@ -42,7 +42,9 @@ def an_giong_tam(ds: list[dict]) -> list[dict]:
 
 # Tiếng câu đệm cất ở đây để khởi động không phải gọi F5 lại. Tên file mang vân
 # tay: đổi nfe/speed/giọng là vân tay lệch -> dựng lại đúng câu đó.
-THU_MUC_FILLER = Path("data/fillers_wav")
+# Đường dẫn khai ở `filler_store` (module nhẹ) để trang quản lý đếm được clip
+# mà không phải kéo cả TTS theo.
+from backend.services.filler_store import THU_MUC_FILLER  # noqa: E402,F401
 
 # --- Ép thời lượng theo ÂM TIẾT ------------------------------------------
 #
@@ -540,8 +542,13 @@ class F5TTSService:
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._default_voice = Path(settings.f5tts_ref_audio).stem
         self._voices: dict[str, tuple] = {}          # name -> (wave, sr, ref_text)
-        self._filler_cache: dict[tuple[str, str, str], bytes] = {}   # (voice, id_th, id_duoi) -> wav
-        self._filler_ms: dict[tuple[str, str, str], float] = {}      # (voice, id_th, id_duoi) -> ms
+        # Khoá gồm CHỈ SỐ MẨU MỞ ĐẦU. Thiếu nó thì bốn mẩu của cùng tình huống
+        # trùng khoá, mẩu đầu dựng xong là ba mẩu sau bị coi như "đã có" - đo
+        # được 24/08/2026: kho 5082 clip mà cache chỉ 1302 = 42 + 30×42, tức
+        # đúng một mẩu mỗi tình huống. Kho đứng ở một mẩu suốt dự án chính vì
+        # thêm mẩu vào cũng vô ích.
+        self._filler_cache: dict[tuple[str, str, int, str], bytes] = {}   # (voice, id_th, i_mau, id_duoi) -> wav
+        self._filler_ms: dict[tuple[str, str, int, str], float] = {}      # -> ms
         self._synth_cache: "OrderedDict[tuple, bytes]" = OrderedDict()  # (voice, text, fast, sr)
         self._synth_cache_max = 256
 
@@ -1204,11 +1211,16 @@ class F5TTSService:
         name = self._giong_thuc(voice)
         return any(k[0] == name for k in self._filler_cache)
 
-    def _duong_dan_filler(self, voice: str, id_th: str, id_duoi: str, vt: str) -> Path:
+    def _duong_dan_filler(self, voice: str, id_th: str, id_duoi: str, vt: str,
+                          i_mau: int = 0) -> Path:
         # id_th == "" la duoi tran (barefoot tail): dung thu muc "_bare" rieng
         # de khong nham lan voi ten tinh huong, va de glob xoa ban cu don gian.
+        #
+        # `i_mau` trong TÊN TỆP: thiếu nó thì hai mẩu mở đầu của cùng tình huống
+        # ra cùng tên, và `_dung_mot_filler` xoá bản cũ theo
+        # `glob(f"{id_duoi}__*.wav")` nên chúng xoá lẫn nhau.
         thu_muc = THU_MUC_FILLER / voice / (id_th if id_th else "_bare")
-        return thu_muc / f"{id_duoi}__{vt}.wav"
+        return thu_muc / f"{id_duoi}_m{i_mau}__{vt}.wav"
 
     def _van_tay_filler(self, text: str, voice: str, toc: float | None = None) -> str:
         # Tốc và câu mẫu phải lấy từ bản riêng của giọng, không phải giá trị chung
@@ -1224,7 +1236,7 @@ class F5TTSService:
         return van_tay(text, voice, settings.f5tts_nfe_step, speed, ref_text)
 
     async def _dung_mot_filler(self, giong: str, id_th: str, id_duoi: str,
-                               text: str, toc: float) -> str:
+                               text: str, toc: float, i_mau: int = 0) -> str:
         """Dựng một clip filler và lưu vào cache + đĩa.
 
         Trả chuỗi trạng thái: 'cache' (đã có), 'doc_dia', 'dung_moi', 'loi'.
@@ -1237,12 +1249,12 @@ class F5TTSService:
         là tổ hợp. Chọn theo độ dài tổng của clip đã ghép thay vì "độ dài đuôi trừ
         độ dài mở đầu" vì độ dài tiếng của mẩu mở đầu không suy được từ chuỗi chữ.
         """
-        khoa = (giong, id_th, id_duoi)
+        khoa = (giong, id_th, i_mau, id_duoi)
         if khoa in self._filler_cache:
             return "cache"
 
         vt = self._van_tay_filler(text, giong, toc)
-        p = self._duong_dan_filler(giong, id_th, id_duoi, vt)
+        p = self._duong_dan_filler(giong, id_th, id_duoi, vt, i_mau)
         p.parent.mkdir(parents=True, exist_ok=True)
 
         if p.exists():
@@ -1263,7 +1275,7 @@ class F5TTSService:
 
         # Xoá bản vân tay cũ của cùng (id_th, id_duoi), nếu không đĩa phình
         # mỗi lần đổi nfe.
-        for cu in p.parent.glob(f"{id_duoi}__*.wav"):
+        for cu in p.parent.glob(f"{id_duoi}_m{i_mau}__*.wav"):
             cu.unlink(missing_ok=True)
         try:
             p.write_bytes(wav)
@@ -1318,8 +1330,8 @@ class F5TTSService:
         for d in kho.duoi:
             van = ghep("", d.text)
             can_giu.add(self._duong_dan_filler(
-                voice, "", d.id, self._van_tay_filler(van, voice, toc_giong)))
-            ket = await self._dung_mot_filler(voice, "", d.id, van, toc_giong)
+                voice, "", d.id, self._van_tay_filler(van, voice, toc_giong), 0))
+            ket = await self._dung_mot_filler(voice, "", d.id, van, toc_giong, 0)
             if ket == "doc_dia":
                 doc_dia += 1
             elif ket == "dung_moi":
@@ -1328,12 +1340,12 @@ class F5TTSService:
         # Sau khi đuôi trần đã sẵn sàng mới dựng tổ hợp
         for t in kho.tinh_huong:
             toc = t.speed if t.speed is not None else toc_giong
-            for m in t.mo_dau:
+            for i_mau, m in enumerate(t.mo_dau):
                 for d in kho.duoi:
                     van = ghep(m, d.text)
                     can_giu.add(self._duong_dan_filler(
-                        voice, t.id, d.id, self._van_tay_filler(van, voice, toc)))
-                    ket = await self._dung_mot_filler(voice, t.id, d.id, van, toc)
+                        voice, t.id, d.id, self._van_tay_filler(van, voice, toc), i_mau))
+                    ket = await self._dung_mot_filler(voice, t.id, d.id, van, toc, i_mau)
                     if ket == "doc_dia":
                         doc_dia += 1
                     elif ket == "dung_moi":
@@ -1423,16 +1435,23 @@ class F5TTSService:
             if th is None:
                 # id_tinh_huong=None → không có tình huống, bỏ qua lần đầu
                 continue
-            ung_vien = [(k[2], self._filler_ms[k]) for k in self._filler_cache
+            # Ứng viên là (mẩu, đuôi) chứ không chỉ đuôi: bốn mẩu của cùng tình
+            # huống là bốn clip khác nhau, gộp chúng lại là quay về đúng cái lỗi
+            # làm khách nghe y hệt nhau mỗi lần hỏi cùng chủ đề.
+            #
+            # `id_ghep` mang cả hai để `_chon_filler` đếm lượt dùng riêng cho
+            # từng clip - nó tránh lặp bằng cách duyệt hết nhóm rồi mới quay lại.
+            ung_vien = [(f"{k[2]}|{k[3]}", self._filler_ms[k]) for k in self._filler_cache
                         if k[0] == name and k[1] == th
-                        and (chi_duoi is None or k[2] in chi_duoi)]
+                        and (chi_duoi is None or k[3] in chi_duoi)]
             if not ung_vien:
                 continue
-            chon_id = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
-            if chon_id:
+            id_ghep = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
+            if id_ghep:
+                i_mau, chon_id = id_ghep.split("|", 1)
                 # Trả id_th="" thành None để nơi gọi ghi log đúng: "dùng đuôi
                 # trần" thay vì "dùng tình huống rỗng".
-                return (self._filler_cache[(name, th, chon_id)],
+                return (self._filler_cache[(name, th, int(i_mau), chon_id)],
                         chon_id, th or None)
         # Về tay không là khách nghe im lặng trọn TTFA — ghi rõ nguyên nhân.
         logger.warning(

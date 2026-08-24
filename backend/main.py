@@ -9,6 +9,7 @@ from backend.core.startup import AppState, startup, shutdown
 from backend.api import (
     websocket, calls, benchmark, voices, training, devices, phones, setup,
     voice_training, scenarios, reports, notify, data_sources,
+    fillers as fillers_api,
     knowledge as knowledge_api,
     logs as logs_api,
 )
@@ -49,6 +50,7 @@ app.include_router(data_sources.router)
 # nguon du lieu nao va khong co endpoint. Hien 'Dang cho ket noi server...' mai.
 app.include_router(logs_api.router)
 app.include_router(knowledge_api.router)
+app.include_router(fillers_api.router)
 
 # Frontend must never be cached: without Cache-Control, Chromium applies
 # heuristic freshness (10% of file age) and Electron can keep serving a
