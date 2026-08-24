@@ -577,6 +577,27 @@ select.status-select {
   border-color: rgba(239, 68, 68, 0.35);
 }
 
+/* Một mục trong bộ soi tài liệu: vấn đề ở trên, cách sửa ở dưới. Báo lỗi mà
+   không nói sửa thế nào thì người dùng đứng im. */
+.kn-soi-muc {
+  border-left: 2px solid #334155;
+  padding-left: 9px;
+}
+.kn-soi-muc.loi { border-left-color: #f87171; }
+.kn-soi-muc.canh { border-left-color: #fbbf24; }
+.kn-soi-chu {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+.kn-soi-muc.loi .kn-soi-chu { color: #fca5a5; }
+.kn-soi-goi-y {
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-top: 1px;
+}
+
 /* Khung xám nhấp nháy lúc đang tải. Đặt keyframes riêng chứ không mượn
    `shimmer` của Tailwind: Tailwind chỉ sinh @keyframes khi có utility dùng tới,
    mà trang này không dùng utility đó nên tên kia có thể không tồn tại. */

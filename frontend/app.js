@@ -3934,7 +3934,7 @@ function veBangTriThuc() {
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
         </button>
       </td>
-      <td class="font-medium text-white">${e}</td>
+      <td class="font-medium text-white">${e}${knNhanSoi(t)}</td>
       <td class="text-gray-400">${escapeHtml(KN_NHAN_NHOM[t.nhom] || t.nhom)}</td>
       <td class="text-gray-500 font-mono text-[11px]">${knByte(t.kich_thuoc)}</td>
       <td>${nap}</td>
@@ -3954,6 +3954,17 @@ function veBangTriThuc() {
     const [nhom, ...con] = khoa.split('/');
     napXemTruoc(nhom, con.join('/'));
   });
+}
+
+// Nhãn soi ngay cạnh tên tài liệu: tài liệu cũ chưa ai mở ra sửa cũng phải lộ
+// vấn đề, không thì chỉ tài liệu vừa soạn mới được soi.
+function knNhanSoi(t) {
+  const n = [];
+  if (t.so_loi) n.push(`<span class="kn-canh kn-canh-loc" title="${t.so_loi} lỗi làm bot nói sai số — bấm Sửa để xem chi tiết">${t.so_loi} lỗi</span>`);
+  // Cảnh báo chỉ hiện số cho gọn, nghĩa nằm ở tooltip: một con số trần trong
+  // bảng không nói được gì, mà viết đủ chữ thì cột tên tài liệu vỡ.
+  if (t.so_canh_bao) n.push(`<span class="kn-canh" title="${t.so_canh_bao} cảnh báo làm AI đọc thiếu ngữ cảnh — bấm Sửa để xem chi tiết">${t.so_canh_bao}</span>`);
+  return n.length ? ' ' + n.join(' ') : '';
 }
 
 function knHangCho() {
@@ -4264,6 +4275,13 @@ async function soanTaiLieu(nhom, ten) {
     demChuTriThuc();
   }
   ta.focus();
+  soiTaiLieuDangSoan();
+  // Luật "tên file không khớp tiêu đề" phụ thuộc cả tên lẫn nhóm, nên đổi hai ô
+  // đó cũng phải soi lại - không thì cảnh báo đứng yên trong khi lý do đã hết.
+  ['knEditTen', 'knEditNhom'].forEach(id => {
+    const o = document.getElementById(id);
+    if (o && !o.dataset.daGanSoi) { o.dataset.daGanSoi = '1'; o.addEventListener('change', soiTaiLieuDangSoan); }
+  });
 }
 
 // Đếm dòng/ký tự và bật cờ "chưa lưu". Cờ này là thứ duy nhất cho người dùng
@@ -4275,6 +4293,98 @@ function demChuTriThuc() {
   const v = ta.value;
   dem.textContent = `${v ? v.split('\n').length : 0} dòng · ${v.length} ký tự`;
   document.getElementById('knChuaLuu').classList.toggle('hidden', v === knGocNoiDung);
+  hoanSoi();
+}
+
+// ---------------------------------------------------------------------------
+// Soi tài liệu đang soạn + cắt thử
+//
+// Ba luật nặng nhất không phải quy ước thẩm mỹ, chúng bắt nguồn từ chỗ khác
+// trong hệ thống: hàng rào `chan_so_sai` chỉ chạy khi tài liệu có ĐÚNG MỘT số
+// thập phân; lưới lọc sản phẩm neo theo TÊN FILE; và cắt mảnh theo ký tự nên
+// bảng dài mất dòng tiêu đề.
+// ---------------------------------------------------------------------------
+let knSoiHen = null;
+// Đánh số lượt soi. Hai lần gọi liên tiếp không đảm bảo về đúng thứ tự, mà kết
+// quả cũ về sau sẽ đè lên kết quả mới - bắt được khi chèn mẫu: khung báo "2
+// mảnh, 1 mảnh cắt vào giữa ý" của tài liệu TRƯỚC đó trong khi nội dung hiện
+// tại sạch. Ở đây hiện sai trạng thái là nguy hiểm: người viết thấy "không có
+// vấn đề gì" rồi lưu một tài liệu đang có lỗi.
+let knSoiLuot = 0;
+
+function hoanSoi() {
+  // Chờ ngừng gõ mới soi: gõ tới đâu gọi tới đó thì mỗi phím một lần gọi mạng,
+  // mà kết quả giữa chừng của một câu đang viết dở chỉ làm rối mắt.
+  clearTimeout(knSoiHen);
+  knSoiHen = setTimeout(soiTaiLieuDangSoan, 600);
+}
+
+async function soiTaiLieuDangSoan() {
+  const o = document.getElementById('knSoi');
+  const ta = document.getElementById('knEditNoiDung');
+  if (!o || !ta) return;
+  clearTimeout(knSoiHen);          // khỏi soi lại lần nữa ngay sau lần này
+  const luot = ++knSoiLuot;
+  try {
+    const fd = new FormData();
+    fd.append('noi_dung', ta.value);
+    fd.append('nhom', document.getElementById('knEditNhom').value);
+    fd.append('ten', document.getElementById('knEditTen').value.trim());
+    const d = await fetch('/api/knowledge/soi', { method: 'POST', body: fd }).then(r => r.json());
+    if (luot !== knSoiLuot) return;   // đã có lượt mới hơn, kết quả này lỗi thời
+    veKhungSoi(d);
+  } catch (e) {
+    if (luot !== knSoiLuot) return;
+    o.innerHTML = '<div class="text-[10px] text-gray-600">Không soi được: '
+      + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function veKhungSoi(d) {
+  const o = document.getElementById('knSoi');
+  if (!o) return;
+  if (d.error) { o.innerHTML = '<div class="text-[10px] text-red-400">' + escapeHtml(d.error) + '</div>'; return; }
+
+  const manhHong = (d.manh || []).filter(m => m.cat_ngang_bang || m.bat_dau_giua_cau).length;
+  const dong = `<div class="flex items-center gap-2 flex-wrap text-[10px] mb-1">
+      <span class="text-gray-500">AI sẽ đọc thành</span>
+      <span class="text-gray-200 font-mono">${d.so_manh || 0} mảnh</span>
+      ${manhHong ? `<span class="kn-canh">${manhHong} mảnh cắt vào giữa ý</span>` : ''}
+    </div>`;
+
+  const muc = (ds, kieu) => (ds || []).map(m => `<div class="kn-soi-muc ${kieu}">
+      <div class="kn-soi-chu">${escapeHtml(m.chu)}</div>
+      <div class="kn-soi-goi-y">${escapeHtml(m.goi_y)}</div>
+    </div>`).join('');
+
+  const than = muc(d.loi, 'loi') + muc(d.canh_bao, 'canh');
+  o.innerHTML = dong + (than
+    ? '<div class="space-y-1.5 mt-2">' + than + '</div>'
+    : '<div class="text-[10px] text-emerald-400/80 mt-1">Không thấy vấn đề gì.</div>');
+}
+
+// Chèn mẫu cấu trúc: người viết khỏi phải đoán viết thế nào cho AI đọc tốt.
+// Chính mẫu này cũng sạch theo bộ luật ở trên (có test khoá) — mẫu vi phạm luật
+// mình dạy thì người dùng chép về là mắc lỗi ngay.
+async function chenMauTaiLieu() {
+  const ta = document.getElementById('knEditNoiDung');
+  const btn = document.getElementById('knMauBtn');
+  if (!ta) return;
+  if (ta.value.trim() && !confirm('Chèn mẫu sẽ thay toàn bộ nội dung đang có. Tiếp tục?')) return;
+  btn.disabled = true;
+  try {
+    const nhom = document.getElementById('knEditNhom').value;
+    const d = await fetch('/api/knowledge/mau?nhom=' + encodeURIComponent(nhom)).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    ta.value = d.noi_dung;
+    ta.focus();
+    demChuTriThuc();
+    soiTaiLieuDangSoan();
+  } catch (e) {
+    thongBao('Không lấy được mẫu: ' + e.message, 'loi');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function dongSoanTaiLieu(ep) {

@@ -2001,16 +2001,20 @@
             <div>
               <div class="flex items-end justify-between mb-1.5">
                 <label class="fld mb-0" for="knEditNoiDung">Nội dung</label>
-                <span class="text-[10px] text-gray-600 font-mono" id="knEditDem"></span>
+                <div class="flex items-center gap-3">
+                  <button type="button" onclick="chenMauTaiLieu()" id="knMauBtn"
+                          class="btn btn-ghost btn-xs">Chèn mẫu</button>
+                  <span class="text-[10px] text-gray-600 font-mono" id="knEditDem"></span>
+                </div>
               </div>
               <textarea id="knEditNoiDung" rows="20" spellcheck="false" oninput="demChuTriThuc()"
                         class="inp font-mono leading-relaxed"
                         style="font-size:11.5px;resize:vertical;min-height:280px"></textarea>
             </div>
-            <div class="flex items-start gap-2 text-[10px] text-gray-600 leading-relaxed">
-              <svg class="w-3.5 h-3.5 flex-none mt-px text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4m0-4h.01"/></svg>
-              <span>Ghi số cụ thể, đừng ghi khoảng mơ hồ. Bot đọc nguyên con số ở đây cho
-              khách nghe — và có lưới chặn đối chiếu số trong câu trả lời với tài liệu này.</span>
+            <!-- Bộ soi + cắt thử. Cập nhật khi ngừng gõ, chưa cần lưu: thấy trước
+                 hậu quả rồi sửa, thay vì lưu xong mới phát hiện. -->
+            <div id="knSoi" class="rounded-lg border border-slate-750 bg-void px-3.5 py-3">
+              <div class="text-[10px] text-gray-600">Đang soi…</div>
             </div>
           </div>
           <div class="flex items-center justify-between gap-2 px-5 py-3 border-t border-slate-750">

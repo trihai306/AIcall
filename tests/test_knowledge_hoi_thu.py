@@ -175,3 +175,46 @@ def test_xem_manh_ten_khong_hop_le_thi_tu_choi(monkeypatch):
     d = asyncio.run(kn.xem_manh(nhom="../../etc", ten="passwd"))
 
     assert "error" in d
+
+
+# --- soi tài liệu + mẫu ---------------------------------------------------------
+
+def test_soi_tra_ve_ca_ket_qua_soi_lan_manh_cat_thu():
+    d = asyncio.run(kn.soi(
+        noi_dung="# Vay Tín Chấp\n\n- Lãi suất: từ 7.9%/năm\n- Trả 3.4 triệu",
+        nhom="products", ten="vay_tin_chap"))
+
+    assert [m["ma"] for m in d["loi"]] == ["nhieu_so_thap_phan"]
+    assert "so_mo_ho" in [m["ma"] for m in d["canh_bao"]]
+    assert d["so_manh"] == 1
+
+
+def test_soi_chay_duoc_ca_khi_rag_chua_san_sang(monkeypatch):
+    """Người vận hành soạn tài liệu ngay lúc backend đang nạp model. Soi là việc
+    thuần văn bản, không được đòi kho vector."""
+    monkeypatch.setattr(kn, "_rag", lambda: None)
+    d = asyncio.run(kn.soi(noi_dung="# Thử\n\nNội dung", nhom="faq", ten="thu"))
+
+    assert "error" not in d
+
+
+def test_mau_tra_ve_noi_dung_cho_tung_nhom():
+    d = asyncio.run(kn.lay_mau(nhom="products"))
+    assert d["noi_dung"].startswith("# ")
+
+
+def test_mau_nhom_khong_hop_le_thi_bao_loi():
+    d = asyncio.run(kn.lay_mau(nhom="linh_tinh"))
+    assert "error" in d
+
+
+def test_danh_sach_kem_so_loi_cua_tung_tai_lieu(monkeypatch, tmp_path):
+    """Mở trang là biết tài liệu nào đang có vấn đề, kể cả tài liệu cũ chưa ai mở."""
+    (tmp_path / "products").mkdir()
+    (tmp_path / "products" / "vay_tin_chap.md").write_text(
+        "# Vay Tín Chấp\n\n- Lãi suất: 7.9%/năm\n- Trả 3.4 triệu", encoding="utf-8")
+    monkeypatch.setattr(kn, "GOC", tmp_path)
+    monkeypatch.setattr(kn, "_rag", lambda: None)
+
+    d = asyncio.run(kn.danh_sach())
+    assert d["tai_lieu"][0]["so_loi"] == 1

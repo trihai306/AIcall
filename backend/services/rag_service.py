@@ -9,6 +9,30 @@ from backend.core.logging_config import Timer
 logger = logging.getLogger(__name__)
 
 
+def cat_manh(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+    """Cắt văn bản thành mảnh chồng lấn theo SỐ KÝ TỰ.
+
+    Đây là cách cắt duy nhất của hệ thống - RAG nạp tài liệu bằng nó, và khung
+    xem trước trong hộp soạn tài liệu cũng gọi chính nó. Cắt theo ký tự nên
+    không biết gì về cấu trúc markdown: bảng lãi suất dài sẽ bị chặt mất dòng
+    tiêu đề, câu bị bẻ giữa từ. Muốn đổi thì đổi ở ĐÂY, cả hai nơi cùng theo.
+    """
+    text = text.strip()
+    if len(text) <= chunk_size:
+        return [text] if text else []
+
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+        if chunk.strip():
+            chunks.append(chunk.strip())
+        start = end - overlap
+
+    return chunks
+
+
 class RAGService:
     """ChromaDB + embedding model for retrieval-augmented generation."""
 
@@ -306,21 +330,13 @@ class RAGService:
         logger.info(f"Ingested {count} files from {directory}")
 
     def _chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-        """Split text into overlapping chunks by character count."""
-        text = text.strip()
-        if len(text) <= chunk_size:
-            return [text] if text else []
+        """Split text into overlapping chunks by character count.
 
-        chunks = []
-        start = 0
-        while start < len(text):
-            end = start + chunk_size
-            chunk = text[start:end]
-            if chunk.strip():
-                chunks.append(chunk.strip())
-            start = end - overlap
-
-        return chunks
+        Gọi thẳng `cat_manh` chứ không chép lại: khung "sẽ cắt thành mấy mảnh"
+        trong hộp soạn tài liệu dùng cùng hàm này. Hai bản chép rồi lệch nhau thì
+        khung đó nói dối, mà người viết lại tin nó.
+        """
+        return cat_manh(text, chunk_size, overlap)
 
     def xoa_theo_nguon(self, source: str) -> int:
         """Xoá mọi mảnh mang metadata `source` này. Trả về số mảnh đã xoá.

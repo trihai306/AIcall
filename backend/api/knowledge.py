@@ -21,6 +21,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile
 
+from backend.core.knowledge_rules import (MAU, bat_dau_giua_cau, cat_ngang_bang,
+                                          soi_manh, soi_tai_lieu)
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 
@@ -107,6 +110,11 @@ def _dem_manh(p: Path) -> int:
     return tong
 
 
+def _dem_soi(p: Path) -> dict:
+    kq = soi_nhanh(p)
+    return {"so_loi": len(kq["loi"]), "so_canh_bao": len(kq["canh_bao"])}
+
+
 def _nap_lai_mot_tep(p: Path) -> int:
     """Gỡ mảnh cũ của file này rồi nạp lại. Trả về số mảnh sau khi nạp."""
     rag = _rag()
@@ -170,6 +178,9 @@ async def danh_sach():
                 # đọc được nó - phải bấm "Nạp lại". Không hiện ra thì người dùng
                 # sửa xong tưởng đã xong, mà bot vẫn trả lời bằng bản cũ.
                 "so_manh": _dem_manh(p),
+                # Soi ngay trong danh sách: tài liệu cũ chưa ai mở ra sửa cũng
+                # phải lộ vấn đề, không thì chỉ tài liệu vừa soạn mới được soi.
+                **_dem_soi(p),
             })
     return {
         "tai_lieu": tai_lieu,
@@ -201,35 +212,6 @@ async def doc(nhom: str, ten: str):
 # Sửa tài liệu xong phải THỬ được ngay tại đây. Trước đây muốn biết AI có lấy
 # đúng tài liệu không thì phải mở tab Chat gọi hẳn một lượt - nên hầu như không
 # ai thử, và tài liệu sai chỉ lộ ra khi khách đã nghe nhầm số.
-
-
-def _cat_ngang_bang(doan: str) -> bool:
-    """Mảnh có dòng bảng nhưng MẤT dòng tiêu đề.
-
-    Cắt theo ký tự (`chunk_size=500`) chặt bảng lãi suất làm đôi là chuyện
-    thường. Nửa sau mất tên cột, AI đọc được số mà không biết số của cột nào.
-    """
-    dong = [d.strip() for d in doan.splitlines() if d.strip()]
-    co_bang = any(d.startswith("|") for d in dong)
-    co_tieu_de = any("-" in d and set(d) <= set("|-: ") for d in dong)
-    return co_bang and not co_tieu_de
-
-
-def _bat_dau_giua_cau(doan: str) -> bool:
-    """Mảnh mở đầu bằng nửa câu của mảnh trước - dấu hiệu chỗ cắt rơi vào giữa ý.
-
-    Số đứng đầu KHÔNG mặc nhiên là đầu ý: chỉ số thứ tự danh sách ("3." hay
-    "3)") mới là. Bắt được trên máy thật - vay_tin_chap.md cắt ngay giữa "sao kê
-    lương 3 tháng gần nhất", nửa sau mở đầu bằng "3 tháng gần nhất".
-    """
-    d = doan.lstrip()
-    if not d:
-        return False
-    if d[0] in "#-*|>([":
-        return False
-    if re.match(r"\d+[.)]\s", d):
-        return False
-    return d[0].islower() or d[0].isdigit()
 
 
 async def hoi_thu(cau_hoi: str, san_pham: str = "", top_k: int = 4) -> dict:
@@ -301,8 +283,8 @@ async def xem_manh(nhom: str, ten: str):
         "stt": i,
         "doan": d,
         "so_chu": len(d),
-        "cat_ngang_bang": _cat_ngang_bang(d),
-        "bat_dau_giua_cau": _bat_dau_giua_cau(d),
+        "cat_ngang_bang": cat_ngang_bang(d),
+        "bat_dau_giua_cau": bat_dau_giua_cau(d),
     } for i, d in enumerate(doan_list, 1)]
 
     return {
@@ -313,6 +295,41 @@ async def xem_manh(nhom: str, ten: str):
         "chua_nap": not manh,
         "manh": manh,
     }
+
+
+def soi_nhanh(p: Path) -> dict:
+    """Soi một file trên đĩa. Lỗi đọc file không được làm hỏng cả danh sách."""
+    try:
+        return soi_tai_lieu(p.read_text(encoding="utf-8", errors="replace"),
+                            nhom=p.parent.name, ten=p.stem)
+    except Exception as e:
+        logger.warning("Tri thức: không soi được %s: %s", p, e)
+        return {"loi": [], "canh_bao": []}
+
+
+async def soi(noi_dung: str, nhom: str = "products", ten: str = "") -> dict:
+    """Soi tài liệu đang soạn + cắt thử, chưa cần lưu.
+
+    KHÔNG đụng tới RAG: người vận hành hay soạn tài liệu ngay lúc backend còn
+    đang nạp model, mà soi là việc thuần văn bản.
+    """
+    kq = soi_tai_lieu(noi_dung or "", nhom=nhom, ten=ten)
+    manh = soi_manh(noi_dung or "")
+    return {**kq, "so_manh": len(manh), "manh": manh}
+
+
+@router.post("/soi")
+async def soi_api(noi_dung: str = Form(""), nhom: str = Form("products"),
+                  ten: str = Form("")):
+    return await soi(noi_dung, nhom, ten)
+
+
+@router.get("/mau")
+async def lay_mau(nhom: str = "products"):
+    """Mẫu cấu trúc để người viết khỏi phải đoán viết thế nào cho AI đọc tốt."""
+    if nhom not in MAU:
+        return {"error": f"Nhóm không hợp lệ. Chọn: {', '.join(MAU)}"}
+    return {"nhom": nhom, "noi_dung": MAU[nhom]}
 
 
 # --- ghi -----------------------------------------------------------------------
