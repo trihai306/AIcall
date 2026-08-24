@@ -3779,11 +3779,18 @@ async function cancelVoiceTrainJob() {
 // lần gọi, số tài liệu ở đây tính bằng chục chứ không phải nghìn. Gọi lại API
 // mỗi lần gõ phím chỉ làm ô tìm kiếm giật mà không đổi kết quả.
 
-const KN_NHAN_NHOM = {
+// Nhãn ngắn cho ba nhóm gốc. Nhóm do người dùng thêm lấy nhãn từ API — bảng
+// cứng ở đây chỉ để ba nhóm gốc có tên tiếng Việt gọn thay vì "chinh sach".
+const KN_NHAN_GOC = {
   products: 'Sản phẩm',
   faq: 'Câu hỏi thường gặp',
   chinh_sach: 'Chính sách',
 };
+let knNhomTuAPI = {};      // mã -> nhãn, gồm cả nhóm người dùng tự thêm
+
+function knNhanNhom(ma) {
+  return KN_NHAN_GOC[ma] || knNhomTuAPI[ma] || ma;
+}
 
 // Tài liệu mẫu của "Ngân hàng ABC" đi kèm bản cài. Lãi suất trong đó là số bịa
 // — phải nêu đích danh thì mới cảnh báo được, và mới xoá gọn được.
@@ -3798,6 +3805,8 @@ let knNoiDungCache = {};    // 'nhom/ten' -> nội dung, khỏi gọi lại khi 
 let knFileDangChon = null;  // file người dùng vừa kéo vào / vừa chọn
 let knGocNoiDung = '';      // nội dung lúc mở hộp soạn, để biết đã sửa gì chưa
 let knVuaTaiLen = false;    // vừa tải file xong? (xem chú thích trong loadTriThuc)
+let knKhopNoiDung = {};     // 'nhom/ten' -> đoạn trích khớp từ khoá đang tìm
+let knTimHen = null;
 
 function knByte(n) {
   return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB';
@@ -3852,6 +3861,8 @@ async function loadTriThuc() {
     const d = await fetch('/api/knowledge').then(r => r.json());
     knDanhSach = d.tai_lieu || [];
     knNoiDungCache = {};   // tài liệu có thể vừa bị sửa, đọc lại cho chắc
+    knNhomTuAPI = d.nhom || {};
+    veChonNhom();
     veThongKeTriThuc();
     veCanhBaoMau();
     veChonSanPham();
@@ -3896,7 +3907,8 @@ function veChipNhom() {
   const o = document.getElementById('knChips');
   if (!o) return;
   const dem = ma => ma ? knDanhSach.filter(t => t.nhom === ma).length : knDanhSach.length;
-  let h = [['', 'Tất cả'], ...Object.entries(KN_NHAN_NHOM)].map(([ma, nhan]) =>
+  const nhom = Object.keys(knNhomTuAPI).map(ma => [ma, knNhanNhom(ma)]);
+  let h = [['', 'Tất cả'], ...nhom].map(([ma, nhan]) =>
     `<button class="chip ${knNhomDangLoc === ma ? 'active' : ''}" onclick="locNhomTriThuc('${ma}')">`
     + `${nhan}<span class="font-mono opacity-55">${dem(ma)}</span></button>`).join('');
   // Chip này chỉ hiện khi người dùng bấm "Xem các tài liệu này" ở thẻ cảnh báo:
@@ -3905,6 +3917,7 @@ function veChipNhom() {
     h += `<button class="chip active" onclick="locNhomTriThuc('')">Tài liệu mẫu`
        + `<span class="chip-x">&times;</span></button>`;
   }
+  h += `<button class="chip chip-add" onclick="themNhomTriThuc()">+ Nhóm</button>`;
   o.innerHTML = h;
 }
 
@@ -3931,7 +3944,11 @@ function veBangTriThuc() {
     const hopNhom = knNhomDangLoc === KN_LOC_MAU
       ? KN_TEN_MAU.includes(t.ten)
       : (!knNhomDangLoc || t.nhom === knNhomDangLoc);
-    return hopNhom && (!tu || t.ten.toLowerCase().includes(tu));
+    // Khi đang tìm: giữ dòng khớp tên (lọc tại chỗ, hiện ngay) HOẶC dòng mà máy
+    // chủ tìm thấy trong nội dung.
+    const hopTu = !tu || t.ten.toLowerCase().includes(tu)
+      || knKhopNoiDung[knKhoa(t.nhom, t.ten)] !== undefined;
+    return hopNhom && hopTu;
   });
 
   if (!ds.length) {
@@ -3956,13 +3973,14 @@ function veBangTriThuc() {
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
         </button>
       </td>
-      <td class="font-medium text-white">${e}${knNhanSoi(t)}</td>
-      <td class="text-gray-400">${escapeHtml(KN_NHAN_NHOM[t.nhom] || t.nhom)}</td>
+      <td class="font-medium text-white">${e}${knNhanSoi(t)}${knTrichKhop(khoa)}</td>
+      <td class="text-gray-400">${escapeHtml(knNhanNhom(t.nhom))}</td>
       <td class="text-gray-500 font-mono text-[11px]">${knByte(t.kich_thuoc)}</td>
       <td>${nap}</td>
       <td class="text-gray-500 text-[11px]">${new Date(t.sua_doi * 1000).toLocaleString('vi-VN')}</td>
       <td class="text-right whitespace-nowrap">
         <button onclick="moXemManh('${n}','${e}')" class="btn btn-ghost btn-xs">Mảnh</button>
+        <button onclick="moLichSu('${n}','${e}')" class="btn btn-ghost btn-xs">Bản cũ</button>
         <button onclick="soanTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs">Sửa</button>
         <button onclick="xoaTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs btn-xoa">Xoá</button>
       </td></tr>`
@@ -3978,6 +3996,13 @@ function veBangTriThuc() {
   });
 }
 
+// Đoạn nội dung khớp từ khoá, hiện ngay dưới tên: tìm ra tài liệu rồi vẫn phải
+// biết nó khớp ở chỗ nào, không thì lại mở từng file ra đọc.
+function knTrichKhop(khoa) {
+  const t = knKhopNoiDung[khoa];
+  return t ? `<div class="text-[10px] text-gray-600 font-normal mt-0.5 leading-relaxed">${escapeHtml(t)}</div>` : '';
+}
+
 // Nhãn soi ngay cạnh tên tài liệu: tài liệu cũ chưa ai mở ra sửa cũng phải lộ
 // vấn đề, không thì chỉ tài liệu vừa soạn mới được soi.
 function knNhanSoi(t) {
@@ -3987,6 +4012,25 @@ function knNhanSoi(t) {
   // bảng không nói được gì, mà viết đủ chữ thì cột tên tài liệu vỡ.
   if (t.so_canh_bao) n.push(`<span class="kn-canh" title="${t.so_canh_bao} cảnh báo làm AI đọc thiếu ngữ cảnh — bấm Sửa để xem chi tiết">${t.so_canh_bao}</span>`);
   return n.length ? ' ' + n.join(' ') : '';
+}
+
+// Tìm: lọc theo tên chạy ngay tại chỗ (không chờ mạng), còn tìm trong NỘI DUNG
+// thì phải hỏi máy chủ - người vận hành nhớ "tài liệu nói về CIC" chứ không nhớ
+// tên file, nên thiếu phần này là tìm trượt rồi bỏ cuộc.
+function timTriThuc() {
+  veBangTriThuc();                       // phản hồi tức thì theo tên
+  clearTimeout(knTimHen);
+  knTimHen = setTimeout(async () => {
+    const tu = (document.getElementById('knTim')?.value || '').trim();
+    if (tu.length < 2) { knKhopNoiDung = {}; veBangTriThuc(); return; }
+    try {
+      const d = await fetch('/api/knowledge/tim?q=' + encodeURIComponent(tu)).then(r => r.json());
+      knKhopNoiDung = {};
+      (d.ket_qua || []).filter(k => k.khop === 'nội dung')
+        .forEach(k => { knKhopNoiDung[knKhoa(k.nhom, k.ten)] = k.trich; });
+      veBangTriThuc();
+    } catch (e) { /* mất mạng thì vẫn còn lọc theo tên */ }
+  }, 350);
 }
 
 function knHangCho() {
@@ -4184,6 +4228,124 @@ document.addEventListener('keydown', ev => {
   const hop = document.getElementById('knHopManh');
   if (!hop || hop.classList.contains('hidden')) return;
   if (ev.key === 'Escape') { ev.preventDefault(); dongXemManh(); }
+});
+
+// ---------------------------------------------------------------------------
+// Nhóm tài liệu: chỉ là thư mục con của knowledge/, thêm được từ giao diện
+// ---------------------------------------------------------------------------
+function veChonNhom() {
+  // Các ô chọn nhóm trước đây ghi cứng ba option trong HTML, nên nhóm mới thêm
+  // sẽ không bao giờ xuất hiện ở chỗ tải lên hay hộp soạn.
+  ['knNhom', 'knEditNhom'].forEach(id => {
+    const o = document.getElementById(id);
+    if (!o) return;
+    const dang_chon = o.value;
+    o.innerHTML = Object.keys(knNhomTuAPI)
+      .map(ma => `<option value="${escapeHtml(ma)}">${escapeHtml(knNhanNhom(ma))}</option>`).join('');
+    if (knNhomTuAPI[dang_chon]) o.value = dang_chon;
+  });
+}
+
+async function themNhomTriThuc() {
+  const ten = prompt('Tên nhóm mới (vd: Biểu phí dịch vụ):');
+  if (!ten || !ten.trim()) return;
+  try {
+    const fd = new FormData();
+    fd.append('ten', ten.trim());
+    const d = await fetch('/api/knowledge/nhom', { method: 'POST', body: fd }).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    thongBao('Đã thêm nhóm "' + d.nhan + '"');
+    loadTriThuc();
+  } catch (e) {
+    thongBao('Không thêm được nhóm: ' + e.message, 'loi');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bản cũ: ghi đè mà mất bản trước là mất đường lùi, mà đây là chỗ duy nhất
+// quyết định con số bot đọc cho khách.
+// ---------------------------------------------------------------------------
+let knLsDangMo = null;
+
+async function moLichSu(nhom, ten) {
+  const hop = document.getElementById('knHopLichSu');
+  const than = document.getElementById('knLsThan');
+  if (!hop || !than) return;
+  knLsDangMo = { nhom, ten };
+  hop.classList.remove('hidden');
+  document.getElementById('knLsTitle').textContent = ten;
+  document.getElementById('knLsPhu').textContent = 'Đang đọc…';
+  than.innerHTML = '';
+  try {
+    const d = await fetch(`/api/knowledge/lich-su?nhom=${encodeURIComponent(nhom)}&ten=${encodeURIComponent(ten)}`)
+      .then(r => r.json());
+    if (d.error) { than.innerHTML = '<div class="text-[11px] text-red-400">' + escapeHtml(d.error) + '</div>'; return; }
+    if (!d.ban.length) {
+      document.getElementById('knLsPhu').textContent = 'Chưa có bản nào';
+      than.innerHTML = '<div class="text-[11px] text-gray-600 leading-relaxed">'
+        + 'Tài liệu này chưa từng bị sửa từ khi có tính năng lưu bản cũ. '
+        + 'Mỗi lần lưu, xoá hay khôi phục, bản trước đó sẽ được giữ lại ở đây.</div>';
+      return;
+    }
+    document.getElementById('knLsPhu').textContent =
+      `${d.ban.length} bản, giữ tối đa ${d.so_ban_giu}`;
+    than.innerHTML = d.ban.map((b, i) => `<div class="kn-manh">
+      <div class="kn-manh-dau">
+        <span class="text-[11px] text-gray-200 font-medium">${knNgayGio(new Date(b.luc * 1000))}</span>
+        <span class="kn-manh-so">${knByte(b.kich_thuoc)}</span>
+        ${i === 0 ? '<span class="kn-manh-so">bản ngay trước bản hiện tại</span>' : ''}
+        <span class="flex-1"></span>
+        <button class="btn btn-ghost btn-xs" onclick="xemBanCu('${b.moc}')">Xem</button>
+        <button class="btn btn-soft btn-xs" onclick="khoiPhucBanCu('${b.moc}')">Khôi phục</button>
+      </div>
+      <div class="kn-manh-noi hidden" data-ban="${b.moc}"></div>
+    </div>`).join('');
+  } catch (e) {
+    than.innerHTML = '<div class="text-[11px] text-red-400">Không đọc được: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+async function xemBanCu(moc) {
+  if (!knLsDangMo) return;
+  const o = document.querySelector(`[data-ban="${CSS.escape(moc)}"]`);
+  if (!o) return;
+  if (!o.classList.contains('hidden')) { o.classList.add('hidden'); return; }
+  o.classList.remove('hidden');
+  o.textContent = 'Đang đọc…';
+  const { nhom, ten } = knLsDangMo;
+  const d = await fetch(`/api/knowledge/lich-su/noi-dung?nhom=${encodeURIComponent(nhom)}`
+    + `&ten=${encodeURIComponent(ten)}&moc=${encodeURIComponent(moc)}`).then(r => r.json());
+  o.textContent = d.error ? ('Lỗi: ' + d.error) : (d.noi_dung || '(rỗng)');
+}
+
+async function khoiPhucBanCu(moc) {
+  if (!knLsDangMo) return;
+  const { nhom, ten } = knLsDangMo;
+  // Bản đang có cũng vào lịch sử, nên khôi phục nhầm vẫn lùi lại được — nói rõ
+  // để người dùng khỏi ngại bấm.
+  if (!confirm('Đưa tài liệu về bản này? Bản đang dùng sẽ được giữ lại trong danh sách bản cũ.')) return;
+  try {
+    const fd = new FormData();
+    fd.append('nhom', nhom); fd.append('ten', ten); fd.append('moc', moc);
+    const d = await fetch('/api/knowledge/khoi-phuc', { method: 'POST', body: fd }).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    thongBao(`Đã khôi phục "${ten}" — AI đọc lại được ${d.so_manh} mảnh`);
+    dongLichSu();
+    loadTriThuc();
+  } catch (e) {
+    thongBao('Không khôi phục được: ' + e.message, 'loi');
+  }
+}
+
+function dongLichSu() {
+  document.getElementById('knHopLichSu')?.classList.add('hidden');
+  knLsDangMo = null;
+}
+
+document.addEventListener('keydown', ev => {
+  const hop = document.getElementById('knHopLichSu');
+  if (!hop || hop.classList.contains('hidden')) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); dongLichSu(); }
 });
 
 // ---------------------------------------------------------------------------

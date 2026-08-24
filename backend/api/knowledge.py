@@ -14,6 +14,7 @@ cho bảng lớn hay đổi. Ở đây là tài liệu tĩnh của chính hệ t
 phẩm, điều kiện, câu hỏi thường gặp.
 """
 
+import io
 import logging
 import re
 import time
@@ -29,20 +30,52 @@ router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 
 GOC = Path("./knowledge")
 
+# Lịch sử sửa để NGOÀI thư mục tri thức, và đó là quyết định an toàn chứ không
+# phải tiện tay: `RAGService.ingest_directory` quét `rglob("*.md")`, nên bản cũ
+# nằm trong `knowledge/` là RAG nạp luôn cả chúng - bot trả lời khách bằng lãi
+# suất đã bị thay, mà không có gì báo.
+GOC_LICH_SU = Path("./data/lich_su_tri_thuc")
+
+# Giữ bao nhiêu bản cho mỗi tài liệu. Tài liệu tri thức chỉ vài KB nên 20 bản
+# vẫn không đáng kể, mà đủ để lùi qua một buổi sửa nhiều lần.
+SO_BAN_GIU = 20
+
 # Thư mục cho phép. KHÔNG nhận tên thư mục tuỳ ý từ client: nó ghép thẳng vào
 # đường dẫn file, nhận bừa là mở đường ghi đè file bất kỳ trên máy.
 #
 # `products` có ý nghĩa ĐẶC BIỆT, đừng đổi tên: RAGService._mat_na_loc chỉ
 # lọc mảnh nằm trong thư mục này. Tài liệu sản phẩm đặt sai chỗ sẽ không được lọc,
 # và bot lại đọc lãi suất của sản phẩm khác cho khách.
-NHOM = {
+NHOM_GOC = {
     "products": "Sản phẩm — mỗi sản phẩm một file, dùng để lọc theo sản phẩm khi tư vấn",
     "faq": "Câu hỏi thường gặp",
     "chinh_sach": "Chính sách, điều kiện, quy định chung",
 }
 
+
+def cac_nhom() -> dict[str, str]:
+    """Nhóm = thư mục con của `knowledge/`, cộng ba nhóm gốc luôn có mặt.
+
+    Không giữ danh sách nhóm trong file cấu hình riêng: thư mục CHÍNH LÀ sự
+    thật, mà hai nguồn sự thật thì sớm muộn lệch nhau - lúc đó tài liệu nằm
+    trong thư mục không có trong danh sách sẽ tàng hình khỏi giao diện.
+
+    Bỏ qua thư mục ẩn: đó là chỗ hệ thống dùng, không phải nhóm tài liệu.
+    """
+    ra = dict(NHOM_GOC)
+    try:
+        for tm in sorted(GOC.iterdir()):
+            if tm.is_dir() and not tm.name.startswith("."):
+                ra.setdefault(tm.name, tm.name.replace("_", " "))
+    except FileNotFoundError:
+        pass
+    return ra
+
 DUOI_VAN_BAN = {".md", ".txt"}
 DUOI_BANG = {".csv", ".xlsx", ".xls"}
+# Word đọc bằng thư viện chuẩn của Python (xem `_docx_sang_van_ban`).
+# PDF thì không tự đọc được - phải thêm gói ngoài, mà máy chạy offline.
+DUOI_WORD = {".docx"}
 _TRAN_BYTE = 10 * 1024 * 1024
 
 
@@ -56,15 +89,25 @@ def _rag():
 
 
 def _ten_an_toan(ten: str) -> str:
-    """Về tên file trần, chỉ chữ-số-gạch. Rỗng nghĩa là không hợp lệ."""
+    """Về tên file trần, chỉ chữ-số-gạch. Rỗng nghĩa là không hợp lệ.
+
+    BỎ DẤU trước khi lọc ký tự, đừng băm thẳng: "Biểu phí dịch vụ" mà lọc thẳng
+    ra "bi_u_ph_d_ch_v" - tên vô nghĩa, và với nhóm `products` thì lưới lọc sản
+    phẩm neo theo tên file cũng hỏng theo.
+    """
+    import unicodedata
+
     ten = Path(ten.replace("\\", "/")).name          # bỏ mọi phần thư mục
-    goc = re.sub(r"\.(md|txt|csv|xlsx|xls)$", "", ten, flags=re.I)
+    goc = re.sub(r"\.(md|txt|csv|xlsx|xls|docx)$", "", ten, flags=re.I)
+    goc = unicodedata.normalize("NFD", goc)
+    goc = "".join(c for c in goc if unicodedata.category(c) != "Mn")
+    goc = goc.replace("đ", "d").replace("Đ", "D")
     goc = re.sub(r"[^0-9A-Za-z_-]+", "_", goc).strip("_")
     return goc[:60]
 
 
 def _duong_dan(nhom: str, ten: str) -> Path | None:
-    if nhom not in NHOM:
+    if nhom not in cac_nhom():
         return None
     goc = _ten_an_toan(ten)
     if not goc:
@@ -129,6 +172,73 @@ def _nap_lai_mot_tep(p: Path) -> int:
     return rag.dem_theo_nguon(src)
 
 
+# .docx là file zip chứa word/document.xml. Đọc bằng `zipfile` + `ElementTree`
+# của Python, KHÔNG thêm thư viện ngoài: máy chạy offline, mỗi phụ thuộc thêm là
+# một thứ có thể thiếu lúc dựng lại trên máy khác.
+_W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def _chu_trong(nut) -> str:
+    """Gộp chữ của một đoạn hoặc một ô.
+
+    Word tách một câu thành nhiều <w:r> khi có soát chính tả hay đổi định dạng
+    giữa chừng, nên phải nối các <w:t> lại chứ không lấy cái đầu tiên. <w:tab>
+    và <w:br> là khoảng trắng, bỏ hẳn thì chữ dính vào nhau.
+    """
+    ra = []
+    for con in nut.iter():
+        if con.tag == _W + "t":
+            ra.append(con.text or "")
+        elif con.tag in (_W + "tab", _W + "br"):
+            ra.append(" ")
+    return "".join(ra).strip()
+
+
+def _docx_sang_van_ban(raw: bytes) -> str:
+    """File Word -> văn bản, bảng giữ nguyên dạng bảng markdown.
+
+    Bảng là phần quan trọng nhất: biểu lãi suất trong Word là ca dùng chính, mà
+    mất bảng thì số rời khỏi tên cột và AI đọc số không biết của ai.
+    """
+    import xml.etree.ElementTree as ET
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            xml = z.read("word/document.xml")
+    except (zipfile.BadZipFile, KeyError) as e:
+        raise ValueError("Không đọc được file Word (.docx). File .doc đời cũ thì "
+                         "mở bằng Word rồi lưu lại dạng .docx.") from e
+
+    than = ET.fromstring(xml).find(_W + "body")
+    if than is None:
+        raise ValueError("File Word rỗng hoặc hỏng")
+
+    dong: list[str] = []
+    for nut in than:
+        if nut.tag == _W + "p":
+            chu = _chu_trong(nut)
+            if chu:
+                dong.append(chu)
+        elif nut.tag == _W + "tbl":
+            hang = [[_chu_trong(o) for o in tr.findall(_W + "tc")]
+                    for tr in nut.findall(_W + "tr")]
+            hang = [h for h in hang if any(c for c in h)]
+            if not hang:
+                continue
+            rong = max(len(h) for h in hang)
+            def _ke(o: list[str]) -> str:
+                o = list(o) + [""] * (rong - len(o))
+                return "| " + " | ".join(c.replace("|", "/") for c in o) + " |"
+            dong.append("")
+            dong.append(_ke(hang[0]))
+            dong.append("|" + "|".join(["---"] * rong) + "|")
+            dong += [_ke(h) for h in hang[1:]]
+            dong.append("")
+
+    return "\n".join(dong).strip() + "\n"
+
+
 def _bang_sang_markdown(raw: bytes, duoi: str, ten: str) -> str:
     """Excel/CSV -> bảng markdown. Giữ nguyên chữ trong ô, không diễn giải."""
     import io
@@ -162,7 +272,7 @@ def _bang_sang_markdown(raw: bytes, duoi: str, ten: str) -> str:
 async def danh_sach():
     rag = _rag()
     tai_lieu = []
-    for nhom in NHOM:
+    for nhom in cac_nhom():
         thu_muc = GOC / nhom
         if not thu_muc.exists():
             continue
@@ -184,9 +294,9 @@ async def danh_sach():
             })
     return {
         "tai_lieu": tai_lieu,
-        "nhom": NHOM,
+        "nhom": cac_nhom(),
         "tong": len(tai_lieu),
-        "duoi_nhan": sorted(DUOI_VAN_BAN | DUOI_BANG),
+        "duoi_nhan": sorted(DUOI_VAN_BAN | DUOI_BANG | DUOI_WORD),
     }
 
 
@@ -332,6 +442,194 @@ async def lay_mau(nhom: str = "products"):
     return {"nhom": nhom, "noi_dung": MAU[nhom]}
 
 
+@router.post("/nhom")
+async def them_nhom(ten: str = Form(...)):
+    """Thêm một nhóm tài liệu. Nhóm chỉ là thư mục con của `knowledge/`.
+
+    KHÔNG đụng tới ý nghĩa đặc biệt của `products`: `RAGService._mat_na_loc`
+    chỉ lọc mảnh nằm trong thư mục đó, nên nhóm mới là chỗ chứa tài liệu chung
+    chứ không thành sản phẩm để lọc.
+    """
+    # Từ chối thẳng chứ không "làm sạch rồi dùng": "../../etc" mà lọc còn "etc"
+    # thì người dùng gõ nhầm một đằng, hệ thống tạo ra một nẻo mà không báo gì.
+    if re.search(r"[/\\]|\.\.", ten or ""):
+        return {"error": "Tên nhóm không được chứa dấu gạch chéo hay hai chấm"}
+    ma = _ten_an_toan(ten).lower()
+    if not ma:
+        return {"error": "Tên nhóm chỉ dùng chữ, số và gạch dưới"}
+    if ma in cac_nhom():
+        return {"error": f"Nhóm '{ma}' đã có rồi"}
+    (GOC / ma).mkdir(parents=True, exist_ok=True)
+    logger.info("Tri thức: thêm nhóm %s", ma)
+    return {"ok": True, "ma": ma, "nhan": ma.replace("_", " "), "nhom": cac_nhom()}
+
+
+def _bo_dau_giu_vi_tri(s: str) -> str:
+    """Bỏ dấu nhưng GIỮ NGUYÊN ĐỘ DÀI, để vị trí khớp ánh xạ thẳng về chuỗi gốc.
+
+    `_khong_dau` gộp mọi ký tự lạ thành "_" nên độ dài đổi, dùng nó để lấy vị
+    trí là trích ra đoạn lệch chỗ. Bắt được trên máy thật: gõ "no xau" ra đúng
+    tài liệu nhưng đoạn trích lại là dòng tiêu đề ở đầu file, nên vẫn phải mở ra
+    dò tay - đúng thứ mà ô tìm sinh ra để khỏi phải làm.
+    """
+    import unicodedata
+
+    ra = []
+    for c in s:
+        if c in "đĐ":
+            ra.append("d" if c == "đ" else "D")
+            continue
+        goc = "".join(x for x in unicodedata.normalize("NFD", c)
+                      if unicodedata.category(x) != "Mn")
+        ra.append(goc[0] if goc else c)
+    return "".join(ra).lower()
+
+
+def _trich_quanh(noi_dung: str, vi_tri: int, rong: int = 90) -> str:
+    dau = max(0, vi_tri - rong // 3)
+    doan = noi_dung[dau:dau + rong].replace("\n", " ").strip()
+    return ("…" if dau else "") + doan + ("…" if dau + rong < len(noi_dung) else "")
+
+
+@router.get("/tim")
+async def tim(q: str = ""):
+    """Tìm trong NỘI DUNG lẫn tên file.
+
+    Người vận hành nhớ "cái tài liệu nói về CIC" chứ không nhớ nó tên gì, nên ô
+    tìm chỉ lọc theo tên là tìm trượt. Bỏ dấu khi so: gõ nhanh thì không ai bỏ
+    dấu, mà tìm trượt một lần là bỏ cuộc luôn.
+
+    Đọc thẳng từ đĩa, không dựng chỉ mục: số tài liệu ở đây tính bằng chục.
+    """
+    from backend.core.knowledge_rules import _khong_dau
+
+    tu = (q or "").strip()
+    if not tu:
+        return {"q": "", "ket_qua": []}
+    moc = _khong_dau(tu)
+
+    ket_qua = []
+    for nhom in cac_nhom():
+        thu_muc = GOC / nhom
+        if not thu_muc.exists():
+            continue
+        for p in sorted(thu_muc.glob("*.md")) + sorted(thu_muc.glob("*.txt")):
+            noi_dung = p.read_text(encoding="utf-8", errors="replace")
+            if moc in _khong_dau(p.stem):
+                ket_qua.append({"ten": p.stem, "nhom": nhom, "khop": "tên",
+                                "trich": _trich_quanh(noi_dung, 0)})
+                continue
+            vi_tri = _bo_dau_giu_vi_tri(noi_dung).find(_bo_dau_giu_vi_tri(tu))
+            if vi_tri >= 0:
+                ket_qua.append({"ten": p.stem, "nhom": nhom, "khop": "nội dung",
+                                "trich": _trich_quanh(noi_dung, vi_tri)})
+    return {"q": tu, "ket_qua": ket_qua}
+
+
+# --- lịch sử sửa ---------------------------------------------------------------
+#
+# Đây là chỗ duy nhất quyết định con số bot đọc cho khách, mà ghi đè là mất trắng
+# bản cũ - sửa nhầm lãi suất lúc gấp thì không có đường lùi.
+
+
+def _thu_muc_lich_su(nhom: str, ten: str) -> Path | None:
+    p = _duong_dan(nhom, ten)
+    return None if p is None else GOC_LICH_SU / nhom / p.stem
+
+
+def _cac_ban(nhom: str, ten: str) -> list[Path]:
+    """Các bản đã lưu, MỚI NHẤT ĐỨNG ĐẦU."""
+    tm = _thu_muc_lich_su(nhom, ten)
+    if tm is None or not tm.exists():
+        return []
+    return sorted(tm.glob("*.md"), key=lambda x: x.name, reverse=True)
+
+
+def _giu_ban_cu(p: Path, nhom: str, ten: str) -> None:
+    """Cất bản đang có trước khi ghi đè. Không có file thì không cất gì.
+
+    Lỗi cất bản cũ KHÔNG được chặn việc ghi: người dùng đang sửa lãi suất, chặn
+    lại vì lịch sử hỏng là chặn đúng việc quan trọng hơn.
+    """
+    if not p.exists():
+        return
+    tm = _thu_muc_lich_su(nhom, ten)
+    if tm is None:
+        return
+    try:
+        tm.mkdir(parents=True, exist_ok=True)
+        # Mốc kèm mili-giây: hai lần lưu trong cùng một giây là chuyện thường khi
+        # bấm Ctrl+S liên tục, trùng tên thì bản trước bị đè MẤT HẲN. Mili-giây
+        # vẫn trùng được (đo được: 25 lần lưu liên tiếp chỉ còn 16 bản), nên
+        # trùng thì thêm hậu tố - hậu tố đứng sau nên thứ tự theo tên vẫn đúng
+        # thứ tự thời gian.
+        goc_moc = time.strftime("%Y%m%d_%H%M%S") + f"_{int(time.time() * 1000) % 1000:03d}"
+        moc, dem = goc_moc, 0
+        while (tm / f"{moc}.md").exists():
+            dem += 1
+            moc = f"{goc_moc}_{dem}"
+        (tm / f"{moc}.md").write_text(p.read_text(encoding="utf-8", errors="replace"),
+                                      encoding="utf-8")
+        for cu in _cac_ban(nhom, ten)[SO_BAN_GIU:]:
+            cu.unlink(missing_ok=True)
+    except Exception as e:
+        logger.warning("Tri thức: không lưu được bản cũ của %s: %s", p, e)
+
+
+def _duong_dan_ban(nhom: str, ten: str, moc: str) -> Path | None:
+    """Đường dẫn một bản trong lịch sử. `moc` đến từ client nên phải chặn."""
+    tm = _thu_muc_lich_su(nhom, ten)
+    if tm is None or not re.fullmatch(r"[0-9_]{1,32}", moc or ""):
+        return None
+    p = (tm / f"{moc}.md").resolve()
+    try:
+        p.relative_to(tm.resolve())
+    except ValueError:
+        return None
+    return p
+
+
+@router.get("/lich-su")
+async def lich_su(nhom: str, ten: str):
+    ban = [{
+        "moc": p.stem,
+        "kich_thuoc": p.stat().st_size,
+        "luc": p.stat().st_mtime,
+    } for p in _cac_ban(nhom, ten)]
+    return {"nhom": nhom, "ten": ten, "ban": ban, "so_ban_giu": SO_BAN_GIU}
+
+
+@router.get("/lich-su/noi-dung")
+async def lich_su_noi_dung(nhom: str, ten: str, moc: str):
+    p = _duong_dan_ban(nhom, ten, moc)
+    if p is None or not p.exists():
+        return {"error": "Không có bản này trong lịch sử"}
+    return {"nhom": nhom, "ten": ten, "moc": moc,
+            "noi_dung": p.read_text(encoding="utf-8", errors="replace")}
+
+
+@router.post("/khoi-phuc")
+async def khoi_phuc(nhom: str = Form(...), ten: str = Form(...), moc: str = Form(...)):
+    """Đưa tài liệu về một bản cũ.
+
+    Bản ĐANG CÓ cũng vào lịch sử: khôi phục nhầm cũng phải lùi lại được, không
+    thì hoàn tác thành một chiều và người dùng mất bản mới.
+    """
+    ban = _duong_dan_ban(nhom, ten, moc)
+    if ban is None or not ban.exists():
+        return {"error": "Không có bản này trong lịch sử"}
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        return {"error": "Tên hoặc nhóm không hợp lệ"}
+
+    _giu_ban_cu(p, nhom, ten)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(ban.read_text(encoding="utf-8", errors="replace"), encoding="utf-8")
+    so_manh = _nap_lai_mot_tep(p)
+    logger.info("Tri thức: khôi phục %s về bản %s (%d mảnh)", p, moc, so_manh)
+    return {"ok": True, "ten": p.stem, "nhom": nhom, "moc": moc, "so_manh": so_manh}
+
+
 # --- ghi -----------------------------------------------------------------------
 
 @router.post("/luu")
@@ -339,6 +637,7 @@ async def luu(nhom: str = Form(...), ten: str = Form(...), noi_dung: str = Form(
     p = _duong_dan(nhom, ten)
     if p is None:
         return {"error": "Tên hoặc nhóm không hợp lệ. Tên chỉ dùng chữ, số, gạch."}
+    _giu_ban_cu(p, nhom, ten)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(noi_dung, encoding="utf-8")
     so_manh = _nap_lai_mot_tep(p)
@@ -349,8 +648,9 @@ async def luu(nhom: str = Form(...), ten: str = Form(...), noi_dung: str = Form(
 @router.post("/upload")
 async def upload(file: UploadFile = File(...), nhom: str = Form("products"),
                  ten: str = Form("")):
-    if nhom not in NHOM:
-        return {"error": f"Nhóm không hợp lệ. Chọn: {', '.join(NHOM)}"}
+    nhom_hop_le = cac_nhom()
+    if nhom not in nhom_hop_le:
+        return {"error": f"Nhóm không hợp lệ. Chọn: {', '.join(nhom_hop_le)}"}
 
     raw = await file.read()
     if not raw:
@@ -366,17 +666,25 @@ async def upload(file: UploadFile = File(...), nhom: str = Form("products"),
             noi_dung = _bang_sang_markdown(raw, duoi, _ten_an_toan(goc_ten))
         except Exception as e:
             return {"error": f"Không đọc được bảng: {e}"}
+    elif duoi in DUOI_WORD:
+        try:
+            noi_dung = _docx_sang_van_ban(raw)
+        except ValueError as e:
+            return {"error": str(e)}
+        except Exception as e:
+            return {"error": f"Không đọc được file Word: {e}"}
     elif duoi in DUOI_VAN_BAN or not duoi:
         noi_dung = raw.decode("utf-8", errors="replace")
     else:
         return {"error": f"Chưa đọc được đuôi '{duoi}'. Nhận: "
-                         f"{', '.join(sorted(DUOI_VAN_BAN | DUOI_BANG))}. "
-                         "File Word/PDF thì lưu lại thành .txt rồi tải lên."}
+                         f"{', '.join(sorted(DUOI_VAN_BAN | DUOI_BANG | DUOI_WORD))}. "
+                         "File PDF thì mở ra, chọn hết rồi dán vào ô Soạn tài liệu."}
 
     p = _duong_dan(nhom, goc_ten)
     if p is None:
         return {"error": "Tên file không hợp lệ"}
     ghi_de = p.exists()
+    _giu_ban_cu(p, nhom, ten)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(noi_dung, encoding="utf-8")
     so_manh = _nap_lai_mot_tep(p)
@@ -401,6 +709,8 @@ async def xoa(nhom: str, ten: str):
     if rag:
         for src in dict.fromkeys(_cac_dang_nguon(p)):
             rag.xoa_theo_nguon(src)
+    # Cất bản cuối trước khi xoá: lỡ tay xoá vẫn lấy lại được.
+    _giu_ban_cu(p, nhom, ten)
     p.unlink()
     logger.info("Tri thức: xoá %s", p)
     return {"ok": True, "da_xoa": p.name}

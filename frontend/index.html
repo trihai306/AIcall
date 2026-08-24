@@ -1905,13 +1905,13 @@
               <span class="text-cyan-400">bấm để chọn từ máy</span>
             </div>
             <div class="text-[10px] text-gray-600 leading-relaxed max-w-[520px]">
-              Nhận <span class="text-gray-400">.md .txt</span> và bảng tính
-              <span class="text-gray-400">.csv .xlsx</span> — bảng lãi suất Excel được
-              chuyển thành bảng cho AI đọc, không phải gõ lại tay.
-              File Word/PDF thì lưu thành .txt rồi tải lên.
+              Nhận <span class="text-gray-400">.md .txt .docx</span> và bảng tính
+              <span class="text-gray-400">.csv .xlsx</span> — bảng trong Word và Excel
+              được giữ nguyên dạng bảng cho AI đọc, không phải gõ lại tay.
+              File PDF thì mở ra, chọn hết rồi dán vào ô Soạn tài liệu.
             </div>
           </div>
-          <input type="file" id="knFile" accept=".md,.txt,.csv,.xlsx,.xls" class="hidden">
+          <input type="file" id="knFile" accept=".md,.txt,.csv,.xlsx,.xls,.docx" class="hidden">
 
           <!-- File đã chọn: hiện tên + dung lượng rồi mới cho bấm Tải lên, để
                người dùng kịp thấy mình chọn nhầm file. -->
@@ -1971,8 +1971,8 @@
               <svg class="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
               <!-- padding-left để inline: `.inp` đặt `padding` rút gọn trong
                    style.css, nạp sau tailwind.css nên `pl-8` sẽ bị nuốt. -->
-              <input id="knTim" type="search" placeholder="Tìm theo tên tài liệu…"
-                     class="inp" style="padding-left:29px" oninput="veBangTriThuc()">
+              <input id="knTim" type="search" placeholder="Tìm trong tên và nội dung…"
+                     class="inp" style="padding-left:29px" oninput="timTriThuc()">
             </div>
           </div>
           <div class="overflow-x-auto">
@@ -1985,6 +1985,22 @@
               <tbody id="knRows"></tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <!-- Bản cũ của một tài liệu. Đây là chỗ duy nhất quyết định con số bot
+           đọc cho khách, nên ghi đè mà mất bản cũ là mất đường lùi. -->
+      <div id="knHopLichSu" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-6">
+        <div class="bg-deep border border-slate-750 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+          <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-750">
+            <div class="min-w-0">
+              <h3 id="knLsTitle" class="text-sm font-semibold text-white truncate">Bản cũ</h3>
+              <p id="knLsPhu" class="text-[10px] text-gray-600 mt-0.5">Đang đọc…</p>
+            </div>
+            <button onclick="dongLichSu()" aria-label="Đóng"
+                    class="text-gray-500 hover:text-white text-xl leading-none px-1">&times;</button>
+          </div>
+          <div id="knLsThan" class="p-5 space-y-2 overflow-y-auto flex-1"></div>
         </div>
       </div>
 
