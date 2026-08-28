@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="vi" >
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceBank AI — Hướng dẫn từng tính năng</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f6f7f9;
+  --bg-card:#ffffff;
+  --fg:#17181c;
+  --fg-dim:#5c6270;
+  --fg-faint:#868d9b;
+  --line:#e2e5ea;
+  --line-soft:#eceef2;
+  --accent:#0f8a5f;
+  --accent-soft:#e7f6ef;
+  --warn:#a8620a;
+  --warn-soft:#fdf3e3;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1013;
+    --bg-soft:#15181d;
+    --bg-card:#15181d;
+    --fg:#e8eaee;
+    --fg-dim:#a3aab8;
+    --fg-faint:#7b8393;
+    --line:#272c34;
+    --line-soft:#1e222a;
+    --accent:#3ddc97;
+    --accent-soft:#12241d;
+    --warn:#e0a45c;
+    --warn-soft:#241c10;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1013;
+  --bg-soft:#15181d;
+  --bg-card:#15181d;
+  --fg:#e8eaee;
+  --fg-dim:#a3aab8;
+  --fg-faint:#7b8393;
+  --line:#272c34;
+  --line-soft:#1e222a;
+  --accent:#3ddc97;
+  --accent-soft:#12241d;
+  --warn:#e0a45c;
+  --warn-soft:#241c10;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:960px;margin:0 auto;padding:48px 24px 96px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);margin:0 0 10px}
+h1{font-size:34px;line-height:1.2;margin:0 0 12px;letter-spacing:-.02em}
+.lede{font-size:17px;color:var(--fg-dim);margin:0;max-width:66ch}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);
+   margin:56px 0 18px;padding-bottom:8px;border-bottom:1px solid var(--line-soft)}
+h3{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+p{margin:0 0 12px}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.88em;background:var(--bg-soft);
+     border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px}
+.toggle{position:fixed;top:16px;right:16px;background:var(--bg-card);color:var(--fg-dim);
+        border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;
+        cursor:pointer;font-family:inherit}
+.toggle:hover{color:var(--fg);border-color:var(--fg-faint)}
+
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;
+      padding:22px 24px;margin:0 0 14px}
+.card .role{font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+            color:var(--accent);margin:0 0 8px;font-weight:600}
+.card p:last-child{margin-bottom:0}
+.card ul{margin:10px 0 0;padding-left:20px}
+.card li{margin:0 0 6px;color:var(--fg-dim)}
+.card li strong{color:var(--fg);font-weight:600}
+.note{margin-top:14px;padding:11px 14px;background:var(--warn-soft);
+      border-left:3px solid var(--warn);border-radius:0 6px 6px 0;
+      font-size:14.5px;color:var(--fg-dim)}
+.note strong{color:var(--fg)}
+
+table{width:100%;border-collapse:collapse;margin:0 0 8px;font-size:15px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-faint);font-weight:600}
+td:first-child{white-space:nowrap;font-weight:600}
+.scroll-x{overflow-x:auto}
+
+figure{margin:26px 0 30px;padding:20px 20px 16px;background:var(--bg-soft);
+       border:1px solid var(--line-soft);border-radius:12px}
+figure svg{display:block;width:100%;height:auto;color:var(--fg-dim)}
+figcaption{margin-top:14px;font-size:14px;color:var(--fg-faint);line-height:1.55}
+
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+ol.steps li{counter-increment:s;position:relative;padding:0 0 16px 42px;
+            border-left:1px solid var(--line);margin-left:13px}
+ol.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+ol.steps li::before{content:counter(s);position:absolute;left:-13px;top:0;
+  width:26px;height:26px;border-radius:50%;background:var(--bg);border:1px solid var(--line);
+  color:var(--fg-dim);font-size:13px;font-weight:600;display:grid;place-items:center}
+ol.steps b{display:block;color:var(--fg);margin-bottom:2px}
+ol.steps span{color:var(--fg-dim);font-size:15px}
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+       font-size:14px;color:var(--fg-faint)}
+</style>
+</head>
+<body>
+<button class="toggle" id="doiNen" type="button">Đổi nền</button>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">VoiceBank AI · Hệ thống gọi điện tư vấn</p>
+  <h1>Hướng dẫn từng tính năng</h1>
+  <p class="lede">Mỗi mục dưới đây tương ứng một trang trong thanh bên trái của ứng dụng: trang đó làm gì, khi nào cần mở, và chỗ nào dễ hỏng. Phần mềm chạy hoàn toàn trên máy bạn, không gửi dữ liệu ra ngoài.</p>
+</header>
+
+<h2>Một lượt nói diễn ra thế nào</h2>
+<p>Hiểu sơ đồ này thì mọi trang cấu hình phía sau đều có chỗ đứng: mỗi trang chỉnh một khối trong đây.</p>
+
+<figure>
+<svg viewBox="0 0 960 200" role="img" aria-label="Sơ đồ một lượt nói: khách nói, STT, RAG, LLM, TTS, khách nghe; câu đệm chạy song song bên dưới">
+  <defs>
+    <marker id="mui" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+    <marker id="muiXanh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#10a37f"/>
+    </marker>
+  </defs>
+
+  <rect x="20"  y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="175" y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="330" y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="485" y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="640" y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="795" y="30" width="120" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+
+  <text x="80"  y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Khách nói</text>
+  <text x="80"  y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">micro / điện thoại</text>
+  <text x="235" y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Nghe ra chữ</text>
+  <text x="235" y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">PhoWhisper</text>
+  <text x="390" y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Tra tài liệu</text>
+  <text x="390" y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">Tri thức AI</text>
+  <text x="545" y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Nghĩ câu</text>
+  <text x="545" y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">Qwen2.5</text>
+  <text x="700" y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Đọc thành tiếng</text>
+  <text x="700" y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">F5-TTS</text>
+  <text x="855" y="54" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Khách nghe</text>
+  <text x="855" y="71" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">qua ống nghe</text>
+
+  <line x1="142" y1="58" x2="171" y2="58" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="297" y1="58" x2="326" y2="58" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="452" y1="58" x2="481" y2="58" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="607" y1="58" x2="636" y2="58" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="762" y1="58" x2="791" y2="58" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+
+  <rect x="345" y="125" width="220" height="50" rx="8" fill="none" stroke="#10a37f" stroke-width="1.4"/>
+  <text x="455" y="145" text-anchor="middle" font-size="13.5" font-weight="600" fill="#10a37f">Câu đệm</text>
+  <text x="455" y="162" text-anchor="middle" font-size="11" fill="#10a37f" opacity=".85">“Dạ vâng, để em xem ạ”</text>
+
+  <polyline points="80,88 80,150 341,150" fill="none" stroke="#10a37f" stroke-width="1.4" marker-end="url(#muiXanh)"/>
+  <polyline points="565,150 855,150 855,90" fill="none" stroke="#10a37f" stroke-width="1.4" marker-end="url(#muiXanh)"/>
+  <text x="92"  y="143" font-size="11.5" fill="#10a37f">ngay khi khách dứt lời</text>
+  <text x="578" y="143" font-size="11.5" fill="#10a37f">câu thật nối vào sau</text>
+</svg>
+<figcaption>Đường xanh không chờ bốn khối phía trên. Câu đệm phát ngay lúc khách vừa dứt lời, trong khi máy còn đang nghe — tra — nghĩ — đọc. Bỏ câu đệm đi thì khách nghe một quãng im đúng bằng chiều dài chuỗi phía trên.</figcaption>
+</figure>
+
+<h2>Con số AI nói ra lấy từ đâu</h2>
+
+<figure>
+<svg viewBox="0 0 920 250" role="img" aria-label="Sơ đồ ba nguồn dữ liệu: Kịch bản, Tri thức AI, Nguồn dữ liệu cùng đi vào khối ghép câu rồi ra câu AI nói">
+  <rect x="20"  y="20"  width="200" height="54" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="20"  y="100" width="200" height="54" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="20"  y="180" width="200" height="54" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="380" y="100" width="180" height="54" rx="8" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="680" y="100" width="200" height="54" rx="8" fill="none" stroke="#10a37f" stroke-width="1.4"/>
+
+  <text x="120" y="43"  text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Kịch bản</text>
+  <text x="120" y="60"  text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">xưng danh, luật riêng ngành</text>
+  <text x="120" y="123" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Tri thức AI</text>
+  <text x="120" y="140" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">lãi suất, hạn mức, điều kiện</text>
+  <text x="120" y="203" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Nguồn dữ liệu</text>
+  <text x="120" y="220" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">hồ sơ riêng từng khách</text>
+  <text x="470" y="123" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">Ghép câu</text>
+  <text x="470" y="140" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">mô hình ngôn ngữ</text>
+  <text x="780" y="123" text-anchor="middle" font-size="14" font-weight="600" fill="#10a37f">Câu AI nói ra</text>
+  <text x="780" y="140" text-anchor="middle" font-size="11" fill="#10a37f" opacity=".85">chỉ chứa số của ba nguồn</text>
+
+  <polyline points="222,47 330,47 330,113 376,113" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="222" y1="127" x2="376" y2="127" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <polyline points="222,207 330,207 330,141 376,141" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#mui)"/>
+  <line x1="562" y1="127" x2="676" y2="127" stroke="#10a37f" stroke-width="1.4" marker-end="url(#muiXanh)"/>
+
+  <text x="265" y="40"  text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">luật</text>
+  <text x="272" y="120" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">dẫn chứng</text>
+  <text x="265" y="200" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">số thật</text>
+  <text x="619" y="120" text-anchor="middle" font-size="11" fill="#10a37f">đọc lên</text>
+</svg>
+<figcaption>Không có mũi tên nào đi từ chỗ khác vào khối ghép câu. Muốn AI nói một con số mới, phải nạp nó vào một trong ba hộp bên trái — không có cách nào dặn miệng.</figcaption>
+</figure>
+
+<h2>Bản đồ nhanh 19 trang</h2>
+<div class="scroll-x">
+<table>
+<thead><tr><th>Trang</th><th>Dùng để</th><th>Mở khi</th></tr></thead>
+<tbody>
+<tr><td>Tổng quan</td><td>Số cuộc gọi, tỉ lệ nghe máy, chiến dịch đang chạy</td><td>Đầu ngày</td></tr>
+<tr><td>Hội thoại</td><td>Bấm micro nói thử như đang gọi, có tiếng</td><td>Nghiệm thu giọng</td></tr>
+<tr><td>Nhắn tin</td><td>Gõ chữ hỏi thử, xem AI trả lời và vì sao</td><td>Soát nội dung</td></tr>
+<tr><td>Danh bạ gọi</td><td>Danh sách số, chiến dịch tự động</td><td>Trước đợt gọi</td></tr>
+<tr><td>Báo cáo</td><td>Lọc cuộc gọi, nghe ghi âm, đọc tóm tắt</td><td>Cuối ngày</td></tr>
+<tr><td>Kịch bản</td><td>Bot xưng danh gì, luật riêng từng ngành</td><td>Khi đổi sản phẩm</td></tr>
+<tr><td>Nguồn dữ liệu</td><td>Nối file Excel / SQLite để tra hồ sơ khách</td><td>Khi cần số riêng</td></tr>
+<tr><td>Tri thức AI</td><td>Tài liệu AI đọc để tư vấn</td><td>Khi đổi lãi suất</td></tr>
+<tr><td>Câu đệm</td><td>Câu nói ngay lúc khách vừa dứt lời</td><td>Khi thấy quãng im</td></tr>
+<tr><td>Giọng nói</td><td>Nạp giọng mẫu, chỉnh tốc đọc</td><td>Khi đổi giọng</td></tr>
+<tr><td>Thiết bị</td><td>Điện thoại / gateway để gọi ra, gọi vào</td><td>Khi cắm máy mới</td></tr>
+<tr><td>Cài đặt</td><td>Tên ngân hàng, model, ghi âm, Telegram</td><td>Lần đầu dựng</td></tr>
+<tr><td>Phiên gọi</td><td>Lịch sử từng lượt nói và độ trễ</td><td>Khi truy lỗi</td></tr>
+<tr><td>Test giọng</td><td>So sánh hai giọng, chạy cả bộ câu khó</td><td>Trước khi chốt giọng</td></tr>
+<tr><td>Training giọng</td><td>Thu 60 câu rồi nhân bản giọng người thật</td><td>Khi muốn giọng riêng</td></tr>
+<tr><td>Training LLM</td><td>Dạy máy trả lời theo cách của bạn</td><td>Khi câu trả lời lệch</td></tr>
+<tr><td>Cài Model</td><td>Tải các model AI về máy</td><td>Lần đầu dựng</td></tr>
+<tr><td>Benchmark</td><td>Đo tốc từng khâu và cả chuỗi</td><td>Khi thấy chậm</td></tr>
+<tr><td>Logs</td><td>Nhật ký thô của các dịch vụ</td><td>Khi có lỗi lạ</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Nhóm Vận hành</h2>
+
+<div class="card">
+  <p class="role">Trang 1</p>
+  <h3>Tổng quan</h3>
+  <p>Màn hình mở đầu. Năm ô số trên cùng: cuộc gọi hôm nay, tỉ lệ nghe máy, tổng thời lượng, số cuộc có ghi âm, số chiến dịch đang chạy. Bên dưới là chiến dịch đang chạy, thiết bị đang nối và cuộc gọi gần nhất.</p>
+  <ul>
+    <li><strong>Làm mới</strong> — số liệu không tự chạy theo thời gian thực, bấm nút góc phải để lấy lại.</li>
+    <li><strong>Mở danh bạ</strong> và <strong>Quản lý</strong> — lối tắt sang trang tương ứng.</li>
+  </ul>
+  <div class="note"><strong>Tất cả bằng 0 mà bạn vừa gọi xong?</strong> Ô số đếm theo <em>ngày</em>. Cuộc gọi lúc nửa đêm rơi sang ngày mới, xem ở trang Báo cáo thay vì ở đây.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 2</p>
+  <h3>Hội thoại</h3>
+  <p>Nói thử với AI y như đang gọi điện, có phát tiếng. Bấm micro rồi nói; bấm lần nữa khi nói xong để AI trả lời. Bốn nút sản phẩm phía trên — Vay tín chấp, Vay mua nhà, Thẻ tín dụng, Tiết kiệm — đổi kịch bản mà AI đang đóng vai.</p>
+  <ul>
+    <li><strong>Bốn ô đo</strong> STT, RAG, TTFA, TOTAL hiện thời gian từng khâu tính bằng mili-giây.</li>
+    <li><strong>Ngưỡng “khách chờ tới khi AI nói”</strong> đặt ở dưới 1000ms — vượt mốc này là khách bắt đầu thấy máy chậm.</li>
+    <li><strong>Session ID</strong> ở khối bên phải là bằng chứng đường truyền hai chiều đã thông.</li>
+  </ul>
+  <div class="note"><strong>Số ở đây bi quan hơn cuộc gọi thật.</strong> Trình duyệt còn phải mã hoá và truyền tiếng qua WebSocket. Đừng lấy con số trang này làm chuẩn nghiệm thu độ trễ.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 3</p>
+  <h3>Nhắn tin</h3>
+  <p>Cùng bộ não với trang Hội thoại nhưng chỉ chạy bằng chữ, không phát tiếng. Gõ câu khách hay hỏi rồi Enter. Kèm mỗi câu trả lời là một <em>phiếu soi</em> cho biết AI đã lấy mảnh tài liệu nào để trả lời như vậy.</p>
+  <ul>
+    <li><strong>Chọn giọng và thanh Tốc</strong> ngay trên đầu trang — đổi tốc đọc rồi thử lại mà không phải sang trang Giọng nói.</li>
+    <li>Đây là chỗ nhanh nhất để soát nội dung: bỏ hẳn khâu nghe và khâu đọc nên lỗi nào còn lại đúng là lỗi nội dung.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <p class="role">Trang 4</p>
+  <h3>Danh bạ gọi</h3>
+  <p>Kho số khách hàng và nơi bấm chạy chiến dịch. Nhập danh sách từ file, xuất CSV, thêm từng số, hoặc nhập lại từ một chiến dịch khác.</p>
+  <ul>
+    <li><strong>Gọi số tiếp theo</strong> — gọi thủ công một số trong hàng đợi.</li>
+    <li><strong>Chạy chiến dịch tự động</strong> — chọn chiến dịch ở ô lọc phía dưới trước, nút mới bật lên.</li>
+    <li><strong>Cài đặt khác</strong> — số lần gọi lại, khoảng cách giữa hai lần, khung giờ được phép gọi.</li>
+    <li>Bảng dưới cho lọc theo trạng thái và xem từng số đã gọi mấy lần, lúc nào.</li>
+  </ul>
+  <div class="note"><strong>Chưa có thiết bị thì không gọi được.</strong> Danh bạ chỉ giữ số; việc bấm số do máy ở trang Thiết bị làm. Dựng danh bạ trước rồi mới cắm máy vẫn được, nhưng đừng bấm chạy chiến dịch khi trang Thiết bị còn trống.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 5</p>
+  <h3>Báo cáo</h3>
+  <p>Nơi xem lại việc đã làm. Lọc theo khoảng ngày, chiến dịch, kết quả, chất lượng, nhãn, thời lượng, giới tính khách, hướng gọi ra hay gọi vào, và tìm chữ trong nội dung hội thoại.</p>
+  <ul>
+    <li><strong>Chỉ cuộc có ghi âm</strong> — lọc bỏ những cuộc không thu tiếng.</li>
+    <li><strong>Gộp cả phiên thử trên trình duyệt</strong> — mặc định các lần bạn tự thử ở trang Hội thoại bị ẩn đi; bật ô này nếu muốn thấy chúng.</li>
+    <li><strong>Tóm tắt các cuộc còn thiếu</strong> — chạy AI đọc lại những cuộc chưa có tóm tắt.</li>
+    <li><strong>Xuất CSV</strong> lấy đúng tập đang lọc, không phải toàn bộ.</li>
+  </ul>
+</div>
+
+<h2>Nhóm Cấu hình</h2>
+
+<div class="card">
+  <p class="role">Trang 6</p>
+  <h3>Kịch bản</h3>
+  <p>Quy định AI xưng là ai, chào thế nào, và những luật riêng của ngành hàng. Tải form mẫu về điền rồi nhập lên, hoặc tạo mới ngay trên trang.</p>
+  <div class="note"><strong>Luật chung không nằm ở đây.</strong> Độ dài câu, cấm bịa số, cấm đọc liệt kê là luật cố định trong hệ thống — kịch bản không ghi đè được. Đó là chủ ý: chúng là hàng rào an toàn, không phải tuỳ chọn.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 7</p>
+  <h3>Nguồn dữ liệu</h3>
+  <p>Nối file dữ liệu trên máy để bot tra cứu khi tư vấn — dùng khi câu trả lời phải phụ thuộc <em>từng khách cụ thể</em>, chứ không phải thông tin chung. Nhận <code>.db</code>, <code>.sqlite</code>, <code>.xlsx</code>, <code>.csv</code>, tối đa 200 MB, lưu vào <code>data/nguon/</code>.</p>
+  <ul>
+    <li>Chỉ nhận đường dẫn cục bộ — hệ thống chạy offline hoàn toàn, không nối ra máy chủ nào.</li>
+    <li>Bảng dưới hiện số dòng đọc được và lần nạp cuối, dùng để biết file đã vào máy chưa.</li>
+  </ul>
+  <div class="note"><strong>Phân biệt với Tri thức AI.</strong> Nguồn dữ liệu trả lời “khách này dư nợ bao nhiêu”. Tri thức AI trả lời “lãi suất gói này bao nhiêu”. Nhầm chỗ là nạp xong AI vẫn không dùng tới.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 8</p>
+  <h3>Tri thức AI</h3>
+  <p>Đây là thứ AI đọc để tư vấn. Mọi con số bot nói cho khách — lãi suất, hạn mức, điều kiện — đều lấy từ đây. Tài liệu chia ba nhóm: Sản phẩm, Câu hỏi thường gặp, Chính sách / điều kiện.</p>
+  <ul>
+    <li><strong>Nhận</strong> <code>.md</code> <code>.txt</code> <code>.docx</code> và bảng tính <code>.csv</code> <code>.xlsx</code>. Bảng trong Word và Excel giữ nguyên dạng bảng, không phải gõ lại tay.</li>
+    <li><strong>File PDF không nhận.</strong> Mở PDF ra, chọn hết, dán vào ô <em>Soạn tài liệu</em>.</li>
+    <li><strong>Hỏi thử AI</strong> — gõ câu khách hay hỏi để xem AI lấy được mảnh nào, từ tài liệu nào, khớp bao nhiêu phần trăm. Chỉ tra tài liệu, không gọi cho ai.</li>
+    <li><strong>Nạp lại toàn bộ</strong> sau khi sửa nhiều file cùng lúc.</li>
+  </ul>
+  <div class="note"><strong>Cột “AI đã đọc” là cột quan trọng nhất.</strong> Tài liệu vừa tải lên chưa được cắt mảnh và đánh chỉ mục thì AI chưa nhìn thấy nó. Sửa lãi suất xong phải thấy cột này đổi thì mới yên tâm.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 9</p>
+  <h3>Câu đệm</h3>
+  <p>Câu AI nói ngay khi khách vừa dứt lời, phát song song trong lúc máy còn đang nghĩ câu trả lời — chính là đường xanh trong sơ đồ đầu trang. Không có nó thì khách nghe một quãng im.</p>
+  <ul>
+    <li><strong>Tình huống</strong> — mỗi tình huống có ví dụ câu khách nói và một mẩu mở đầu tương ứng.</li>
+    <li><strong>Thử một câu khách nói</strong> — máy chấm điểm giống hệt lúc gọi thật, kể cả khi câu còn cụt, vì câu đệm phải phát <em>trước khi</em> khách nói xong.</li>
+    <li><strong>Câu đuôi dùng chung</strong> — dùng khi không nhận ra tình huống nào. Đây là đường xuống cấp cuối cùng.</li>
+    <li><strong>Dựng tiếng</strong> — sinh sẵn file tiếng cho toàn bộ câu đệm.</li>
+  </ul>
+  <div class="note"><strong>Để trống mục Câu đuôi là hỏng nặng nhất.</strong> Rỗng nó nghĩa là khi máy không đoán ra tình huống, khách nghe im lặng trọn quãng chờ — đúng thứ mà cả trang này sinh ra để tránh.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 10</p>
+  <h3>Giọng nói</h3>
+  <p>Nạp giọng mẫu, nghe thử, và chỉnh tốc đọc cho cuộc gọi. Một giọng gồm file WAV mẫu và transcript đúng nội dung đọc trong file đó.</p>
+  <ul>
+    <li><strong>Đoạn mẫu 3–5 giây</strong> là đủ. Tệp dài hơn 30 giây tự vào mục <em>Bản ghi dài</em>, máy nghe hết rồi gợi ý đoạn mẫu tốt nhất.</li>
+    <li><strong>Đọc giống cuộc gọi</strong> — bật ô này khi phát thử để máy cắt mảnh y như đường gọi thật, thay vì đọc liền một hơi.</li>
+  </ul>
+  <div class="note"><strong>Transcript sai thì giọng đọc sai.</strong> Máy tin transcript bạn khai là nội dung thật của file mẫu. Khai lệch một chữ, giọng sinh ra sẽ mang đúng chữ sai đó vào mọi câu.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 11</p>
+  <h3>Thiết bị</h3>
+  <p>Điện thoại, gateway hoặc modem mà hệ thống dùng để gọi ra và nhận cuộc gọi vào. Hai phần tách biệt: thiết bị cắm cổng USB, và phone farm điều khiển qua ADB.</p>
+  <ul>
+    <li><strong>Tốc độ đọc khi gọi điện thoại</strong> — khối trên cùng của trang. Hệ số <em>nhân thêm</em> vào tốc riêng của từng giọng, chỉ áp cho cuộc gọi thật. Nút <strong>Nghe như khách nghe (8kHz)</strong> phát bản đã bóp xuống băng hẹp giống đường điện thoại.</li>
+    <li><strong>Quét cổng USB</strong> / <strong>Quét máy</strong> — tìm thiết bị đang cắm.</li>
+    <li><strong>Phone farm</strong> — cắm điện thoại Android qua USB hub và bật <em>Gỡ lỗi USB</em> trên máy đó. Hệ thống tự bấm số và đọc trạng thái cuộc gọi.</li>
+    <li><strong>Kiểm tra máy</strong> — soi từng khâu khi cắm vào mà chưa gọi được: kết nối USB, màn hình, SIM, sóng, pin, quyền root, và app cầu nối tiếng.</li>
+    <li><strong>Nhận cuộc gọi đến</strong> — bật để máy tự trả lời cuộc gọi vào.</li>
+  </ul>
+  <div class="note"><strong>“Không ai bắt máy” thường không phải lỗi phần mềm.</strong> SIM hết tiền, màn hình đang khoá, và hộp thoại chọn SIM đều cho ra đúng triệu chứng đó. Bấm <em>Kiểm tra</em> trước khi đi sửa cấu hình.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 12</p>
+  <h3>Cài đặt</h3>
+  <p>Cấu hình chung của hệ thống.</p>
+  <ul>
+    <li><strong>Thông tin ngân hàng</strong> — tên ngân hàng và tên nhân viên AI mà bot tự xưng.</li>
+    <li><strong>LLM Model</strong> — chọn giữa Qwen2.5-3B (nhanh), Qwen2.5-7B (chất lượng cao) và Qwen3-4B (chế độ suy luận).</li>
+    <li><strong>Ghi âm cuộc gọi</strong> — bật/tắt, và dọn ổ đĩa theo số ngày.</li>
+    <li><strong>Gửi báo cáo qua Telegram</strong> — thêm bot để nhận báo cáo; trang có sẵn hướng dẫn lấy token và chat_id.</li>
+    <li><strong>Thông tin hệ thống</strong> — khối JSON ở cuối cho biết tình trạng bốn dịch vụ. Nút <em>Kiểm tra Health</em> lấy lại số mới.</li>
+  </ul>
+  <div class="note"><strong>Đổi tên ngân hàng ở đây chưa chắc đủ.</strong> Kịch bản đang chọn có thể ghi đè, và câu chào mở đầu có thể ghi cứng tên riêng. Đổi xong nhớ sang trang Nhắn tin gõ thử một câu để nghe bot tự giới thiệu lại.</div>
+</div>
+
+<h2>Nhóm Hệ thống</h2>
+
+<div class="card">
+  <p class="role">Trang 13</p>
+  <h3>Phiên gọi</h3>
+  <p>Lịch sử toàn bộ cuộc gọi ở mức chi tiết hơn trang Báo cáo: nội dung hội thoại từng lượt, độ trễ từng lượt, kết quả. Lọc theo <em>Đang diễn ra</em> hoặc <em>Đã kết thúc</em>.</p>
+  <p>Trang Báo cáo dành cho người quản lý; trang này dành cho lúc truy một lượt cụ thể chậm ở khâu nào.</p>
+</div>
+
+<div class="card">
+  <p class="role">Trang 14</p>
+  <h3>Test giọng</h3>
+  <p>Nghe thử, so sánh hai giọng cạnh nhau, và chạy cả bộ câu kiểm thử.</p>
+  <ul>
+    <li><strong>Câu hay đọc vấp</strong> — năm nhóm bấm là có ngay: Số tiền, Lãi suất, Số điện thoại, Ngày tháng, Từ chối.</li>
+    <li><strong>Chạy bộ câu</strong> — chọn nhóm và số câu tối đa (10 / 25 / 50 / cả bộ) rồi chạy hàng loạt.</li>
+    <li><strong>So sánh A / B</strong> — tổng hợp cùng một câu bằng hai giọng để nghe cạnh nhau.</li>
+  </ul>
+  <div class="note"><strong>Nghe qua loa điện thoại thật trước khi chốt.</strong> Cuộc gọi thực tế nén giọng xuống băng hẹp; nhiều lỗi chỉ lộ ra ở đó chứ không lộ ra trên loa máy tính.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 15</p>
+  <h3>Training giọng</h3>
+  <p>Nhân bản giọng một người thật qua bốn bước: chọn tên giọng → thu 60 câu kịch bản → chuẩn hoá dataset → fine-tune.</p>
+  <ul>
+    <li><strong>Chuẩn hoá</strong> hạ về 24kHz mono, cắt khoảng lặng, chuẩn âm lượng và gán transcript theo kịch bản.</li>
+    <li><strong>Dùng PhoWhisper cho file ngoài kịch bản</strong> — bật khi có file thu không theo 60 câu mẫu.</li>
+  </ul>
+  <div class="note"><strong>Pháp lý.</strong> Giọng nói là dữ liệu sinh trắc học theo Nghị định 13/2023. Phải có văn bản đồng ý của người được thu âm trước khi nhân bản giọng — kể cả nhân viên công ty.<br><br><strong>Transcript sinh bằng máy phải soát tay.</strong> Sai transcript là giọng train ra đọc sai, và lỗi đó nằm luôn trong model, không sửa bằng cấu hình được.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 16</p>
+  <h3>Training LLM</h3>
+  <p>Dạy mô hình trả lời theo cách của bạn, bằng dữ liệu tư vấn của chính bạn.</p>
+  <ul>
+    <li><strong>Cài môi trường training</strong> — tải vài GB, chỉ cần làm một lần.</li>
+    <li><strong>Dataset</strong> — tải file mẫu CSV về, điền hai cột <em>khách hỏi</em> và <em>tư vấn trả lời</em>, lưu dạng CSV UTF-8 rồi tải lên. Nhận cả <code>.jsonl</code> và <code>.txt</code>.</li>
+    <li><strong>Sinh mẫu từ tài liệu Tri thức AI</strong> — máy tự đọc tài liệu, sinh cặp hỏi–đáp và loại bớt cặp phạm luật phong cách. Kết quả là <em>bản nháp</em>: đọc lại các con số trước khi train.</li>
+    <li><strong>Cấu hình</strong> — base model, epochs, learning rate, LoRA rank (8 nhẹ → 64 nặng), batch size, grad accum.</li>
+    <li><strong>Tự nạp vào Ollama</strong> — bật để train xong tự chuyển sang dùng model mới.</li>
+  </ul>
+  <div class="note"><strong>Trong lúc train, hệ thống không nhận cuộc gọi.</strong> Bộ đọc tiếng và mô hình ngôn ngữ đều bị nhả khỏi bộ nhớ card đồ hoạ để nhường chỗ. Đừng train trong giờ chạy chiến dịch.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 17</p>
+  <h3>Cài Model</h3>
+  <p>Tải model AI về máy. Mỗi model chạy độc lập — cài cái nào dùng cái đó. Có nút <em>Cài tất cả còn thiếu</em> cho lần dựng đầu.</p>
+  <div class="note"><strong>Tải xong chưa phải là dùng được.</strong> Model đã về máy vẫn cần bật dịch vụ tương ứng ở khối <em>Dịch vụ</em> phía dưới. Đây là chỗ hay bị bỏ sót nhất khi dựng máy mới.</div>
+</div>
+
+<div class="card">
+  <p class="role">Trang 18</p>
+  <h3>Benchmark</h3>
+  <p>Đo tốc từng khâu: nghe ra chữ, nghĩ câu, đọc thành tiếng, tra tài liệu — và <em>Full Pipeline</em> đo cả chuỗi từ đầu đến cuối.</p>
+  <p>Dùng khi thấy chậm mà chưa biết chậm ở đâu: chạy bốn ô riêng lẻ trước, khâu nào vọt lên bất thường thì đi sửa khâu đó.</p>
+</div>
+
+<div class="card">
+  <p class="role">Trang 19</p>
+  <h3>Logs</h3>
+  <p>Nhật ký thô, chia theo dịch vụ: Backend, PhoWhisper, Ollama, Training LLM, Training giọng. Nút <em>Bám đáy</em> giữ khung nhìn ở dòng mới nhất.</p>
+  <p>Khi một trang khác báo lỗi mà không nói rõ lý do, mở đúng tab dịch vụ ở đây thường thấy nguyên văn.</p>
+</div>
+
+<h2>Thứ tự làm khi dựng máy mới</h2>
+<ol class="steps">
+  <li><b>Cài Model</b><span>Bấm “Cài tất cả còn thiếu”, chờ tải xong, rồi bật các dịch vụ ở khối bên dưới.</span></li>
+  <li><b>Cài đặt</b><span>Điền tên ngân hàng và tên nhân viên AI. Kiểm tra khối Health thấy bốn dịch vụ đều xanh.</span></li>
+  <li><b>Tri thức AI</b><span>Tải tài liệu lên, chờ cột “AI đã đọc” đổi, rồi dùng ô Hỏi thử để chắc AI tra ra đúng chỗ.</span></li>
+  <li><b>Kịch bản</b><span>Đặt cách xưng danh và luật riêng của ngành hàng.</span></li>
+  <li><b>Giọng nói</b><span>Nạp giọng mẫu kèm transcript đúng, phát thử với ô “Đọc giống cuộc gọi”.</span></li>
+  <li><b>Câu đệm</b><span>Kiểm ít nhất một câu đuôi dùng chung không rỗng, rồi bấm Dựng tiếng.</span></li>
+  <li><b>Nhắn tin</b><span>Gõ vài câu khách hay hỏi, đọc phiếu soi xem AI lấy dẫn chứng từ đâu.</span></li>
+  <li><b>Hội thoại</b><span>Nói thử có tiếng, xem bốn ô đo có nằm dưới 1000ms không.</span></li>
+  <li><b>Thiết bị</b><span>Cắm máy, quét, bấm Kiểm tra cho tới khi mọi khâu đều đạt.</span></li>
+  <li><b>Danh bạ gọi</b><span>Nhập danh sách số, tạo chiến dịch, gọi thử một số trước khi chạy tự động.</span></li>
+</ol>
+
+<h2>Khi có gì đó không chạy</h2>
+<div class="scroll-x">
+<table>
+<thead><tr><th>Hiện tượng</th><th>Xem ở đâu trước</th></tr></thead>
+<tbody>
+<tr><td>AI trả lời nhưng không có tiếng</td><td>Cài đặt → khối Health, xem dòng <code>tts</code>. <code>not_loaded</code> nghĩa là thiếu file giọng, không phải lỗi mạng.</td></tr>
+<tr><td>Bấm micro mà không nhận</td><td>Health, dòng <code>stt</code>. <code>unavailable</code> là dịch vụ nghe chưa bật — sang trang Cài Model.</td></tr>
+<tr><td>AI im hẳn, không trả lời</td><td>Health, dòng <code>llm</code>. Thường là Ollama chưa chạy.</td></tr>
+<tr><td>AI trả lời chung chung, không có số</td><td>Tri thức AI → ô Hỏi thử. Nếu không ra mảnh nào thì tài liệu chưa được đọc.</td></tr>
+<tr><td>Có quãng im dài trước mỗi câu</td><td>Câu đệm → kiểm mục Câu đuôi dùng chung có rỗng không.</td></tr>
+<tr><td>Gọi mà máy không bấm số</td><td>Thiết bị → nút Kiểm tra ở đúng máy đó.</td></tr>
+<tr><td>Chậm mà không rõ chậm đâu</td><td>Benchmark → chạy bốn ô riêng lẻ trước khi chạy Full Pipeline.</td></tr>
+<tr><td>Lỗi lạ không có thông báo rõ</td><td>Logs → chọn đúng tab dịch vụ liên quan.</td></tr>
+</tbody>
+</table>
+</div>
+
+<footer>
+  Bản có ảnh chụp và khoanh vùng từng nút: <a href="HUONG_DAN_CO_ANH.html">HUONG_DAN_CO_ANH.html</a>. VoiceBank AI — tài liệu hướng dẫn sử dụng. Nội dung mô tả theo giao diện tại thời điểm soạn; khi thêm trang mới nhớ cập nhật cả bản đồ 19 trang ở đầu tài liệu.
+</footer>
+
+</div>
+<script>
+(function(){
+  var r = document.documentElement, b = document.getElementById('doiNen');
+  try { var luu = localStorage.getItem('vb-nen'); if (luu) r.setAttribute('data-theme', luu); } catch(e){}
+  b.addEventListener('click', function(){
+    var toi = getComputedStyle(document.body).backgroundColor;
+    var dangToi = /^rgba?\(\s*(\d+)/.test(toi) && parseInt(RegExp.$1,10) < 128;
+    var moi = dangToi ? 'light' : 'dark';
+    r.setAttribute('data-theme', moi);
+    try { localStorage.setItem('vb-nen', moi); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

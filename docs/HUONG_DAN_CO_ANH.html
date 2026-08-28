@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceBank AI — Hướng dẫn từng tính năng có ảnh</title>
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f5f6f8; --bg-card:#ffffff;
+  --fg:#16181d; --fg-dim:#565d6b; --fg-faint:#848b99;
+  --line:#e3e6ec; --line-soft:#eef0f4;
+  --accent:#0f8a5f; --khoanh:#e0921a; --khoanh-chu:#3a2400;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0f12; --bg-soft:#14171c; --bg-card:#14171c;
+    --fg:#e9ebef; --fg-dim:#a6adba; --fg-faint:#7c8494;
+    --line:#262b33; --line-soft:#1d2128;
+    --accent:#3ddc97; --khoanh:#fbbf24; --khoanh-chu:#2a1c00;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d0f12; --bg-soft:#14171c; --bg-card:#14171c;
+  --fg:#e9ebef; --fg-dim:#a6adba; --fg-faint:#7c8494;
+  --line:#262b33; --line-soft:#1d2128;
+  --accent:#3ddc97; --khoanh:#fbbf24; --khoanh-chu:#2a1c00;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.khung{display:grid;grid-template-columns:236px minmax(0,1fr);gap:40px;
+  max-width:1360px;margin:0 auto;padding:40px 28px 100px}
+nav.muc{position:sticky;top:28px;align-self:start;max-height:calc(100vh - 56px);
+  overflow-y:auto;font-size:14px;border-right:1px solid var(--line-soft);padding-right:16px}
+nav.muc a{display:block;padding:5px 8px;border-radius:6px;color:var(--fg-dim);
+  text-decoration:none;margin-bottom:1px}
+nav.muc a:hover{background:var(--bg-soft);color:var(--fg)}
+nav.muc .nh{font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fg-faint);margin:18px 0 6px;padding-left:8px}
+nav.muc .nh:first-child{margin-top:0}
+main{min-width:0}
+.dau{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:14px}
+.mac{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);margin:0 0 10px}
+h1{font-size:33px;line-height:1.18;margin:0 0 12px;letter-spacing:-.02em}
+.mo{font-size:17px;color:var(--fg-dim);margin:0;max-width:68ch}
+h2{font-size:25px;margin:0 0 6px;letter-spacing:-.015em;scroll-margin-top:24px}
+.nhomlab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin:0 0 8px}
+section.trang{padding-top:52px;margin-top:44px;border-top:1px solid var(--line-soft)}
+section.trang:first-of-type{border-top:0}
+.tomtat{color:var(--fg-dim);margin:0 0 20px;max-width:72ch}
+figure{margin:0 0 24px}
+.anh{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  background:#0b0d10;line-height:0}
+.anh img{display:block;width:100%;height:auto}
+.anh.hep{max-width:290px}
+.anh svg{position:absolute;left:0;top:0;width:100%;height:100%}
+figcaption{margin-top:9px;font-size:13.5px;color:var(--fg-faint)}
+ol.chu{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+ol.chu li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:13px;
+  background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.so{width:26px;height:26px;border-radius:50%;background:var(--khoanh);color:var(--khoanh-chu);
+  font-size:14px;font-weight:800;display:grid;place-items:center;margin-top:1px}
+.chu b{display:block;font-size:16px;margin-bottom:3px}
+.chu p{margin:0 0 5px;color:var(--fg-dim);font-size:15px}
+.chu p:last-child{margin-bottom:0}
+.chu .nhan{display:inline-block;min-width:64px;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fg-faint);font-weight:700}
+.chu .sao{padding-left:12px;border-left:2px solid var(--line)}
+code{font-family:var(--mono);font-size:.87em;background:var(--bg-soft);
+  border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px}
+.canh{margin:16px 0 0;padding:12px 15px;background:var(--bg-soft);
+  border-left:3px solid var(--khoanh);border-radius:0 7px 7px 0;font-size:14.5px;color:var(--fg-dim)}
+.canh b{color:var(--fg)}
+table.bang{width:100%;border-collapse:collapse;margin:0 0 10px;font-size:14.5px}
+table.bang th,table.bang td{text-align:left;padding:9px 12px;
+  border-bottom:1px solid var(--line-soft);vertical-align:top}
+table.bang th{font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--fg-faint);font-weight:700}
+table.bang td:first-child{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+table.bang td{color:var(--fg-dim)}
+.muc-do{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;
+  font-weight:700;letter-spacing:.04em}
+.muc-do.loi{background:#c0392b;color:#fff}
+.muc-do.cb{background:var(--khoanh);color:var(--khoanh-chu)}
+.cuon{overflow-x:auto}
+.doi{position:fixed;top:14px;right:14px;background:var(--bg-card);color:var(--fg-dim);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;
+  cursor:pointer;font-family:inherit;z-index:9}
+.doi:hover{color:var(--fg)}
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:14px;color:var(--fg-faint)}
+@media (max-width:900px){
+  .khung{grid-template-columns:1fr;gap:0;padding:24px 16px 70px}
+  nav.muc{position:static;max-height:none;border-right:0;
+    border-bottom:1px solid var(--line-soft);padding:0 0 18px;margin-bottom:10px}
+}
+</style>
+</head>
+<body>
+<button class="doi" id="doiNen" type="button">Đổi nền</button>
+<div class="khung">
+<nav class="muc"><div class="nh">Bắt đầu từ đây</div><a href="#thanh-ben">Thanh bên — bản đồ 19 trang</a><div class="nh">Vận hành</div><a href="#overview">Tổng quan</a><a href="#chat">Hội thoại</a><a href="#messaging">Nhắn tin</a><a href="#contacts">Danh bạ gọi</a><a href="#reports">Báo cáo</a><div class="nh">Cấu hình</div><a href="#scenarios">Kịch bản</a><a href="#datasources">Nguồn dữ liệu</a><a href="#knowledge">Tri thức AI</a><a href="#fillers">Câu đệm</a><a href="#voice">Giọng nói</a><a href="#devices">Thiết bị</a><a href="#settings">Cài đặt</a><div class="nh">Hệ thống</div><a href="#sessions">Phiên gọi</a><a href="#voice-test">Test giọng</a><a href="#voice-training">Training giọng</a><a href="#training">Training LLM</a><a href="#models">Cài Model</a><a href="#benchmark">Benchmark</a><a href="#logs">Logs</a><div class="nh">Màn hiện ra khi bấm</div><a href="#phu-manh">Mảnh — AI đang giữ gì cho tài liệu này</a><a href="#phu-soan-tai-lieu">Soạn / sửa tài liệu + bộ soi</a><a href="#phu-ban-cu">Bản cũ của tài liệu</a><a href="#phu-kich-ban">Soạn kịch bản</a><a href="#phu-them-so">Thêm một số vào danh bạ</a><a href="#phu-nhap-danh-sach">Nhập danh sách hàng loạt</a><a href="#phu-them-thiet-bi">Thêm thiết bị gọi</a><a href="#phu-goi-den">Nhận cuộc gọi đến</a><a href="#phu-them-nguon">Thêm nguồn dữ liệu</a><a href="#phu-tinh-huong">Soạn tình huống câu đệm</a></nav>
+<main>
+<header class="dau">
+  <p class="mac">VoiceBank AI · Hệ thống gọi điện tư vấn</p>
+  <h1>VoiceBank AI — Hướng dẫn từng tính năng có ảnh</h1>
+  <p class="mo">Mỗi mục dưới đây là <b>một ảnh chụp thật của app</b>, các vùng đáng chú ý được khoanh và đánh số. Dưới mỗi ảnh, từng số được giải thích theo ba lớp: <b>nó là gì</b>, <b>điều kiện</b> để nó hoạt động, và <b>vì sao</b> nó được làm như thế. Ảnh chụp trên máy vừa dựng nên phần lớn bảng còn rỗng — đó là trạng thái đúng của máy mới, và bản thân nó cũng là thông tin.</p>
+</header>
+<section class="trang" id="thanh-ben"><p class="nhomlab">Bắt đầu từ đây</p><h2>Thanh bên — bản đồ 19 trang</h2><p class="tomtat">Mọi thứ trong app nằm sau 19 nút này. Chúng được xếp theo <b>việc bạn đang làm</b>, không theo module kỹ thuật.</p><figure><div class="anh hep"><img src="anh_tinh_nang/thanh-ben.jpg" alt="Anh chup trang Thanh bên — bản đồ 19 trang" width="220" height="1000"><svg viewBox="0 0 220 1000" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="9" y="73" width="196" height="237" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="60" r="13" fill="var(--khoanh)"/>
+<text x="15" y="65" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="9" y="298" width="196" height="324" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="285" r="13" fill="var(--khoanh)"/>
+<text x="15" y="290" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="9" y="610" width="196" height="324" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="597" r="13" fill="var(--khoanh)"/>
+<text x="15" y="602" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="9" y="943" width="201" height="44" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="930" r="13" fill="var(--khoanh)"/>
+<text x="15" y="935" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+</svg></div><figcaption>Ba nhóm không phải để cho đẹp: người bán hàng chỉ cần nhóm đầu, và không phải lướt qua “Benchmark” hay “Training LLM” mỗi lần muốn mở danh bạ.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Nhóm “Vận hành” — 5 trang</b><p>Tổng quan, Hội thoại, Nhắn tin, Danh bạ gọi, Báo cáo. Đây là việc hằng ngày: xem tình hình, gọi, đọc kết quả.</p><p><span class="nhan">Điều kiện</span> Người bán hàng thường chỉ dùng đúng nhóm này.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây 12 tab xếp phẳng ngang hàng nhau, nên việc dùng mỗi ngày bị chôn lẫn với việc chỉ làm một lần lúc dựng máy.</p></div></li><li><div class="so">2</div><div><b>Nhóm “Cấu hình” — 7 trang</b><p>Kịch bản, Nguồn dữ liệu, Tri thức AI, Câu đệm, Giọng nói, Thiết bị, Cài đặt. Quyết định bot <b>nói gì</b> và <b>nói bằng giọng nào</b>.</p><p><span class="nhan">Điều kiện</span> Mở khi đổi sản phẩm, đổi lãi suất, đổi giọng, hoặc cắm máy mới.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là nơi duy nhất thay đổi được nội dung bot nói. Không có cách nào “dặn miệng” bot.</p></div></li><li><div class="so">3</div><div><b>Nhóm “Hệ thống” — 7 trang</b><p>Phiên gọi, Test giọng, Training giọng, Training LLM, Cài Model, Benchmark, Logs. Việc kỹ thuật và việc chỉ làm một lần.</p><p><span class="nhan">Điều kiện</span> Lúc dựng máy mới, lúc truy lỗi, hoặc lúc muốn nâng chất lượng.</p><p class="sao"><span class="nhan">Vì sao</span> Tách ra để người vận hành hằng ngày không bấm nhầm vào nút khởi động một buổi train dài mấy tiếng.</p></div></li><li><div class="so">4</div><div><b>Đèn trạng thái kết nối</b><p>Chấm xanh + chữ “Đã kết nối” nghĩa là trình duyệt đang nối được với máy chủ qua WebSocket.</p><p><span class="nhan">Điều kiện</span> Chấm tắt hoặc chữ đổi thành “Mất kết nối” thì mọi trang đều ngừng cập nhật.</p><p class="sao"><span class="nhan">Vì sao</span> Là thứ cần nhìn đầu tiên khi có gì đó “không chạy”. Nhiều lỗi trông như lỗi tính năng thật ra chỉ là rớt kết nối.</p></div></li></ol></section><section class="trang" id="overview"><p class="nhomlab">Vận hành</p><h2>Tổng quan</h2><p class="tomtat">Màn hình mở đầu. Trả lời một câu hỏi duy nhất: <b>hôm nay đang xảy ra chuyện gì.</b></p><figure><div class="anh"><img src="anh_tinh_nang/overview.jpg" alt="Anh chup trang Tổng quan" width="1220" height="422"><svg viewBox="0 0 1220 422" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="1122" y="21" width="77" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1109" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1109" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="21" y="85" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="72" r="13" fill="var(--khoanh)"/>
+<text x="15" y="77" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="22" y="211" width="1176" height="54" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="198" r="13" fill="var(--khoanh)"/>
+<text x="15" y="203" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="22" y="322" width="582" height="54" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="309" r="13" fill="var(--khoanh)"/>
+<text x="15" y="314" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="616" y="322" width="582" height="54" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="603" cy="309" r="13" fill="var(--khoanh)"/>
+<text x="603" y="314" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+</svg></div><figcaption>Ảnh chụp khi máy chưa gọi cuộc nào — nên mọi ô đều là 0 và ba khối dưới đều rỗng. Đó là trạng thái đúng của máy mới dựng.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Làm mới</b><p>Đọc lại số liệu từ máy chủ.</p><p><span class="nhan">Điều kiện</span> Số trên trang <b>không tự chạy</b> theo thời gian thực — phải bấm nút này.</p><p class="sao"><span class="nhan">Vì sao</span> Trang tổng quan hỏi máy chủ nhiều bảng cùng lúc; tự động làm mới liên tục sẽ chiếm tài nguyên đúng lúc máy đang bận gọi.</p></div></li><li><div class="so">2</div><div><b>Dải năm ô số của hôm nay</b><p>Cuộc gọi hôm nay · tỉ lệ nghe máy · tổng thời lượng · số cuộc có ghi âm · số chiến dịch đang chạy.</p><p><span class="nhan">Điều kiện</span> Đếm theo <b>ngày</b>. Cuộc gọi lúc nửa đêm rơi sang ngày mới nên không hiện ở đây.</p><p class="sao"><span class="nhan">Vì sao</span> Tỉ lệ nghe máy là con số cho biết danh sách số có dùng được không — thấp bất thường thường là lỗi danh sách chứ không phải lỗi bot.</p></div></li><li><div class="so">3</div><div><b>Chiến dịch đang chạy</b><p>Danh sách chiến dịch tự động đang quay số, kèm lối tắt “Mở danh bạ →”.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa bấm chạy chiến dịch nào ở trang Danh bạ gọi.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây mở app lên là vào thẳng khung chat, nên không nhìn thấy chiến dịch đang chạy cho tới khi tự đi tìm.</p></div></li><li><div class="so">4</div><div><b>Thiết bị</b><p>Máy đang nối và máy rụng, kèm lối tắt “Quản lý →” sang trang Thiết bị.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa khai máy nào.</p><p class="sao"><span class="nhan">Vì sao</span> Đặt ngay trang chủ vì máy rụng giữa chiến dịch là lỗi im lặng: chiến dịch vẫn “đang chạy” nhưng không cuộc nào ra.</p></div></li><li><div class="so">5</div><div><b>Cuộc gọi gần nhất</b><p>Vài cuộc mới nhất, kèm lối tắt “Xem báo cáo →”.</p><p><span class="nhan">Điều kiện</span> Chỉ hiện cuộc gọi thật; phiên thử trên trang Hội thoại không tính.</p><p class="sao"><span class="nhan">Vì sao</span> Để soi nhanh sau khi vừa đổi kịch bản hoặc giọng, không phải mở hẳn trang Báo cáo rồi lọc.</p></div></li></ol></section><section class="trang" id="chat"><p class="nhomlab">Vận hành</p><h2>Hội thoại</h2><p class="tomtat">Nói thử với AI <b>có tiếng</b>, y như đang gọi điện. Đây là chỗ nghiệm thu giọng và đo độ trễ.</p><figure><div class="anh"><img src="anh_tinh_nang/chat.jpg" alt="Anh chup trang Hội thoại" width="1220" height="980"><svg viewBox="0 0 1220 980" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="106" y="17" width="102" height="22" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="93" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="93" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="759" y="12" width="118" height="32" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="746" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="746" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="877" y="10" width="32" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="864" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="864" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="974" y="36" width="233" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="961" cy="23" r="13" fill="var(--khoanh)"/>
+<text x="961" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="974" y="82" width="233" height="153" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="961" cy="69" r="13" fill="var(--khoanh)"/>
+<text x="961" y="74" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="974" y="255" width="233" height="106" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="961" cy="242" r="13" fill="var(--khoanh)"/>
+<text x="961" y="247" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="1" y="53" width="966" height="749" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="40" r="13" fill="var(--khoanh)"/>
+<text x="15" y="45" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="445" y="821" width="70" height="70" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="432" cy="808" r="13" fill="var(--khoanh)"/>
+<text x="432" y="813" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+</svg></div><figcaption>Chỉ có nút micro, cố ý <b>không có ô gõ chữ</b>. Khách gọi điện thật thì không gõ được, nên bỏ hẳn ô nhập để mọi số đo trên trang này đều là số của đường thoại.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Chọn sản phẩm</b><p>Đổi kịch bản mà AI đang đóng vai: Vay tín chấp · Vay mua nhà · Thẻ tín dụng · Tiết kiệm.</p><p><span class="nhan">Điều kiện</span> Đổi giữa chừng sẽ bắt đầu một mạch tư vấn khác; nên đổi trước khi bấm micro.</p><p class="sao"><span class="nhan">Vì sao</span> Cùng một câu hỏi nhưng khác sản phẩm thì tài liệu được tra cũng khác — đây là công tắc quyết định bot lấy số ở đâu.</p></div></li><li><div class="so">2</div><div><b>Tên khách</b><p>Tên bot dùng để xưng hô với người đối diện trong phiên thử này.</p><p><span class="nhan">Điều kiện</span> Để trống thì bot xưng hô chung chung.</p><p class="sao"><span class="nhan">Vì sao</span> Xưng hô sai tên là lỗi khách nhận ra ngay; thử trước ở đây rẻ hơn nghe lại bản ghi sau.</p></div></li><li><div class="so">3</div><div><b>Chọn giọng</b><p>Giọng bot dùng để đọc trong phiên thử.</p><p><span class="nhan">Điều kiện</span> Danh sách lấy từ trang Giọng nói. Chưa nạp giọng nào thì chỉ có giọng mặc định.</p><p class="sao"><span class="nhan">Vì sao</span> Cho phép đổi giọng ngay tại chỗ thử, không phải nhảy sang trang khác rồi quay lại.</p></div></li><li><div class="so">4</div><div><b>Ngưỡng “khách chờ tới khi AI nói”</b><p>Mốc chuẩn: dưới <code>1000ms</code>. Vượt mốc này là khách bắt đầu cảm thấy máy chậm.</p><p><span class="nhan">Điều kiện</span> Là ngưỡng cố định để đối chiếu, không phải số đo.</p><p class="sao"><span class="nhan">Vì sao</span> Có một mốc hiện sẵn thì không phải nhớ “bao nhiêu là đạt” mỗi lần thử.</p></div></li><li><div class="so">5</div><div><b>Bốn thước đo từng khâu</b><p>STT (nghe ra chữ) · RAG (tra tài liệu) · TTFA (bao lâu tới tiếng đầu tiên) · TOTAL (cả lượt). Đơn vị mili-giây.</p><p><span class="nhan">Điều kiện</span> Hiện dấu <code>—</code> cho tới khi xong lượt đầu tiên.</p><p class="sao"><span class="nhan">Vì sao</span> Tách bốn khâu để khi chậm thì biết chậm ở đâu, thay vì chỉ biết “chậm”. TTFA quan trọng hơn TOTAL vì khách nghe tiếng đầu là hết sốt ruột.</p></div></li><li><div class="so">6</div><div><b>Phiên làm việc</b><p>Số lượt hội thoại · thời gian phiên · mã phiên (Session ID).</p><p><span class="nhan">Điều kiện</span> Session ID khác dấu <code>—</code> chính là bằng chứng đường truyền hai chiều đã thông.</p><p class="sao"><span class="nhan">Vì sao</span> Mã phiên là thứ để tra ngược sang trang Phiên gọi khi muốn xem lại đúng buổi thử này.</p></div></li><li><div class="so">7</div><div><b>Khung hội thoại</b><p>Từng lượt nói hiện ra ở đây: câu bạn nói (đã chuyển thành chữ) và câu bot trả lời.</p><p><span class="nhan">Điều kiện</span> Bong bóng màu lỗi nghĩa là máy chủ trả lỗi — thường do thiếu Ollama / PhoWhisper / TTS chứ không phải lỗi giao diện.</p><p class="sao"><span class="nhan">Vì sao</span> Hiện cả phần chữ mà máy nghe được để phân biệt “bot trả lời sai” với “máy nghe nhầm câu hỏi” — hai lỗi rất khác nhau.</p></div></li><li><div class="so">8</div><div><b>Nút micro</b><p>Bấm để bắt đầu nói, bấm lần nữa khi nói xong để AI trả lời.</p><p><span class="nhan">Điều kiện</span> Cần trình duyệt cho phép dùng micro. Cần dịch vụ nghe (STT) đang bật.</p><p class="sao"><span class="nhan">Vì sao</span> Bấm hai lần thay vì tự nhận im lặng, để bạn chủ động quyết định lúc nào là “đã nói xong” khi đang thử các câu cụt.</p></div></li></ol></section><section class="trang" id="messaging"><p class="nhomlab">Vận hành</p><h2>Nhắn tin</h2><p class="tomtat">Cùng bộ não với trang Hội thoại nhưng chạy <b>bằng chữ, không phát tiếng</b> — kèm phiếu soi cho biết vì sao AI trả lời như vậy.</p><figure><div class="anh"><img src="anh_tinh_nang/messaging.jpg" alt="Anh chup trang Nhắn tin" width="1220" height="980"><svg viewBox="0 0 1220 980" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="102" y="17" width="102" height="22" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="89" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="89" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="210" y="17" width="42" height="21" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="197" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="197" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="859" y="12" width="118" height="32" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="846" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="846" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="977" y="10" width="32" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="964" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="964" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="1031" y="17" width="132" height="22" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1018" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1018" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="1" y="53" width="1218" height="819" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="40" r="13" fill="var(--khoanh)"/>
+<text x="15" y="45" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="223" y="883" width="721" height="44" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="210" cy="870" r="13" fill="var(--khoanh)"/>
+<text x="210" y="875" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="946" y="886" width="51" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="933" cy="873" r="13" fill="var(--khoanh)"/>
+<text x="933" y="878" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+</svg></div><figcaption>Bỏ khâu nghe và khâu đọc đi, nên lỗi nào còn lại đúng là lỗi nội dung. Đây là trang soát nội dung nhanh nhất.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Chọn sản phẩm</b><p>Giống trang Hội thoại: đổi kịch bản đang đóng vai.</p><p><span class="nhan">Điều kiện</span> Đổi trước khi gõ câu hỏi.</p><p class="sao"><span class="nhan">Vì sao</span> Để thử cùng một câu hỏi trên nhiều sản phẩm, xem bot có lấy nhầm tài liệu không.</p></div></li><li><div class="so">2</div><div><b>Trạng thái kết nối riêng của trang</b><p>Hiện “chưa nối” hoặc “đã nối” — trang này mở một đường WebSocket riêng.</p><p><span class="nhan">Điều kiện</span> Còn “chưa nối” thì gõ gì cũng không có trả lời.</p><p class="sao"><span class="nhan">Vì sao</span> Tách khỏi đèn chung ở thanh bên vì đây là đường riêng; đèn chung xanh không đảm bảo đường này đã mở.</p></div></li><li><div class="so">3</div><div><b>Tên khách</b><p>Tên dùng để xưng hô trong phiên chữ.</p><p><span class="nhan">Điều kiện</span> Để trống thì xưng chung chung.</p><p class="sao"><span class="nhan">Vì sao</span> Cùng lý do với trang Hội thoại: bắt lỗi xưng hô sớm.</p></div></li><li><div class="so">4</div><div><b>Chọn giọng</b><p>Chọn giọng để lấy đúng tốc đọc riêng của giọng đó.</p><p><span class="nhan">Điều kiện</span> Trang này không phát tiếng, nên chọn giọng chỉ ảnh hưởng tới thanh Tốc bên cạnh.</p><p class="sao"><span class="nhan">Vì sao</span> Mỗi giọng có tốc riêng; muốn chỉnh tốc thì phải biết đang chỉnh cho giọng nào.</p></div></li><li><div class="so">5</div><div><b>Thanh Tốc + nút hoàn nguyên</b><p>Kéo để đổi tốc đọc của giọng đang chọn; số bên cạnh là hệ số; nút <code>↺</code> trả về mặc định.</p><p><span class="nhan">Điều kiện</span> Đổi ở đây là đổi tốc <b>của giọng</b>, áp cho mọi nơi dùng giọng đó.</p><p class="sao"><span class="nhan">Vì sao</span> Đặt ngay cạnh chỗ thử để chỉnh xong thử lại được luôn, không phải sang trang Giọng nói rồi quay về.</p></div></li><li><div class="so">6</div><div><b>Khung trả lời + phiếu soi</b><p>Câu trả lời của AI, kèm phiếu soi cho biết nó lấy mảnh tài liệu nào để trả lời như vậy.</p><p><span class="nhan">Điều kiện</span> Phiếu soi chỉ có ý nghĩa khi tài liệu đã được nạp ở trang Tri thức AI.</p><p class="sao"><span class="nhan">Vì sao</span> Không có phiếu soi thì khi bot đọc sai số bạn không biết là tài liệu sai hay bot bịa — hai lỗi phải sửa ở hai chỗ khác nhau.</p></div></li><li><div class="so">7</div><div><b>Ô gõ câu hỏi</b><p>Gõ câu khách hay hỏi rồi Enter.</p><p><span class="nhan">Điều kiện</span> Enter gửi; Shift+Enter xuống dòng.</p><p class="sao"><span class="nhan">Vì sao</span> Gõ nhanh hơn nói, nên đây là chỗ chạy nhiều câu thử liên tiếp.</p></div></li><li><div class="so">8</div><div><b>Gửi</b><p>Gửi câu đang gõ.</p><p><span class="nhan">Điều kiện</span> Tương đương bấm Enter.</p><p class="sao"><span class="nhan">Vì sao</span> Có nút để người không quen phím tắt vẫn dùng được.</p></div></li></ol></section><section class="trang" id="contacts"><p class="nhomlab">Vận hành</p><h2>Danh bạ gọi</h2><p class="tomtat">Kho số khách hàng và nơi bấm chạy chiến dịch. Danh bạ chỉ <b>giữ số</b>; việc bấm số do máy khai ở trang Thiết bị làm.</p><figure><div class="anh"><img src="anh_tinh_nang/contacts.jpg" alt="Anh chup trang Danh bạ gọi" width="1220" height="667"><svg viewBox="0 0 1220 667" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="764" y="21" width="118" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="751" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="751" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="884" y="21" width="81" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="871" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="871" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="968" y="21" width="86" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="955" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="955" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="1054" y="22" width="32" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1041" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1041" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="1082" y="21" width="117" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1095" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1095" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="21" y="85" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="72" r="13" fill="var(--khoanh)"/>
+<text x="15" y="77" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="21" y="166" width="1178" height="101" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="153" r="13" fill="var(--khoanh)"/>
+<text x="15" y="158" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="995" y="181" width="65" height="21" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="982" cy="168" r="13" fill="var(--khoanh)"/>
+<text x="982" y="173" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+<rect x="21" y="277" width="1178" height="35" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="264" r="13" fill="var(--khoanh)"/>
+<text x="15" y="269" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">9</text>
+<rect x="38" y="334" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="321" r="13" fill="var(--khoanh)"/>
+<text x="25" y="326" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">10</text>
+<rect x="38" y="376" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="363" r="13" fill="var(--khoanh)"/>
+<text x="25" y="368" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">11</text>
+<rect x="22" y="499" width="1176" height="63" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="486" r="13" fill="var(--khoanh)"/>
+<text x="15" y="491" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">12</text>
+</svg></div><figcaption>Ảnh chụp khi chưa có số nào. Bảng dưới hướng dẫn luôn hai lối vào: “+ Thêm số” cho một số lẻ, “Nhập danh sách” cho cả file.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Nhập danh sách</b><p>Nạp nhiều số cùng lúc từ file CSV hoặc dán thẳng danh sách vào ô.</p><p><span class="nhan">Điều kiện</span> Nạp được vào một chiến dịch cụ thể, chọn ngay trong hộp nhập.</p><p class="sao"><span class="nhan">Vì sao</span> Đợt gọi thật thường vài trăm số; thêm tay từng số là không khả thi.</p></div></li><li><div class="so">2</div><div><b>Xuất CSV</b><p>Tải danh sách đang hiển thị ra file.</p><p><span class="nhan">Điều kiện</span> Xuất đúng tập <b>đang lọc</b>, không phải toàn bộ danh bạ.</p><p class="sao"><span class="nhan">Vì sao</span> Để lọc ra nhóm cần rồi mang sang nơi khác xử lý, ví dụ danh sách đã từ chối để loại khỏi đợt sau.</p></div></li><li><div class="so">3</div><div><b>+ Thêm số</b><p>Mở khung khai một số lẻ: số điện thoại, tên khách, sản phẩm, chiến dịch, ghi chú.</p><p><span class="nhan">Điều kiện</span> Dùng khi thêm vài số để thử.</p><p class="sao"><span class="nhan">Vì sao</span> Thử một số thật trước khi đổ cả danh sách vào là cách rẻ nhất để bắt lỗi kịch bản.</p></div></li><li><div class="so">4</div><div><b>Chọn giọng cho cuộc gọi</b><p>Giọng dùng khi bấm gọi từ trang này.</p><p><span class="nhan">Điều kiện</span> Áp cho cuộc gọi tay; chiến dịch tự động có ô chọn giọng riêng bên trong.</p><p class="sao"><span class="nhan">Vì sao</span> Đặt cạnh nút gọi để không gọi nhầm bằng giọng của lần thử trước.</p></div></li><li><div class="so">5</div><div><b>Gọi số tiếp theo</b><p>Gọi tay một số trong hàng đợi.</p><p><span class="nhan">Điều kiện</span> Cần ít nhất một thiết bị sẵn sàng ở trang Thiết bị.</p><p class="sao"><span class="nhan">Vì sao</span> Đường gọi tay giữ lại để thử từng số mà không phải bật cả chiến dịch tự động.</p></div></li><li><div class="so">6</div><div><b>Dải năm ô số của danh bạ</b><p>Tổng số · chưa gọi · đã gọi · tư vấn xong · từ chối hoặc chặn gọi.</p><p><span class="nhan">Điều kiện</span> Đếm trên tập đang lọc.</p><p class="sao"><span class="nhan">Vì sao</span> Ô “từ chối / chặn gọi” tô đỏ vì đó là nhóm phải loại khỏi đợt sau, gọi lại là gây phiền.</p></div></li><li><div class="so">7</div><div><b>Chạy chiến dịch tự động</b><p>Khối bật chế độ máy tự quay số lần lượt.</p><p><span class="nhan">Điều kiện</span> <b>Phải chọn một chiến dịch ở ô lọc bên dưới trước</b>, nút mới bật lên. Ảnh chụp đang ở trạng thái chưa chọn.</p><p class="sao"><span class="nhan">Vì sao</span> Khoá cho tới khi chọn chiến dịch để không lỡ tay quay số cho toàn bộ danh bạ.</p></div></li><li><div class="so">8</div><div><b>Cài đặt khác</b><p>Mở phần cấu hình sâu của chiến dịch: số lần gọi lại, khoảng cách giữa hai lần, khung giờ được phép gọi, có ghi âm không, có đoán giới tính không.</p><p><span class="nhan">Điều kiện</span> Ẩn mặc định, bấm mới mở.</p><p class="sao"><span class="nhan">Vì sao</span> Gấp lại vì đây là thứ đặt một lần rồi thôi, không phải thứ chỉnh mỗi ngày.</p></div></li><li><div class="so">9</div><div><b>Ô lọc chiến dịch</b><p>Chọn chiến dịch để xem và để bật chế độ chạy tự động. Nút “+ Chiến dịch” tạo mới.</p><p><span class="nhan">Điều kiện</span> Chọn ở đây là điều kiện để khối phía trên bật lên.</p><p class="sao"><span class="nhan">Vì sao</span> Một danh bạ chứa nhiều đợt gọi khác nhau; không tách chiến dịch thì không biết số nào thuộc đợt nào.</p></div></li><li><div class="so">10</div><div><b>Tìm số hoặc tên khách</b><p>Lọc nhanh theo số điện thoại hoặc tên.</p><p><span class="nhan">Điều kiện</span> Tìm trong tập đang chọn.</p><p class="sao"><span class="nhan">Vì sao</span> Để tra một khách cụ thể khi họ gọi lại, không phải lật từng trang.</p></div></li><li><div class="so">11</div><div><b>Lọc theo trạng thái</b><p>Mọi trạng thái · Chưa gọi · Đang gọi · Đã tư vấn · Không nghe máy…</p><p><span class="nhan">Điều kiện</span> Kết hợp được với ô tìm phía trên.</p><p class="sao"><span class="nhan">Vì sao</span> Lọc “chưa gọi” là cách dựng danh sách cho đợt tiếp theo mà không gọi trùng người đã nghe.</p></div></li><li><div class="so">12</div><div><b>Bảng số + thao tác từng dòng</b><p>Số điện thoại, khách hàng, sản phẩm, chiến dịch, trạng thái, số lần gọi, gọi lúc nào, và nút thao tác.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa có số nào, kèm gợi ý hai lối vào.</p><p class="sao"><span class="nhan">Vì sao</span> Cột “lần gọi” cho biết số nào đã gọi lại nhiều lần mà vẫn không ai nghe — dấu hiệu số sai chứ không phải khách bận.</p></div></li></ol></section><section class="trang" id="reports"><p class="nhomlab">Vận hành</p><h2>Báo cáo</h2><p class="tomtat">Nơi xem lại việc đã làm: lọc cuộc gọi theo nhiều chiều, nghe lại ghi âm, đọc tóm tắt.</p><figure><div class="anh"><img src="anh_tinh_nang/reports.jpg" alt="Anh chup trang Báo cáo" width="1220" height="665"><svg viewBox="0 0 1220 665" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="938" y="21" width="178" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="925" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="925" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="1118" y="21" width="81" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1105" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1105" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="21" y="85" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="72" r="13" fill="var(--khoanh)"/>
+<text x="15" y="77" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="38" y="247" width="1144" height="42" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="234" r="13" fill="var(--khoanh)"/>
+<text x="25" y="239" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="38" y="315" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="302" r="13" fill="var(--khoanh)"/>
+<text x="25" y="307" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="38" y="371" width="159" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="358" r="13" fill="var(--khoanh)"/>
+<text x="25" y="363" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="1087" y="361" width="95" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1074" cy="348" r="13" fill="var(--khoanh)"/>
+<text x="1074" y="353" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="964" y="440" width="218" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="951" cy="427" r="13" fill="var(--khoanh)"/>
+<text x="951" y="432" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+<rect x="22" y="521" width="1176" height="41" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="508" r="13" fill="var(--khoanh)"/>
+<text x="15" y="513" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">9</text>
+</svg></div><figcaption>Bộ lọc chiếm gần nửa trang vì đây là công cụ chính của trang — không phải chỗ để lướt, mà chỗ để tìm đúng nhóm cuộc gọi cần soi.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tóm tắt các cuộc còn thiếu</b><p>Chạy AI đọc lại những cuộc chưa có tóm tắt và sinh tóm tắt cho chúng.</p><p><span class="nhan">Điều kiện</span> Cần mô hình ngôn ngữ đang chạy. Chạy trên nhiều cuộc sẽ mất thời gian.</p><p class="sao"><span class="nhan">Vì sao</span> Tóm tắt không sinh tự động lúc gọi để không tranh tài nguyên với cuộc gọi đang diễn ra.</p></div></li><li><div class="so">2</div><div><b>Xuất CSV</b><p>Tải danh sách cuộc gọi ra file.</p><p><span class="nhan">Điều kiện</span> Xuất đúng tập đang lọc.</p><p class="sao"><span class="nhan">Vì sao</span> Để gửi báo cáo ra ngoài mà không phải chụp màn hình.</p></div></li><li><div class="so">3</div><div><b>Dải số tổng hợp</b><p>Số liệu gộp của tập đang lọc.</p><p><span class="nhan">Điều kiện</span> Đổi theo bộ lọc bên dưới.</p><p class="sao"><span class="nhan">Vì sao</span> Lọc xong nhìn ngay được nhóm vừa lọc lớn cỡ nào, không phải đếm dòng.</p></div></li><li><div class="so">4</div><div><b>Bộ lọc hàng 1 — thời gian và phân loại</b><p>Từ ngày · đến ngày · chiến dịch · kết quả · chất lượng · nhãn.</p><p><span class="nhan">Điều kiện</span> Các ô kết hợp với nhau theo kiểu “và”.</p><p class="sao"><span class="nhan">Vì sao</span> “Kết quả” là máy tự ghi (nghe máy, bận, hộp thư…), còn “nhãn” là người gắn tay — tách ra để phân biệt sự thật máy đo với đánh giá của người.</p></div></li><li><div class="so">5</div><div><b>Bộ lọc hàng 2 — thời lượng, giới tính, hướng gọi, tìm chữ</b><p>Thời lượng từ/đến giây · giới tính khách · gọi ra hay gọi vào · tìm chữ trong tên, số, và <b>nội dung hội thoại</b>.</p><p><span class="nhan">Điều kiện</span> Tìm trong nội dung chỉ chạy được với cuộc đã có bản ghi chữ.</p><p class="sao"><span class="nhan">Vì sao</span> Lọc theo thời lượng là cách nhanh nhất tách cuộc “nhấc máy rồi dập ngay” khỏi cuộc tư vấn thật.</p></div></li><li><div class="so">6</div><div><b>Hai ô tick: chỉ cuộc có ghi âm · gộp cả phiên thử</b><p>Ô đầu bỏ qua cuộc không thu tiếng. Ô sau kéo cả những lần bạn tự thử ở trang Hội thoại vào danh sách.</p><p><span class="nhan">Điều kiện</span> Phiên thử <b>mặc định bị ẩn</b>.</p><p class="sao"><span class="nhan">Vì sao</span> Phiên thử trên trang Hội thoại không quay số nên không phải cuộc gọi; để lẫn vào báo cáo sẽ làm sai mọi tỉ lệ.</p></div></li><li><div class="so">7</div><div><b>Áp dụng lọc</b><p>Chạy bộ lọc vừa đặt.</p><p><span class="nhan">Điều kiện</span> Bộ lọc <b>không tự chạy</b> khi đổi từng ô.</p><p class="sao"><span class="nhan">Vì sao</span> Đợi bấm mới chạy vì mỗi lần lọc là một truy vấn nặng; tự chạy theo từng ký tự sẽ nghẽn.</p></div></li><li><div class="so">8</div><div><b>Gắn nhãn hàng loạt</b><p>Chọn nhiều dòng rồi gắn cùng một nhãn: Quan tâm · Không quan tâm · Follow chăm sóc thêm…</p><p><span class="nhan">Điều kiện</span> Phải tick chọn dòng trước, nút mới có tác dụng.</p><p class="sao"><span class="nhan">Vì sao</span> Nhãn là dữ liệu để lọc lại về sau; gắn từng dòng cho vài trăm cuộc là việc không ai làm nổi.</p></div></li><li><div class="so">9</div><div><b>Bảng cuộc gọi</b><p>Thời gian, khách, số, chiến dịch, thời lượng, kết quả, chất lượng, nhãn, ghi âm, tóm tắt.</p><p><span class="nhan">Điều kiện</span> Cột ghi âm chỉ có khi bật ghi âm ở trang Cài đặt.</p><p class="sao"><span class="nhan">Vì sao</span> Đặt ghi âm và tóm tắt cạnh nhau để nghe và đọc đối chiếu — tóm tắt do máy sinh nên phải kiểm được bằng tiếng gốc.</p></div></li></ol></section><section class="trang" id="scenarios"><p class="nhomlab">Cấu hình</p><h2>Kịch bản</h2><p class="tomtat">Quy định bot <b>xưng là ai</b>, chào thế nào, và luật riêng của ngành hàng.</p><figure><div class="anh"><img src="anh_tinh_nang/scenarios.jpg" alt="Anh chup trang Kịch bản" width="1220" height="252"><svg viewBox="0 0 1220 252" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="890" y="21" width="102" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="877" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="877" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="994" y="21" width="93" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="981" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="981" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="1089" y="21" width="110" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1076" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1076" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="22" y="131" width="324" height="75" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="118" r="13" fill="var(--khoanh)"/>
+<text x="15" y="123" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="357" y="85" width="842" height="101" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="344" cy="72" r="13" fill="var(--khoanh)"/>
+<text x="344" y="77" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+</svg></div><figcaption>Luật chung — độ dài câu, cấm bịa số, cấm đọc liệt kê — cố định trong hệ thống và kịch bản không ghi đè được. Chúng là hàng rào an toàn, không phải tuỳ chọn.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tải form mẫu</b><p>Tải về file mẫu để điền kịch bản ngoài app rồi nạp lại.</p><p><span class="nhan">Điều kiện</span> Dùng khi muốn soạn hàng loạt hoặc nhờ người khác điền.</p><p class="sao"><span class="nhan">Vì sao</span> Bắt đầu từ file mẫu thì người điền không phải đoán định dạng, và các dòng mẫu đều đã đạt luật phong cách nên nhìn là biết viết sao.</p></div></li><li><div class="so">2</div><div><b>Nhập từ file</b><p>Nạp kịch bản đã điền sẵn từ file.</p><p><span class="nhan">Điều kiện</span> Định dạng phải khớp form mẫu ở nút bên trái.</p><p class="sao"><span class="nhan">Vì sao</span> Đường đi kèm với nút tải form — hai nút này là một cặp.</p></div></li><li><div class="so">3</div><div><b>+ Kịch bản mới</b><p>Tạo một kịch bản trắng ngay trên trang.</p><p><span class="nhan">Điều kiện</span> Dùng khi chỉ thêm một kịch bản.</p><p class="sao"><span class="nhan">Vì sao</span> Nhanh hơn vòng tải form → điền → nạp lại cho trường hợp đơn lẻ.</p></div></li><li><div class="so">4</div><div><b>Danh sách kịch bản</b><p>Các kịch bản đang có. Ảnh chụp cho thấy kịch bản mặc định “Tư vấn vay ngân hàng”.</p><p><span class="nhan">Điều kiện</span> Kịch bản mặc định được tạo tự động từ cấu hình lúc khởi động lần đầu.</p><p class="sao"><span class="nhan">Vì sao</span> Có sẵn một kịch bản chạy được để máy mới dựng vẫn gọi thử được ngay, không phải soạn từ số không.</p></div></li><li><div class="so">5</div><div><b>Khung soạn kịch bản</b><p>Nội dung của kịch bản đang chọn: cách xưng danh, câu chào mở đầu, luật riêng ngành.</p><p><span class="nhan">Điều kiện</span> Rỗng cho tới khi chọn một kịch bản bên trái.</p><p class="sao"><span class="nhan">Vì sao</span> Câu chào mở đầu thường ghi cứng tên ngân hàng ở đây — đổi tên ở trang Cài đặt mà quên chỗ này thì bot vẫn xưng tên cũ.</p></div></li></ol></section><section class="trang" id="datasources"><p class="nhomlab">Cấu hình</p><h2>Nguồn dữ liệu</h2><p class="tomtat">Nối file dữ liệu trên máy để bot tra cứu <b>hồ sơ của từng khách cụ thể</b> — khác với Tri thức AI vốn chứa thông tin chung.</p><figure><div class="anh"><img src="anh_tinh_nang/datasources.jpg" alt="Anh chup trang Nguồn dữ liệu" width="1220" height="666"><svg viewBox="0 0 1220 666" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="1092" y="21" width="107" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1079" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1079" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="21" y="108" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="95" r="13" fill="var(--khoanh)"/>
+<text x="15" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="38" y="234" width="1144" height="123" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="221" r="13" fill="var(--khoanh)"/>
+<text x="25" y="226" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="38" y="400" width="390" height="35" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="387" r="13" fill="var(--khoanh)"/>
+<text x="25" y="392" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="936" y="397" width="246" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="923" cy="384" r="13" fill="var(--khoanh)"/>
+<text x="923" y="389" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="22" y="477" width="1176" height="141" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="464" r="13" fill="var(--khoanh)"/>
+<text x="15" y="469" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Chỉ nhận file trên máy, không nối ra máy chủ nào. Hệ thống chạy offline hoàn toàn.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>+ Thêm nguồn</b><p>Khai một nguồn dữ liệu mới: kiểu file, chế độ dùng, đường dẫn.</p><p><span class="nhan">Điều kiện</span> Nhận <code>.db</code> <code>.sqlite</code> và bảng tính <code>.xlsx</code> <code>.csv</code>, tối đa 200 MB.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây trang này chỉ có ô gõ đường dẫn: người dùng phải tự copy file vào máy chủ, tự biết đường tuyệt đối, tự biết tên bảng bên trong. Giờ tải lên rồi chọn bảng từ danh sách dò được.</p></div></li><li><div class="so">2</div><div><b>Dải số nguồn dữ liệu</b><p>Số nguồn theo từng nhóm và số nguồn đang lỗi.</p><p><span class="nhan">Điều kiện</span> Đếm trên toàn bộ nguồn đã khai.</p><p class="sao"><span class="nhan">Vì sao</span> Nguồn lỗi là lỗi im lặng: bot vẫn trả lời, chỉ là thiếu mất phần tra cứu.</p></div></li><li><div class="so">3</div><div><b>Vùng kéo-thả file</b><p>Kéo file vào hoặc bấm để chọn. File lưu vào <code>data/nguon/</code>.</p><p><span class="nhan">Điều kiện</span> Hiện tên và dung lượng file đã chọn rồi mới cho bấm tải lên.</p><p class="sao"><span class="nhan">Vì sao</span> Ô chọn file gốc của trình duyệt hiện chuỗi hệ thống không sửa được và không nhận kéo-thả; và hiện tên file trước khi tải để bạn kịp thấy mình chọn nhầm.</p></div></li><li><div class="so">4</div><div><b>Lọc theo nhóm nguồn</b><p>Tất cả · Tri thức chung · Tra theo khách · Có lỗi.</p><p><span class="nhan">Điều kiện</span> Số bên cạnh mỗi nhóm là số nguồn thuộc nhóm đó.</p><p class="sao"><span class="nhan">Vì sao</span> “Tra theo khách” là nhóm quan trọng nhất — đó là nguồn khiến bot nói được con số riêng của từng người.</p></div></li><li><div class="so">5</div><div><b>Tìm theo tên nguồn</b><p>Lọc nhanh khi có nhiều nguồn.</p><p><span class="nhan">Điều kiện</span> Tìm trong tên nguồn.</p><p class="sao"><span class="nhan">Vì sao</span> Danh sách nguồn phình ra nhanh khi mỗi sản phẩm một bảng.</p></div></li><li><div class="so">6</div><div><b>Bảng nguồn</b><p>Tên · kiểu · chế độ · đường dẫn · số dòng · nạp lần cuối · trạng thái · thao tác.</p><p><span class="nhan">Điều kiện</span> Cột “số dòng” và “nạp lần cuối” là bằng chứng file đã thật sự vào máy.</p><p class="sao"><span class="nhan">Vì sao</span> Khai đường dẫn xong mà số dòng vẫn trống nghĩa là máy chưa đọc được file — bắt lỗi ở đây rẻ hơn phát hiện khi khách đã nghe sai.</p></div></li></ol></section><section class="trang" id="knowledge"><p class="nhomlab">Cấu hình</p><h2>Tri thức AI</h2><p class="tomtat">Đây là thứ AI đọc để tư vấn. <b>Mọi con số bot nói cho khách — lãi suất, hạn mức, điều kiện — đều lấy từ đây.</b></p><figure><div class="anh"><img src="anh_tinh_nang/knowledge.jpg" alt="Anh chup trang Tri thức AI" width="1220" height="968"><svg viewBox="0 0 1220 968" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="979" y="21" width="112" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="966" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="966" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="1093" y="21" width="106" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1080" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1080" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="21" y="89" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="76" r="13" fill="var(--khoanh)"/>
+<text x="15" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="21" y="169" width="1178" height="112" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="156" r="13" fill="var(--khoanh)"/>
+<text x="15" y="161" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="976" y="308" width="206" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="963" cy="295" r="13" fill="var(--khoanh)"/>
+<text x="963" y="300" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="38" y="354" width="1144" height="140" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="341" r="13" fill="var(--khoanh)"/>
+<text x="25" y="346" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="21" y="520" width="1178" height="120" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="507" r="13" fill="var(--khoanh)"/>
+<text x="15" y="512" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="38" y="666" width="490" height="35" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="653" r="13" fill="var(--khoanh)"/>
+<text x="25" y="658" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+<rect x="936" y="664" width="246" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="923" cy="651" r="13" fill="var(--khoanh)"/>
+<text x="923" y="656" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">9</text>
+<rect x="22" y="744" width="1176" height="177" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="731" r="13" fill="var(--khoanh)"/>
+<text x="15" y="736" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">10</text>
+</svg></div><figcaption>Ảnh chụp máy vừa dựng: 4 tài liệu, 10 mảnh đã nạp, và dải cảnh báo đỏ vì cả 4 tài liệu vẫn là dữ liệu mẫu của “Ngân hàng ABC”.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Nạp lại toàn bộ</b><p>Cắt mảnh và đánh chỉ mục lại tất cả tài liệu.</p><p><span class="nhan">Điều kiện</span> Dùng sau khi sửa nhiều file cùng lúc, hoặc khi cột “AI đã đọc” trông không khớp.</p><p class="sao"><span class="nhan">Vì sao</span> Nạp lại toàn bộ tốn thời gian nên không chạy tự động; sửa một tài liệu thì hệ thống chỉ nạp lại tài liệu đó.</p></div></li><li><div class="so">2</div><div><b>+ Soạn tài liệu</b><p>Mở khung soạn tài liệu ngay trong app, có mẫu cấu trúc và bộ soi lỗi.</p><p><span class="nhan">Điều kiện</span> <b>Đây là đường duy nhất cho nội dung PDF</b> — mở PDF ra, chọn hết, dán vào đây.</p><p class="sao"><span class="nhan">Vì sao</span> Hệ thống không đọc PDF. Thay vì cài thêm thư viện đọc PDF, chọn cách chép tay vào ô soạn để nội dung luôn qua bộ soi lỗi.</p></div></li><li><div class="so">3</div><div><b>Dải bốn ô số</b><p>Số tài liệu · <b>số mảnh AI đã đọc</b> · số tài liệu chưa nạp · lần sửa gần nhất.</p><p><span class="nhan">Điều kiện</span> Ô “chưa nạp” khác 0 nghĩa là có tài liệu AI chưa nhìn thấy.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây phải dò từng dòng trong bảng mới biết còn tài liệu nào chưa nạp; giờ mở trang là thấy ngay.</p></div></li><li><div class="so">4</div><div><b>Cảnh báo dữ liệu mẫu</b><p>Báo rằng bot đang đọc số bịa cho khách, kèm hai nút: xem các tài liệu đó, hoặc xoá hết tài liệu mẫu.</p><p><span class="nhan">Điều kiện</span> Chỉ hiện khi vẫn còn tài liệu mẫu chưa thay bằng số thật.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây chỉ là dải chữ: nói ra vấn đề mà không cho lối xử lý. Giờ kèm hai nút để làm luôn.</p></div></li><li><div class="so">5</div><div><b>Chọn nhóm khi tải lên</b><p>Sản phẩm · Câu hỏi thường gặp · Chính sách / điều kiện.</p><p><span class="nhan">Điều kiện</span> Chọn <b>trước</b> khi thả file; nhóm gán cho file sắp tải.</p><p class="sao"><span class="nhan">Vì sao</span> Nhóm quyết định lưới lọc lúc tra: hỏi lãi tiết kiệm mà tài liệu bị gán nhầm nhóm thì bot có thể đọc lãi vay tín chấp.</p></div></li><li><div class="so">6</div><div><b>Vùng thả tài liệu</b><p>Nhận <code>.md</code> <code>.txt</code> <code>.docx</code> và bảng tính <code>.csv</code> <code>.xlsx</code>.</p><p><span class="nhan">Điều kiện</span> Bảng trong Word và Excel được giữ nguyên dạng bảng, không phải gõ lại tay.</p><p class="sao"><span class="nhan">Vì sao</span> Bảng lãi suất là thứ hay bị mất cấu trúc nhất khi chép tay; giữ nguyên dạng bảng để AI đọc đúng cột nào là kỳ hạn, cột nào là lãi.</p></div></li><li><div class="so">7</div><div><b>Hỏi thử AI</b><p>Gõ câu khách hay hỏi để xem AI lấy được mảnh nào, từ tài liệu nào, khớp bao nhiêu. Ô bên phải giới hạn theo sản phẩm đang tư vấn.</p><p><span class="nhan">Điều kiện</span> <b>Chỉ tra tài liệu — không gọi cho ai.</b></p><p class="sao"><span class="nhan">Vì sao</span> Trước đây muốn biết AI có lấy đúng tài liệu không thì phải mở tab Hội thoại gọi hẳn một lượt, nên hầu như không ai thử — và tài liệu sai chỉ lộ ra khi khách đã nghe nhầm số. Gõ được cả sản phẩm chưa có tài liệu là cố ý: đó là ca mà lưới lọc phải bỏ hết mảnh của sản phẩm khác.</p></div></li><li><div class="so">8</div><div><b>Lọc theo nhóm + tạo nhóm mới</b><p>Tất cả · Sản phẩm · Câu hỏi thường gặp · Chính sách, kèm nút “+ Nhóm”.</p><p><span class="nhan">Điều kiện</span> Số bên cạnh là số tài liệu trong nhóm.</p><p class="sao"><span class="nhan">Vì sao</span> Tự đặt được nhóm vì mỗi ngân hàng chia loại tài liệu một kiểu.</p></div></li><li><div class="so">9</div><div><b>Tìm trong tên và nội dung</b><p>Tìm cả trong tên tài liệu lẫn nội dung bên trong.</p><p><span class="nhan">Điều kiện</span> Tìm trong nội dung nên bắt được cả tài liệu đặt tên khó nhớ.</p><p class="sao"><span class="nhan">Vì sao</span> Muốn sửa một con số lãi suất thì nhớ con số dễ hơn nhớ file nào chứa nó.</p></div></li><li><div class="so">10</div><div><b>Bảng tài liệu và bốn nút thao tác</b><p>Mỗi dòng: tên tài liệu, nhóm, kích thước, <b>AI đã đọc mấy mảnh</b>, sửa lần cuối. Bốn nút: Mảnh · Bản cũ · Sửa · Xoá. Huy hiệu đỏ “1 lỗi” là bộ soi báo tài liệu có vấn đề.</p><p><span class="nhan">Điều kiện</span> Cột “AI đã đọc” trống nghĩa là tài liệu chưa được nạp — AI chưa nhìn thấy nó.</p><p class="sao"><span class="nhan">Vì sao</span> Nút <b>Mảnh</b> đọc từ kho vector chứ không cắt lại từ file trên đĩa: cắt lại thì luôn ra kết quả đẹp kể cả khi kho còn giữ bản cũ. Nút <b>Bản cũ</b> tồn tại vì đây là chỗ duy nhất quyết định con số bot đọc cho khách, ghi đè mà mất bản cũ là mất đường lùi.</p></div></li></ol></section><section class="trang" id="fillers"><p class="nhomlab">Cấu hình</p><h2>Câu đệm</h2><p class="tomtat">Câu AI nói <b>ngay khi khách vừa dứt lời</b>, phát song song trong lúc máy còn đang nghĩ câu trả lời. Không có nó thì khách nghe một quãng im.</p><figure><div class="anh"><img src="anh_tinh_nang/fillers.jpg" alt="Anh chup trang Câu đệm" width="1220" height="1021"><svg viewBox="0 0 1220 1021" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="1007" y="21" width="90" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="994" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="994" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="1099" y="21" width="100" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1086" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="1086" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="21" y="108" width="1178" height="90" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="95" r="13" fill="var(--khoanh)"/>
+<text x="15" y="100" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="38" y="273" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="260" r="13" fill="var(--khoanh)"/>
+<text x="25" y="265" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="22" y="434" width="1176" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="421" r="13" fill="var(--khoanh)"/>
+<text x="15" y="426" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="22" y="543" width="1176" height="432" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="530" r="13" fill="var(--khoanh)"/>
+<text x="15" y="535" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Ảnh chụp trạng thái hiện tại: chưa cấu hình tình huống nào (0 tình huống, 0 mẫu mở đầu), nhưng đã có 42 câu đuôi dùng chung — nên bot vẫn không để khách nghe im.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Dựng tiếng</b><p>Sinh sẵn file tiếng cho toàn bộ câu đệm, để lúc gọi thật không phải đọc từ đầu.</p><p><span class="nhan">Điều kiện</span> Số clip phải dựng = mẫu mở đầu × câu đuôi, <b>cho mỗi giọng</b>. Đổi giọng là phải dựng lại.</p><p class="sao"><span class="nhan">Vì sao</span> Câu đệm phải phát ngay lập tức; đọc tại chỗ thì đã mất đúng cái quãng im mà nó sinh ra để lấp.</p></div></li><li><div class="so">2</div><div><b>+ Tình huống</b><p>Thêm một tình huống: câu ví dụ khách hay nói, và mẩu mở đầu tương ứng.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp đang có 0 tình huống.</p><p class="sao"><span class="nhan">Vì sao</span> Càng nhiều mẫu mở đầu thì càng đỡ lặp — dải số ghi thẳng điều đó dưới ô “MẪU MỞ ĐẦU”.</p></div></li><li><div class="so">3</div><div><b>Dải bốn ô số</b><p>Tình huống đang bật · mẫu mở đầu · câu đuôi · số clip phải dựng.</p><p><span class="nhan">Điều kiện</span> “Clip phải dựng” là tích của mẫu mở đầu và câu đuôi cho mỗi giọng.</p><p class="sao"><span class="nhan">Vì sao</span> Con số này cho biết trước bấm “Dựng tiếng” sẽ mất bao lâu — nó tăng theo cấp số nhân chứ không cộng dồn.</p></div></li><li><div class="so">4</div><div><b>Thử một câu khách nói</b><p>Gõ câu khách nói để xem máy nhận ra tình huống nào.</p><p><span class="nhan">Điều kiện</span> Máy chấm điểm giống hệt lúc gọi thật — <b>kể cả khi câu còn cụt</b>.</p><p class="sao"><span class="nhan">Vì sao</span> Câu đệm phải phát trước khi khách nói xong, nên máy chỉ có phiên âm cụt để chấm. Một tình huống nghe rất hợp lý vẫn có thể không bao giờ đạt ngưỡng — chỉ thử ở đây mới biết.</p></div></li><li><div class="so">5</div><div><b>Bảng tình huống</b><p>Tình huống · ví dụ · mẫu mở đầu · trạng thái · thao tác.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp rỗng vì chưa cấu hình tình huống nào.</p><p class="sao"><span class="nhan">Vì sao</span> Tình huống là lớp làm câu đệm nghe khớp ngữ cảnh; không có nó thì mọi lượt đều rơi xuống câu đuôi chung.</p></div></li><li><div class="so">6</div><div><b>Câu đuôi dùng chung</b><p>Kho câu dùng khi không nhận ra tình huống. Ảnh chụp có 42 câu; nút “×” xoá từng câu.</p><p><span class="nhan">Điều kiện</span> <b>Đây là đường xuống cấp cuối cùng.</b></p><p class="sao"><span class="nhan">Vì sao</span> Rỗng nó là khách nghe im lặng trọn quãng chờ — đúng thứ mà cả trang này sinh ra để tránh. Kho câu phải rải liền mạch nhiều độ dài, không chỉ đủ số lượng.</p></div></li></ol></section><section class="trang" id="voice"><p class="nhomlab">Cấu hình</p><h2>Giọng nói</h2><p class="tomtat">Nạp giọng mẫu và nghe thử. Một giọng gồm <b>file WAV mẫu</b> và <b>transcript đúng nội dung đọc trong file đó</b>.</p><figure><div class="anh"><img src="anh_tinh_nang/voice.jpg" alt="Anh chup trang Giọng nói" width="1220" height="876"><svg viewBox="0 0 1220 876" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="140" y="177" width="279" height="164" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="164" r="13" fill="var(--khoanh)"/>
+<text x="127" y="169" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="471" y="158" width="609" height="86" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="458" cy="145" r="13" fill="var(--khoanh)"/>
+<text x="458" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="150" y="508" width="920" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="137" cy="495" r="13" fill="var(--khoanh)"/>
+<text x="137" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="140" y="568" width="940" height="70" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="555" r="13" fill="var(--khoanh)"/>
+<text x="127" y="560" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="140" y="742" width="940" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="729" r="13" fill="var(--khoanh)"/>
+<text x="127" y="734" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="140" y="790" width="19" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="777" r="13" fill="var(--khoanh)"/>
+<text x="127" y="782" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Ảnh chụp trên máy chưa có mô hình đọc tiếng, nên danh sách giọng rỗng. Tốc đọc dùng khi gọi điện nằm ở trang Thiết bị, không phải ở đây.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Khung nạp giọng mẫu</b><p>Ba ô: tên giọng · file WAV · transcript (nội dung đọc trong file).</p><p><span class="nhan">Điều kiện</span> Đoạn mẫu 3–5 giây là đủ. <b>Tệp dài hơn 30 giây tự rơi xuống mục Bản ghi dài</b> thay vì thành giọng.</p><p class="sao"><span class="nhan">Vì sao</span> Transcript sai thì giọng đọc sai: máy tin transcript bạn khai là nội dung thật của file mẫu, khai lệch một chữ là giọng sinh ra mang đúng chữ sai đó vào mọi câu.</p></div></li><li><div class="so">2</div><div><b>Danh sách giọng</b><p>Các giọng đã nạp, kèm nút Làm mới.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa nạp giọng nào, hoặc khi máy chưa có mô hình đọc tiếng.</p><p class="sao"><span class="nhan">Vì sao</span> Danh sách này là nguồn cho mọi ô chọn giọng ở các trang khác.</p></div></li><li><div class="so">3</div><div><b>Bản ghi dài — tải lên</b><p>Tải cả buổi thu lên, máy nghe hết rồi <b>gợi ý đoạn mẫu tốt nhất</b>.</p><p><span class="nhan">Điều kiện</span> Đường riêng, không gộp với ô nạp giọng phía trên.</p><p class="sao"><span class="nhan">Vì sao</span> Mô hình chép giọng từ một đoạn mẫu ngắn, nên chọn đoạn nào quyết định chất lượng ngang với model. Chọn tay mất khoảng hai giờ mỗi giọng và rất dễ sai theo kiểu khó truy — có lần đoạn mẫu đang dùng không có lấy một chữ “ạ” nào trong 20 phút bản ghi, nên máy phải tự bịa ngữ điệu cho tiểu từ và bên A nghe ra ngay. Nút tải đặt ngay đây vì dòng chỉ dẫn trỏ lên ô trên đã được chứng minh là không ăn.</p></div></li><li><div class="so">4</div><div><b>Danh sách bản ghi dài</b><p>Các bản thu dài đã tải, và đoạn mẫu máy gợi ý từ mỗi bản.</p><p><span class="nhan">Điều kiện</span> Rỗng cho tới khi tải một file WAV dài hơn 30 giây.</p><p class="sao"><span class="nhan">Vì sao</span> Giữ cả bản gốc để chọn lại đoạn khác khi đoạn đang dùng cho ra giọng chưa ưng.</p></div></li><li><div class="so">5</div><div><b>Test giọng nói (TTS)</b><p>Chọn giọng · gõ câu · <b>Phát thử</b> đọc một câu, <b>Đọc cả cuộc thoại</b> đọc liền mạch nhiều lượt.</p><p><span class="nhan">Điều kiện</span> Cần mô hình đọc tiếng đang chạy.</p><p class="sao"><span class="nhan">Vì sao</span> Nghe một câu rời không nói lên được thứ khách thật sự nghe: lỗi hay gặp nằm <b>giữa các lượt</b> — tông lạc quẻ giữa mảnh, “ạ” chưa ngắt xong đã đọc từ sau, tiếng lúc to lúc bé. Phải nghe liền mạch mới bắt được.</p></div></li><li><div class="so">6</div><div><b>Đọc giống cuộc gọi (cắt mảnh như đường gọi)</b><p>Bật để máy cắt câu thành mảnh y như lúc gọi thật, thay vì đọc liền một hơi.</p><p><span class="nhan">Điều kiện</span> Số mảnh thật hiện ở dòng kết quả bên dưới sau khi phát.</p><p class="sao"><span class="nhan">Vì sao</span> Nhãn cố ý không ghi cứng luật cắt vì luật đổi nhiều lần — từ 5 từ lên 16, rồi tăng dần 5/10/20, rồi theo nguyên câu — và nhãn cũ hoá sai lặng lẽ.</p></div></li></ol></section><section class="trang" id="devices"><p class="nhomlab">Cấu hình</p><h2>Thiết bị</h2><p class="tomtat">Điện thoại / gateway / modem mà hệ thống dùng để gọi ra và nhận cuộc gọi vào — <b>và tốc độ đọc riêng cho đường điện thoại.</b></p><figure><div class="anh"><img src="anh_tinh_nang/devices.jpg" alt="Anh chup trang Thiết bị" width="1220" height="916"><svg viewBox="0 0 1220 916" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="106" y="103" width="1008" height="22" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="93" cy="90" r="13" fill="var(--khoanh)"/>
+<text x="93" y="95" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="38" y="132" width="32" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="119" r="13" fill="var(--khoanh)"/>
+<text x="25" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="72" y="131" width="184" height="38" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="59" cy="118" r="13" fill="var(--khoanh)"/>
+<text x="59" y="123" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="258" y="131" width="105" height="38" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="245" cy="118" r="13" fill="var(--khoanh)"/>
+<text x="245" y="123" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="727" y="196" width="111" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="714" cy="183" r="13" fill="var(--khoanh)"/>
+<text x="714" y="188" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="840" y="196" width="111" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="827" cy="183" r="13" fill="var(--khoanh)"/>
+<text x="827" y="188" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="953" y="196" width="132" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="940" cy="183" r="13" fill="var(--khoanh)"/>
+<text x="940" y="188" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="1087" y="196" width="112" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1074" cy="183" r="13" fill="var(--khoanh)"/>
+<text x="1074" y="188" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+<rect x="21" y="260" width="1178" height="71" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="247" r="13" fill="var(--khoanh)"/>
+<text x="15" y="252" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">9</text>
+<rect x="21" y="340" width="586" height="207" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="327" r="13" fill="var(--khoanh)"/>
+<text x="15" y="332" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">10</text>
+<rect x="613" y="340" width="586" height="207" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="600" cy="327" r="13" fill="var(--khoanh)"/>
+<text x="600" y="332" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">11</text>
+<rect x="21" y="557" width="1178" height="144" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="544" r="13" fill="var(--khoanh)"/>
+<text x="15" y="549" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">12</text>
+<rect x="38" y="768" width="1144" height="86" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="25" cy="755" r="13" fill="var(--khoanh)"/>
+<text x="25" y="760" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">13</text>
+</svg></div><figcaption>Khối tốc độ đặt ở đầu trang Thiết bị chứ không ở trang Giọng nói: nó là thuộc tính của đường truyền, không phải của giọng.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Thanh tốc độ đọc khi gọi điện thoại</b><p>Hệ số nhân thêm vào tốc riêng của từng giọng, từ 0.6 (chậm) tới 1.4 (nhanh). Ảnh chụp đang để 1.00.</p><p><span class="nhan">Điều kiện</span> <b>Chỉ áp cho cuộc gọi thật</b>, không ảnh hưởng lúc nghe thử trên web.</p><p class="sao"><span class="nhan">Vì sao</span> Kênh GSM 8kHz cắt sạch dải trên 4kHz — đúng dải mang phụ âm s, x, ch, tr — nên tốc nghe rõ trên web chưa chắc rõ qua điện thoại. Tách riêng khỏi tốc từng giọng vì đây là đặc tính của đường truyền.</p></div></li><li><div class="so">2</div><div><b>Chọn giọng để nghe thử</b><p>Chọn giọng dùng cho hai nút nghe bên cạnh.</p><p><span class="nhan">Điều kiện</span> Danh sách lấy từ trang Giọng nói.</p><p class="sao"><span class="nhan">Vì sao</span> Mỗi giọng chịu ảnh hưởng của băng hẹp một kiểu; phải nghe đúng giọng sắp dùng.</p></div></li><li><div class="so">3</div><div><b>Nghe như khách nghe (8kHz)</b><p>Phát bản đã bóp xuống băng hẹp, giống hệt thứ đi qua đường điện thoại.</p><p><span class="nhan">Điều kiện</span> Dùng để chốt tốc độ trước khi chạy chiến dịch.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là nút quan trọng nhất của khối: nghe bản gốc rồi chốt tốc là chốt nhầm, vì lỗi phụ âm chỉ lộ ra sau khi bóp băng.</p></div></li><li><div class="so">4</div><div><b>Nghe bản gốc</b><p>Phát bản chất lượng đầy đủ để so sánh.</p><p><span class="nhan">Điều kiện</span> Dùng kèm nút bên trái, không dùng một mình.</p><p class="sao"><span class="nhan">Vì sao</span> Có cặp đối chứng thì mới nghe ra băng hẹp lấy mất những gì.</p></div></li><li><div class="so">5</div><div><b>Quét cổng USB</b><p>Tìm thiết bị đang cắm vào cổng USB.</p><p><span class="nhan">Điều kiện</span> Máy phải cắm sẵn trước khi quét.</p><p class="sao"><span class="nhan">Vì sao</span> Quét theo yêu cầu chứ không liên tục để không đụng vào máy đang giữa cuộc gọi.</p></div></li><li><div class="so">6</div><div><b>Kiểm tra tất cả</b><p>Chạy bộ kiểm cho mọi máy đã khai.</p><p><span class="nhan">Điều kiện</span> Kết quả đổ vào khối “Kiểm tra máy” bên dưới.</p><p class="sao"><span class="nhan">Vì sao</span> Trước một đợt gọi lớn, kiểm cả dàn một lượt rẻ hơn phát hiện máy hỏng giữa chiến dịch.</p></div></li><li><div class="so">7</div><div><b>Nhận cuộc gọi đến</b><p>Bật chế độ máy tự trả lời cuộc gọi vào.</p><p><span class="nhan">Điều kiện</span> Cần khai kịch bản dùng cho cuộc gọi vào.</p><p class="sao"><span class="nhan">Vì sao</span> Gọi vào và gọi ra là hai luồng khác nhau; tách công tắc để không vô tình bật cả hai.</p></div></li><li><div class="so">8</div><div><b>+ Thêm thiết bị</b><p>Khai một điện thoại / gateway dùng để gọi ra.</p><p><span class="nhan">Điều kiện</span> Là điều kiện để trang Danh bạ gọi bấm gọi được.</p><p class="sao"><span class="nhan">Vì sao</span> Danh bạ chỉ giữ số; không có thiết bị thì không có gì quay số.</p></div></li><li><div class="so">9</div><div><b>Dải số thiết bị</b><p>Tổng thiết bị · sẵn sàng · mất kết nối · thiết bị mặc định.</p><p><span class="nhan">Điều kiện</span> “Mất kết nối” khác 0 là có máy rụng.</p><p class="sao"><span class="nhan">Vì sao</span> Máy rụng giữa chiến dịch là lỗi im lặng — chiến dịch vẫn báo đang chạy nhưng không cuộc nào ra.</p></div></li><li><div class="so">10</div><div><b>Phone farm (ADB)</b><p>Điều khiển điện thoại Android qua cáp USB: hệ thống tự bấm số và đọc trạng thái cuộc gọi.</p><p><span class="nhan">Điều kiện</span> Phải cắm qua USB hub và <b>bật Gỡ lỗi USB</b> trên máy đó.</p><p class="sao"><span class="nhan">Vì sao</span> Dùng máy Android thật thay vì gateway vì đây là đường có sẵn SIM và loa mic thật, không phải mô phỏng.</p></div></li><li><div class="so">11</div><div><b>Kiểm tra máy</b><p>Soi từng khâu của một máy: kết nối USB · màn hình · SIM · sóng · pin · quyền root · app cầu nối tiếng.</p><p><span class="nhan">Điều kiện</span> Bấm “Kiểm tra” ở một máy bên trái mới có kết quả ở đây.</p><p class="sao"><span class="nhan">Vì sao</span> “Không ai bắt máy” thường không phải lỗi phần mềm: SIM hết tiền, màn hình đang khoá, và hộp thoại chọn SIM đều cho ra đúng triệu chứng đó. Bộ kiểm tách từng khâu để không đoán mò.</p></div></li><li><div class="so">12</div><div><b>Danh sách thiết bị</b><p>Các máy đã khai và trạng thái từng máy.</p><p><span class="nhan">Điều kiện</span> Rỗng cho tới khi bấm “+ Thêm thiết bị”.</p><p class="sao"><span class="nhan">Vì sao</span> Khai tường minh thay vì tự nhận, để biết máy nào được phép gọi.</p></div></li><li><div class="so">13</div><div><b>Gọi thử</b><p>Chọn máy, nhập một số, bấm gọi để kiểm tra cả đường từ đầu tới cuối.</p><p><span class="nhan">Điều kiện</span> Cần ít nhất một thiết bị sẵn sàng.</p><p class="sao"><span class="nhan">Vì sao</span> Gọi thử một số của chính mình là cách duy nhất xác nhận tiếng đi tới được tai người, không chỉ tới được máy.</p></div></li></ol></section><section class="trang" id="settings"><p class="nhomlab">Cấu hình</p><h2>Cài đặt</h2><p class="tomtat">Cấu hình chung: bot xưng tên gì, dùng mô hình nào, có ghi âm không, và tình trạng bốn dịch vụ lõi.</p><figure><div class="anh"><img src="anh_tinh_nang/settings.jpg" alt="Anh chup trang Cài đặt" width="1220" height="967"><svg viewBox="0 0 1220 967" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="183" y="93" width="854" height="134" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="170" cy="80" r="13" fill="var(--khoanh)"/>
+<text x="170" y="85" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="183" y="233" width="854" height="138" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="170" cy="220" r="13" fill="var(--khoanh)"/>
+<text x="170" y="225" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="183" y="381" width="421" height="219" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="170" cy="368" r="13" fill="var(--khoanh)"/>
+<text x="170" y="373" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="615" y="381" width="421" height="219" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="602" cy="368" r="13" fill="var(--khoanh)"/>
+<text x="602" y="373" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="183" y="609" width="421" height="313" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="170" cy="596" r="13" fill="var(--khoanh)"/>
+<text x="170" y="601" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="615" y="609" width="421" height="313" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="602" cy="596" r="13" fill="var(--khoanh)"/>
+<text x="602" y="601" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Ảnh chụp cho thấy tên ngân hàng vẫn đang là “Ngân hàng ABC” và nhân viên AI tên “Lan” — dữ liệu mẫu chưa thay.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Gửi báo cáo qua Telegram</b><p>Thêm bot Telegram để nhận báo cáo. Dòng “Lấy token và chat_id ở đâu?” mở hướng dẫn tại chỗ.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa thêm bot nào.</p><p class="sao"><span class="nhan">Vì sao</span> Có hướng dẫn gấp sẵn ngay trong app vì lấy token là bước hay tắc nhất, và mở tài liệu ngoài thì mất mạch.</p></div></li><li><div class="so">2</div><div><b>Ghi âm cuộc gọi + dọn ổ đĩa</b><p>Số bản ghi, dung lượng, số ngày lưu; ô nhập số ngày và nút “Dọn ổ đĩa” xoá bản ghi cũ hơn mốc đó.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp: 0 bản ghi · 0 MB · 0 ngày. Mặc định giữ 90 ngày.</p><p class="sao"><span class="nhan">Vì sao</span> Ghi âm cuộc gọi phình rất nhanh; có nút dọn ngay cạnh con số dung lượng để thấy vấn đề là xử lý được luôn.</p></div></li><li><div class="so">3</div><div><b>LLM Model</b><p>Chọn mô hình sinh câu trả lời: Qwen2.5-3B (nhanh, tới tiếng đầu sớm) · Qwen2.5-7B (chất lượng cao) · Qwen3-4B (chế độ suy luận).</p><p><span class="nhan">Điều kiện</span> Mô hình phải đã tải về ở trang Cài Model mới chọn được.</p><p class="sao"><span class="nhan">Vì sao</span> Đánh đổi thẳng giữa tốc và chất: bản nhỏ trả lời nhanh hơn nên khách ít phải chờ, bản lớn trả lời đúng hơn nhưng kéo dài quãng im.</p></div></li><li><div class="so">4</div><div><b>Thông tin ngân hàng</b><p>Tên ngân hàng và tên nhân viên AI mà bot tự xưng.</p><p><span class="nhan">Điều kiện</span> <b>Sửa ở đây chưa chắc đủ.</b> Kịch bản đang chọn có thể ghi đè, và câu chào mở đầu có thể ghi cứng tên.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là ô cấu hình gốc, nhưng kịch bản nằm ở lớp trên nên thắng. Đổi xong nên sang trang Nhắn tin gõ một câu để nghe bot tự giới thiệu lại.</p></div></li><li><div class="so">5</div><div><b>Giọng nói — file giọng mẫu</b><p>Đường dẫn file WAV làm giọng mặc định của hệ thống.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp đang trỏ <code>models/tts/ref_voices/default.wav</code>.</p><p class="sao"><span class="nhan">Vì sao</span> Giọng mặc định lấy nội dung đoạn mẫu từ cấu hình chứ không từ file <code>.txt</code> đi kèm như các giọng khác — nên lệch lời ở đây là bot đọc ra chính chữ sai đó.</p></div></li><li><div class="so">6</div><div><b>Thông tin hệ thống + Kiểm tra Health</b><p>Khối JSON cho biết nền tảng, thiết bị tính toán, và tình trạng bốn dịch vụ: <code>stt</code> · <code>llm</code> · <code>tts</code> · <code>rag</code>.</p><p><span class="nhan">Điều kiện</span> <b>Đây là chỗ cần nhìn đầu tiên khi có gì đó không chạy.</b> Trạng thái chốt lúc khởi động, nên bật một dịch vụ xong phải bấm nút này.</p><p class="sao"><span class="nhan">Vì sao</span> Bốn dịch vụ hỏng cho ra bốn triệu chứng rất giống nhau ở phía người dùng; đọc thẳng trạng thái nhanh hơn đoán từ triệu chứng.</p></div></li></ol></section><section class="trang" id="sessions"><p class="nhomlab">Hệ thống</p><h2>Phiên gọi</h2><p class="tomtat">Lịch sử cuộc gọi ở mức chi tiết hơn trang Báo cáo: nội dung hội thoại từng lượt và độ trễ từng lượt.</p><figure><div class="anh"><img src="anh_tinh_nang/sessions.jpg" alt="Anh chup trang Phiên gọi" width="1220" height="471"><svg viewBox="0 0 1220 471" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="31" y="89" width="1158" height="87" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="18" cy="76" r="13" fill="var(--khoanh)"/>
+<text x="18" y="81" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="31" y="190" width="390" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="18" cy="177" r="13" fill="var(--khoanh)"/>
+<text x="18" y="182" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="423" y="190" width="125" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="410" cy="177" r="13" fill="var(--khoanh)"/>
+<text x="410" y="182" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="32" y="277" width="1156" height="102" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="19" cy="264" r="13" fill="var(--khoanh)"/>
+<text x="19" y="269" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+</svg></div><figcaption>Trang Báo cáo dành cho người quản lý; trang này dành cho lúc truy một lượt cụ thể chậm ở khâu nào.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Dải số phiên</b><p>Số liệu tổng hợp của các phiên.</p><p><span class="nhan">Điều kiện</span> Đổi theo bộ lọc bên dưới.</p><p class="sao"><span class="nhan">Vì sao</span> Cho biết ngay tập dữ liệu đang soi lớn cỡ nào.</p></div></li><li><div class="so">2</div><div><b>Tìm phiên</b><p>Tìm theo tên khách, sản phẩm, hoặc mã phiên.</p><p><span class="nhan">Điều kiện</span> Mã phiên lấy từ khối “Phiên làm việc” ở trang Hội thoại.</p><p class="sao"><span class="nhan">Vì sao</span> Vừa thử xong một buổi, cầm mã phiên sang đây là mở đúng phiên đó, không phải dò theo giờ.</p></div></li><li><div class="so">3</div><div><b>Lọc trạng thái</b><p>Tất cả · Đang diễn ra · Đã kết thúc.</p><p><span class="nhan">Điều kiện</span> “Đang diễn ra” hữu ích khi chiến dịch đang chạy.</p><p class="sao"><span class="nhan">Vì sao</span> Tách phiên đang chạy ra để theo dõi thời gian thực mà không lẫn với lịch sử.</p></div></li><li><div class="so">4</div><div><b>Bảng phiên</b><p>Mã phiên · khách hàng · sản phẩm · số lượt · thời lượng · bắt đầu lúc nào. Bấm vào một dòng để mở nội dung hội thoại đầy đủ.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa có phiên nào.</p><p class="sao"><span class="nhan">Vì sao</span> Số lượt và thời lượng đặt cạnh nhau để nhận ra phiên bất thường: nhiều lượt mà ngắn thường là máy nghe nhầm liên tục.</p></div></li></ol></section><section class="trang" id="voice-test"><p class="nhomlab">Hệ thống</p><h2>Test giọng</h2><p class="tomtat">Nghe thử, chạy cả bộ câu khó, và <b>so sánh hai giọng cạnh nhau</b> trước khi chốt.</p><figure><div class="anh"><img src="anh_tinh_nang/voice-test.jpg" alt="Anh chup trang Test giọng" width="1220" height="885"><svg viewBox="0 0 1220 885" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="140" y="216" width="940" height="56" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="203" r="13" fill="var(--khoanh)"/>
+<text x="127" y="208" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="140" y="308" width="940" height="37" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="295" r="13" fill="var(--khoanh)"/>
+<text x="127" y="300" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="140" y="443" width="361" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="430" r="13" fill="var(--khoanh)"/>
+<text x="127" y="435" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="685" y="542" width="19" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="672" cy="529" r="13" fill="var(--khoanh)"/>
+<text x="672" y="534" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="157" y="615" width="906" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="144" cy="602" r="13" fill="var(--khoanh)"/>
+<text x="144" y="607" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="140" y="750" width="147" height="42" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="737" r="13" fill="var(--khoanh)"/>
+<text x="127" y="742" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Trang này khác trang Giọng nói ở chỗ: bên kia để nạp và nghe một câu, bên này để chấm điểm hàng loạt và đối chứng A/B.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Nội dung đọc</b><p>Câu sẽ đem đi tổng hợp. Ảnh chụp đang để sẵn một câu chào chương trình.</p><p><span class="nhan">Điều kiện</span> Bị các nút bên dưới ghi đè khi bạn bấm chọn nhóm câu.</p><p class="sao"><span class="nhan">Vì sao</span> Để gõ câu riêng khi cần thử đúng một chỗ vừa sửa.</p></div></li><li><div class="so">2</div><div><b>Câu hay đọc vấp — năm nhóm</b><p>Số tiền · Lãi suất · Số điện thoại · Ngày tháng · Từ chối. Bấm một nhóm là điền câu vào ô trên.</p><p><span class="nhan">Điều kiện</span> Bấm để lấy câu, chưa phát.</p><p class="sao"><span class="nhan">Vì sao</span> Năm nhóm này là chỗ máy đọc sai nhiều nhất — con số và ngày tháng đọc sai là khách nghe ra ngay, còn câu thường thì hiếm khi lộ lỗi.</p></div></li><li><div class="so">3</div><div><b>Chạy cả bộ câu</b><p>Chọn nhóm và số câu tối đa (10 · 25 · 50 · cả bộ) rồi bấm chạy hàng loạt.</p><p><span class="nhan">Điều kiện</span> Bộ câu lấy từ kho câu kiểm thử có sẵn trong hệ thống.</p><p class="sao"><span class="nhan">Vì sao</span> Nghe vài câu lẻ dễ ra kết luận sai; chạy cả bộ mới thấy lỗi nào lặp lại có hệ thống.</p></div></li><li><div class="so">4</div><div><b>Ô tick “chunk đầu”</b><p>Điều khiển số bước khử nhiễu cho mảnh đầu tiên.</p><p><span class="nhan">Điều kiện</span> Nhãn ghi rõ: <b>hiện đang để bằng chunk sau, bật lên không đổi gì.</b></p><p class="sao"><span class="nhan">Vì sao</span> Giữ lại ô này và ghi thẳng ra là nó đang vô hiệu, thay vì gỡ đi hoặc để người dùng tưởng nó có tác dụng.</p></div></li><li><div class="so">5</div><div><b>So sánh A / B</b><p>Chọn hai giọng để tổng hợp cùng một câu, nghe cạnh nhau.</p><p><span class="nhan">Điều kiện</span> Cần ít nhất hai giọng trong danh sách.</p><p class="sao"><span class="nhan">Vì sao</span> Nghe lần lượt hai giọng cách nhau vài phút thì trí nhớ không giữ đủ chi tiết; đặt cạnh nhau mới so được.</p></div></li><li><div class="so">6</div><div><b>Tổng hợp cả hai</b><p>Chạy tổng hợp cho cả giọng A và B.</p><p><span class="nhan">Điều kiện</span> Kết quả kèm số đo độ trễ của từng giọng.</p><p class="sao"><span class="nhan">Vì sao</span> Một giọng hay hơn nhưng chậm hơn là đánh đổi thật; phải thấy cả hai con số mới chốt được.</p></div></li></ol></section><section class="trang" id="voice-training"><p class="nhomlab">Hệ thống</p><h2>Training giọng</h2><p class="tomtat">Nhân bản giọng một người thật qua bốn bước: <b>chọn tên → thu 60 câu → chuẩn hoá → luyện mô hình.</b></p><figure><div class="anh"><img src="anh_tinh_nang/voice-training.jpg" alt="Anh chup trang Training giọng" width="1220" height="1156"><svg viewBox="0 0 1220 1156" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="140" y="236" width="817" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="223" r="13" fill="var(--khoanh)"/>
+<text x="127" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="119" y="319" width="982" height="156" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="106" cy="306" r="13" fill="var(--khoanh)"/>
+<text x="106" y="311" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="140" y="580" width="444" height="65" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="567" r="13" fill="var(--khoanh)"/>
+<text x="127" y="572" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="636" y="569" width="444" height="88" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="623" cy="556" r="13" fill="var(--khoanh)"/>
+<text x="623" y="561" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="140" y="828" width="940" height="262" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="815" r="13" fill="var(--khoanh)"/>
+<text x="127" y="820" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+</svg></div><figcaption>Trang có dải cảnh báo pháp lý ngay đầu: giọng nói là dữ liệu sinh trắc học theo Nghị định 13/2023, phải có văn bản đồng ý của người được thu âm — kể cả nhân viên công ty.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Bước 1 — tên giọng</b><p>Đặt tên giọng bằng chữ thường không dấu, rồi bấm “Mở bộ thu âm”.</p><p><span class="nhan">Điều kiện</span> Chưa nhập tên thì bộ thu âm không mở.</p><p class="sao"><span class="nhan">Vì sao</span> Tên giọng thành tên thư mục chứa dữ liệu thu; ràng buộc chữ thường không dấu để tránh lỗi đường dẫn.</p></div></li><li><div class="so">2</div><div><b>Bước 2 — thu âm</b><p>Bộ thu 60 câu kịch bản: đọc từng câu, nghe lại, thu lại nếu chưa ưng.</p><p><span class="nhan">Điều kiện</span> Rỗng cho tới khi nhập tên và bấm mở ở bước 1.</p><p class="sao"><span class="nhan">Vì sao</span> Đọc theo kịch bản cố định để transcript có sẵn và chắc chắn đúng — không phải nhờ máy phiên âm rồi soát lại.</p></div></li><li><div class="so">3</div><div><b>Bước 3 — chuẩn hoá dataset</b><p>Hạ về 24kHz mono, cắt khoảng lặng, chuẩn âm lượng, gán transcript theo kịch bản. Ô tick bật phiên âm bằng máy cho file ngoài kịch bản.</p><p><span class="nhan">Điều kiện</span> Bật ô tick khi có file thu không theo 60 câu mẫu.</p><p class="sao"><span class="nhan">Vì sao</span> Transcript sinh bằng máy <b>phải soát lại từng file</b>: sai transcript là giọng luyện ra đọc sai, và lỗi đó nằm luôn trong mô hình chứ không sửa được bằng cấu hình.</p></div></li><li><div class="so">4</div><div><b>Bước 4 — luyện mô hình</b><p>Đặt số vòng lặp và kích thước lô, rồi bấm bắt đầu.</p><p><span class="nhan">Điều kiện</span> Cần card đồ hoạ; trang sẽ cảnh báo nếu máy không đủ.</p><p class="sao"><span class="nhan">Vì sao</span> Để lộ hai tham số này thay vì giấu đi, vì đây là hai nút xoay duy nhất khi giọng luyện ra chưa đạt.</p></div></li><li><div class="so">5</div><div><b>Khối tiến độ và log</b><p>Phần trăm, thời gian còn lại, vòng lặp hiện tại, và log chi tiết.</p><p><span class="nhan">Điều kiện</span> Rỗng khi chưa có tiến trình nào đang chạy.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây trang này không có gì ngoài log thô: thanh vẽ vỡ font, tiếng Anh, và thời gian còn lại chỉ tính cho vòng lặp hiện tại — báo “còn 2 phút” trong khi cả buổi còn gần 3 tiếng.</p></div></li></ol></section><section class="trang" id="training"><p class="nhomlab">Hệ thống</p><h2>Training LLM</h2><p class="tomtat">Dạy mô hình trả lời theo cách của bạn, bằng dữ liệu tư vấn của chính bạn.</p><figure><div class="anh"><img src="anh_tinh_nang/training.jpg" alt="Anh chup trang Training LLM" width="1220" height="1389"><svg viewBox="0 0 1220 1389" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="140" y="158" width="940" height="174" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="145" r="13" fill="var(--khoanh)"/>
+<text x="127" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="140" y="355" width="171" height="38" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="342" r="13" fill="var(--khoanh)"/>
+<text x="127" y="347" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="140" y="508" width="444" height="99" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="495" r="13" fill="var(--khoanh)"/>
+<text x="127" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="140" y="832" width="444" height="80" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="819" r="13" fill="var(--khoanh)"/>
+<text x="127" y="824" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="636" y="489" width="444" height="62" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="623" cy="476" r="13" fill="var(--khoanh)"/>
+<text x="623" y="481" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="636" y="590" width="444" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="623" cy="577" r="13" fill="var(--khoanh)"/>
+<text x="623" y="582" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="140" y="1078" width="940" height="109" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="1065" r="13" fill="var(--khoanh)"/>
+<text x="127" y="1070" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="140" y="1199" width="19" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="1186" r="13" fill="var(--khoanh)"/>
+<text x="127" y="1191" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+<rect x="140" y="1280" width="150" height="42" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="1267" r="13" fill="var(--khoanh)"/>
+<text x="127" y="1272" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">9</text>
+</svg></div><figcaption>Trang dài nhất trong app vì nó gói cả ba việc: dựng môi trường, dựng dữ liệu, và chạy luyện.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Trạng thái môi trường</b><p>Cho biết máy đã đủ điều kiện luyện mô hình chưa.</p><p><span class="nhan">Điều kiện</span> Bấm “Làm mới” để đọc lại.</p><p class="sao"><span class="nhan">Vì sao</span> Luyện mô hình đòi nhiều thư viện nặng; kiểm trước để không chạy nửa chừng mới đứt.</p></div></li><li><div class="so">2</div><div><b>Cài môi trường training</b><p>Tải và cài các thư viện cần cho việc luyện.</p><p><span class="nhan">Điều kiện</span> Tải vài GB, <b>chỉ cần làm một lần</b>.</p><p class="sao"><span class="nhan">Vì sao</span> Tách khỏi phần cài đặt chung vì phần lớn người dùng không bao giờ luyện mô hình, không nên bắt họ tải vài GB thừa.</p></div></li><li><div class="so">3</div><div><b>Tải dataset lên</b><p>Đặt tên rồi tải file CSV, JSONL hoặc TXT.</p><p><span class="nhan">Điều kiện</span> Khi lưu từ Excel nhớ chọn <b>CSV UTF-8</b>, không thì tiếng Việt vỡ.</p><p class="sao"><span class="nhan">Vì sao</span> Có nút tải file mẫu ngay bên dưới để không phải đoán định dạng — và các dòng mẫu đều đã đạt luật phong cách nên nhìn là biết viết sao.</p></div></li><li><div class="so">4</div><div><b>Sinh mẫu từ tài liệu Tri thức AI</b><p>Máy đọc tài liệu trong Tri thức AI, sinh cặp hỏi–đáp, rồi tự loại cặp phạm luật phong cách. Chọn được số cặp mỗi đoạn và nhóm tài liệu.</p><p><span class="nhan">Điều kiện</span> Kết quả là <b>bản nháp</b> — phải đọc lại các con số trước khi đem luyện.</p><p class="sao"><span class="nhan">Vì sao</span> Luyện mô hình đòi tối thiểu khoảng 200 mẫu, mà soạn tay 200 cặp đúng luật phong cách là việc không ai làm nổi — trong khi kho tri thức đã có sẵn nội dung, và chính nó là thứ AI đọc lúc tư vấn thật.</p></div></li><li><div class="so">5</div><div><b>Danh sách dataset</b><p>Các bộ dữ liệu đã có, kèm số mẫu và dung lượng. Nút “Kiểm tra” soi thử một bộ.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp có sẵn <code>banking_sample</code> 5 mẫu.</p><p class="sao"><span class="nhan">Vì sao</span> Bộ mẫu 5 dòng để chạy thử cả đường ống mà không tốn hàng giờ luyện thật.</p></div></li><li><div class="so">6</div><div><b>Chọn dataset để luyện</b><p>Chỉ định bộ dữ liệu đem đi luyện.</p><p><span class="nhan">Điều kiện</span> Phải chọn thì nút bắt đầu mới chạy.</p><p class="sao"><span class="nhan">Vì sao</span> Tách khỏi danh sách bên trên vì có dataset chỉ để tham khảo, không phải để luyện.</p></div></li><li><div class="so">7</div><div><b>Cấu hình luyện</b><p>Mô hình gốc · số vòng lặp · tốc học · độ chi tiết LoRA (8 nhẹ → 64 nặng) · kích thước lô · gộp gradient.</p><p><span class="nhan">Điều kiện</span> Mô hình gốc phải đã tải về ở trang Cài Model.</p><p class="sao"><span class="nhan">Vì sao</span> LoRA rank là nút đánh đổi chính: rank thấp học ít, giữ được văn phong gốc; rank cao học kỹ hơn nhưng dễ làm mô hình trả lời rập một khuôn.</p></div></li><li><div class="so">8</div><div><b>Tự nạp vào Ollama sau khi luyện xong</b><p>Bật để luyện xong tự chuyển sang dùng mô hình mới.</p><p><span class="nhan">Điều kiện</span> Tắt thì mô hình mới nằm chờ, hệ thống vẫn dùng bản cũ.</p><p class="sao"><span class="nhan">Vì sao</span> Cho tắt được để nghe thử mô hình mới trước khi cho nó tiếp khách thật.</p></div></li><li><div class="so">9</div><div><b>Bắt đầu Training</b><p>Khởi động buổi luyện.</p><p><span class="nhan">Điều kiện</span> <b>Trong lúc luyện, hệ thống không nhận cuộc gọi</b> — bộ đọc tiếng và mô hình ngôn ngữ đều bị nhả khỏi bộ nhớ card đồ hoạ.</p><p class="sao"><span class="nhan">Vì sao</span> Card đồ hoạ không đủ chỗ cho cả luyện lẫn phục vụ cuộc gọi; nhả tường minh còn hơn để cả hai cùng chậm rồi hỏng.</p></div></li></ol></section><section class="trang" id="models"><p class="nhomlab">Hệ thống</p><h2>Cài Model</h2><p class="tomtat">Tải các mô hình AI về máy. Mỗi mô hình chạy độc lập — cài cái nào dùng cái đó.</p><figure><div class="anh"><img src="anh_tinh_nang/models.jpg" alt="Anh chup trang Cài Model" width="1220" height="969"><svg viewBox="0 0 1220 969" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="940" y="21" width="161" height="38" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="927" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="927" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="119" y="93" width="982" height="316" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="106" cy="80" r="13" fill="var(--khoanh)"/>
+<text x="106" y="85" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="140" y="492" width="940" height="57" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="479" r="13" fill="var(--khoanh)"/>
+<text x="127" y="484" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="140" y="641" width="940" height="262" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="628" r="13" fill="var(--khoanh)"/>
+<text x="127" y="633" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+</svg></div><figcaption>Đây là trang phải làm đầu tiên khi dựng máy mới. Không có mô hình thì mọi trang khác đều chạy nửa vời.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Cài tất cả còn thiếu</b><p>Tải một lượt mọi mô hình chưa có.</p><p><span class="nhan">Điều kiện</span> Tải vài GB, cần mạng.</p><p class="sao"><span class="nhan">Vì sao</span> Lối đi một nút cho lần dựng đầu, thay vì bắt người dùng tự biết cần những mô hình nào.</p></div></li><li><div class="so">2</div><div><b>Danh sách mô hình</b><p>Từng mô hình với dung lượng và nút cài riêng. Ảnh chụp cho thấy hai mô hình đã có (nút “Cài lại”) và hai chưa có (“Cài — ~500 MB”, “Cài — ~5.4 GB”).</p><p><span class="nhan">Điều kiện</span> Nút đổi chữ theo tình trạng: chưa có thì hiện dung lượng, có rồi thì thành “Cài lại”.</p><p class="sao"><span class="nhan">Vì sao</span> Ghi dung lượng ngay trên nút để biết trước sẽ tải bao nhiêu, không bấm rồi mới biết là 5.4 GB.</p></div></li><li><div class="so">3</div><div><b>Dịch vụ</b><p>Bật / tắt từng dịch vụ. Ảnh chụp có hai nút “Bật”.</p><p><span class="nhan">Điều kiện</span> <b>Mô hình đã tải xong vẫn cần bật dịch vụ mới dùng được</b> — dòng chữ này in ngay trong khối.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là chỗ bị bỏ sót nhiều nhất khi dựng máy mới: tải xong tưởng là xong, nhưng trang Cài đặt vẫn báo dịch vụ không khả dụng.</p></div></li><li><div class="so">4</div><div><b>Tiến trình cài đặt</b><p>Log của việc tải và cài đang chạy.</p><p><span class="nhan">Điều kiện</span> Rỗng khi không có tiến trình nào.</p><p class="sao"><span class="nhan">Vì sao</span> Tải vài GB mà không có gì hiện ra thì không phân biệt được “đang tải” với “đã treo”.</p></div></li></ol></section><section class="trang" id="benchmark"><p class="nhomlab">Hệ thống</p><h2>Benchmark</h2><p class="tomtat">Đo tốc từng khâu riêng lẻ, và đo cả chuỗi từ đầu tới cuối.</p><figure><div class="anh"><img src="anh_tinh_nang/benchmark.jpg" alt="Anh chup trang Benchmark" width="1220" height="670"><svg viewBox="0 0 1220 670" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="140" y="114" width="444" height="136" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="101" r="13" fill="var(--khoanh)"/>
+<text x="127" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="636" y="114" width="444" height="136" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="623" cy="101" r="13" fill="var(--khoanh)"/>
+<text x="623" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="140" y="302" width="444" height="136" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="289" r="13" fill="var(--khoanh)"/>
+<text x="127" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="636" y="302" width="444" height="136" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="623" cy="289" r="13" fill="var(--khoanh)"/>
+<text x="623" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="140" y="551" width="940" height="53" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="127" cy="538" r="13" fill="var(--khoanh)"/>
+<text x="127" y="543" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+</svg></div><figcaption>Bốn ô trên đo bốn khâu tách rời; ô dưới đo cả chuỗi nối lại. Chạy bốn ô trước rồi mới chạy ô dưới.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>STT — nhận dạng giọng nói</b><p>Đo thời gian chuyển tiếng thành chữ.</p><p><span class="nhan">Điều kiện</span> Cần dịch vụ nghe đang bật.</p><p class="sao"><span class="nhan">Vì sao</span> Khâu này phụ thuộc chất lượng tiếng vào; chậm bất thường thường là do file thử chứ không phải do máy.</p></div></li><li><div class="so">2</div><div><b>LLM — sinh câu trả lời</b><p>Đo thời gian mô hình nghĩ ra câu.</p><p><span class="nhan">Điều kiện</span> Cần mô hình ngôn ngữ đang chạy.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là khâu đổi nhiều nhất khi bạn đổi mô hình ở trang Cài đặt — đo trước và sau khi đổi để biết đánh đổi đáng không.</p></div></li><li><div class="so">3</div><div><b>TTS — tổng hợp giọng nói</b><p>Đo thời gian đọc chữ thành tiếng.</p><p><span class="nhan">Điều kiện</span> Cần mô hình đọc tiếng đã nạp.</p><p class="sao"><span class="nhan">Vì sao</span> Số đo ở đây dễ bị bộ nhớ đệm làm sai: chạy lại đúng một câu có thể ra gần bằng 0 vì máy trả lại kết quả cũ.</p></div></li><li><div class="so">4</div><div><b>RAG — truy vấn kho tri thức</b><p>Đo thời gian tra tài liệu.</p><p><span class="nhan">Điều kiện</span> Cần kho tri thức đã nạp mảnh.</p><p class="sao"><span class="nhan">Vì sao</span> Thường là khâu nhanh nhất; nếu nó chậm thì gần như chắc chắn kho vector có vấn đề.</p></div></li><li><div class="so">5</div><div><b>Chạy Full Pipeline</b><p>Đo cả chuỗi nghe → tra → nghĩ → đọc, nối liền.</p><p><span class="nhan">Điều kiện</span> Cần cả bốn dịch vụ cùng chạy được.</p><p class="sao"><span class="nhan">Vì sao</span> Tổng của bốn khâu riêng lẻ không bằng số đo cả chuỗi, vì còn phần chuyển tiếp giữa các khâu — chính chỗ đó hay là thủ phạm.</p></div></li></ol></section><section class="trang" id="logs"><p class="nhomlab">Hệ thống</p><h2>Logs</h2><p class="tomtat">Nhật ký thô của từng dịch vụ. Khi một trang khác báo lỗi mà không nói rõ lý do, ở đây thường có nguyên văn.</p><figure><div class="anh"><img src="anh_tinh_nang/logs.jpg" alt="Anh chup trang Logs" width="1220" height="159"><svg viewBox="0 0 1220 159" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="903" y="30" width="132" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="890" cy="17" r="13" fill="var(--khoanh)"/>
+<text x="890" y="22" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="1037" y="39" width="19" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1024" cy="26" r="13" fill="var(--khoanh)"/>
+<text x="1024" y="31" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="1121" y="30" width="78" height="36" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1108" cy="17" r="13" fill="var(--khoanh)"/>
+<text x="1108" y="22" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="21" y="81" width="1178" height="56" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="68" r="13" fill="var(--khoanh)"/>
+<text x="15" y="73" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+</svg></div><figcaption>Trang ngắn nhất trong app: một ô chọn nguồn, một ô tick, một nút xoá, và khung log. Ảnh chụp đang chờ nối tới máy chủ.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Chọn nguồn log</b><p>Backend · PhoWhisper (nghe) · Ollama (nghĩ) · Training LLM · Training giọng.</p><p><span class="nhan">Điều kiện</span> Mỗi nguồn là một tiến trình riêng, log không trộn vào nhau.</p><p class="sao"><span class="nhan">Vì sao</span> Trộn chung thì log của buổi luyện kéo dài mấy tiếng sẽ nhấn chìm log cuộc gọi.</p></div></li><li><div class="so">2</div><div><b>Bám đáy</b><p>Giữ khung nhìn luôn ở dòng mới nhất.</p><p><span class="nhan">Điều kiện</span> Tắt khi muốn cuộn lên đọc mà không bị kéo xuống.</p><p class="sao"><span class="nhan">Vì sao</span> Log chạy nhanh; không có nút này thì vừa đọc được nửa dòng đã bị đẩy đi.</p></div></li><li><div class="so">3</div><div><b>Xóa logs</b><p>Xoá nội dung đang hiển thị.</p><p><span class="nhan">Điều kiện</span> Chỉ xoá phần đang xem trên màn hình.</p><p class="sao"><span class="nhan">Vì sao</span> Dọn màn trước khi tái hiện một lỗi, để log mới không lẫn với log cũ.</p></div></li><li><div class="so">4</div><div><b>Khung log</b><p>Nội dung nhật ký của nguồn đang chọn.</p><p><span class="nhan">Điều kiện</span> Hiện “Đang chờ kết nối server…” khi chưa nối được.</p><p class="sao"><span class="nhan">Vì sao</span> Trang này trước đây là vỏ rỗng — chỉ có nút xoá, không có nguồn dữ liệu nào và không có đầu nối, nên hiện dòng chờ mãi mãi. Giờ đã có đầu nối thật.</p></div></li></ol></section><section class="trang" id="phu-manh"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Mảnh — AI đang giữ gì cho tài liệu này</h2><p class="tomtat">Mở bằng nút <b>Mảnh</b> ở trang Tri thức AI. Cho xem <b>đúng thứ AI đang giữ trong kho</b>, không phải nội dung file trên đĩa.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-manh.jpg" alt="Anh chup trang Mảnh — AI đang giữ gì cho tài liệu này" width="768" height="548"><svg viewBox="0 0 768 548" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="18" y="12" width="203" height="26" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="15" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="18" y="34" width="203" height="21" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="47" r="13" fill="var(--khoanh)"/>
+<text x="15" y="52" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="18" y="84" width="732" height="240" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="97" r="13" fill="var(--khoanh)"/>
+<text x="15" y="102" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="18" y="326" width="732" height="204" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="313" r="13" fill="var(--khoanh)"/>
+<text x="15" y="318" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="149" y="337" width="114" height="25" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="136" cy="324" r="13" fill="var(--khoanh)"/>
+<text x="136" y="329" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+</svg></div><figcaption>Ảnh chụp thật: mảnh 2 mở đầu bằng “ập từ 5 triệu đồng/tháng” — chỗ cắt rơi vào <b>giữa chữ “nhập”</b>. Đây là hậu quả của việc cắt theo số ký tự.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tên tài liệu</b><p>Tài liệu đang soi. Ảnh chụp là <code>the_tin_dung</code>.</p><p><span class="nhan">Điều kiện</span> Mở từ đúng dòng bạn bấm nút Mảnh.</p><p class="sao"><span class="nhan">Vì sao</span> Một tài liệu ra nhiều mảnh; phải biết đang xem mảnh của tài liệu nào.</p></div></li><li><div class="so">2</div><div><b>“AI đang giữ 2 mảnh · 1 mảnh cắt vào giữa ý”</b><p>Số mảnh thật trong kho, và bao nhiêu mảnh bị cắt hỏng.</p><p><span class="nhan">Điều kiện</span> Đọc từ <b>kho vector</b>, không phải cắt lại từ file.</p><p class="sao"><span class="nhan">Vì sao</span> Cắt lại từ file thì luôn ra kết quả đẹp, kể cả khi kho còn giữ bản cũ. Đọc thẳng từ kho mới biết AI <em>thật sự</em> đang cầm gì.</p></div></li><li><div class="so">3</div><div><b>Mảnh 1/2 — 499 ký tự</b><p>Một mảnh là <b>một lát 500 ký tự</b> của tài liệu. Mảnh này bắt đầu đúng đầu file nên có cả tiêu đề “# Thẻ Tín Dụng”.</p><p><span class="nhan">Điều kiện</span> Mảnh nào chứa tiêu đề thì AI biết số trong đó là của sản phẩm nào.</p><p class="sao"><span class="nhan">Vì sao</span> Khi khách hỏi, hệ thống không đưa cả tài liệu cho AI đọc — nó tìm vài mảnh giống câu hỏi nhất rồi chỉ đưa mấy mảnh đó. Nên mảnh chính là <b>đơn vị nhỏ nhất mà AI nhìn thấy</b>.</p></div></li><li><div class="so">4</div><div><b>Mảnh 2/2 — 226 ký tự</b><p>Lát tiếp theo. Nó <b>chồng lấn 50 ký tự</b> với mảnh trước, nên mở đầu bằng đuôi của mảnh 1.</p><p><span class="nhan">Điều kiện</span> Chồng lấn là cố ý: câu bị cắt đôi thì ít nhất một trong hai mảnh còn giữ đủ ngữ cảnh.</p><p class="sao"><span class="nhan">Vì sao</span> Không chồng lấn thì một ý nằm vắt qua hai mảnh sẽ mất hẳn ở cả hai. Chồng lấn 50 ký tự là giá phải trả để giảm rủi ro đó.</p></div></li><li><div class="so">5</div><div><b>Nhãn vàng “bắt đầu từ giữa câu”</b><p>Cảnh báo mảnh này mở đầu bằng nửa câu. Ảnh chụp: mảnh 2 bắt đầu bằng <code>ập từ 5 triệu đồng/tháng</code> — chữ “nhập” bị chặt đôi.</p><p><span class="nhan">Điều kiện</span> Máy gắn nhãn khi ký tự đầu mảnh là chữ thường hoặc chữ số, mà không phải số thứ tự danh sách.</p><p class="sao"><span class="nhan">Vì sao</span> AI đọc mảnh này sẽ thấy “ập từ 5 triệu đồng/tháng” và không biết đó là <em>thu nhập</em>. Cách sửa: chèn tiêu đề con <code>##</code> để chia tài liệu thành phần ngắn hơn, chỗ cắt sẽ rơi vào ranh giới sạch.</p></div></li></ol></section><section class="trang" id="phu-soan-tai-lieu"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Soạn / sửa tài liệu + bộ soi</h2><p class="tomtat">Mở bằng <b>+ Soạn tài liệu</b> hoặc nút <b>Sửa</b>. Bên dưới ô nội dung là <b>bộ soi</b> — chạy lại mỗi khi bạn ngừng gõ, chưa cần lưu.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-soan-tai-lieu.jpg" alt="Anh chup trang Soạn / sửa tài liệu + bộ soi" width="896" height="838"><svg viewBox="0 0 896 838" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="18" y="104" width="427" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="91" r="13" fill="var(--khoanh)"/>
+<text x="15" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="451" y="104" width="427" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="438" cy="91" r="13" fill="var(--khoanh)"/>
+<text x="438" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="675" y="150" width="77" height="32" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="662" cy="137" r="13" fill="var(--khoanh)"/>
+<text x="662" y="142" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="758" y="155" width="120" height="21" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="745" cy="142" r="13" fill="var(--khoanh)"/>
+<text x="745" y="147" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="18" y="181" width="860" height="396" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="168" r="13" fill="var(--khoanh)"/>
+<text x="15" y="173" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="33" y="603" width="830" height="25" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="20" cy="590" r="13" fill="var(--khoanh)"/>
+<text x="20" y="595" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="33" y="630" width="830" height="119" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="46" cy="617" r="13" fill="var(--khoanh)"/>
+<text x="46" y="622" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="752" y="788" width="126" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="739" cy="775" r="13" fill="var(--khoanh)"/>
+<text x="739" y="780" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+</svg></div><figcaption>Bộ soi <b>cảnh báo chứ không chặn lưu</b>: chặn người vận hành sửa lãi suất lúc gấp còn tệ hơn để họ lưu một tài liệu chưa đẹp.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tên file</b><p>Tên tài liệu, cũng là tên file trên đĩa.</p><p><span class="nhan">Điều kiện</span> Với nhóm Sản phẩm, tên file <b>phải khớp tiêu đề</b> trong nội dung, nếu không bộ soi sẽ cảnh báo.</p><p class="sao"><span class="nhan">Vì sao</span> Lưới lọc sản phẩm neo theo <b>tên file</b>, không đọc nội dung. Tên lệch là lọc không bao giờ ăn — và bot có thể đọc lãi suất sản phẩm khác cho khách.</p></div></li><li><div class="so">2</div><div><b>Nhóm</b><p>Sản phẩm · Câu hỏi thường gặp · Chính sách.</p><p><span class="nhan">Điều kiện</span> Đổi nhóm là đổi cả cách bộ soi chấm.</p><p class="sao"><span class="nhan">Vì sao</span> Luật “tên file khớp tiêu đề” chỉ áp cho nhóm Sản phẩm, vì chỉ nhóm đó bị lưới lọc neo theo tên.</p></div></li><li><div class="so">3</div><div><b>Chèn mẫu</b><p>Chèn khung tài liệu mẫu đúng chuẩn cho nhóm đang chọn.</p><p><span class="nhan">Điều kiện</span> Ghi đè nội dung đang có.</p><p class="sao"><span class="nhan">Vì sao</span> Mẫu này <b>tự nó cũng phải sạch theo luật của bộ soi</b> — mẫu vi phạm luật mình dạy thì người dùng chép về là mắc lỗi ngay. Mẫu sản phẩm cố ý chỉ mang một số thập phân, đúng điều kiện để hàng rào chặn số chạy được.</p></div></li><li><div class="so">4</div><div><b>Đếm dòng và ký tự</b><p>Ảnh chụp: 30 dòng · 865 ký tự.</p><p><span class="nhan">Điều kiện</span> Cập nhật khi gõ.</p><p class="sao"><span class="nhan">Vì sao</span> 865 ký tự ÷ 500 = 2 mảnh. Con số này cho biết trước tài liệu sẽ bị cắt ra bao nhiêu phần.</p></div></li><li><div class="so">5</div><div><b>Ô nội dung</b><p>Nội dung tài liệu, viết bằng Markdown.</p><p><span class="nhan">Điều kiện</span> Ctrl+S để lưu, Esc để đóng.</p><p class="sao"><span class="nhan">Vì sao</span> Dùng Markdown vì tiêu đề <code>#</code> và <code>##</code> là công cụ duy nhất bạn có để điều khiển chỗ cắt mảnh.</p></div></li><li><div class="so">6</div><div><b>“AI sẽ đọc thành 2 mảnh · 1 mảnh cắt vào giữa ý”</b><p>Cắt thử ngay lúc gõ, bằng <b>đúng hàm mà RAG dùng khi nạp thật</b>.</p><p><span class="nhan">Điều kiện</span> Cập nhật khi ngừng gõ, chưa cần lưu.</p><p class="sao"><span class="nhan">Vì sao</span> Thấy trước hậu quả rồi sửa, thay vì lưu xong mới phát hiện. Và vì dùng chung một hàm cắt, con số ở đây không bao giờ lệch với thực tế.</p></div></li><li><div class="so">7</div><div><b>Ba phát hiện của bộ soi</b><p>Dòng <b>đỏ là lỗi</b> (làm bot nói sai số), dòng <b>vàng là cảnh báo</b> (làm AI đọc thiếu ngữ cảnh, vẫn dùng được). Mỗi dòng gồm vấn đề và cách sửa.</p><p><span class="nhan">Điều kiện</span> Ảnh chụp bắt được đúng ba lỗi thường gặp nhất — xem bảng giải thích ngay dưới mục này.</p><p class="sao"><span class="nhan">Vì sao</span> Báo lỗi mà không nói sửa thế nào thì người dùng đứng im, nên mỗi phát hiện đều kèm một câu chỉ cách sửa.</p></div></li><li><div class="so">8</div><div><b>Lưu và nạp cho AI</b><p>Lưu file <b>và</b> cắt mảnh, đánh chỉ mục lại ngay.</p><p><span class="nhan">Điều kiện</span> Lưu được cả khi bộ soi còn báo lỗi.</p><p class="sao"><span class="nhan">Vì sao</span> Gộp hai việc vào một nút vì lưu mà quên nạp là tài liệu nằm trên đĩa còn AI vẫn đọc bản cũ — lỗi im lặng, chỉ lộ ra khi khách nghe nhầm số.</p></div></li></ol></section><section class="trang" id="phu-ban-cu"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Bản cũ của tài liệu</h2><p class="tomtat">Mở bằng nút <b>Bản cũ</b>. Mỗi lần lưu, xoá hay khôi phục, bản trước đó được giữ lại ở đây.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-ban-cu.jpg" alt="Anh chup trang Bản cũ của tài liệu" width="768" height="126"><svg viewBox="0 0 768 126" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="13" y="7" width="306" height="52" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="15" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="13" y="77" width="726" height="38" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="64" r="13" fill="var(--khoanh)"/>
+<text x="15" y="69" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+</svg></div><figcaption>Ảnh chụp trạng thái rỗng — tài liệu này chưa từng bị sửa kể từ khi có tính năng lưu bản cũ.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tên tài liệu và số bản cũ</b><p>Ảnh chụp: <code>the_tin_dung</code> · “Chưa có bản cũ”.</p><p><span class="nhan">Điều kiện</span> Đếm số bản đã lưu lại.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là chỗ duy nhất quyết định con số bot đọc cho khách, nên ghi đè mà mất bản cũ là mất đường lùi.</p></div></li><li><div class="so">2</div><div><b>Dòng giải thích khi rỗng</b><p>Nói rõ vì sao trống và khi nào sẽ có bản cũ.</p><p><span class="nhan">Điều kiện</span> Chỉ hiện khi chưa có bản nào.</p><p class="sao"><span class="nhan">Vì sao</span> Ô trống không kèm lời giải thích khiến người dùng tưởng tính năng hỏng.</p></div></li></ol></section><section class="trang" id="phu-kich-ban"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Soạn kịch bản</h2><p class="tomtat">Hiện ra khi bấm một kịch bản trong danh sách ở trang Kịch bản. Đây là nơi quyết định <b>bot xưng là ai và mở lời thế nào</b>.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-kich-ban.jpg" alt="Anh chup trang Soạn kịch bản" width="836" height="802"><svg viewBox="0 0 836 802" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="14" y="79" width="809" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="66" r="13" fill="var(--khoanh)"/>
+<text x="15" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="14" y="149" width="808" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="136" r="13" fill="var(--khoanh)"/>
+<text x="15" y="141" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="14" y="219" width="808" height="76" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="206" r="13" fill="var(--khoanh)"/>
+<text x="15" y="211" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="14" y="350" width="808" height="186" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="337" r="13" fill="var(--khoanh)"/>
+<text x="15" y="342" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="14" y="606" width="809" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="593" r="13" fill="var(--khoanh)"/>
+<text x="15" y="598" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="14" y="733" width="183" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="720" r="13" fill="var(--khoanh)"/>
+<text x="15" y="725" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="728" y="12" width="94" height="21" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="715" cy="15" r="13" fill="var(--khoanh)"/>
+<text x="715" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+</svg></div><figcaption>Khối “Bản ghi hay sai các từ sau” là thứ ít ai để ý nhưng cứu được nhiều lượt: nó dạy máy hiểu đúng những từ mà bộ nghe hay chép sai.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Bốn ô định danh</b><p>Tên kịch bản · ngành (ngân hàng / bảo hiểm…) · tên tổ chức · tên nhân viên AI.</p><p><span class="nhan">Điều kiện</span> Tên tổ chức và tên nhân viên ở đây <b>đè lên</b> giá trị đặt ở trang Cài đặt.</p><p class="sao"><span class="nhan">Vì sao</span> Một máy có thể chạy nhiều kịch bản cho nhiều bên; xưng danh phải theo kịch bản chứ không theo cấu hình chung.</p></div></li><li><div class="so">2</div><div><b>Câu chào mở đầu</b><p>Câu bot nói ngay khi khách nhấc máy.</p><p><span class="nhan">Điều kiện</span> Thường ghi cứng tên tổ chức trong câu này.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là lý do đổi tên ngân hàng ở trang Cài đặt vẫn chưa đủ — câu chào giữ tên cũ cho tới khi bạn sửa ở đây.</p></div></li><li><div class="so">3</div><div><b>Luật riêng của ngành</b><p>Ghi những từ mà bộ nghe hay chép sai, kèm cách hiểu đúng.</p><p><span class="nhan">Điều kiện</span> Áp cho mọi lượt trong kịch bản này.</p><p class="sao"><span class="nhan">Vì sao</span> Bộ nghe chép sai tên sản phẩm là bot trả lời lạc đề mà không ai biết vì sao; dạy trước ở đây rẻ hơn sửa sau.</p></div></li><li><div class="so">4</div><div><b>Ví dụ khách nói → bot trả lời</b><p>Các cặp mẫu dạy bot giọng điệu và cách trả lời.</p><p><span class="nhan">Điều kiện</span> Thêm bằng nút “+ Thêm ví dụ”, xoá bằng dấu <code>×</code>.</p><p class="sao"><span class="nhan">Vì sao</span> Vài ví dụ cụ thể chỉnh giọng điệu tốt hơn nhiều câu mô tả trừu tượng.</p></div></li><li><div class="so">5</div><div><b>Chuyển máy và giới hạn lượt</b><p>Số máy chuyển tiếp · số lượt tối đa · hướng gọi (ra / vào / cả hai) · câu nói khi chuyển.</p><p><span class="nhan">Điều kiện</span> Đạt số lượt tối đa thì bot dừng hoặc chuyển người thật.</p><p class="sao"><span class="nhan">Vì sao</span> Giới hạn lượt là phanh an toàn: bot lặp vòng với khách khó tính sẽ tốn tiền và gây phiền, cắt sớm rồi chuyển người thật là đúng hơn.</p></div></li><li><div class="so">6</div><div><b>Lưu kịch bản · Chạy thử</b><p>Lưu, hoặc thử ngay kịch bản vừa sửa.</p><p><span class="nhan">Điều kiện</span> Chạy thử mở phiên thử, không gọi cho ai.</p><p class="sao"><span class="nhan">Vì sao</span> Đặt hai nút cạnh nhau để sửa xong thử được luôn, không phải nhớ sang trang khác.</p></div></li><li><div class="so">7</div><div><b>Đặt mặc định · Xoá</b><p>Chọn kịch bản dùng khi không chỉ định gì khác, hoặc xoá hẳn.</p><p><span class="nhan">Điều kiện</span> Luôn phải có ít nhất một kịch bản mặc định.</p><p class="sao"><span class="nhan">Vì sao</span> Cuộc gọi vào không có chỗ chọn kịch bản, nên bắt buộc phải có một cái mặc định.</p></div></li></ol></section><section class="trang" id="phu-them-so"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Thêm một số vào danh bạ</h2><p class="tomtat">Mở bằng <b>+ Thêm số</b> ở trang Danh bạ gọi. Khai một khách lẻ.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-them-so.jpg" alt="Anh chup trang Thêm một số vào danh bạ" width="1172" height="182"><svg viewBox="0 0 1172 182" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="14" y="78" width="224" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="15" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="244" y="78" width="224" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="231" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="231" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="474" y="78" width="224" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="461" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="461" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="704" y="78" width="224" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="691" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="691" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="934" y="78" width="224" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="921" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="921" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="1029" y="128" width="129" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1016" cy="115" r="13" fill="var(--khoanh)"/>
+<text x="1016" y="120" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Ô nào cũng có chữ mờ làm ví dụ sẵn — không phải đoán định dạng.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Số điện thoại</b><p>Số sẽ quay. Ví dụ trong ô: <code>0912 345 678</code>.</p><p><span class="nhan">Điều kiện</span> Bắt buộc.</p><p class="sao"><span class="nhan">Vì sao</span> Là khoá nhận dạng khách trong toàn hệ thống — báo cáo và phiên gọi đều tra ngược theo số này.</p></div></li><li><div class="so">2</div><div><b>Tên khách</b><p>Tên bot dùng để xưng hô.</p><p><span class="nhan">Điều kiện</span> Để trống thì bot xưng chung chung.</p><p class="sao"><span class="nhan">Vì sao</span> Gọi đúng tên ngay câu đầu là thứ giữ khách ở lại nghe hết câu chào.</p></div></li><li><div class="so">3</div><div><b>Sản phẩm</b><p>Sản phẩm sẽ tư vấn cho khách này.</p><p><span class="nhan">Điều kiện</span> Quyết định bot tra tài liệu nào.</p><p class="sao"><span class="nhan">Vì sao</span> Gán theo từng khách chứ không theo cả đợt, vì một danh sách có thể pha nhiều nhu cầu khác nhau.</p></div></li><li><div class="so">4</div><div><b>Chiến dịch</b><p>Xếp khách này vào một đợt gọi.</p><p><span class="nhan">Điều kiện</span> Để trống thì không thuộc chiến dịch nào và sẽ không bị máy tự quay.</p><p class="sao"><span class="nhan">Vì sao</span> Đây là công tắc an toàn: số chưa gán chiến dịch thì chạy tự động không đụng tới.</p></div></li><li><div class="so">5</div><div><b>Ghi chú</b><p>Ghi chú tự do. Ví dụ trong ô: <em>gọi sau 17h</em>.</p><p><span class="nhan">Điều kiện</span> Không ảnh hưởng tới việc quay số.</p><p class="sao"><span class="nhan">Vì sao</span> Chỗ để người vận hành ghi lại điều máy không biết — như khách dặn giờ gọi.</p></div></li><li><div class="so">6</div><div><b>Thêm vào danh bạ</b><p>Lưu số vào danh bạ.</p><p><span class="nhan">Điều kiện</span> Chưa gọi ngay.</p><p class="sao"><span class="nhan">Vì sao</span> Tách việc thêm số khỏi việc gọi, để nhập cả danh sách rồi mới quyết định lúc nào chạy.</p></div></li></ol></section><section class="trang" id="phu-nhap-danh-sach"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Nhập danh sách hàng loạt</h2><p class="tomtat">Mở bằng <b>Nhập danh sách</b>. Hai lối vào: tải file CSV, hoặc dán thẳng danh sách.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-nhap-danh-sach.jpg" alt="Anh chup trang Nhập danh sách hàng loạt" width="1172" height="254"><svg viewBox="0 0 1172 254" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="14" y="78" width="567" height="34" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="15" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="14" y="138" width="567" height="94" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="125" r="13" fill="var(--khoanh)"/>
+<text x="15" y="130" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="1040" y="200" width="118" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1027" cy="187" r="13" fill="var(--khoanh)"/>
+<text x="1027" y="192" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+</svg></div><figcaption>Ô dán có sẵn ví dụ định dạng: <code>0912345678,Anh Minh</code> — số trước, tên sau, mỗi khách một dòng.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Chọn file CSV</b><p>Nạp từ file.</p><p><span class="nhan">Điều kiện</span> Dùng khi danh sách xuất từ hệ thống khác.</p><p class="sao"><span class="nhan">Vì sao</span> Danh sách thật thường vài trăm số, không dán tay được.</p></div></li><li><div class="so">2</div><div><b>Ô dán danh sách</b><p>Dán trực tiếp, mỗi dòng một khách: số phẩy tên.</p><p><span class="nhan">Điều kiện</span> Ví dụ mờ trong ô chính là định dạng đúng.</p><p class="sao"><span class="nhan">Vì sao</span> Có đường dán để thêm chục số mà không phải tạo file — và ví dụ đặt sẵn trong ô thì không cần đọc tài liệu.</p></div></li><li><div class="so">3</div><div><b>Nhập danh sách</b><p>Chạy nhập.</p><p><span class="nhan">Điều kiện</span> Số trùng sẽ được xử theo quy tắc của hệ thống, không nhân đôi.</p><p class="sao"><span class="nhan">Vì sao</span> Nhập lại cùng một file là chuyện thường; nhân đôi số là gọi khách hai lần.</p></div></li></ol></section><section class="trang" id="phu-them-thiet-bi"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Thêm thiết bị gọi</h2><p class="tomtat">Mở bằng <b>+ Thêm thiết bị</b> ở trang Thiết bị. Khai máy dùng để quay số.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-them-thiet-bi.jpg" alt="Anh chup trang Thêm thiết bị gọi" width="1172" height="314"><svg viewBox="0 0 1172 314" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="14" y="78" width="377" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="15" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="397" y="78" width="377" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="384" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="384" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="781" y="78" width="377" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="768" cy="65" r="13" fill="var(--khoanh)"/>
+<text x="768" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="14" y="144" width="377" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="131" r="13" fill="var(--khoanh)"/>
+<text x="15" y="136" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="397" y="144" width="761" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="384" cy="131" r="13" fill="var(--khoanh)"/>
+<text x="384" y="136" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="14" y="210" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="197" r="13" fill="var(--khoanh)"/>
+<text x="15" y="202" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="1055" y="260" width="103" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="1042" cy="247" r="13" fill="var(--khoanh)"/>
+<text x="1042" y="252" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+</svg></div><figcaption>Ô nào cũng có ví dụ mờ — kể cả ô đường gọi, vốn là chỗ dễ khai sai nhất.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tên thiết bị</b><p>Tên gợi nhớ. Ví dụ: <em>Samsung A54 — SIM Viettel</em>.</p><p><span class="nhan">Điều kiện</span> Chỉ để bạn nhận ra máy.</p><p class="sao"><span class="nhan">Vì sao</span> Dàn máy chục cái giống hệt nhau; đặt tên kèm nhà mạng là cách duy nhất biết máy nào đang rụng.</p></div></li><li><div class="so">2</div><div><b>Kiểu thiết bị</b><p>Điện thoại phone farm (ADB/USB), hoặc kiểu khác.</p><p><span class="nhan">Điều kiện</span> Quyết định hệ thống điều khiển máy bằng đường nào.</p><p class="sao"><span class="nhan">Vì sao</span> ADB và gateway nói hai giao thức khác hẳn nhau; chọn sai là không quay được số.</p></div></li><li><div class="so">3</div><div><b>Số điện thoại của máy</b><p>Số SIM đang lắp trong máy.</p><p><span class="nhan">Điều kiện</span> Là số hiện lên máy khách.</p><p class="sao"><span class="nhan">Vì sao</span> Cần biết để đối chiếu khi khách gọi lại vào đúng số đó.</p></div></li><li><div class="so">4</div><div><b>Địa chỉ</b><p>Ví dụ: <code>192.168.1.50:8080</code> hoặc <code>/dev/ttyUSB0</code>.</p><p><span class="nhan">Điều kiện</span> Tuỳ kiểu thiết bị mà điền địa chỉ mạng hay cổng nối tiếp.</p><p class="sao"><span class="nhan">Vì sao</span> Hai kiểu máy có hai dạng địa chỉ; ô ví dụ nêu cả hai để không phải tra tài liệu.</p></div></li><li><div class="so">5</div><div><b>Đường gọi (dial URL)</b><p>Địa chỉ hệ thống gọi tới để quay số. Ví dụ: <code>http://192.168.1.50:8080/call?number={number}</code>.</p><p><span class="nhan">Điều kiện</span> <code>{number}</code> là chỗ hệ thống thay bằng số thật.</p><p class="sao"><span class="nhan">Vì sao</span> Để nguyên chuỗi mẫu mà quên phần <code>{number}</code> là mọi cuộc đều gọi vào cùng một số — lỗi khó nhìn ra nhất trong khối này.</p></div></li><li><div class="so">6</div><div><b>Ghi chú</b><p>Ghi chú tự do về máy.</p><p><span class="nhan">Điều kiện</span> Không ảnh hưởng hoạt động.</p><p class="sao"><span class="nhan">Vì sao</span> Ghi vị trí vật lý của máy để lúc nó rụng thì biết đi đâu mà cắm lại.</p></div></li><li><div class="so">7</div><div><b>Thêm thiết bị</b><p>Lưu máy vào danh sách.</p><p><span class="nhan">Điều kiện</span> Sau khi lưu nên bấm Kiểm tra ở trang Thiết bị.</p><p class="sao"><span class="nhan">Vì sao</span> Khai xong không đảm bảo chạy được; bộ kiểm mới là thứ xác nhận.</p></div></li></ol></section><section class="trang" id="phu-goi-den"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Nhận cuộc gọi đến</h2><p class="tomtat">Mở bằng <b>Nhận cuộc gọi đến</b> ở trang Thiết bị. Khai máy nào tự trả lời cuộc gọi vào và trả lời bằng kịch bản nào.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-goi-den.jpg" alt="Anh chup trang Nhận cuộc gọi đến" width="1172" height="124"><svg viewBox="0 0 1172 124" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="13" y="55" width="1146" height="58" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="42" r="13" fill="var(--khoanh)"/>
+<text x="15" y="47" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+</svg></div><figcaption>Ảnh chụp trạng thái rỗng vì chưa khai máy nào — khối này chỉ có nội dung khi danh sách thiết bị đã có máy.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Bảng máy nhận cuộc gọi vào</b><p>Mỗi dòng là một máy, kèm kịch bản dùng khi có cuộc gọi vào và độ trễ trước khi bắt máy.</p><p><span class="nhan">Điều kiện</span> <b>Rỗng cho tới khi có thiết bị.</b> Cần khai máy ở “+ Thêm thiết bị” trước.</p><p class="sao"><span class="nhan">Vì sao</span> Gọi vào và gọi ra là hai luồng tách biệt: một máy có thể chỉ gọi ra mà không nhận vào, nên phải bật riêng từng máy chứ không bật chung.</p></div></li></ol></section><section class="trang" id="phu-them-nguon"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Thêm nguồn dữ liệu</h2><p class="tomtat">Mở bằng <b>+ Thêm nguồn</b>. Khai file dữ liệu và <b>cách bot dùng nó</b>.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-them-nguon.jpg" alt="Anh chup trang Thêm nguồn dữ liệu" width="1172" height="408"><svg viewBox="0 0 1172 408" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="14" y="79" width="282" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="66" r="13" fill="var(--khoanh)"/>
+<text x="15" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="302" y="79" width="282" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="289" cy="66" r="13" fill="var(--khoanh)"/>
+<text x="289" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="589" y="79" width="282" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="576" cy="66" r="13" fill="var(--khoanh)"/>
+<text x="576" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="14" y="200" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="187" r="13" fill="var(--khoanh)"/>
+<text x="15" y="192" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="14" y="289" width="1144" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="276" r="13" fill="var(--khoanh)"/>
+<text x="15" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="14" y="339" width="81" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="326" r="13" fill="var(--khoanh)"/>
+<text x="15" y="331" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+</svg></div><figcaption>Ô “Chế độ” là ô quan trọng nhất khối này: nó quyết định file được tra bằng cách nào.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Tên nguồn</b><p>Tên gợi nhớ cho nguồn dữ liệu.</p><p><span class="nhan">Điều kiện</span> Dùng để tìm trong danh sách.</p><p class="sao"><span class="nhan">Vì sao</span> Danh sách nguồn phình nhanh khi mỗi sản phẩm một bảng.</p></div></li><li><div class="so">2</div><div><b>Kiểu file</b><p>excel · csv · sqlite.</p><p><span class="nhan">Điều kiện</span> Phải khớp file thật, không đoán theo đuôi tên.</p><p class="sao"><span class="nhan">Vì sao</span> Ba kiểu đọc bằng ba cách khác nhau; khai sai là đọc ra 0 dòng.</p></div></li><li><div class="so">3</div><div><b>Chế độ dùng</b><p><b>Tri thức chung (tìm gần đúng)</b> hoặc <b>Tra theo khách</b>.</p><p><span class="nhan">Điều kiện</span> Đây là ô quyết định cách bot dùng file.</p><p class="sao"><span class="nhan">Vì sao</span> “Tìm gần đúng” hợp với văn bản — hỏi đại ý cũng ra. “Tra theo khách” hợp với bảng — cần khớp chính xác một dòng theo số điện thoại hoặc mã khách. Chọn nhầm là bot tra ra dòng của người khác.</p></div></li><li><div class="so">4</div><div><b>Đường dẫn file</b><p>Đường dẫn cục bộ. Ví dụ: <code>/Users/ban/bang_gia.xlsx</code>.</p><p><span class="nhan">Điều kiện</span> Chỉ nhận đường dẫn trên máy, không nhận link mạng.</p><p class="sao"><span class="nhan">Vì sao</span> Hệ thống chạy offline hoàn toàn — không có đường nào gọi ra internet.</p></div></li><li><div class="so">5</div><div><b>Sheet · Bảng · Câu truy vấn</b><p>Chỉ định lấy sheet nào của Excel, bảng nào trong SQLite, và câu truy vấn nếu cần.</p><p><span class="nhan">Điều kiện</span> Điền theo kiểu file đã chọn; ô không liên quan để trống.</p><p class="sao"><span class="nhan">Vì sao</span> Trước đây người dùng phải tự biết tên bảng bên trong file <code>.db</code>; giờ tải lên rồi chọn từ danh sách dò được.</p></div></li><li><div class="so">6</div><div><b>Lưu và công tắc bật</b><p>Lưu nguồn, kèm ô tick bật / tắt nguồn.</p><p><span class="nhan">Điều kiện</span> Tắt thì nguồn vẫn còn trong danh sách nhưng bot không tra.</p><p class="sao"><span class="nhan">Vì sao</span> Có công tắc để tạm ngắt một nguồn đang lỗi mà không phải xoá rồi khai lại.</p></div></li></ol></section><section class="trang" id="phu-tinh-huong"><p class="nhomlab">Màn hiện ra khi bấm</p><h2>Soạn tình huống câu đệm</h2><p class="tomtat">Mở bằng <b>+ Tình huống</b> ở trang Câu đệm. Dạy máy nhận ra khách đang nói chuyện gì để chọn câu đệm cho khớp.</p><figure><div class="anh"><img src="anh_tinh_nang/phu-tinh-huong.jpg" alt="Anh chup trang Soạn tình huống câu đệm" width="768" height="654"><svg viewBox="0 0 768 654" role="img" aria-label="Anh chup man hinh co danh so tung vung">
+<rect x="18" y="104" width="363" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="91" r="13" fill="var(--khoanh)"/>
+<text x="15" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">1</text>
+<rect x="387" y="104" width="363" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="374" cy="91" r="13" fill="var(--khoanh)"/>
+<text x="374" y="96" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">2</text>
+<rect x="18" y="170" width="732" height="108" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="157" r="13" fill="var(--khoanh)"/>
+<text x="15" y="162" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">3</text>
+<rect x="18" y="347" width="732" height="108" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="334" r="13" fill="var(--khoanh)"/>
+<text x="15" y="339" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">4</text>
+<rect x="18" y="508" width="363" height="57" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="15" cy="495" r="13" fill="var(--khoanh)"/>
+<text x="15" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">5</text>
+<rect x="387" y="508" width="363" height="40" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="374" cy="495" r="13" fill="var(--khoanh)"/>
+<text x="374" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">6</text>
+<rect x="387" y="556" width="19" height="19" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="374" cy="543" r="13" fill="var(--khoanh)"/>
+<text x="374" y="548" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">7</text>
+<rect x="698" y="604" width="52" height="39" rx="6" fill="none" stroke="var(--khoanh)" stroke-width="2.4"/>
+<circle cx="685" cy="591" r="13" fill="var(--khoanh)"/>
+<text x="685" y="596" text-anchor="middle" font-size="15" font-weight="700" fill="var(--khoanh-chu)" font-family="-apple-system,Segoe UI,Arial,sans-serif">8</text>
+</svg></div><figcaption>Ô “Ví dụ” là thứ máy đem đi so khớp; ô “Mẩu mở đầu” là thứ khách sẽ nghe.</figcaption></figure><ol class="chu"><li><div class="so">1</div><div><b>Mã tình huống</b><p>Mã ngắn không dấu. Ví dụ: <code>hoi_phi</code>.</p><p><span class="nhan">Điều kiện</span> Dùng làm khoá, không hiện cho khách.</p><p class="sao"><span class="nhan">Vì sao</span> Cần một khoá ổn định để tra cứu, tách khỏi tên hiển thị vốn hay được sửa.</p></div></li><li><div class="so">2</div><div><b>Tên tình huống</b><p>Tên tiếng Việt. Ví dụ: <em>Khách hỏi phí</em>.</p><p><span class="nhan">Điều kiện</span> Hiện trong bảng tình huống.</p><p class="sao"><span class="nhan">Vì sao</span> Người vận hành đọc tên, máy đọc mã.</p></div></li><li><div class="so">3</div><div><b>Ví dụ câu khách nói</b><p>Các câu mẫu mà khách thường nói trong tình huống này.</p><p><span class="nhan">Điều kiện</span> Máy so khớp câu khách <b>đang nói dở</b> với các ví dụ này.</p><p class="sao"><span class="nhan">Vì sao</span> Máy chấm điểm trên phiên âm <b>cụt</b>, vì câu đệm phải phát trước khi khách nói xong. Nên ví dụ nên viết như nửa câu đầu, đừng viết câu hoàn chỉnh dài.</p></div></li><li><div class="so">4</div><div><b>Mẩu mở đầu</b><p>Câu bot nói khi nhận ra tình huống này.</p><p><span class="nhan">Điều kiện</span> Ghép với một câu đuôi dùng chung để thành câu đệm hoàn chỉnh.</p><p class="sao"><span class="nhan">Vì sao</span> Tách mở đầu và đuôi để nhân số câu: 5 mở đầu × 42 đuôi cho 210 câu khác nhau, đỡ lặp mà không phải viết tay 210 câu.</p></div></li><li><div class="so">5</div><div><b>Từ khoá</b><p>Từ khoá phụ trợ cho việc nhận dạng.</p><p><span class="nhan">Điều kiện</span> Dùng kèm phần so khớp ví dụ.</p><p class="sao"><span class="nhan">Vì sao</span> Có từ khoá cứng để bắt các ca mà so khớp theo nghĩa bỏ sót.</p></div></li><li><div class="so">6</div><div><b>Tốc đọc riêng</b><p>Tốc đọc cho câu đệm của tình huống này.</p><p><span class="nhan">Điều kiện</span> Bỏ trống thì dùng tốc chung của giọng.</p><p class="sao"><span class="nhan">Vì sao</span> Câu đệm ngắn và cần thoát ra nhanh; đọc chậm như câu tư vấn thì mất tác dụng lấp quãng im.</p></div></li><li><div class="so">7</div><div><b>Bật tình huống</b><p>Bật / tắt tình huống này.</p><p><span class="nhan">Điều kiện</span> Tắt thì máy bỏ qua khi so khớp.</p><p class="sao"><span class="nhan">Vì sao</span> Tắt tạm rẻ hơn xoá, vì tình huống viết ra mất công và có thể cần lại.</p></div></li><li><div class="so">8</div><div><b>Lưu</b><p>Lưu tình huống.</p><p><span class="nhan">Điều kiện</span> Sau khi lưu <b>phải bấm Dựng tiếng</b> ở trang Câu đệm thì câu mới có file âm.</p><p class="sao"><span class="nhan">Vì sao</span> Tách hai bước vì dựng tiếng chạy lâu; thêm liền mấy tình huống rồi dựng một lượt sẽ nhanh hơn.</p></div></li></ol></section>
+
+<section class="trang" id="manh-la-gi">
+<p class="nhomlab">Phụ lục</p>
+<h2>“Mảnh” là gì — và vì sao nó quyết định mọi thứ</h2>
+
+<p class="tomtat">Khi khách hỏi, hệ thống <b>không đưa cả tài liệu cho AI đọc</b>. Nó tìm vài
+mảnh giống câu hỏi nhất rồi chỉ đưa mấy mảnh đó. Mảnh vì thế là đơn vị nhỏ nhất mà
+AI nhìn thấy — và cũng là đơn vị mà mọi sai sót bắt đầu.</p>
+
+<div class="canh">
+<b>Luật cắt, nguyên văn từ mã nguồn:</b> cắt theo <b>500 ký tự</b> một mảnh,
+mỗi mảnh <b>chồng lấn 50 ký tự</b> với mảnh trước. Cắt theo <em>số ký tự</em>,
+không theo câu, không theo dòng, <b>không biết gì về Markdown</b>.
+Đây là cách cắt duy nhất của hệ thống: RAG nạp tài liệu bằng nó, và khung xem trước
+trong hộp soạn tài liệu cũng gọi chính hàm đó — nên con số hiển thị không bao giờ
+lệch với thực tế.
+</div>
+
+<p style="margin-top:18px">Ba hệ quả trực tiếp, đều thấy được trong ảnh chụp phía trên:</p>
+<ol class="chu" style="margin-top:12px">
+<li><div class="so">A</div><div>
+  <b>Câu bị bẻ giữa từ</b>
+  <p>Tài liệu <code>the_tin_dung</code> dài 725 ký tự. Mảnh 1 lấy ký tự 1–500,
+  mảnh 2 bắt đầu từ ký tự 450 (500 trừ 50 chồng lấn). Ký tự 450 rơi đúng giữa chữ
+  “nhập”, nên mảnh 2 mở đầu bằng <code>ập từ 5 triệu đồng/tháng</code>.</p>
+  <p class="sao"><span class="nhan">Hậu quả</span> AI đọc mảnh đó thấy “ập từ 5 triệu”
+  và không biết đó là <em>thu nhập</em>.</p>
+</div></li>
+<li><div class="so">B</div><div>
+  <b>Bảng dài mất dòng tiêu đề</b>
+  <p>Bảng lãi suất 25 dòng dài hơn 500 ký tự nên bị chặt làm nhiều mảnh. Chỉ mảnh
+  đầu giữ được dòng tên cột.</p>
+  <p class="sao"><span class="nhan">Hậu quả</span> Các mảnh sau chứa số mà không
+  biết số của cột nào — kỳ hạn 6 tháng hay 12 tháng, lãi gửi hay lãi vay.</p>
+</div></li>
+<li><div class="so">C</div><div>
+  <b>Mảnh không có tiêu đề thì mất danh tính</b>
+  <p>Chỉ mảnh đầu tiên chứa dòng <code># Tên sản phẩm</code>.</p>
+  <p class="sao"><span class="nhan">Hậu quả</span> Mảnh giữa tài liệu chứa lãi suất
+  nhưng không mang tên sản phẩm; AI đọc số mà không biết của ai.</p>
+</div></li>
+</ol>
+
+<div class="canh"><b>Cách chữa duy nhất bạn có trong tay:</b> chèn thêm tiêu đề con
+<code>## </code> để chia tài liệu thành phần ngắn hơn. Chỗ cắt sẽ rơi vào ranh giới
+sạch thay vì giữa câu. Đó cũng chính là câu mà bộ soi gợi ý mỗi khi nó bắt được lỗi
+“mảnh bắt đầu từ giữa câu”.</div>
+</section>
+
+<section class="trang" id="bo-soi">
+<p class="nhomlab">Phụ lục</p>
+<h2>Bảy luật của bộ soi tài liệu</h2>
+
+<p class="tomtat">Đây là các dòng đỏ và vàng hiện dưới ô nội dung trong hộp soạn tài liệu.
+Bộ soi <b>cảnh báo chứ không chặn lưu</b> — chặn người vận hành sửa lãi suất lúc gấp
+còn tệ hơn để họ lưu một tài liệu chưa đẹp.</p>
+
+<div class="cuon">
+<table class="bang">
+<thead><tr><th>Mã</th><th>Mức</th><th>Bộ soi nói gì</th><th>Vì sao nó là vấn đề</th></tr></thead>
+<tbody>
+<tr>
+  <td>nhieu_so_thap_phan</td>
+  <td><span class="muc-do loi">LỖI</span></td>
+  <td>“Có N số thập phân: 0.5, 3.4, 6.8, 7.9, 8.2”</td>
+  <td>Hàng rào chặn mô hình đọc sai số <b>chỉ chạy khi tài liệu có đúng MỘT số thập phân</b>.
+      Nhiều số thì nó bỏ qua, vì đoán bừa còn tệ hơn. Cách sửa: tách mục ví dụ tính toán
+      sang tài liệu riêng, giữ lại một con số quan trọng nhất.</td>
+</tr>
+<tr>
+  <td>du_lieu_mau</td>
+  <td><span class="muc-do loi">LỖI</span></td>
+  <td>Còn tên “Ngân hàng ABC” của bản cài mẫu</td>
+  <td>Lãi suất và hạn mức trong tài liệu mẫu là <b>số bịa để chạy thử</b>. Còn dấu vết này
+      nghĩa là bot đang đọc số bịa cho khách.</td>
+</tr>
+<tr>
+  <td>thieu_tieu_de</td>
+  <td><span class="muc-do cb">CẢNH BÁO</span></td>
+  <td>Không có dòng tiêu đề mở đầu bằng <code>#</code></td>
+  <td>Không có nó thì mảnh đầu tiên không mang tên sản phẩm, AI đọc số mà không biết của ai.</td>
+</tr>
+<tr>
+  <td>ten_khong_khop</td>
+  <td><span class="muc-do cb">CẢNH BÁO</span></td>
+  <td>Tên file không khớp tiêu đề trong nội dung</td>
+  <td>Lưới lọc sản phẩm <b>neo theo tên file</b>, không đọc nội dung. Tên lệch là lọc không
+      bao giờ ăn, và bot có thể đọc lãi suất sản phẩm khác cho khách. Chỉ áp cho nhóm Sản phẩm.</td>
+</tr>
+<tr>
+  <td>so_mo_ho</td>
+  <td><span class="muc-do cb">CẢNH BÁO</span></td>
+  <td>Số đứng sau chữ không chắc chắn: “khoảng”, “lên đến”, “từ”</td>
+  <td>Tám chữ bị bắt: <code>từ · khoảng · lên đến · lên tới · tối đa · tối thiểu · tuỳ · tùy</code>.
+      Bot đọc nguyên văn cho khách nghe, mà “lãi suất từ 7.9%” <b>nghe qua điện thoại thành một
+      lời hứa</b>. Cách sửa: ghi con số cụ thể, hoặc nói rõ điều kiện đi kèm mức đó.</td>
+</tr>
+<tr>
+  <td>bang_mat_tieu_de</td>
+  <td><span class="muc-do cb">CẢNH BÁO</span></td>
+  <td>N mảnh có bảng nhưng mất dòng tiêu đề sau khi cắt</td>
+  <td>Bảng dài bị chặt làm đôi theo số ký tự; nửa sau mất tên cột. Cách sửa: chia thành nhiều
+      bảng ngắn, mỗi bảng có tiêu đề cột riêng.</td>
+</tr>
+<tr>
+  <td>cat_giua_y</td>
+  <td><span class="muc-do cb">CẢNH BÁO</span></td>
+  <td>N mảnh bắt đầu từ giữa câu</td>
+  <td>Chỗ cắt rơi vào giữa ý. Máy gắn cờ khi ký tự đầu mảnh là chữ thường hoặc chữ số mà không
+      phải số thứ tự danh sách. Cách sửa: thêm tiêu đề con <code>##</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="canh"><b>Ba luật nặng nhất không phải quy ước thẩm mỹ.</b> Chúng bắt nguồn từ
+ba chỗ khác trong hệ thống: hàng rào chặn số sai chỉ chạy với đúng một số thập phân;
+lưới lọc sản phẩm neo theo tên file; và hàm cắt mảnh không biết Markdown. Sửa ba chỗ đó
+thì phải sửa cả bộ soi.</div>
+</section>
+
+<section class="trang" id="chua-chup">
+<p class="nhomlab">Phụ lục</p>
+<h2>Những màn tài liệu này chưa chụp được</h2>
+
+<p class="tomtat">Nói rõ ra để bạn biết chỗ nào còn thiếu, thay vì tưởng đã đủ.
+Tất cả đều vì <b>máy chụp thiếu dữ liệu hoặc thiếu mô hình</b>, không phải vì màn đó không tồn tại.</p>
+
+<div class="cuon">
+<table class="bang">
+<thead><tr><th>Màn</th><th>Ở đâu</th><th>Cần gì mới hiện ra</th></tr></thead>
+<tbody>
+<tr><td>Cài đặt chiến dịch</td><td>Danh bạ gọi → Cài đặt khác</td><td>Phải có ít nhất một chiến dịch</td></tr>
+<tr><td>Chi tiết cuộc gọi</td><td>Báo cáo → bấm một dòng</td><td>Phải có cuộc gọi thật</td></tr>
+<tr><td>Chi tiết phiên</td><td>Phiên gọi → bấm một dòng</td><td>Phải có phiên đã chạy</td></tr>
+<tr><td>Bộ thu âm 60 câu</td><td>Training giọng → bước 2</td><td>Nhập tên giọng rồi bấm mở</td></tr>
+<tr><td>Tiến độ luyện mô hình</td><td>Training LLM · Training giọng</td><td>Phải có buổi luyện đang chạy</td></tr>
+<tr><td>Kết quả benchmark</td><td>Benchmark → Chạy Test</td><td>Cần mô hình nghe và đọc tiếng</td></tr>
+<tr><td>Kết quả phát thử giọng</td><td>Giọng nói · Test giọng</td><td>Cần mô hình đọc tiếng</td></tr>
+<tr><td>Ứng viên đoạn mẫu</td><td>Giọng nói → Bản ghi dài</td><td>Cần tải một bản thu dài hơn 30 giây</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="canh">Máy dựng tài liệu này là máy Mac, <b>không có mô hình nghe tiếng và đọc tiếng</b>.
+Chạy lại bộ chụp trên máy Windows có card đồ hoạ, và trên một máy đã có dữ liệu gọi thật,
+là ra đủ các màn trên.</div>
+</section>
+
+<footer>Ảnh chụp từ chính app đang chạy, khổ 1440px. Toạ độ khoanh vùng lấy trực tiếp từ vị trí thật của từng phần tử trên màn hình, không phải ước lượng bằng mắt. Khi giao diện đổi, phải chụp lại ảnh thì khung khoanh mới còn đúng chỗ.</footer>
+</main>
+</div>
+<script>
+(function(){
+  var r=document.documentElement,b=document.getElementById('doiNen');
+  try{var l=localStorage.getItem('vb-nen2');if(l)r.setAttribute('data-theme',l);}catch(e){}
+  b.addEventListener('click',function(){
+    var c=getComputedStyle(document.body).backgroundColor;
+    var toi=/^rgba?\(\s*(\d+)/.test(c)&&parseInt(RegExp.$1,10)<128;
+    var m=toi?'light':'dark';
+    r.setAttribute('data-theme',m);
+    try{localStorage.setItem('vb-nen2',m);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
