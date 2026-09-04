@@ -5,6 +5,11 @@ import uuid
 class CallSession:
     """Manages conversation state for a single call."""
 
+    # Số lượt gửi lại để trình duyệt vẽ lại khung chat sau khi tải lại trang.
+    # Không gửi trọn lịch sử: cuộc dài đẩy vài trăm lượt qua WebSocket chỉ để vẽ
+    # màn hình, trong khi người dùng chỉ cần thấy đoạn vừa nói dở.
+    TOI_DA_LUOT_VE_LAI = 40
+
     def __init__(
         self,
         customer_name: str = "Anh/Chị",
@@ -246,6 +251,25 @@ class CallSession:
         if cau_moi.strip().lower().startswith(cu.lower()[:20]) and len(cu) > 10:
             return cau_moi
         return f"{cu} {cau_moi.strip()}".strip()
+
+    def payload_ket_noi(self, noi_lai: bool) -> dict:
+        """Tin `connected` gửi ngay khi mở WebSocket.
+
+        `noi_lai=True` nghĩa là trình duyệt xin đúng phiên cũ và phiên đó còn
+        sống trong bộ nhớ - kèm lịch sử để vẽ lại khung chat. Không kèm thì bot
+        vẫn nhớ nhưng màn hình trống trơn, và người dùng không có cách nào biết
+        nó còn nhớ hay không.
+
+        Giữ nguyên `type: "connected"` và `session_id`: bản frontend cũ chỉ đọc
+        hai trường đó, thêm trường mới không được làm nó hỏng.
+        """
+        return {
+            "type": "connected",
+            "session_id": self.session_id,
+            "noi_lai": noi_lai,
+            "history": (self.history[-self.TOI_DA_LUOT_VE_LAI:]
+                        if noi_lai else []),
+        }
 
     def log_latency(self, metrics: dict):
         metrics["turn"] = self.turn_count

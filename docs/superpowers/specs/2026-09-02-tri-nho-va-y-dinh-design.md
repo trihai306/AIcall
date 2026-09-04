@@ -105,7 +105,7 @@ phải đo). Bảng hỏi-đáp phải có người soạn — code chỉ dựng
 |---|---|
 | 1 | ✅ **XONG 2026-09-02.** Cửa sổ 2048 → 8192. VRAM 4.6 → 5.2 GB (card còn trống 3.4 GB). Tốc độ sinh chữ **không đổi**: 8.75 → 8.71 ms/chữ. 782 test xanh trên máy Windows |
 | 2 | ✅ **XONG 2026-09-04.** `scripts/thu_hoi_hay_che.py`: **21/23**, chê nhầm khi chưa tư vấn = **0**. Kết quả trùng nhau trên Mac và Win. 792 test xanh |
-| 3 | Tải lại trang giữa cuộc, lượt kế tiếp bot vẫn nhắc đúng thứ vừa nói |
+| 3 | ✅ **XONG 2026-09-04.** Kiểm trên trình duyệt thật qua máy Win: F5 giữ nguyên mã phiên `cd931305`, khung chat vẽ lại đủ, hỏi "thế còn hạn mức thì sao" (không nhắc sản phẩm) bot đáp "Hạn mức **vay tín chấp**...". Rớt mạng rồi tự nối lại: không nhân đôi. 804 test xanh |
 
 
 ## Đã đảo ngược trong lúc làm
@@ -152,3 +152,23 @@ Thêm 4 tình huống × 4 mẩu mở đầu = **672 clip câu đệm phải d�
 (16 mẩu × 42 câu đuôi). Log máy Win: `5082 đọc từ đĩa, 672 dựng mới, tổng 5754`.
 Dựng xong trong ~3 phút, làm chủ động lúc khởi động lại chứ không để rơi vào
 lúc có cuộc gọi thật.
+
+
+## Mốc 3 - nguyên nhân thật khác với dự đoán
+
+Dự đoán ban đầu: "phiên gắn với kết nối, đứt là mới". **Sai một nửa.**
+
+Server VỐN ĐÃ nối lại được (`websocket_call` tra `sessions.get(id)`), và trình
+duyệt sau khi sửa cũng gửi đúng mã cũ — log máy Win ghi rõ
+`WebSocket /ws/call/7e590a03 [accepted]`. Nhưng vẫn không nối lại được.
+
+Nguyên nhân thật: ngắt WebSocket → `_flush_on_disconnect` → `chot_phien` →
+`sessions.remove(id)`. Phiên bị **xoá khỏi bộ nhớ** trước khi trình duyệt kịp
+quay lại. Đúng cho cuộc gọi thật (khách cúp máy là hết cuộc), sai cho web.
+
+Chữa bằng `services/hoan_chot_phien.py`: chờ 90 giây rồi mới chốt; nối lại kịp
+thì huỷ hẹn. **Chỉ áp cho đường web** — cuộc gọi điện thoại đi
+`phone_call_service` và cố ý giữ nguyên hành vi chốt ngay.
+
+Nếu chỉ sửa phía trình duyệt rồi tin là xong, lỗi vẫn còn nguyên và không có gì
+báo — đúng kiểu bẫy im lặng mà mốc 1 đã gặp.

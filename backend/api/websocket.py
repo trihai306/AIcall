@@ -6,6 +6,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
+from backend.services.hoan_chot_phien import HoanChot
 from backend.services.filler_store import lay_kho
 
 logger = logging.getLogger(__name__)
@@ -88,6 +89,25 @@ def _tra_san_ho_so(session, so: str):
     task.add_done_callback(_warmups.discard)
 
 
+async def _chot_muon(session_id: str):
+    """Chốt phiên sau khi đã chờ mà không ai nối lại.
+
+    Tra lại phiên từ bộ nhớ chứ không giữ tham chiếu: trong lúc chờ, phiên có
+    thể đã được chốt bằng đường khác (bấm Kết thúc trên giao diện) và không còn
+    ở đó nữa - chốt lần hai là đẻ bản ghi trùng trong trang Báo cáo.
+    """
+    from backend.main import app_state
+    session = app_state.sessions.get(session_id)
+    if session is None:
+        return
+    await _flush_on_disconnect(session)
+
+
+# Hoãn chốt phiên của ĐƯỜNG WEB. Cuộc gọi điện thoại đi đường khác
+# (`phone_call_service`) và cố ý không dùng cái này: bên đó cúp máy là hết thật.
+_hoan_chot = HoanChot(chot=_chot_muon)
+
+
 async def _flush_on_disconnect(session: CallSession):
     """Chốt phiên khi trình duyệt ngắt kết nối. Luôn await, nên luôn chạy xong.
 
@@ -156,6 +176,12 @@ async def websocket_call(websocket: WebSocket, session_id: str):
     _ham_llm(app_state.llm)
 
     session = app_state.sessions.get(session_id)
+    # Trình duyệt xin đúng phiên cũ và phiên đó còn sống -> nối lại, kèm lịch sử
+    # để vẽ lại khung chat. Xem `CallSession.payload_ket_noi`.
+    noi_lai = session is not None
+    if noi_lai:
+        # Trình duyệt quay lại kịp -> bỏ hẹn chốt đã đặt lúc nó ngắt.
+        _hoan_chot.huy(session_id)
     if not session:
         # Phiên web PHẢI mang kịch bản mặc định giống cuộc gọi thật.
         #
@@ -171,10 +197,10 @@ async def websocket_call(websocket: WebSocket, session_id: str):
         )
         session_id = session.session_id
 
-    await websocket.send_json({
-        "type": "connected",
-        "session_id": session.session_id,
-    })
+    if noi_lai:
+        logger.info("Nối lại phiên %s (%d lượt đã có)",
+                    session.session_id, len(session.history))
+    await websocket.send_json(session.payload_ket_noi(noi_lai))
 
     # Lượt chạy trong task riêng thay vì await thẳng trong vòng lặp. Trước đây
     # await thẳng nên vòng lặp không đọc được tin tiếp theo cho tới khi lượt cũ
@@ -395,4 +421,7 @@ async def websocket_call(websocket: WebSocket, session_id: str):
         # Huỷ lượt còn đang chạy: khách đóng tab giữa chừng mà không dừng thì nó
         # sinh nốt tiếng rồi ghi vào socket đã đóng, vừa phí GPU vừa đẻ lỗi.
         await huy_luot_cu()
-        await _flush_on_disconnect(session)
+        # KHÔNG chốt ngay: tải lại trang cũng ngắt WebSocket, mà đó không phải
+        # hết cuộc. Chờ một nhịp - nối lại kịp thì hẹn bị huỷ ở đầu hàm này.
+        # Xem `services/hoan_chot_phien`.
+        _hoan_chot.hen(session.session_id)

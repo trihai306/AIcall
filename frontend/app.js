@@ -3,7 +3,16 @@
 // ============================================
 
 let ws = null;
-let sessionId = null;
+// Nhớ mã phiên qua lần TẢI LẠI TRANG. Server vốn đã nối lại được (nó tra
+// `sessions.get(id)` và chỉ tạo mới khi không thấy) - chỗ hụt là trang quên mất
+// mình là phiên nào nên xin 'new', và server chiều theo.
+//
+// sessionStorage chứ không localStorage: một thẻ = một cuộc. Mở thẻ mới là cuộc
+// mới, đúng như người dùng mong đợi; localStorage thì hai thẻ giành nhau một phiên.
+// Bọc try: chế độ ẩn danh của vài trình duyệt ném lỗi ngay khi ĐỌC.
+let sessionId = (() => {
+  try { return sessionStorage.getItem('maPhien') || null; } catch { return null; }
+})();
 let isRecording = false;
 let mediaRecorder = null;
 let audioChunks = [];
@@ -43,7 +52,14 @@ function handleMessage(msg) {
   switch (msg.type) {
     case 'connected':
       sessionId = msg.session_id;
+      try { sessionStorage.setItem('maPhien', sessionId); } catch {}
       document.getElementById('sessionId').textContent = sessionId;
+      // CHỈ vẽ khi khung đang trống. Mất mạng vài giây rồi tự nối lại cũng đi
+      // qua đúng nhánh này, mà lúc đó màn hình đã đầy đủ - vẽ thêm là nhân đôi
+      // toàn bộ cuộc nói chuyện.
+      if (msg.noi_lai && msg.history?.length && khungChatTrong()) {
+        veLaiLichSu(msg.history);
+      }
       break;
 
     case 'filler':
@@ -264,6 +280,24 @@ function clearChat() {
   turnCount = 0;
   document.getElementById('turnCount').textContent = '0';
   currentResponseEl = null;
+}
+
+function khungChatTrong() {
+  const chat = document.getElementById('chat');
+  return !chat || chat.querySelectorAll('[data-bubble]').length === 0;
+}
+
+function veLaiLichSu(history) {
+  removeWelcome();
+  for (const t of history) {
+    if (!t || !t.content) continue;
+    addMessage(t.role === 'user' ? 'user' : 'assistant', t.content);
+  }
+  const chat = document.getElementById('chat');
+  if (chat) chat.scrollTop = chat.scrollHeight;
+  turnCount = history.filter(t => t && t.role === 'user').length;
+  const el = document.getElementById('turnCount');
+  if (el) el.textContent = turnCount;
 }
 
 function removeWelcome() {
