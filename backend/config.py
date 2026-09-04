@@ -15,7 +15,12 @@ class Settings(BaseSettings):
     # Ollama LLM - Vistral-7B-Chat (Vietnamese)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "vistral-7b-chat"
-    llm_num_ctx: int = 2048
+    # Đo 2026-09-02 (qwen2.5:7b, prompt_eval_count thật): lời dặn + tri thức
+    # đã ăn 1414 token. Ở 2048 thì hội thoại chỉ còn 484 token ~ 6 lượt, rồi
+    # Ollama cắt bỏ phần đầu KHÔNG BÁO GÌ - đó là lỗi "nói chuyện một lúc là
+    # bot quên". 8192 cho ~88 lượt, tốn thêm ~340MB VRAM (bộ nhớ đệm khoá-giá
+    # trị của qwen2.5-7B ~56KB/token). Xem `services/cua_so_nho`.
+    llm_num_ctx: int = 8192
 
     # F5-TTS
     f5tts_ckpt_path: str = "./models/tts/F5-TTS-Vietnamese-ViVoice/model_last.pt"

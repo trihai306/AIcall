@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 import httpx
 import ollama
 from backend.config import settings
+from backend.services.cua_so_nho import canh_bao_tran, doc_so_token
 from backend.pipeline.text_normalizer import bo_chu_la, co_chu_la
 from backend.core.logging_config import Timer
 
@@ -340,6 +341,28 @@ class LLMService:
                         first_token = False
                         logger.info("LLM first token received")
                     yield token
+
+                # Chunk cuối mang số token THẬT của lời dặn + lịch sử. Không
+                # đọc thì việc Ollama cắt bớt hội thoại là bẫy im lặng hoàn
+                # toàn - xem `cua_so_nho`.
+                n_prompt = doc_so_token(chunk)
+                if n_prompt is not None:
+                    self._soat_cua_so(n_prompt)
+
+    def _soat_cua_so(self, prompt_tokens: int) -> None:
+        """Kêu lên khi cửa sổ không đủ cho một cuộc tư vấn thật.
+
+        Chỉ kêu MỘT LẦN mỗi tiến trình: cấu hình không đổi giữa chừng nên kêu
+        mỗi lượt chỉ làm ngập log rồi không ai đọc nữa.
+        """
+        logger.debug("LLM prompt: %d/%d token", prompt_tokens, settings.llm_num_ctx)
+        if getattr(self, "_da_keu_tran", False):
+            return
+        loi = canh_bao_tran(prompt_tokens, settings.llm_num_ctx,
+                            settings.llm_max_tokens)
+        if loi:
+            self._da_keu_tran = True
+            logger.warning(loi)
 
     async def generate_simple(self, prompt: str) -> str:
         """Non-streaming generation for simple tasks."""
