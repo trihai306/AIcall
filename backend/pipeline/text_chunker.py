@@ -950,3 +950,21 @@ def cho_gom_ms(du_dia_ms: float, uoc_sinh: float) -> float:
     """
     con = du_dia_ms - uoc_sinh - JITTER_MS
     return max(0.0, min(TRAN_CHO_MS, con))
+
+
+def ty_le_gop(so_manh: int, so_lan_sinh: int) -> float | None:
+    """Bao nhiêu phần chỗ nối đã bị gộp mất, hoặc None nếu không có chỗ nối nào.
+
+    Chỗ nối là nơi đẻ ra "chữ ngân" giữa câu - `so_manh - 1` chỗ. Gộp được bao
+    nhiêu chỗ thì bớt bấy nhiêu lần F5 kéo dài âm cuối.
+
+    Trả None chứ không phải 0.0 khi lượt chỉ có một mảnh: 0% nghĩa là "có cơ hội
+    gộp mà trượt", khác hẳn "không có cơ hội nào". Gộp hai thứ đó vào một con số
+    thì trung bình cộng bị kéo xuống bởi những lượt vốn không thể gộp, và tưởng
+    là gộp đang hỏng.
+    """
+    cho_noi = so_manh - 1
+    if cho_noi <= 0:
+        return None
+    da_gop = so_manh - so_lan_sinh
+    return max(0.0, min(1.0, da_gop / cho_noi))

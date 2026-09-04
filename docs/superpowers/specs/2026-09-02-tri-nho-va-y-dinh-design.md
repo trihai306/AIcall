@@ -172,3 +172,31 @@ thì huỷ hẹn. **Chỉ áp cho đường web** — cuộc gọi điện tho�
 
 Nếu chỉ sửa phía trình duyệt rồi tin là xong, lỗi vẫn còn nguyên và không có gì
 báo — đúng kiểu bẫy im lặng mà mốc 1 đã gặp.
+
+
+## Bộ đếm gộp mảnh (2026-09-04) - và thứ nó phát hiện ngay
+
+Gộp mảnh là thứ bên A đã nghe 100 câu rồi chọn, nhưng trên cuộc gọi nó chỉ xảy
+ra khi còn dư địa thời gian - và **không có gì trong log cho biết nó còn ăn hay
+đã tắt ngóm**. Sổ tay ghi 25-36% từ một lần đo tay hồi 16-08.
+
+Thêm `ty_le_gop()` + số đo mỗi lượt. Đo ngay được 5 lượt trên đường chat web:
+
+| Lượt | Mảnh | Chỗ nối gộp được |
+|---|---|---|
+| 1 | 2 | 0/1 |
+| 2 | 2 | 0/1 |
+| 3 | 3 | 0/2 |
+| 4 | 4 | 0/3 |
+| 5 | 2 | 0/1 — dư địa TB **3390ms**, đã chờ **600ms** |
+
+**Toàn bộ 0%.** Và không phải vì thiếu thời gian: lượt 5 dư tới 3,4 giây và đã
+chờ đủ 600ms mà vẫn không có mảnh nào để gộp.
+
+Nguyên nhân của lượt 2 mảnh đã rõ: mảnh đầu cố ý không tham gia gộp (`idx > 0`),
+nên mảnh còn lại đứng một mình - gộp cần từ 3 mảnh trở lên. Lượt 4 mảnh cũng 0%
+thì **chưa giải thích được**, cần đo tiếp.
+
+CẦN LÀM TIẾP (chưa thuộc mốc nào): tìm vì sao lượt nhiều mảnh vẫn không gộp, và
+đo trên ĐƯỜNG THOẠI thật chứ không chỉ chat web - hai đường có nhịp khác nhau.
+Công cụ đo giờ đã có sẵn trong log, không phải dựng lại.

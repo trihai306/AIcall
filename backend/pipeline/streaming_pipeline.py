@@ -15,7 +15,8 @@ from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             cho_gom_ms, nhip_nghi_sau, noi_lo,
-                                            sap_cum_gop, tach_manh, uoc_sinh_ms)
+                                            sap_cum_gop, tach_manh, ty_le_gop,
+                                            uoc_sinh_ms)
 from backend.pipeline.text_normalizer import (BotLichSu, bo_cau_lui_thua,
                                               chan_chu_ngoai, chan_lai_suat_bia,
                                               chan_so_sai, sua_chu_mo_hinh,
@@ -1009,6 +1010,17 @@ class StreamingPipeline:
             da_gui_ms = 0.0
             t_am_dau = None
             nghi_ms = 0.0        # nhịp nghỉ nợ từ mảnh TRƯỚC, trả vào đầu mảnh này
+            # Đếm gộp mảnh. Gộp là thứ bên A đã nghe 100 câu rồi chọn, nhưng nó
+            # chỉ xảy ra khi còn đủ thời gian (`cho_gom_ms`) - có lượt ăn, có
+            # lượt không, và trước đây KHÔNG có gì trong log cho biết. Bản xuất
+            # file thì gộp gần 100%, nên nghe bản xuất rồi duyệt là duyệt nhầm.
+            n_manh_sinh = 0      # số mảnh đi qua bước sinh tiếng
+            n_lan_sinh = 0       # số lần thật sự gọi F5
+            # Vì sao gộp trượt. Chỉ "0%" thì lần sau lại phải mở máy điều tra
+            # từ đầu: hết dư địa, hay có dư địa mà chờ vẫn không ra mảnh nào?
+            du_dia_tong = 0.0
+            doi_tong = 0.0
+            n_co_hoi = 0
             while True:
                 goi = await tts_queue.get()
                 if goi is None:
@@ -1075,6 +1087,9 @@ class StreamingPipeline:
                     if t_am_dau is not None:
                         du_dia = da_gui_ms - (time.perf_counter() - t_am_dau) * 1000
                         doi = cho_gom_ms(du_dia, uoc_sinh_ms(chunk_text))
+                        du_dia_tong += du_dia
+                        doi_tong += doi
+                        n_co_hoi += 1
                         if doi > 0:
                             try:
                                 them = await asyncio.wait_for(tts_queue.get(),
@@ -1123,6 +1138,7 @@ class StreamingPipeline:
                         dan.append((t_chu, t_nghi))
 
                 t_synth = time.perf_counter()
+                n_manh_sinh += len(dan)
                 if soi:
                     # Chế độ soi: KHÔNG sinh tiếng. Vẫn đi trọn vòng cắt mảnh và
                     # vẫn gửi `response_chunk` bên dưới, nên chữ hiện ra đúng
@@ -1131,6 +1147,7 @@ class StreamingPipeline:
                     # phải rắc thêm điều kiện xuống dưới.
                     song = [None] * len(dan)
                 elif gop_mot:
+                    n_lan_sinh += 1
                     # MỘT lần sinh cho cả cụm - đó chính là chỗ chữ ngân biến
                     # mất. Tiếng đi kèm mảnh đầu; các mảnh sau vẫn được gửi
                     # `response_chunk` để chữ hiện đúng như cũ, chỉ không có
@@ -1142,14 +1159,19 @@ class StreamingPipeline:
                         # Đường lùi: gộp hỏng thì sinh từng mảnh như cũ, thà
                         # còn chữ ngân hơn là khách nghe im cả cụm.
                         logger.warning("gộp mảnh hỏng - lùi về sinh từng mảnh")
+                        # Gộp trượt: lần sinh gộp không ra tiếng, thay bằng
+                        # từng mảnh. Trừ lại lần đã đếm để tỷ lệ không báo dư.
+                        n_lan_sinh += len(dan) - 1
                         song = [await self._try_synthesize(
                             d[0], voice=session.voice_name, session=session) for d in dan]
                     else:
                         song = [tieng_gop] + [None] * (len(dan) - 1)
                 elif len(dan) > 1:
+                    n_lan_sinh += len(dan)
                     song = await self._try_synthesize_lo(
                         [d[0] for d in dan], voice=session.voice_name, session=session)
                 else:
+                    n_lan_sinh += 1
                     song = [await self._try_synthesize(
                         chunk_text, fast=(idx == 0), voice=session.voice_name,
                         session=session)]
@@ -1186,6 +1208,22 @@ class StreamingPipeline:
                     await self._send_event(ws, "response_chunk",
                                            {"text": t_chu, "chunk_id": idx})
                     idx += 1
+
+            # Gộp mảnh ăn được bao nhiêu chỗ nối trong LƯỢT NÀY. Không ghi lại
+            # thì không ai biết nó còn chạy hay đã tắt ngóm - `f5tts_gop_manh`
+            # tắt đi, hay lượt nào cũng thiếu thời gian, log đều im như nhau.
+            ty_le = ty_le_gop(n_manh_sinh, n_lan_sinh)
+            if ty_le is not None:
+                metrics["gop_manh"] = f"{n_manh_sinh - n_lan_sinh}/{n_manh_sinh - 1}"
+                metrics["gop_ty_le"] = round(ty_le, 2)
+                logger.info(
+                    "Gộp mảnh: bỏ được %d/%d chỗ nối (%.0f%%) - %d mảnh, %d lần "
+                    "gọi F5. Dư địa TB %.0fms, chờ TB %.0fms trên %d cơ hội. "
+                    "Mỗi chỗ nối bỏ được là một chữ ngân giữa câu biến mất.",
+                    n_manh_sinh - n_lan_sinh, n_manh_sinh - 1, ty_le * 100,
+                    n_manh_sinh, n_lan_sinh,
+                    du_dia_tong / n_co_hoi if n_co_hoi else 0.0,
+                    doi_tong / n_co_hoi if n_co_hoi else 0.0, n_co_hoi)
 
         consumer_task = asyncio.create_task(tts_consumer())
 
