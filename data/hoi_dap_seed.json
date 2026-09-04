@@ -1,0 +1,59 @@
+{
+  "hoi_dap": [
+    {
+      "id": "co_che_vay_chung",
+      "cau_dem": "Dạ em nói qua về cách vay bên em,",
+      "cau_hoi": [
+        "cơ chế thế nào",
+        "vay như nào",
+        "vay ra sao",
+        "thế vay kiểu gì",
+        "cách vay thế nào",
+        "quy trình vay ra sao"
+      ],
+      "tra_loi": "Bên em cho vay tín chấp, tức là không cần tài sản thế chấp ạ. Mình chỉ cần chứng minh thu nhập, hạn mức tối đa 500 triệu, thời hạn từ 12 đến 60 tháng. Hồ sơ duyệt trong 24 đến 48 giờ.",
+      "san_pham": "vay tín chấp",
+      "bat": 1
+    },
+    {
+      "id": "can_nhung_gi",
+      "cau_dem": "Dạ về giấy tờ cần chuẩn bị,",
+      "cau_hoi": [
+        "cần những gì",
+        "chuẩn bị gì",
+        "cần giấy tờ gì",
+        "phải có gì",
+        "thủ tục gồm những gì"
+      ],
+      "tra_loi": "Mình chuẩn bị căn cước công dân và sao kê lương ba tháng gần nhất ạ. Nếu nhận lương tiền mặt thì thay bằng hợp đồng lao động và xác nhận công tác.",
+      "san_pham": "vay tín chấp",
+      "bat": 1
+    },
+    {
+      "id": "co_loi_gi_khong",
+      "cau_dem": "Dạ em nói rõ điểm lợi cho mình,",
+      "cau_hoi": [
+        "có lợi gì không",
+        "được lợi gì",
+        "hơn gì chỗ khác",
+        "tốt ở chỗ nào"
+      ],
+      "tra_loi": "Bên em duyệt nhanh trong 24 đến 48 giờ, không cần thế chấp, và miễn phí trả nợ trước hạn với khoản vay tín chấp ạ.",
+      "san_pham": "vay tín chấp",
+      "bat": 1
+    },
+    {
+      "id": "ben_em_o_dau",
+      "cau_dem": "Dạ về địa điểm,",
+      "cau_hoi": [
+        "bên em ở đâu",
+        "chi nhánh ở đâu",
+        "đến đâu để làm",
+        "văn phòng chỗ nào"
+      ],
+      "tra_loi": "Mình không cần tới quầy ạ, chuyên viên bên em sẽ tới tận nơi làm hồ sơ theo lịch mình hẹn.",
+      "san_pham": "",
+      "bat": 1
+    }
+  ]
+}

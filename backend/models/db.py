@@ -83,6 +83,20 @@ CREATE TABLE IF NOT EXISTS tinh_huong (
     updated_at REAL
 );
 
+-- Bang hoi-dap: cau dem + cac cach hoi + noi dung tra loi tren CUNG mot dong.
+-- BO SUNG cho knowledge/*.md chu khong thay: tra bang truoc, truot thi chay y
+-- nhu cu. Xem services/bang_hoi_dap.py.
+CREATE TABLE IF NOT EXISTS hoi_dap (
+    id         TEXT PRIMARY KEY,
+    cau_dem    TEXT,               -- mau mo dau, PHAI ket bang dau phay; rong = dung ro chung
+    cau_hoi    TEXT NOT NULL,      -- JSON array: cac cach khach hoi, de nhung
+    tra_loi    TEXT NOT NULL,      -- noi dung chot, dung nguyen van
+    san_pham   TEXT,               -- rong = cau hoi chung, moi san pham deu dung
+    bat        INTEGER NOT NULL DEFAULT 1,
+    created_at REAL,
+    updated_at REAL
+);
+
 CREATE TABLE IF NOT EXISTS cau_duoi (
     id          TEXT PRIMARY KEY,
     text        TEXT NOT NULL,

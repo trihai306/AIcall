@@ -28,6 +28,7 @@ from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
+from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
     DIEU_KIEN_NGU_CANH, chon_tinh_huong, chuan_hoa, loc_theo_ngu_canh,
 )
@@ -196,6 +197,36 @@ class StreamingPipeline:
     def _byte_cho_ms(session: CallSession, ms: int) -> int:
         """Số byte PCM 16-bit mono ứng với `ms` mili giây tiếng trong đệm phiên."""
         return session.audio_rate * 2 * ms // 1000
+
+    def _tra_bang_hoi_dap(self, text: str, session: CallSession) -> dict | None:
+        """Dòng bảng hỏi-đáp khớp với lời khách, hoặc None.
+
+        Tra TRƯỚC khi hỏi tri thức. Trúng thì nội dung là câu đã soạn sẵn - đúng
+        nguyên văn, không phụ thuộc việc mô hình có đọc đúng con số hay không.
+        Trượt thì trả None và đường cũ chạy nguyên vẹn.
+
+        Dùng lại `chon_tinh_huong`: việc "chọn id khớp nhất từ kho ví dụ đã
+        nhúng" y hệt bài toán chọn tình huống, viết lại là có hai bộ luật ngưỡng
+        rồi lệch nhau lúc nào không biết.
+        """
+        try:
+            from backend.main import app_state
+            kho = getattr(app_state, "hoi_dap_vector", None)
+            if not kho or len(text) < 4:
+                return None
+            q = chuan_hoa(self.rag.embed([text]))[0]
+            dieu_kien = {ma: d.get("san_pham", "")
+                         for ma, d in app_state.hoi_dap.items()}
+            ma, diem = chon_tinh_huong(
+                q, kho, bo_qua=bo_qua_khac_san_pham(dieu_kien, session.product))
+            if not ma:
+                return None
+            dong = dict(app_state.hoi_dap[ma])
+            dong["diem"] = diem
+            return dong
+        except Exception as e:
+            logger.debug("tra bảng hỏi-đáp trượt (bỏ qua): %s", e)
+            return None
 
     @staticmethod
     def _truy_van_rag(text: str, session: CallSession) -> str:
@@ -923,6 +954,19 @@ class StreamingPipeline:
                 logger.warning(f"RAG error: {e}")
                 rag_context = ""
                 metrics["rag_ms"] = 0
+
+        # Bảng hỏi-đáp đứng TRƯỚC tri thức: trúng dòng nào thì nội dung dòng đó
+        # lên đầu ngữ cảnh, còn tri thức tra được vẫn giữ nguyên bên dưới. Đặt
+        # lên đầu chứ không thay thế: câu khách hỏi có thể chạm hai chuyện, bỏ
+        # hẳn phần tri thức là làm hẹp câu trả lời lại.
+        dong_bang = self._tra_bang_hoi_dap(user_text, session)
+        if dong_bang:
+            metrics["bang_hoi_dap"] = dong_bang["id"]
+            metrics["bang_diem"] = round(dong_bang.get("diem", 0.0), 3)
+            logger.info("Bảng hỏi-đáp: trúng dòng %r (%.3f)",
+                        dong_bang["id"], dong_bang.get("diem", 0.0))
+            rag_context = (f"[Câu trả lời đã duyệt - dùng ĐÚNG nội dung này]\n"
+                           f"{dong_bang['tra_loi']}\n\n{rag_context}").strip()
             metrics["rag_doan_truoc"] = False
 
         # Cho mô hình TỰ TRA thứ RAG không có: hồ sơ riêng của khách (dư nợ, kỳ
@@ -1245,6 +1289,15 @@ class StreamingPipeline:
             # Lượt thường gặp (chào, "ai đấy", "đang bận"...) - xem
             # `luot_thuong_gap` để biết vì sao KHÔNG giao cho mô hình.
             nguon_token = _phat_lai(dap_san[1])
+        elif dong_bang and doc_thang(dong_bang.get("diem", 0.0)):
+            # Khách hỏi gần đúng cách đã soạn -> đọc NGUYÊN VĂN nội dung đã
+            # duyệt, bỏ qua mô hình. Đo được: đưa nội dung vào ngữ cảnh kèm nhãn
+            # "dùng ĐÚNG nội dung này" thì mô hình VẪN viết lại và bỏ sạch con
+            # số. Đây là tư vấn tài chính, sai số là sai cam kết với khách.
+            metrics["bang_doc_thang"] = True
+            logger.info("Bảng hỏi-đáp: đọc NGUYÊN VĂN dòng %r (%.3f), bỏ qua mô hình",
+                        dong_bang["id"], dong_bang.get("diem", 0.0))
+            nguon_token = _phat_lai(dong_bang["tra_loi"])
         elif dung_ban_nghi:
             logger.info("LLM: dùng bản đã nghĩ sẵn, bỏ qua sinh mới (tiết kiệm ~220ms)")
             nguon_token = _phat_lai(spec_answer)

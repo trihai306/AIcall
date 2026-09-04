@@ -200,3 +200,41 @@ thì **chưa giải thích được**, cần đo tiếp.
 CẦN LÀM TIẾP (chưa thuộc mốc nào): tìm vì sao lượt nhiều mảnh vẫn không gộp, và
 đo trên ĐƯỜNG THOẠI thật chứ không chỉ chat web - hai đường có nhịp khác nhau.
 Công cụ đo giờ đã có sẵn trong log, không phải dựng lại.
+
+
+## Mốc 4 - bảng hỏi-đáp (2026-09-04)
+
+Bảng `hoi_dap`: **câu đệm + các cách hỏi + nội dung trả lời** trên cùng một
+dòng, gộp hai kho vốn rời nhau. Tra TRƯỚC tri thức; trượt thì chạy y như cũ.
+
+Dùng lại `chon_tinh_huong` để chấm điểm thay vì viết bộ luật thứ hai — hai bộ
+ngưỡng song song rồi lệch nhau lúc nào không biết.
+
+### Nghiệm thu: 11/11, không vơ bừa dòng nào
+
+| Câu | Trước (kho tình huống) | Sau (bảng) |
+|---|---|---|
+| "cơ chế thế nào" | 0.622 — trượt, khách nghe im lặng | **1.000** đúng dòng |
+| "vay như nào" | rơi nhầm `hoi_lai_suat` 0.832 | **1.000** đúng dòng |
+| "lãi suất bao nhiêu phần trăm" | — | 0.593 → **trượt đúng**, rơi về đường cũ |
+
+### Đã đảo ngược: nội dung đã duyệt phải ĐỌC NGUYÊN VĂN
+
+| **v1 chốt: bảng trúng thì nội dung là "ngữ cảnh ưu tiên cho mô hình", chỉ nhóm chê mới đọc thẳng** | Lý do cũ vẫn đúng ở thời điểm đó: để mô hình diễn giải thì câu trả lời bám ngữ cảnh hội thoại, nghe tự nhiên hơn. Nay làm ngược vì **đo được**: bảng trúng `co_che_vay_chung` điểm 1.000, nội dung đưa vào ngữ cảnh KÈM NHÃN "dùng ĐÚNG nội dung này", mô hình vẫn tự viết lại và **bỏ sạch mọi con số** (500 triệu, 12–60 tháng, 24–48 giờ). Nội dung đã duyệt mà bị diễn giải lại thì việc duyệt thành vô nghĩa — và đây là tư vấn tài chính. Cái giá nhận về: câu trả lời cứng, không bám ngữ cảnh trước đó. Nên chỉ đọc thẳng khi điểm ≥ 0.90 (khách hỏi gần đúng cách đã soạn); dưới đó vẫn để mô hình. |
+
+Kiểm trên trình duyệt thật qua máy Win, cùng một câu hỏi:
+
+- Trước khi sửa: *"Cơ chế vay tín chấp là dựa trên uy tín và thu nhập..."* — mất hết số
+- Sau khi sửa: *"Bên em cho vay tín chấp, tức là không cần tài sản thế chấp ạ. Mình chỉ cần chứng minh thu nhập, hạn mức tối đa 500 triệu, thời hạn từ 12 đến 60 tháng. Hồ sơ duyệt trong 24 đến 48 giờ."* — đúng nguyên văn
+- Câu ngoài bảng ("lãi suất bao nhiêu phần trăm") vẫn chạy đường cũ
+
+### CÒN THIẾU: cột câu đệm chưa nối vào tiếng
+
+Cột `cau_dem` đã có trong bảng và được xác thực (phải kết bằng dấu phẩy), nhưng
+**chưa nối vào đường phát tiếng**. Lý do: mỗi mẩu mở đầu mới cần dựng
+`42 clip` (một cho mỗi câu đuôi) — mốc 2 thêm 16 mẩu đã tốn 672 clip và ~3 phút.
+Bảng 20 dòng sẽ là ~840 clip. Đó là quyết định về chi phí dựng, cần bàn trước
+khi làm, nên tách ra khỏi mốc này.
+
+Hiện câu đệm vẫn do kho tình huống chọn như cũ — không tệ hơn trước, chỉ là
+chưa dùng được cột đã soạn.

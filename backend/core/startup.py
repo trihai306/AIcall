@@ -29,6 +29,9 @@ class AppState:
         self.sessions = SessionStore()
         self.pipeline: StreamingPipeline | None = None
         self.kho_vector: dict = {}
+        # Bảng hỏi-đáp: {id: dòng} và {id: ma trận đã chuẩn hoá}.
+        self.hoi_dap: dict = {}
+        self.hoi_dap_vector: dict = {}
 
 
 async def _ham_hinh_dang_tts(state: AppState):
@@ -83,6 +86,25 @@ async def startup(state: AppState):
             for t in kho.tinh_huong if t.vi_du
         }
         logger.info("Đã nhúng ví dụ của %d tình huống", len(state.kho_vector))
+
+        # Bảng hỏi-đáp: nhúng các cách hỏi để tra trước khi hỏi tri thức.
+        # Hỏng thì bỏ qua, KHÔNG chặn khởi động - bảng rỗng nghĩa là chạy y như
+        # trước khi có nó.
+        try:
+            from backend.models import db as _db
+            from backend.services.bang_hoi_dap import doc_dong
+            conn = _db.connection()
+            dong = doc_dong(conn) if conn is not None else []
+        except Exception as e:
+            dong = []
+            logger.warning("Không đọc được bảng hỏi-đáp: %s", e)
+        state.hoi_dap = {d["id"]: d for d in dong}
+        state.hoi_dap_vector = {
+            d["id"]: chuan_hoa(state.rag.embed(list(d["cau_hoi"])))
+            for d in dong if d["cau_hoi"]
+        }
+        if dong:
+            logger.info("Đã nhúng %d dòng bảng hỏi-đáp", len(state.hoi_dap_vector))
     except Exception as e:
         # Không có phân loại thì câu đệm rơi về rổ chung, tức đúng hành vi cũ.
         # Đây KHÔNG phải lỗi chặn khởi động.
