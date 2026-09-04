@@ -24,6 +24,11 @@ class CallSession:
         self.product = product
         self.voice_name = voice_name
         self.history: list[dict] = []
+        # Chủ đề bot ĐÃ THẬT SỰ tư vấn trong cuộc này. Mở cổng cho nhóm tình
+        # huống chê - xem `filler_situation.loc_theo_ngu_canh`. Chỉ đọc lời BOT:
+        # lấy lời khách thì chính câu "lãi cao thế" đang cần phân loại lại tự
+        # mở cổng cho mình.
+        self.da_tu_van: set[str] = set()
         self.created_at = time.time()
         self.turn_count = 0
         self.latency_log: list[dict] = []
@@ -189,6 +194,11 @@ class CallSession:
         self.history.append({"role": role, "content": content})
         if role == "user":
             self.turn_count += 1
+        else:
+            # Ghi tại ĐÂY chứ không ở đường thoại: ba đường (gọi ra, gọi vào,
+            # chat) đều đi qua add_turn, vá từng chỗ là chắc chắn sót một chỗ.
+            from backend.services.filler_situation import chu_de_da_noi
+            self.da_tu_van |= chu_de_da_noi(content)
 
     # --- Khách cắt lời AI --------------------------------------------------
     def danh_dau_bi_cat(self):
@@ -210,6 +220,20 @@ class CallSession:
             self.turn_count = max(0, self.turn_count - 1)
         else:
             self.cau_bi_cat = ""
+        self._tinh_lai_da_tu_van()
+
+    def _tinh_lai_da_tu_van(self):
+        """Dựng lại `da_tu_van` từ lịch sử còn lại.
+
+        Cần vì lượt bị cắt đã bị nhấc khỏi lịch sử: khách cắt lời khi bot mới
+        nói "Dạ lãi suất bên em" thì khách CHƯA NGHE mức lãi nào. Vẫn tính là đã
+        tư vấn thì cổng mở sớm, và câu HỎI lãi ngay sau đó bị chấm thành CHÊ.
+        """
+        from backend.services.filler_situation import chu_de_da_noi
+        self.da_tu_van = set()
+        for t in self.history:
+            if t.get("role") == "assistant":
+                self.da_tu_van |= chu_de_da_noi(t.get("content") or "")
 
     def ghep_cau_bi_cat(self, cau_moi: str) -> str:
         """Nối câu bị cắt với câu vừa nói. Trả về câu đã ghép, và xoá trạng thái."""

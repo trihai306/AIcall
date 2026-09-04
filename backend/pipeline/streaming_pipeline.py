@@ -27,7 +27,9 @@ from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
-from backend.services.filler_situation import chon_tinh_huong, chuan_hoa
+from backend.services.filler_situation import (
+    DIEU_KIEN_NGU_CANH, chon_tinh_huong, chuan_hoa, loc_theo_ngu_canh,
+)
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
@@ -266,7 +268,13 @@ class StreamingPipeline:
                     kho_vec = getattr(app_state, "kho_vector", None)
                     if kho_vec and len(text) >= 4:
                         q = chuan_hoa(self.rag.embed([text]))[0]
-                        id_th, diem = chon_tinh_huong(q, kho_vec)
+                        # Nhóm chê chỉ vào cuộc sau khi bot đã tư vấn chủ đề đó.
+                        # Xem `loc_theo_ngu_canh` - điểm cosine giữa hỏi và chê
+                        # chỉ cách nhau 0.026 trên câu cụt, chữ không tự cứu được.
+                        id_th, diem = chon_tinh_huong(
+                            q, kho_vec,
+                            bo_qua=loc_theo_ngu_canh(DIEU_KIEN_NGU_CANH,
+                                                     session.da_tu_van))
                         if id_th:
                             session.tinh_huong = (n, id_th, diem)
                 except Exception as e:
@@ -517,7 +525,9 @@ class StreamingPipeline:
             if not (kho_vec and text_stt and len(text_stt) >= 4):
                 return
             q = chuan_hoa(self.rag.embed([text_stt]))[0]
-            id_th, diem = chon_tinh_huong(q, kho_vec)
+            id_th, diem = chon_tinh_huong(
+                q, kho_vec,
+                bo_qua=loc_theo_ngu_canh(DIEU_KIEN_NGU_CANH, session.da_tu_van))
             if id_th:
                 session.tinh_huong = (n_stt, id_th, diem)
         except Exception as e:

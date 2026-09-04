@@ -683,6 +683,99 @@
         "Dạ vâng ạ,",
         "Dạ em đọc số giúp anh chị,"
       ]
+    },
+    {
+      "id": "che_lai_cao",
+      "ten": "Khách chê lãi cao",
+      "vi_du": [
+        "lãi cao thế",
+        "lãi cao quá",
+        "lãi thế thì cao rồi",
+        "sao lãi cao vậy",
+        "lãi vậy là cao đấy",
+        "lãi này cao quá em ơi"
+      ],
+      "tu_khoa": [
+        "lãi cao",
+        "cao quá",
+        "cao thế"
+      ],
+      "mo_dau": [
+        "Dạ em hiểu băn khoăn của mình,",
+        "Dạ về mức lãi này em xin nói rõ thêm,",
+        "Dạ em xin phép giải thích thêm về mức lãi,",
+        "Dạ mức lãi này em xin phép trao đổi thêm,"
+      ],
+      "speed": null
+    },
+    {
+      "id": "che_phi_cao",
+      "ten": "Khách chê phí cao",
+      "vi_du": [
+        "phí cao quá",
+        "sao nhiều phí thế",
+        "phí gì mà lắm thế",
+        "tính phí cao vậy",
+        "mất nhiều phí quá"
+      ],
+      "tu_khoa": [
+        "phí cao",
+        "nhiều phí",
+        "lắm phí"
+      ],
+      "mo_dau": [
+        "Dạ về các khoản phí em xin nói rõ,",
+        "Dạ em hiểu ạ,",
+        "Dạ em xin phép liệt kê lại các khoản phí,",
+        "Dạ em xin phép nói rõ từng khoản,"
+      ],
+      "speed": null
+    },
+    {
+      "id": "che_han_muc_thap",
+      "ten": "Khách chê hạn mức thấp",
+      "vi_du": [
+        "vay được có thế thôi à",
+        "hạn mức thấp quá",
+        "ít thế",
+        "có nhiêu đó thôi hả",
+        "vay được ít vậy"
+      ],
+      "tu_khoa": [
+        "thấp quá",
+        "ít thế",
+        "có thế thôi"
+      ],
+      "mo_dau": [
+        "Dạ hạn mức này còn tuỳ hồ sơ của mình,",
+        "Dạ em xem thêm giúp mình,",
+        "Dạ về hạn mức em xin nói rõ hơn,",
+        "Dạ mức này em xem lại giúp mình,"
+      ],
+      "speed": null
+    },
+    {
+      "id": "so_sanh_ben_khac",
+      "ten": "Khách so sánh với ngân hàng khác",
+      "vi_du": [
+        "bên kia rẻ hơn",
+        "ngân hàng khác lãi thấp hơn",
+        "chỗ khác cho vay nhiều hơn",
+        "bên kia tốt hơn",
+        "so với bên khác thì đắt"
+      ],
+      "tu_khoa": [
+        "bên kia",
+        "ngân hàng khác",
+        "chỗ khác"
+      ],
+      "mo_dau": [
+        "Dạ em hiểu mình đang cân nhắc,",
+        "Dạ mình so sánh là đúng ạ,",
+        "Dạ em xin phép nói về điểm khác biệt,",
+        "Dạ em xin phép nói thêm về bên em,"
+      ],
+      "speed": null
     }
   ]
 }

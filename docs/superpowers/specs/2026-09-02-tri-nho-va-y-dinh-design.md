@@ -104,7 +104,7 @@ phải đo). Bảng hỏi-đáp phải có người soạn — code chỉ dựng
 | Mốc | Đo bằng |
 |---|---|
 | 1 | ✅ **XONG 2026-09-02.** Cửa sổ 2048 → 8192. VRAM 4.6 → 5.2 GB (card còn trống 3.4 GB). Tốc độ sinh chữ **không đổi**: 8.75 → 8.71 ms/chữ. 782 test xanh trên máy Windows |
-| 2 | Bộ thử ≥ 20 câu hỏi/chê trộn lẫn, phân đúng ≥ 18/20. Ở lượt đầu (chưa tư vấn lãi) **không bao giờ** chấm CHÊ |
+| 2 | ✅ **XONG 2026-09-04.** `scripts/thu_hoi_hay_che.py`: **21/23**, chê nhầm khi chưa tư vấn = **0**. Kết quả trùng nhau trên Mac và Win. 792 test xanh |
 | 3 | Tải lại trang giữa cuộc, lượt kế tiếp bot vẫn nhắc đúng thứ vừa nói |
 
 
@@ -119,3 +119,36 @@ phải đo). Bảng hỏi-đáp phải có người soạn — code chỉ dựng
 Chạy thật qua `stream_response` với 10 lượt lịch sử + tri thức: lời dặn + hội thoại
 = **1957 token**. Ở cửa sổ 2048 thì còn đúng **0 token** — Ollama đang cắt bỏ hoàn
 toàn phần đầu. Đây là bằng chứng trực tiếp cho lỗi "nói chuyện một lúc là bot quên".
+
+
+## Mốc 2 - ghi thêm sau khi làm
+
+**Không thêm cột vào bảng `tinh_huong`.** Ánh xạ điều kiện (`DIEU_KIEN_NGU_CANH`,
+3 dòng) để trong code. Lý do: bảng đó đang có dữ liệu thật trên máy chạy, nâng
+cấp cơ sở dữ liệu cho một ánh xạ gần như không đổi là đắt hơn cái nhận được.
+Đánh đổi: thêm tình huống chê mới qua trang quản lý thì phải sửa thêm trong code
+— `tests/test_ngu_canh_luot.py` bắt được nếu quên.
+
+**Ghi chủ đề trong `add_turn`, không ghi ở đường thoại.** Ba đường (gọi ra, gọi
+vào, chat) đều đi qua đó; vá từng chỗ là chắc chắn sót một chỗ.
+
+**Khách cắt lời thì rút lại chủ đề của lượt đó.** Bot mới nói "Dạ lãi suất bên
+em" mà bị cắt thì khách CHƯA NGHE mức lãi nào. Vẫn tính là đã tư vấn thì cổng mở
+sớm, và câu hỏi lãi ngay sau đó bị chấm thành chê.
+
+**`so_sanh_ben_khac` cố ý không có điều kiện.** Khách so sánh ngay từ lượt đầu là
+chuyện thường, và đo được nó không lẫn với "hỏi lãi" (0.638, dưới ngưỡng).
+
+### Hai câu còn sai, đều KHÔNG do cổng ngữ cảnh
+
+| Câu | Ra | Vì sao |
+|---|---|---|
+| "bên em lãi bao nhiêu phần trăm" | *không nhận ra* (0.705) | Dưới ngưỡng 0.75 → rơi về rổ chung, đúng hành vi cũ, không tệ hơn |
+| "nhắc lại lãi suất giúp anh" | `xin_gui_tai_lieu` (0.841) | Lỗi sẵn có của kho: "nhắc lại / gửi" lẫn với xin tài liệu. Sửa bằng cách chỉnh `vi_du`, không thuộc mốc này |
+
+### Cái giá đã trả
+
+Thêm 4 tình huống × 4 mẩu mở đầu = **672 clip câu đệm phải dựng mới**
+(16 mẩu × 42 câu đuôi). Log máy Win: `5082 đọc từ đĩa, 672 dựng mới, tổng 5754`.
+Dựng xong trong ~3 phút, làm chủ động lúc khởi động lại chứ không để rơi vào
+lúc có cuộc gọi thật.
