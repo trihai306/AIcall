@@ -147,8 +147,23 @@ class RAGService:
         metas = (results.get("metadatas") or [[]])[0] or []
         dists = (results.get("distances") or [[]])[0] or []
 
-        giu = self._mat_na_loc(docs, metas, san_pham,
-                               self._san_pham_co_tai_lieu())
+        co_tl = self._san_pham_co_tai_lieu()
+        # Câu hỏi nêu rõ một sản phẩm mà kho KHÔNG có tài liệu -> bỏ hết mảnh
+        # `products`, giữ FAQ/chính sách. Phải xét TRƯỚC `_mat_na_loc` vì hàm đó
+        # chỉ soi sản phẩm của phiên, mà phiên thường là sản phẩm CÓ tài liệu.
+        if self._san_pham_trong_cau(query, co_tl) == "khong_co_tai_lieu":
+            def _la_products(meta):
+                src = ((meta or {}).get("source") or "").replace("\\", "/")
+                return PurePath(src).parent.name == "products"
+            giu = [not _la_products(metas[i] if i < len(metas) else None)
+                   for i in range(len(docs))]
+            if not all(giu):
+                logger.info(
+                    "RAG: câu hỏi nêu sản phẩm không có tài liệu - bỏ %d mảnh "
+                    "products để mô hình khỏi đọc số của sản phẩm khác",
+                    giu.count(False))
+        else:
+            giu = self._mat_na_loc(docs, metas, san_pham, co_tl)
 
         chi_tiet = []
         for i, doc in enumerate(docs):
@@ -164,6 +179,48 @@ class RAGService:
             })
 
         return "\n---\n".join(d for d, k in zip(docs, giu) if k), chi_tiet
+
+    # Từ khoá nhận ra sản phẩm KHÁCH ĐANG HỎI, không phải sản phẩm của phiên.
+    #
+    # Vì sao cần dù `_mat_na_loc` đã có ca (b): ca đó chỉ soi `san_pham` của
+    # PHIÊN. Cuộc gọi thật đang tư vấn vay tín chấp (sản phẩm CÓ tài liệu) nên
+    # ca (b) không bao giờ chạy, dù khách vừa hỏi sang tiết kiệm. Đo 8 vòng
+    # 05-09-2026: "gửi tiết kiệm tối thiểu bao nhiêu" -> AI đáp "200 triệu",
+    # đó là hạn mức VAY.
+    #
+    # Danh sách CỨNG và cố ý để hẹp. Đã đo và BÁC BỎ hướng ngưỡng điểm khớp
+    # (`scripts/do_nguong_rag.py`): hai nhóm chồng nhau, mà neo sản phẩm còn kéo
+    # chúng chồng nhiều hơn. Cụm phải đủ đặc trưng - "thẻ" hay "vay" trơ trọi
+    # thì quá rộng, câu nào cũng dính.
+    _TU_KHOA_SP = [
+        ("tiet_kiem", ("tiết kiệm",)),
+        ("bao_hiem", ("bảo hiểm",)),
+        ("chung_khoan", ("chứng khoán",)),
+        ("ngoai_te", ("ngoại tệ", "đổi tiền")),
+        ("vay_tin_chap", ("vay tín chấp", "tín chấp")),
+        ("vay_mua_nha", ("vay mua nhà", "mua bất động sản")),
+        ("the_tin_dung", ("thẻ tín dụng",)),
+    ]
+
+    @classmethod
+    def _san_pham_trong_cau(cls, query: str, ma_co_tai_lieu: set[str] | None) -> str:
+        """Mã sản phẩm mà CÂU HỎI nhắc tới.
+
+        Trả `"khong_co_tai_lieu"` khi câu hỏi nêu rõ một sản phẩm mà kho không
+        có tài liệu nào - lúc đó mọi mảnh `products` lấy được đều chắc chắn là
+        của sản phẩm KHÁC.
+
+        Trả `""` khi câu không nêu sản phẩm nào. Đó là phần lớn lượt trong cuộc
+        gọi thật ("hạn mức được bao nhiêu"), và giữ nguyên hành vi cũ ở đó là
+        VAN AN TOÀN - siết chỗ này là làm hỏng cả những lượt đang chạy tốt.
+        """
+        thap = (query or "").lower()
+        for ma, cum in cls._TU_KHOA_SP:
+            if any(c in thap for c in cum):
+                if ma_co_tai_lieu is not None and ma not in ma_co_tai_lieu:
+                    return "khong_co_tai_lieu"
+                return ma
+        return ""
 
     @staticmethod
     def _ma_san_pham(s: str) -> str:

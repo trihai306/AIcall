@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from backend.pipeline.text_normalizer import chan_tien_sai
+from backend.pipeline.text_normalizer import CAU_KIEM_TRA_LAI, chan_tien_sai
 
 TAI_LIEU = "- Hạn mức: lên đến 500 triệu đồng\nVay tín chấp tối đa 500 triệu."
 CO_HO_SO = TAI_LIEU + "\nHỒ SƠ KHÁCH: dư nợ hiện tại 142.500.000 đồng."
@@ -27,16 +27,21 @@ CO_HO_SO = TAI_LIEU + "\nHỒ SƠ KHÁCH: dư nợ hiện tại 142.500.000 đ�
     "Anh vay 300.000.000 được không ạ.",
 ])
 def test_chan_tien_viet_bang_chu_so(cau):
+    """05-09-2026 đổi thiết kế: chặn xong thì THAY CẢ CÂU chứ không thay số nữa.
+
+    Bài học gốc của test này không đổi - `_TIEN_SO_RE` đòi chữ đơn vị đi kèm nên
+    tiền viết toàn chữ số từng lọt hẳn. Vẫn phải bắt được; chỉ khác cách xử.
+    """
     ra, sua = chan_tien_sai(cau, TAI_LIEU, khach_noi="")
     assert sua is not None, "phải chặn"
-    assert "năm trăm triệu" in ra
+    assert ra == CAU_KIEM_TRA_LAI
     assert "2.000.000.000" not in ra and "300.000.000" not in ra
 
 
 def test_van_chan_duoc_dang_co_chu_don_vi():
     """Dạng cũ không được hỏng khi thêm dạng mới."""
     ra, sua = chan_tien_sai("vay tối đa 2 tỷ đồng ạ.", TAI_LIEU, khach_noi="")
-    assert sua is not None and "năm trăm triệu" in ra
+    assert sua is not None and ra == CAU_KIEM_TRA_LAI
 
 
 def test_khong_dung_so_dung():
@@ -69,9 +74,13 @@ def test_khong_nham_so_khong_phai_tien(cau):
 
 
 def test_khong_lam_dinh_chu():
-    """Bản đầu nuốt cả khoảng trắng: "300.000.000 được" -> "triệuđược"."""
+    """Bản đầu nuốt cả khoảng trắng: "300.000.000 được" -> "triệuđược".
+
+    Đo qua đường SỬA SỐ - đường duy nhất còn thay số sau khi đổi thiết kế, dành
+    cho con số khách vừa nêu. Đường thay-cả-câu không dính lỗi này.
+    """
     ra, _ = chan_tien_sai("Anh vay 300.000.000 được không ạ.", TAI_LIEU,
-                          khach_noi="")
+                          khach_noi="anh cần vay 80 triệu")
     assert "triệuđược" not in ra
     assert "triệu được" in ra
 
@@ -97,7 +106,7 @@ def test_thay_bang_so_GAN_NHAT_khong_phai_lon_nhat():
 def test_van_chan_duoc_so_bia_that():
     """Đừng nới lỏng tới mức hết chặn: 2 tỷ trong khi tài liệu ghi 500 triệu."""
     ra, sua = chan_tien_sai("hạn mức 2 tỷ đồng", TL)
-    assert "năm trăm triệu" in ra
+    assert ra == CAU_KIEM_TRA_LAI
     assert sua is not None
 
 

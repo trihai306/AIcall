@@ -549,7 +549,35 @@ def _tien_theo_chu_de(text: str, tai_lieu: str) -> set[float] | None:
     if not ung_vien:
         return None
     # Tên mục DÀI NHẤT thắng vì nó cụ thể hơn ("hạn mức thẻ" > "hạn mức").
-    return max(ung_vien, key=lambda x: x[0])[1]
+    cua_muc = max(ung_vien, key=lambda x: x[0])[1]
+
+    # Câu ĐÃ nhắc đúng một số của mục -> model đang bám tài liệu, chỉ thêm một
+    # mức sàn hợp lý. Đừng đụng vào.
+    #
+    # Không có bước này thì bản thu hẹp ép MỌI số khác về con số duy nhất của
+    # mục, và nó làm câu trả lời TỆ ĐI chứ không tốt lên. Đo 8 vòng bằng
+    # `scripts/do_luoi_nhieu_vong.py`, nhóm "hạn mức mơ hồ" hỏng 8/8 vòng:
+    #
+    #   AI  : "Hạn mức thấp nhất là 50 triệu, cao nhất lên đến 500 triệu"
+    #   lưới: 50 triệu -> năm trăm triệu
+    #   ra  : "thấp nhất là năm trăm triệu, cao nhất lên đến 500 triệu"
+    #
+    # Vừa vô nghĩa vừa tự mâu thuẫn, mà bản CŨ thì để nguyên câu đó. Tức là thu
+    # hẹp theo mục chỉ đúng khi model KHÔNG hề dùng số của tài liệu - lúc đó nó
+    # mới thật sự đang bịa cả dải ("từ 200 đến 300 triệu").
+    # Tách chữ dính số TRƯỚC KHI dò, chỉ để SO SÁNH (không đụng câu trả về).
+    # Mô hình hay viết "lên đến500 triệu", mà `_TIEN_SO_RE` đòi ranh giới trước
+    # số nên bỏ sót đúng con số ĐÚNG -> phép so với mục thành rỗng -> mức sàn
+    # hợp lý bị ép về trần. Hỏng 6/8 vòng ở lần đo thứ hai, tất cả đều dính
+    # chuỗi "đến500".
+    trong_cau = _tien_trong(re.sub(r"(?<=[^\W\d_])(?=\d)", " ", text or ""))
+    if trong_cau & cua_muc:
+        # Tha mọi số NHỎ HƠN trần của mục, nhưng vẫn chặn số VƯỢT trần: mức sàn
+        # model tự thêm thì vô hại ("thấp nhất 50 triệu"), còn nói vống lên trần
+        # ("hạn mức tới 2 tỷ") mới là thứ khách nghe rồi tin và thiệt.
+        tran = max(cua_muc)
+        return cua_muc | {v for v in trong_cau if v < tran}
+    return cua_muc
 
 
 # "từ năm trăm triệu đến năm trăm triệu" -> "năm trăm triệu". Sinh ra khi hai
@@ -585,6 +613,7 @@ def chan_tien_sai(text: str, tai_lieu: str,
             return CAU_KIEM_TRA_LAI, "bịa số tiền (ngữ cảnh không có số nào)"
         return text, None
     sua = None
+    thay_ca_cau = False
 
     # Diễn đạt số thay thế bằng ĐƠN VỊ CỦA CHÍNH NÓ, đừng ép về đơn vị của câu
     # gốc: 500 triệu ép sang "tỷ" thành 0 -> câu ra "không tỷ đồng". Chọn đơn vị
@@ -597,8 +626,22 @@ def chan_tien_sai(text: str, tai_lieu: str,
         return f"{doc_so(int(dong))} đồng"
 
     def _xu_ly(gia_tri: float, goc: str, dv: str) -> str:
-        nonlocal sua
+        nonlocal sua, thay_ca_cau
         if gia_tri in hop_le:
+            return goc
+        # KHÔNG có căn cứ nào -> thay CẢ CÂU chứ đừng thay số.
+        #
+        # Ba lần vá cơ chế "thay bằng số gần nhất" đều không dứt được cùng một
+        # kiểu hỏng (8 -> 6 -> 7 ca qua ba lần chạy 8 vòng bằng
+        # `scripts/do_luoi_nhieu_vong.py`). Gốc nằm ở chính cơ chế: nó biến câu
+        # sai thành câu KHÁC cũng sai, đôi khi vô lý hơn -
+        # "tiết kiệm tối thiểu 5 triệu" thành "tối thiểu 200 triệu", mà 200
+        # triệu là hạn mức VAY TÍN CHẤP bị RAG kéo nhầm vào.
+        #
+        # Ngoại lệ giữ lại ngay bên dưới: con số khách vừa nêu.
+        if not _tien_trong(khach_noi):
+            thay_ca_cau = True
+            sua = f"{goc} -> thay cả câu (không có căn cứ trong tài liệu)"
             return goc
         # Thay bằng số GẦN NHẤT, không phải số LỚN NHẤT.
         #
@@ -641,6 +684,8 @@ def chan_tien_sai(text: str, tai_lieu: str,
     # Chạy SAU hai cái trên: "500 triệu" đã được xử ở `_TIEN_SO_RE`, chạy trước
     # thì regex chữ-số thuần nuốt mất phần "500" và bỏ lại "triệu" chơ vơ.
     text = _TIEN_CHU_SO_RE.sub(_t_chu_so, text)
+    if thay_ca_cau:
+        return CAU_KIEM_TRA_LAI, sua
     if sua:
         text = _DAI_TRUNG_RE.sub(r"\1", text)
     return text, sua
