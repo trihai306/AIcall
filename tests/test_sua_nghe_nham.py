@@ -80,3 +80,43 @@ def test_chuoi_rong_khong_no():
 
 def test_sua_duoc_nhieu_cum_trong_mot_cau():
     assert _sua_nghe_nham("lãi xuất với hạng mức thế nào") == "lãi suất với hạn mức thế nào"
+
+
+# --- Mục thêm 05-09-2026 (chiều), tìm bằng cách ĐÀO 2086 lượt phiên âm thật ---
+#
+# `scripts/soi_cum_hong.py`: đếm cụm 2 từ trong toàn bộ lượt do STT sinh (lọc
+# `content[0].islower()` để bỏ lượt gõ tay khi test), rồi so với từ khoá nghiệp
+# vụ. Một cụm VÔ NGHĨA xuất hiện nhiều lần qua nhiều phiên thì gần như chắc chắn
+# là lỗi máy nghe, không phải lời khách - biết được điều đó mà KHÔNG cần nghe.
+#
+#     "tính chóp"  18 lần
+#     "tính chớp"   4 lần
+#
+# Ngữ cảnh thật xác nhận: "vay tính chóp thì cần những giấy tờ gì", "lãi suất
+# vay tính chóp bên em bao nhiêu một năm".
+#
+# ĐÃ LOẠI một ứng viên vì xem ngữ cảnh: "giao ngân" (4 lần) trông như "giải
+# ngân", nhưng câu thật là "sổ đỏ có phải GIAO NGÂN HÀNG không" - đúng rồi. Thêm
+# luật cho nó là tự tay làm hỏng một câu vốn đúng.
+
+@pytest.mark.parametrize("vao,ra", [
+    ("vay tính chóp thì cần những giấy tờ gì",
+     "vay tín chấp thì cần những giấy tờ gì"),
+    ("lãi suất vay tính chóp bên em bao nhiêu một năm",
+     "lãi suất vay tín chấp bên em bao nhiêu một năm"),
+    ("lãi suất vay tính chớp bên em bao nhiêu một năm",
+     "lãi suất vay tín chấp bên em bao nhiêu một năm"),
+    ("vậy tính chóp thì cần những giấy tờ gì",
+     "vậy tín chấp thì cần những giấy tờ gì"),
+])
+def test_tinh_chop_thanh_tin_chap(vao, ra):
+    assert _sua_nghe_nham(vao) == ra
+
+
+@pytest.mark.parametrize("cau", [
+    "sổ đỏ có phải giao ngân hàng không",   # ứng viên đã loại - câu này ĐÚNG
+    "chóp núi cao quá",
+    "anh tính chi phí giúp em",
+])
+def test_KHONG_dung_toi_cau_dung_gan_giong(cau):
+    assert _sua_nghe_nham(cau) == cau

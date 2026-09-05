@@ -185,6 +185,18 @@ _SUA_NGHE_NHAM = [
     #
     # "lợn sơn" / "lớn sơn" không phải cụm tiếng Việt có thật nên sửa thẳng.
     # Hai chữ đứng RIÊNG thì không đụng tới ("giá thịt lợn", "nghề sơn nhà").
+    # "tính chóp" / "tính chớp" -> "tín chấp". Tìm 05-09-2026 bằng
+    # `scripts/soi_cum_hong.py`: đào 2086 lượt phiên âm thật, đếm cụm 2 từ rồi so
+    # với từ khoá nghiệp vụ. "tính chóp" xuất hiện 18 lần, "tính chớp" 4 lần -
+    # một cụm vô nghĩa lặp lại nhiều thế thì là lỗi máy nghe, không phải lời
+    # khách. Biết được điều đó mà KHÔNG cần nghe lại băng.
+    #
+    # Ngữ cảnh thật: "vay tính chóp thì cần những giấy tờ gì", "lãi suất vay
+    # tính chóp bên em bao nhiêu một năm".
+    #
+    # Sửa thẳng chứ không đòi đứng sau "vay" như "vay tính chất": "tính chất" LÀ
+    # từ thật nên phải rào, còn "tính chóp"/"tính chớp" thì không.
+    (re.compile(r"\btính\s+ch[óớ]p\b", re.I), "tín chấp"),
     (re.compile(r"\bl[ợớ]n\s+sơn\b", re.I), "hạn mức"),
     # "hắn mừng" LÀ cụm có thật ("hắn mừng lắm"), nên chỉ sửa khi theo sau là
     # "được" - đúng dạng đã quan sát ("hắn mừng được bao nhiêu"). Khách gọi
