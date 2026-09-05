@@ -497,6 +497,66 @@ def _tien_trong(van_ban: str) -> set[float]:
     return ra
 
 
+# --- Đối chiếu theo MỤC tài liệu -------------------------------------------
+#
+# Vì sao cần: `vay_tin_chap.md` để hạn mức ở mục "Hạn mức" (500 triệu), còn các
+# con số 200/300 triệu nằm ở mục ví dụ trả góp. Lưới chỉ hỏi "số này có trong
+# tài liệu không" nên câu "hạn mức từ 200 đến 300 triệu" lọt sạch - cả hai số
+# đều CÓ THẬT, chỉ là ở nhầm mục.
+#
+# Bắt được 05-09-2026 khi chạy lại cuộc gọi thật `4cd44fb7` bằng chính giọng
+# khách (`scripts/goi_lai_bang_giong_that.py`); lỗi lặp 3/3 lần chạy.
+_HEADING_RE = re.compile(r"^[ \t]*#{1,6}[ \t]*(.+?)[ \t]*$", re.M)
+# Dòng nhãn "- Hạn mức: lên đến 500 triệu". Dấu gạch đầu dòng KHÔNG bắt buộc:
+# mảnh RAG cắt 500 ký tự hay làm mất nó (xem `rag_service.cat_manh`). Tên mục
+# không được chứa chữ số, nếu không thì "Vay 300 triệu, 36 tháng:" cũng thành
+# một mục và mọi con số ví dụ lại hợp lệ trở lại.
+_NHAN_RE = re.compile(
+    r"^[ \t]*(?:[-*][ \t]*)?([^:\n\d]{2,30}?)[ \t]*:[ \t]*(.+)$", re.M)
+
+
+def _muc_trong(tai_lieu: str) -> dict[str, str]:
+    """Tên mục (chữ thường) -> phần nội dung thuộc mục đó."""
+    ra: dict[str, str] = {}
+    moc = [(m.start(), m.end(), m.group(1))
+           for m in _HEADING_RE.finditer(tai_lieu or "")]
+    for i, (_, e, ten) in enumerate(moc):
+        het = moc[i + 1][0] if i + 1 < len(moc) else len(tai_lieu or "")
+        ra[ten.lower()] = ra.get(ten.lower(), "") + "\n" + (tai_lieu or "")[e:het]
+    for m in _NHAN_RE.finditer(tai_lieu or ""):
+        ten = m.group(1).strip().lower()
+        ra[ten] = ra.get(ten, "") + "\n" + m.group(2)
+    return ra
+
+
+def _tien_theo_chu_de(text: str, tai_lieu: str) -> set[float] | None:
+    """Số tiền của MỤC mà câu trả lời đang nói tới; None nếu không xác định được.
+
+    Trả None chứ không phải tập rỗng là CỐ Ý - đó là van an toàn. Không nhận ra
+    chủ đề thì giữ nguyên hành vi cũ (đối chiếu cả tài liệu), nếu không sẽ siết
+    oan câu dẫn ví dụ trả góp vốn cần đúng con số của ví dụ.
+
+    Ràng buộc #2 trong `chan_tien_sai` ("để nguyên kể cả khi nằm ở phần ví dụ")
+    vẫn ĐÚNG ở thời điểm nó được viết, và vẫn còn hiệu lực cho mọi câu không nêu
+    rõ chủ đề. Nay siết lại CÓ ĐIỀU KIỆN, chỉ khi câu gọi tên một mục và mục đó
+    thật sự có số tiền.
+    """
+    thap = (text or "").lower()
+    ung_vien = [(len(ten), so)
+                for ten, noi in _muc_trong(tai_lieu).items()
+                if len(ten) >= 4 and ten in thap
+                for so in [_tien_trong(noi)] if so]
+    if not ung_vien:
+        return None
+    # Tên mục DÀI NHẤT thắng vì nó cụ thể hơn ("hạn mức thẻ" > "hạn mức").
+    return max(ung_vien, key=lambda x: x[0])[1]
+
+
+# "từ năm trăm triệu đến năm trăm triệu" -> "năm trăm triệu". Sinh ra khi hai
+# đầu của một dải cùng bị thay về một số; không rút gọn thì câu vô nghĩa.
+_DAI_TRUNG_RE = re.compile(r"\btừ\s+(.{1,40}?)\s+đến\s+\1\b", re.IGNORECASE)
+
+
 def chan_tien_sai(text: str, tai_lieu: str,
                   khach_noi: str = "") -> tuple[str, str | None]:
     """Bỏ số tiền AI nói mà KHÔNG có trong tài liệu và KHÔNG do khách nêu ra.
@@ -510,8 +570,19 @@ def chan_tien_sai(text: str, tai_lieu: str,
 
     Trả (văn bản đã sửa, mô tả chỗ sửa hoặc None).
     """
-    hop_le = _tien_trong(tai_lieu) | _tien_trong(khach_noi)
+    # Thu hẹp về ĐÚNG MỤC mà câu đang nói tới, nếu nhận ra được.
+    rieng = _tien_theo_chu_de(text, tai_lieu)
+    hop_le = (_tien_trong(tai_lieu) if rieng is None else rieng) \
+        | _tien_trong(khach_noi)
     if not hop_le:
+        # Tài liệu KHÔNG có số tiền nào mà câu lại nêu -> con số đó lấy từ TRÍ
+        # NHỚ mô hình. Bản cũ trả nguyên ở đây, và đó chính là đường mà câu
+        # "hạn mức từ 200 triệu đến ba trăm triệu" đi thẳng ra loa trong cuộc
+        # gọi 4cd44fb7: câu hỏi méo kéo RAG đi lạc, ngữ cảnh thật của lượt đó
+        # chỉ 63 ký tự và không có số nào. Xử như lãi suất bịa - thay cả câu,
+        # vì bỏ mỗi con số thì còn lại "hạn mức bên em là ạ".
+        if _tien_trong(text):
+            return CAU_KIEM_TRA_LAI, "bịa số tiền (ngữ cảnh không có số nào)"
         return text, None
     sua = None
 
@@ -570,6 +641,8 @@ def chan_tien_sai(text: str, tai_lieu: str,
     # Chạy SAU hai cái trên: "500 triệu" đã được xử ở `_TIEN_SO_RE`, chạy trước
     # thì regex chữ-số thuần nuốt mất phần "500" và bỏ lại "triệu" chơ vơ.
     text = _TIEN_CHU_SO_RE.sub(_t_chu_so, text)
+    if sua:
+        text = _DAI_TRUNG_RE.sub(r"\1", text)
     return text, sua
 
 
