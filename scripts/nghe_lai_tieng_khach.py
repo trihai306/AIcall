@@ -1,109 +1,79 @@
-"""Nghe lại CHÍNH tiếng mình đã nói trong cuộc gọi, đủ to để đối chiếu với bản
-phiên âm.
+"""Cho STT nghe lai ban ghi TRON VEN cua khach, tach theo doan co tieng.
 
-Vì sao cần: trong file hội thoại ghép, tiếng khách là bản ghi thật qua GSM nên
-nhỏ hơn tiếng F5 khoảng 9dB và bị cắt còn dải 300-3400Hz, nghe cạnh nhau thì
-gần như chìm - không cách nào tự kiểm được "máy nghe đúng chưa".
-
-Script cắt từng lượt theo đúng logic VAD, chuẩn mức từng lượt cho ngang tiếng
-AI, rồi ghi ra:
-  0_ca_bang_ghi.wav   - cả bản ghi, đã chuẩn mức
-  luot_1..N.wav       - từng lượt riêng, để nghe đi nghe lại một câu
-  ban_chu.txt         - máy nghe ra gì ở từng lượt
-
-Không hạ nhiễu mạnh: mục đích là NGƯỜI nghe để đối chiếu, hạ mạnh sẽ nuốt mất
-chính những chữ đang cần kiểm.
-
-    python scripts/nghe_lai_tieng_khach.py
-    python scripts/nghe_lai_tieng_khach.py --file logs/tieng_khach/khach.wav
+Muc dich: doi chung voi chu ma may nghe duoc LUC GOI (luu trong app.db).
+Neu ban ghi tron cho ra chu DUNG ma luc goi ra chu RAC -> loi o khau CAT,
+khong phai o model hay kenh 8kHz.
 """
-
-import argparse
-import sys
-import wave
+import asyncio
 from pathlib import Path
-
+import sys
 import numpy as np
+import soundfile as sf
 
-PROJECT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT))
-sys.path.insert(0, str(PROJECT / "scripts"))
+sys.path.insert(0, str(DU_AN))
+from backend.services.stt_service import STTService, moi_tu_vung  # noqa: E402
+from backend.config import settings  # noqa: E402
 
-try:
-    sys.stdout.reconfigure(encoding="utf-8")
-except Exception:
-    pass
+DU_AN = Path(__file__).resolve().parents[1]
 
-RA = PROJECT / "logs" / "nghe_lai"
-MUC_DICH = 10 ** (-15.0 / 20)      # -15 dBFS RMS, ngang tiếng F5
-
-
-def chuan_muc(x: np.ndarray, nguong_im: float = 0.02) -> np.ndarray:
-    """Kéo phần CÓ TIẾNG lên -15 dBFS. Đo RMS trên phần có tiếng thôi, không thì
-    quãng lặng dài kéo tụt số đo và câu ngắn bị đẩy vỡ."""
-    manh = np.abs(x) > nguong_im * np.abs(x).max()
-    rms = float(np.sqrt((x[manh] ** 2).mean())) if manh.any() else 0.0
-    if rms < 1e-6:
-        return x
-    y = x * (MUC_DICH / rms)
-    dinh = float(np.abs(y).max())
-    return y / dinh * 0.97 if dinh > 0.97 else y      # chặn vỡ, không nén
+DUONG = DU_AN / "data" / "kenh_khach_4cd44fb7.wav"
+NGUONG = 0.012        # bien do coi la co tieng
+TOI_THIEU_MS = 400    # doan ngan hon thi bo
+NOI_KHE_MS = 600      # hai doan cach nhau duoi muc nay thi noi lai
 
 
-def ghi(p: Path, x: np.ndarray, sr: int):
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(p), "wb") as w:
-        w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
-        w.writeframes((np.clip(x, -1, 1) * 32767).astype("<i2").tobytes())
+def tim_doan(x, sr):
+    khung = int(sr * 0.02)
+    n = len(x) // khung
+    manh = np.array([np.abs(x[i * khung:(i + 1) * khung]).max() for i in range(n)])
+    co = manh >= NGUONG
+    doan, dang = [], None
+    for i, c in enumerate(co):
+        if c and dang is None:
+            dang = i
+        elif not c and dang is not None:
+            doan.append((dang, i))
+            dang = None
+    if dang is not None:
+        doan.append((dang, n))
+    # noi cac doan gan nhau
+    gop = []
+    for d in doan:
+        if gop and (d[0] - gop[-1][1]) * 20 <= NOI_KHE_MS:
+            gop[-1] = (gop[-1][0], d[1])
+        else:
+            gop.append(list(d) if False else (d[0], d[1]))
+            gop[-1] = (d[0], d[1])
+    ket = []
+    for a, b in gop:
+        if (b - a) * 20 >= TOI_THIEU_MS:
+            ket.append((a * khung, b * khung))
+    return ket
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--file", default=str(PROJECT / "logs/tieng_khach/khach_nói.wav"))
-    ap.add_argument("--le", type=float, default=0.25,
-                    help="lấy dư mỗi đầu bao nhiêu giây, kẻo cụt chữ đầu/cuối")
-    a = ap.parse_args()
+async def main():
+    x, sr = sf.read(DUONG, dtype="float32")
+    if x.ndim > 1:
+        x = x[:, 0]
+    print(f"file: {len(x)/sr:.1f}s @ {sr}Hz")
+    print(f"stt_vung_mien = {settings.stt_vung_mien!r}")
 
-    from soi_tung_luot import cat_luot
+    stt = STTService()
+    print("health:", await stt.health_check())
 
-    from backend.services import phone_call_service as PS
+    ket = []
+    doan = tim_doan(x, sr)
+    print(f"\nTim duoc {len(doan)} doan co tieng khach:\n")
+    for i, (a, b) in enumerate(doan, 1):
+        pcm = x[a:b]
+        raw = (np.clip(pcm, -1, 1) * 32767).astype(np.int16).tobytes()
+        chu = await stt.transcribe(raw, sample_rate=sr)
+        ket.append(f"[{i}] {a/sr:6.2f}s -> {b/sr:6.2f}s ({(b-a)/sr:4.2f}s)  {chu!r}")
+        print(f"  [{i}] xong")
 
-    f = Path(a.file)
-    with wave.open(str(f)) as w:
-        sr = w.getframerate()
-        x = (np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
-             .astype(np.float32) / 32768.0)
+    import io
+    with io.open(DU_AN / "data" / "ket_nghe_lai.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(ket))
+    await stt.close()
 
-    luot, nen, nguong = cat_luot(x, sr, PS)
-    print(f"\n  {f.name}: {len(x)/sr:.1f}s @ {sr}Hz | {len(luot)} lượt "
-          f"| nền {nen:.0f}, ngưỡng {nguong:.0f}")
-    truoc = 20 * np.log10(float(np.sqrt((x[np.abs(x) > 0.02 * np.abs(x).max()] ** 2).mean())) + 1e-9)
-    print(f"  mức gốc {truoc:.1f} dBFS -> chuẩn về -15.0 dBFS "
-          f"(tiếng F5 để so: -14.9)\n")
-
-    RA.mkdir(parents=True, exist_ok=True)
-    for p in RA.glob("*"):
-        p.unlink()
-    ghi(RA / "0_ca_bang_ghi.wav", chuan_muc(x), sr)
-
-    le = int(a.le * sr)
-    dong = []
-    for i, (bd, kt, talk, du_dai) in enumerate(luot, 1):
-        seg = x[max(0, bd - le):min(len(x), kt + le)]
-        ghi(RA / f"luot_{i}.wav", chuan_muc(seg), sr)
-        print(f"  lượt {i}: {bd/sr:5.1f}-{kt/sr:5.1f}s  ({talk}ms tiếng)"
-              f"{'' if du_dai else '   [ngắn hơn MIN_TURN_MS]'}")
-        dong.append(f"lượt {i}: {bd/sr:.1f}-{kt/sr:.1f}s, {talk}ms tiếng")
-
-    (RA / "ban_chu.txt").write_text(
-        f"{f.name}\nmức gốc {truoc:.1f} dBFS, đã kéo lên -15 dBFS\n\n"
-        + "\n".join(dong)
-        + "\n\nNghe từng lượt rồi ghi lại anh THỰC SỰ nói gì, để đối chiếu với\n"
-          "bản máy nghe ra trong logs/tieng_that/ban_chu.txt\n", encoding="utf-8")
-
-    print(f"\n  {RA}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+asyncio.run(main())
