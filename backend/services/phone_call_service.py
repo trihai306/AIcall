@@ -27,6 +27,7 @@ from backend.services.audio_utils import (
     compute_rms, float32_to_int16, int16_to_float32, resample_audio,
     resample_lien_tuc,
 )
+from backend.services.dem_truoc import DEM_TRUOC_MS, DemTruoc
 from backend.services.gender_detect import doan_gioi_tinh
 from backend.services.recorder import GhiAmCuocGoi
 from backend.services.voicemail_detect import BoDoHopThuThoai
@@ -987,6 +988,10 @@ class PhoneCallBridge:
         """
         spec_cho = bytearray()      # đếm nhịp để biết khi nào chạy đoán trước
         tieng_8k = bytearray()      # TOÀN BỘ tiếng 8kHz của lượt đang mở
+        # Tiếng TRƯỚC lúc VAD nhận ra - xem services/dem_truoc.py. Không có nó
+        # thì 4 khung dùng để dò (80ms) cộng cả phụ âm đầu dưới ngưỡng bị vứt,
+        # và PhoWhisper đoán bừa phần đầu câu.
+        dem_truoc = DemTruoc(DEM_TRUOC_MS, FRAME_MS)
         on_streak = 0               # số khung liên tiếp vượt ngưỡng
         speaking = False
         silence_ms = 0
@@ -1068,6 +1073,11 @@ class PhoneCallBridge:
                 if self.ghi_am is not None:
                     self.ghi_am.them_khach(int16_to_float32(frame))
 
+                # Nạp vòng đệm ở MỌI khung, kể cả khung im: chỗ trũng giữa hai
+                # âm tiết mà xoá đệm thì mất đúng phần đầu câu (lỗi cũ của
+                # `xuLyCatLoi` bên frontend).
+                dem_truoc.them(frame)
+
                 if not speaking:
                     on_streak = on_streak + 1 if rms >= self.nguong_on() else 0
                     if on_streak >= VAD_ON_FRAMES:
@@ -1098,8 +1108,13 @@ class PhoneCallBridge:
                         self.session.clear_speculation()
                         spec_cho.clear()
                         tieng_8k.clear()
-                        spec_cho += frame
-                        tieng_8k += frame
+                        # Vòng đệm ĐÃ chứa `frame` (nạp ở trên), nên lấy cả vòng
+                        # chứ đừng cộng thêm `frame` lần nữa. Đây là chỗ chữa
+                        # "mất đầu câu": trước đây bắt đầu từ đúng khung hiện
+                        # tại, tức bỏ luôn 80ms đã dùng để dò.
+                        dem = dem_truoc.lay()
+                        spec_cho += dem
+                        tieng_8k += dem
                     continue
 
                 spec_cho += frame

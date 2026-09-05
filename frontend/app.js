@@ -356,11 +356,32 @@ let daCatLoi = false;
 // thực tế; chỉ bám XUỐNG nhanh và LÊN chậm để một tiếng động lạ không kéo ngưỡng
 // vọt lên rồi khách nói thật lại không cắt được.
 let catLoiNen = CAT_LOI_SAN;
-// Giữ lại chính những khung đã dùng để phát hiện. Không giữ thì chúng bị vứt và
-// chỉ từ khung thứ ba mới gửi lên - mất ~256ms ĐẦU câu khách, đúng chỗ chứa từ
-// đầu tiên. Đo được: "lãi suất vay tín chấp bao nhiêu" về tới server thành
-// "unk suất vay tín chấp bao nhiêu" - mất hẳn chữ "lãi".
-let catLoiDem_khung = [];
+// VÒNG ĐỆM TRƯỚC. Luôn giữ vài khung gần nhất, KHÔNG cần vượt ngưỡng.
+//
+// Bản cũ chỉ `push` khung sau khi `rms >= nguong` và xoá sạch ở bất kỳ khung nào
+// tụt xuống dưới, nên chỉ còn chuỗi liên tục CUỐI CÙNG. Mà lúc AI đang nói thì
+// ngưỡng là `mucAIDinh() * 0.6` - rất cao - còn phụ âm đầu (h, th, l, c) năng
+// lượng thấp, nên phần đầu câu khách mất trắng. Đo 05-09-2026
+// (`scripts/do_cut_dau_cau.py`, PhoWhisper-medium, 5 câu):
+//     cắt   0ms -> CER 0,000
+//     cắt 200ms -> CER 0,334   "hạn mức được bao nhiêu" -> "mức được bao nhiêu"
+//     cắt 400ms -> CER 0,466   "lãi suất bao nhiêu"     -> "nhiều"
+// Khớp đúng chữ rác trên cuộc gọi thật: `sẵn mức được bao nhiêu`, `lãi suất rất
+// nhiều`, `mừng được mời nhiều`.
+//
+// CÓ TRẦN, không phải càng dài càng chắc: phần đệm chứa tiếng AI vọng vào mic và
+// Whisper chép luôn lời AI thành lời khách (`năm trăm triệu đồng lãi suất bao
+// nhiêu`). Đo `scripts/do_dem_truoc.py` hai lượt, vọng AI 30%:
+//     +256ms 0,144 · +300ms 0,033 · +384ms 0,000 · +500ms 0,481 · +800ms 0,896
+// Vách đứng nằm giữa 384 và 500ms. Khung ScriptProcessor 2048 mẫu @16kHz =
+// 128ms, nên 3 khung = 384ms là mức DÀI NHẤT còn an toàn. Nới lên 4 khung
+// (512ms) là rơi qua vách - phải đo lại bằng chính script đó nếu muốn đổi.
+//
+// PHẢI LỚN HƠN `CAT_LOI_SO_KHUNG`. Bằng nhau thì vòng đệm vừa đúng bằng cửa sổ
+// dò, tức chỉ chứa những khung ĐÃ vượt ngưỡng - không mang thêm được gì so với
+// mã cũ. Chênh 1 khung này chính là phần đầu câu lấy lại được.
+const CAT_LOI_DEM_TRUOC_KHUNG = 3;
+let catLoiVong = [];
 
 function dangPhatTieng() {
   if (!playCtx) return false;
@@ -394,24 +415,27 @@ function nguongCatLoi() {
 function xuLyCatLoi(ch) {
   const rms = rmsKhung(ch);
 
+  // Nạp vòng đệm TRƯỚC mọi nhánh và KHÔNG xét ngưỡng. Phải sao chép: `ch` là bộ
+  // đệm dùng lại của ScriptProcessor, khung sau sẽ ghi đè lên.
+  catLoiVong.push(new Float32Array(ch));
+  if (catLoiVong.length > CAT_LOI_DEM_TRUOC_KHUNG) catLoiVong.shift();
+
   // AI đang im: đây là lúc duy nhất đo được mức nền thật của phòng.
   // Xuống nhanh (0.3) để vào phòng yên tĩnh là ngưỡng hạ theo ngay; lên chậm
   // (0.02) để một tiếng động lạ không đẩy ngưỡng vọt lên rồi khách nói không cắt được.
   if (!dangPhatTieng()) {
     const k = rms < catLoiNen ? 0.3 : 0.02;
     catLoiNen = Math.max(CAT_LOI_SAN / 4, catLoiNen * (1 - k) + rms * k);
-    catLoiDem = 0; catLoiDem_khung = [];
+    catLoiDem = 0;
     mucAIDinhGiaTri = 0;   // hết tiếng thì bỏ đỉnh cũ, đừng để nó chặn lượt sau
     return;
   }
-  if (daCatLoi) { catLoiDem = 0; catLoiDem_khung = []; return; }
+  if (daCatLoi) { catLoiDem = 0; return; }
 
   const nguong = nguongCatLoi();
-  if (rms < nguong) { catLoiDem = 0; catLoiDem_khung = []; return; }
+  // CHỈ đặt lại bộ ĐẾM. Vòng đệm giữ nguyên - đó là chỗ chứa phần đầu câu.
+  if (rms < nguong) { catLoiDem = 0; return; }
 
-  // Giữ bản sao: `ch` là bộ đệm dùng lại của ScriptProcessor, khung sau sẽ ghi
-  // đè lên. Không sao chép thì tới lúc gửi chỉ còn dữ liệu của khung mới nhất.
-  catLoiDem_khung.push(new Float32Array(ch));
   if (++catLoiDem < CAT_LOI_SO_KHUNG) return;
 
   daCatLoi = true;
@@ -423,9 +447,10 @@ function xuLyCatLoi(ch) {
     ws.send(JSON.stringify({ type: 'barge_in' }));   // bảo server thôi sinh tiếp
   }
   // Thu luôn câu khách đang nói: bắt họ bấm nút lúc đang nói dở là vô lý.
-  const dem = catLoiDem_khung;
+  const dem = catLoiVong.slice();
   batDauGuiTieng();
-  // Gửi bù đúng những khung vừa dùng để phát hiện, TRƯỚC khi khung mới tới.
+  // Gửi bù cả vòng đệm TRƯỚC khi khung mới tới - gồm cả khung dưới ngưỡng, vì
+  // đó chính là phụ âm đầu.
   for (const k of dem) sendAudioChunk(khungSangPCM(k));
 }
 
@@ -516,7 +541,7 @@ function batDauGuiTieng() {
   isRecording = true;
   daCatLoi = false;
   catLoiDem = 0;
-  catLoiDem_khung = [];
+  catLoiVong = [];
   document.getElementById('micBtn').classList.add('recording');
   datGoiY('Đang nghe… bấm lần nữa khi nói xong', 'text-rose-400');
 }
@@ -542,7 +567,7 @@ function dongMic() {
   isRecording = false;
   daCatLoi = false;
   catLoiDem = 0;
-  catLoiDem_khung = [];
+  catLoiVong = [];
   document.getElementById('micBtn')?.classList.remove('recording');
 }
 
