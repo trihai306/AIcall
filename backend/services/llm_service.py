@@ -372,7 +372,13 @@ class LLMService:
             think=False,
             # Dùng chung CHUOI_DUNG với đường chính: đây cũng đi qua model ấy nên
             # rò nhãn vai trò được y hệt, chỉ là chưa ai bắt gặp.
-            options={"num_predict": 100, "temperature": 0.3, "stop": CHUOI_DUNG},
+            # PHẢI gửi cùng num_ctx với `stream_response`. Thiếu nó thì Ollama
+            # dùng cỡ ngữ cảnh mặc định (2048), khác 8192 của đường chính, và
+            # NẠP LẠI model mỗi lần đổi qua lại: đo 05-09-2026 mỗi lượt LLM chờ
+            # token đầu 3-6 giây thay vì ~100ms, TTFA 53/60 lượt vượt trần.
+            # Bộ tóm tắt gọi hàm này sau mỗi lượt nên lượt nào cũng dính.
+            options={"num_predict": 100, "temperature": 0.3, "stop": CHUOI_DUNG,
+                     "num_ctx": settings.llm_num_ctx},
         )
         msg = response.get("message", {}) if isinstance(response, dict) else getattr(response, "message", None)
         return self._extract_content(msg)
