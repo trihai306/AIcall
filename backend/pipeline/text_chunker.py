@@ -924,22 +924,34 @@ def sap_cum_gop(dau: tuple[str, float], cho: list, het_luot: bool):
 # Đo dư địa trên cuộc gọi thật lúc sinh mảnh 2: 1070-2165ms, thấp nhất 515ms.
 # Nên phải tính chứ không được chờ cứng một con số.
 
-# Trần chờ. Dư địa 8 giây cũng không chờ quá mức này: chờ lâu là kéo dài lượt
-# nói của bot, mà khách đang đợi câu trả lời.
-TRAN_CHO_MS = 600.0
+# Trần chờ.
+# ĐÃ ĐẢO NGƯỢC 05-09-2026: 600 -> 1500. Lý do cũ (vẫn đúng lúc đó): "chờ lâu là
+# kéo dài lượt nói của bot". Nhưng chờ chỉ xảy ra khi CÒN dư địa, tức tiếng
+# cũ vẫn đang phát, khách không nghe im - lượt không dài thêm, chỉ gửi muộn.
+# Đo 05-09 trên 12 lượt WebSocket thật: dư địa TB 2200-3360ms mà chờ đúng
+# 600ms rồi hết trần, gộp được 0/1 chỗ nối ở hầu hết lượt - mảnh sau của LLM
+# tới muộn hơn 600ms. Trần là chỗ chặn, không phải dư địa. Cái giá nhận về:
+# tiếng gửi muộn hơn tới 1,5s nên đệm phía khách mỏng hơn; `cho_gom_ms` vẫn
+# trừ thời gian sinh + JITTER nên không bao giờ chờ quá dư địa.
+TRAN_CHO_MS = 1500.0
 
 # Chừa cho dao động: mạng, GPU bận vì lượt đoán trước, ghi đĩa.
 JITTER_MS = 250.0
 
-# Ước tốc độ sinh. Đo thật: ~1420ms cho lượt ~32 âm tiết (~6,5s tiếng), tức
-# ~44ms mỗi âm tiết trên RTX 5070 với nfe=16.
-MS_MOI_AM_TIET = 45.0
+# Ước tốc độ sinh. Đo lại 05-09-2026 sau gộp CFG + CUDA graphs
+# (scripts/do_gop_cfg.py, RTX 5070, nfe 16): câu 3 âm tiết 140ms, 22 âm tiết
+# 314ms - phần cố định ~120ms (16 bước khuếch tán, không phụ thuộc độ dài)
+# cộng ~8ms mỗi âm tiết. Công thức cũ 45ms/âm tiết ước 15 âm tiết = 675ms,
+# thật ~240ms: ước dư 400ms là bớt đúng 400ms chờ gom mỗi chỗ nối.
+MS_CO_DINH = 120.0
+MS_MOI_AM_TIET = 8.0
 
 
 def uoc_sinh_ms(text: str) -> float:
     """Ước thời gian F5 sinh xong đoạn này."""
     from backend.services.tts_service import so_am_tiet   # nhập muộn: tránh vòng
-    return so_am_tiet(text or "") * MS_MOI_AM_TIET
+    n = so_am_tiet(text or "")
+    return MS_CO_DINH + n * MS_MOI_AM_TIET if n else 0.0
 
 
 def cho_gom_ms(du_dia_ms: float, uoc_sinh: float) -> float:

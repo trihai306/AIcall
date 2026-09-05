@@ -23,8 +23,15 @@ def test_uoc_sinh_tang_theo_do_dai():
 
 
 def test_uoc_sinh_sat_so_do_that():
-    """Đo thật: ~1420ms cho lượt ~32 âm tiết."""
-    assert 900 <= uoc_sinh_ms("một " * 32) <= 2000
+    """Đo 05-09-2026 (gộp CFG + CUDA graphs): 3 âm tiết 140ms, 22 âm tiết 314ms.
+    Ước phải nằm trong ±30% số đo, không được quay về 45ms/âm tiết cũ."""
+    assert 100 <= uoc_sinh_ms("một hai ba") <= 190
+    assert 230 <= uoc_sinh_ms("một " * 22) <= 400
+
+
+def test_uoc_sinh_co_phan_co_dinh():
+    """16 bước khuếch tán tốn thời gian dù câu ngắn: 1 âm tiết không phải ~8ms."""
+    assert uoc_sinh_ms("dạ") >= 100
 
 
 def test_uoc_sinh_chuoi_rong():
