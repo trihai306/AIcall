@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceBank AI — Khach hoi hay che, va bang hoi-dap</title>
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f5f6f8; --bg-card:#ffffff;
+  --fg:#16181d; --fg-dim:#565d6b; --fg-faint:#848b99;
+  --line:#e3e6ec; --line-soft:#eef0f4;
+  --accent:#0f8a5f; --canh:#c2410c; --canh-nen:#fff5ef;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0f12; --bg-soft:#14171c; --bg-card:#14171c;
+    --fg:#e9ebef; --fg-dim:#a6adba; --fg-faint:#7c8494;
+    --line:#262b33; --line-soft:#1d2128;
+    --accent:#3ddc97; --canh:#fb923c; --canh-nen:#1f1409;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d0f12; --bg-soft:#14171c; --bg-card:#14171c;
+  --fg:#e9ebef; --fg-dim:#a6adba; --fg-faint:#7c8494;
+  --line:#262b33; --line-soft:#1d2128;
+  --accent:#3ddc97; --canh:#fb923c; --canh-nen:#1f1409;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.khung{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px;
+  max-width:1240px;margin:0 auto;padding:40px 28px 100px}
+@media (max-width:880px){ .khung{grid-template-columns:1fr;gap:0} nav.muc{display:none} }
+nav.muc{position:sticky;top:28px;align-self:start;max-height:calc(100vh - 56px);
+  overflow-y:auto;font-size:14px;border-right:1px solid var(--line-soft);padding-right:16px}
+nav.muc a{display:block;padding:5px 8px;border-radius:6px;color:var(--fg-dim);
+  text-decoration:none;margin-bottom:1px}
+nav.muc a:hover{background:var(--bg-soft);color:var(--fg)}
+nav.muc .nh{font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fg-faint);margin:18px 0 6px;padding-left:8px}
+nav.muc .nh:first-child{margin-top:0}
+main{min-width:0}
+.dau{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:14px}
+.mac{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);margin:0 0 10px}
+h1{font-size:33px;line-height:1.18;margin:0 0 12px;letter-spacing:-.02em}
+.mo{font-size:17px;color:var(--fg-dim);margin:0;max-width:68ch}
+h2{font-size:25px;margin:0 0 6px;letter-spacing:-.015em;scroll-margin-top:24px}
+h3{font-size:18px;margin:28px 0 8px;letter-spacing:-.01em}
+.nhomlab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin:0 0 8px}
+section.trang{padding-top:52px;margin-top:44px;border-top:1px solid var(--line-soft)}
+section.trang:first-of-type{border-top:0;margin-top:20px;padding-top:20px}
+p{max-width:74ch}
+.tomtat{color:var(--fg-dim);margin:0 0 20px;max-width:72ch}
+figure{margin:26px 0}
+figcaption{margin-top:10px;font-size:13.5px;color:var(--fg-faint);max-width:72ch}
+figure svg{display:block;width:100%;height:auto;color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:14.5px}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--bg-soft);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--bg-soft);
+  padding:1.5px 5px;border-radius:4px}
+pre{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.55}
+pre code{background:none;padding:0}
+.canhbao{border:1px solid var(--canh);background:var(--canh-nen);border-radius:9px;
+  padding:14px 17px;margin:20px 0;max-width:74ch}
+.canhbao b{color:var(--canh)}
+.the{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;margin:16px 0;max-width:74ch}
+ul{max-width:74ch}
+li{margin-bottom:5px}
+.nho{font-size:13.5px;color:var(--fg-faint)}
+</style>
+</head>
+<body>
+<div class="khung">
+<nav class="muc">
+  <div class="nh">Hai viec</div>
+  <a href="#vande">Vấn đề gốc</a>
+  <a href="#luong">Một lượt đi qua đâu</a>
+  <div class="nh">Hỏi hay chê</div>
+  <a href="#che-cochesao">Cơ chế</a>
+  <a href="#che-them">Thêm nhóm chê mới</a>
+  <a href="#che-kiem">Tự kiểm</a>
+  <div class="nh">Bảng hỏi-đáp</div>
+  <a href="#bang-la-gi">Bảng dùng khi nào</a>
+  <a href="#bang-cot">Bốn cột</a>
+  <a href="#bang-nhap">Nhập nội dung</a>
+  <a href="#bang-nguong">Hai ngưỡng điểm</a>
+  <div class="nh">Đừng nhầm</div>
+  <a href="#phanbiet">Ba chỗ trông giống nhau</a>
+  <a href="#chuaxong">Phần chưa làm</a>
+</nav>
+
+<main>
+<header class="dau">
+  <p class="mac">VoiceBank AI · tài liệu vận hành</p>
+  <h1>Khách hỏi hay chê, và bảng hỏi-đáp</h1>
+  <p class="mo">Hai việc vừa làm ngày 04-09-2026: dạy bot phân biệt khách đang
+  hỏi với khách đang chê, và thêm một bảng để soạn sẵn câu trả lời cho những
+  câu hỏi chung chung.</p>
+</header>
+
+<section class="trang" id="vande">
+  <p class="nhomlab">Bắt đầu từ đâu</p>
+  <h2>Vấn đề gốc</h2>
+  <p class="tomtat">Cả hai việc đều xuất phát từ cùng một chỗ yếu: bot chấm câu
+  của khách bằng cách so <em>độ giống chữ</em>, mà hai câu rất giống chữ có thể
+  mang hai ý hoàn toàn khác nhau.</p>
+
+  <h3>Việc 1 — cùng nói về lãi suất, nhưng khác ý</h3>
+  <p>Đo trên chính kho tình huống của hệ thống, trước khi sửa:</p>
+  <table>
+    <tr><th>Khách nói</th><th>Ý thật</th><th>Bot hiểu</th><th>Điểm giống</th></tr>
+    <tr><td>lãi suất bao nhiêu</td><td>hỏi</td><td>hỏi lãi suất</td><td>1.000</td></tr>
+    <tr><td><b>lãi cao thế</b></td><td><b>chê</b></td><td>hỏi lãi suất</td><td>0.923</td></tr>
+    <tr><td><b>lãi cao quá em ơi</b></td><td><b>chê</b></td><td>hỏi lãi suất</td><td>0.849</td></tr>
+  </table>
+  <p>Hậu quả nghe được: khách chê lãi cao, bot mở lời <em>"Dạ về lãi suất thì,"</em>
+  rồi đọc lại đúng bảng lãi mà khách vừa chê.</p>
+
+  <h3>Việc 2 — khách hỏi chung chung thì trượt</h3>
+  <table>
+    <tr><th>Khách nói</th><th>Trước đây</th></tr>
+    <tr><td>cơ chế thế nào</td><td>0.622 — dưới ngưỡng, không có câu mở lời, khách nghe im lặng</td></tr>
+    <tr><td>vay như nào</td><td>rơi nhầm vào "hỏi lãi suất" 0.832 — mở lời về lãi trong khi khách hỏi chung</td></tr>
+  </table>
+</section>
+
+<section class="trang" id="luong">
+  <p class="nhomlab">Nhìn tổng thể</p>
+  <h2>Một lượt của khách đi qua đâu</h2>
+  <p class="tomtat">Bốn chặng. Hai việc vừa làm nằm ở chặng 2 và chặng 3.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg"
+         role="img" aria-label="Sơ đồ bốn chặng xử lý một lượt khách nói">
+      <defs>
+        <marker id="mt" viewBox="0 0 10 10" refX="9" refY="5"
+                markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="14" y="40" width="150" height="58" rx="8"/>
+        <rect x="222" y="40" width="176" height="58" rx="8"/>
+        <rect x="456" y="40" width="176" height="58" rx="8"/>
+        <rect x="690" y="40" width="176" height="58" rx="8"/>
+        <rect x="222" y="176" width="176" height="52" rx="8" stroke-dasharray="4 3"/>
+        <rect x="456" y="176" width="176" height="52" rx="8" stroke-dasharray="4 3"/>
+      </g>
+      <g fill="currentColor" font-size="13.5" font-family="sans-serif">
+        <text x="89" y="65" text-anchor="middle">Khách nói</text>
+        <text x="89" y="83" text-anchor="middle" opacity="0.65">tai máy nghe</text>
+        <text x="310" y="65" text-anchor="middle">2. Chấm ý định</text>
+        <text x="310" y="83" text-anchor="middle" opacity="0.65">hỏi hay chê?</text>
+        <text x="544" y="65" text-anchor="middle">3. Tra nội dung</text>
+        <text x="544" y="83" text-anchor="middle" opacity="0.65">bảng, rồi tri thức</text>
+        <text x="778" y="65" text-anchor="middle">4. Đọc thành tiếng</text>
+        <text x="778" y="83" text-anchor="middle" opacity="0.65">giọng đã chọn</text>
+        <text x="310" y="197" text-anchor="middle" font-size="12.5">cổng ngữ cảnh</text>
+        <text x="310" y="215" text-anchor="middle" font-size="12" opacity="0.65">bot đã nói lãi chưa</text>
+        <text x="544" y="197" text-anchor="middle" font-size="12.5">bảng hỏi-đáp</text>
+        <text x="544" y="215" text-anchor="middle" font-size="12" opacity="0.65">nội dung đã duyệt</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#mt)">
+        <path d="M164,69 L214,69"/>
+        <path d="M398,69 L448,69"/>
+        <path d="M632,69 L682,69"/>
+        <path d="M310,168 L310,106"/>
+        <path d="M544,168 L544,106"/>
+      </g>
+      <g fill="currentColor" font-size="11.5" font-family="sans-serif" opacity="0.75">
+        <text x="189" y="60" text-anchor="middle">chữ</text>
+        <text x="423" y="60" text-anchor="middle">ý định</text>
+        <text x="657" y="60" text-anchor="middle">câu trả lời</text>
+        <text x="322" y="140">quyết định câu mở lời</text>
+        <text x="556" y="140">quyết định nội dung</text>
+      </g>
+      <text x="14" y="270" fill="currentColor" font-size="12.5" font-family="sans-serif" opacity="0.7">
+        Hai hộp nét đứt là phần vừa thêm. Bỏ cả hai đi thì hệ thống chạy y như trước —
+      </text>
+      <text x="14" y="290" fill="currentColor" font-size="12.5" font-family="sans-serif" opacity="0.7">
+        chúng chỉ chen vào, không thay thế chặng nào.
+      </text>
+    </svg>
+    <figcaption>Hai phần mới đều là lớp <em>chen thêm</em>, không thay thế: tắt
+    chúng đi là về đúng hành vi cũ. Đó là lý do có thể bật từng phần một mà
+    không sợ hỏng cái đang chạy.</figcaption>
+  </figure>
+</section>
+
+<section class="trang" id="che-cochesao">
+  <p class="nhomlab">Việc 1</p>
+  <h2>Cổng ngữ cảnh hoạt động thế nào</h2>
+  <p class="tomtat">Ý tưởng gốc là của bên đặt hàng: <em>"lãi cao" trước khi tư vấn
+  lãi thì khả năng cao là hỏi; sau khi tư vấn lãi thì khả năng là chê.</em></p>
+
+  <p>Điều quan trọng nhất trong cách làm: cổng đọc <b>lời của bot</b>, không đọc
+  lời của khách. Lời bot là chữ do chính hệ thống sinh ra — không đi qua tai máy,
+  không mất dấu vì kênh thoại, không cụt vì khách chưa nói xong.</p>
+
+  <div class="the">
+    <p style="margin:0"><b>Nếu đọc lời khách thì sao?</b> Chính câu
+    <em>"lãi cao thế"</em> đang cần phân loại sẽ tự mở cổng cho mình. Vòng tròn
+    luẩn quẩn, và không có gì báo lỗi.</p>
+  </div>
+
+  <h3>Cổng chỉ mở thêm, không đóng bớt</h3>
+  <p>Sau khi bot đã tư vấn lãi, nhóm "chê lãi" được đưa vào cuộc chấm điểm —
+  nhưng nhóm "hỏi lãi" <b>vẫn ở nguyên đó</b>. Khách hoàn toàn có quyền hỏi lại
+  lãi lần thứ hai. Đo được: câu <em>"lãi có cao không"</em> hỏi lại sau khi đã
+  nghe lãi vẫn ra "hỏi lãi suất" điểm 1.000, không bị kéo thành chê.</p>
+
+  <h3>Khách cắt lời thì rút lại</h3>
+  <p>Bot mới nói được <em>"Dạ lãi suất bên em"</em> mà khách cắt ngang — khách
+  <b>chưa nghe</b> mức lãi nào. Hệ thống rút chủ đề đó khỏi sổ, cổng đóng lại như
+  cũ. Nếu không làm vậy, câu hỏi lãi ngay sau đó sẽ bị chấm thành chê.</p>
+</section>
+
+<section class="trang" id="che-them">
+  <p class="nhomlab">Việc 1</p>
+  <h2>Thêm một nhóm chê mới</h2>
+  <p class="tomtat">Hiện có bốn nhóm: chê lãi cao, chê phí cao, chê hạn mức thấp,
+  so sánh với ngân hàng khác.</p>
+
+  <p>Nhóm chê nằm cùng chỗ với các tình huống câu đệm khác, trong
+  <code>data/tinh_huong_seed.json</code>. Một nhóm gồm:</p>
+  <pre><code>{
+  "id": "che_lai_cao",
+  "ten": "Khách chê lãi cao",
+  "vi_du": ["lãi cao thế", "lãi cao quá", "sao lãi cao vậy", ...],
+  "mo_dau": ["Dạ em hiểu băn khoăn của mình,", ...]
+}</code></pre>
+
+  <p>Nạp vào hệ thống bằng lệnh sau, chạy trên máy Windows:</p>
+  <pre><code>.venv\python.exe scripts\nap_tinh_huong.py</code></pre>
+
+  <div class="canhbao">
+    <p style="margin:0 0 6px"><b>Hai điều bắt buộc, sai là hỏng câm</b></p>
+    <ul style="margin:0">
+      <li>Mỗi câu mở lời <b>phải kết bằng dấu phẩy</b>. Thiếu phẩy thì giọng đọc
+      hạ xuống như kết câu ngay giữa lượt — khách nghe như bot nói xong rồi lại nói tiếp.</li>
+      <li>Mỗi nhóm cần <b>ít nhất 4 câu mở lời</b>. Chỉ có một câu thì khách hỏi
+      cùng chủ đề hai lần sẽ nghe y hệt nhau.</li>
+    </ul>
+    <p style="margin:8px 0 0" class="nho">Cả hai điều này đã có bộ kiểm tự động
+    chặn trước khi ghi — nhưng biết trước thì đỡ mất công sửa lại.</p>
+  </div>
+
+  <h3>Nhóm mới có cần điều kiện ngữ cảnh không</h3>
+  <p>Chỉ những nhóm <b>dùng lại đúng chữ của câu hỏi</b> mới cần. "Chê lãi cao"
+  dùng chữ "lãi cao" y như câu hỏi "lãi có cao không", nên phải có cổng.
+  Ngược lại "so sánh với ngân hàng khác" dùng chữ hoàn toàn khác
+  (<em>"bên kia rẻ hơn"</em>) nên cố ý <b>không</b> đặt điều kiện — khách so sánh
+  ngay từ câu đầu là chuyện thường.</p>
+  <p>Điều kiện khai trong <code>backend/services/filler_situation.py</code>, mục
+  <code>DIEU_KIEN_NGU_CANH</code>. Quên khai thì nhóm mới vẫn chạy, chỉ là không
+  có cổng bảo vệ.</p>
+</section>
+
+<section class="trang" id="che-kiem">
+  <p class="nhomlab">Việc 1</p>
+  <h2>Tự kiểm sau khi sửa</h2>
+  <p class="tomtat">Sửa xong ví dụ trong kho thì chạy bộ thử — nó chấm 23 câu và
+  nói ngay đạt hay không.</p>
+  <pre><code>.venv\python.exe scripts\thu_hoi_hay_che.py</code></pre>
+  <p>Kết quả hiện tại:</p>
+  <pre><code>Đúng 21/23
+Chê nhầm khi bot chưa tư vấn gì: 0 (phải là 0)
+=&gt; ĐẠT</code></pre>
+
+  <p><b>Dòng thứ hai quan trọng hơn dòng thứ nhất.</b> "Chê nhầm khi bot chưa tư
+  vấn gì" phải luôn bằng 0 — đó là lỗi tệ nhất: khách vừa nghe máy bắt đầu nói,
+  chưa biết lãi bao nhiêu, mà bot đã xử lý như đang bị chê.</p>
+
+  <p class="nho">Hai câu còn sai không phải do cổng: một câu điểm dưới ngưỡng nên
+  rơi về rổ chung (đúng như trước, không tệ hơn), một câu lẫn sang "xin gửi tài
+  liệu" — lỗi sẵn có của kho, sửa bằng cách chỉnh lại ví dụ.</p>
+</section>
+
+<section class="trang" id="bang-la-gi">
+  <p class="nhomlab">Việc 2</p>
+  <h2>Bảng hỏi-đáp dùng khi nào</h2>
+  <p class="tomtat">Khi câu trả lời <b>phải đúng từng chữ</b> — số tiền, thời hạn,
+  điều kiện — và không được để mô hình diễn giải lại.</p>
+
+  <p>Bảng này <b>bổ sung</b>, không thay tri thức cũ. Cách chạy:</p>
+  <ol>
+    <li>Khách nói xong, hệ thống tra bảng trước.</li>
+    <li>Trúng dòng nào thì lấy nội dung đã soạn của dòng đó.</li>
+    <li>Không trúng thì chạy y như trước — tra tri thức rồi để mô hình trả lời.</li>
+  </ol>
+  <p>Nghĩa là xoá sạch bảng đi thì hệ thống về đúng trạng thái cũ.</p>
+
+  <h3>Vì sao phải đọc nguyên văn</h3>
+  <p>Ban đầu chúng tôi định đưa nội dung đã duyệt cho mô hình <em>tham khảo</em>
+  rồi để nó diễn đạt tự nhiên. Đo thật thì không được:</p>
+  <table>
+    <tr><th></th><th>Câu bot đọc ra</th></tr>
+    <tr><td>Để mô hình diễn giải</td>
+        <td>"Cơ chế vay tín chấp là dựa trên uy tín và thu nhập của khách hàng ạ."
+        <span class="nho">— mất sạch mọi con số</span></td></tr>
+    <tr><td>Đọc nguyên văn</td>
+        <td>"Bên em cho vay tín chấp, tức là không cần tài sản thế chấp ạ. Mình chỉ
+        cần chứng minh thu nhập, hạn mức tối đa 500 triệu, thời hạn từ 12 đến 60
+        tháng. Hồ sơ duyệt trong 24 đến 48 giờ."</td></tr>
+  </table>
+  <p>Nội dung đã duyệt mà bị viết lại thì việc duyệt thành vô nghĩa — và đây là
+  tư vấn tài chính, sai số là sai cam kết với khách.</p>
+</section>
+
+<section class="trang" id="bang-cot">
+  <p class="nhomlab">Việc 2</p>
+  <h2>Bốn cột của một dòng</h2>
+  <table>
+    <tr><th>Cột</th><th>Là gì</th><th>Để trống được không</th></tr>
+    <tr><td><b>Câu đệm</b></td>
+        <td>Câu mở lời trong lúc bot còn đang nghĩ. Phải kết bằng dấu phẩy.</td>
+        <td>Được — khi đó dùng câu mở lời chung</td></tr>
+    <tr><td><b>Các cách hỏi</b></td>
+        <td>Nhiều cách khách có thể hỏi cùng một ý. Càng nhiều cách nói càng bắt trúng.</td>
+        <td><b>Không.</b> Trống thì dòng vĩnh viễn không khớp câu nào</td></tr>
+    <tr><td><b>Nội dung trả lời</b></td>
+        <td>Câu bot sẽ đọc, nguyên văn.</td>
+        <td><b>Không.</b> Trống thì khách nghe câu đệm rồi im bặt</td></tr>
+    <tr><td><b>Sản phẩm</b></td>
+        <td>Dòng chỉ dùng cho sản phẩm này.</td>
+        <td>Được — để trống nghĩa là câu hỏi chung, mọi sản phẩm đều dùng</td></tr>
+  </table>
+  <p class="nho">Ba lỗi ở trên đều bị chặn ngay lúc nạp, kèm tên dòng sai — không
+  âm thầm bỏ qua rồi hỏng lúc đang gọi khách.</p>
+</section>
+
+<section class="trang" id="bang-nhap">
+  <p class="nhomlab">Việc 2</p>
+  <h2>Nhập nội dung vào bảng</h2>
+  <p class="tomtat">Hiện nhập bằng tệp <code>data/hoi_dap_seed.json</code>.</p>
+  <pre><code>{
+  "hoi_dap": [
+    {
+      "id": "co_che_vay_chung",
+      "cau_dem": "Dạ em nói qua về cách vay bên em,",
+      "cau_hoi": ["cơ chế thế nào", "vay như nào", "vay ra sao",
+                  "cách vay thế nào", "quy trình vay ra sao"],
+      "tra_loi": "Bên em cho vay tín chấp, tức là không cần tài sản thế chấp ạ...",
+      "san_pham": "vay tín chấp",
+      "bat": 1
+    }
+  ]
+}</code></pre>
+  <p>Nạp trên máy Windows:</p>
+  <pre><code>.venv\python.exe scripts\nap_hoi_dap.py</code></pre>
+  <p>Chạy lại nhiều lần được — dòng trùng mã sẽ được cập nhật, không nhân đôi.
+  Sau khi nạp phải <b>khởi động lại dịch vụ</b> thì bảng mới có hiệu lực.</p>
+
+  <h3>Kiểm lại bằng bộ thử</h3>
+  <pre><code>.venv\python.exe scripts\thu_bang_hoi_dap.py</code></pre>
+  <p>Bộ thử báo hai con số. Số thứ hai — <b>"vơ bừa"</b> — phải bằng 0: đó là số
+  câu <em>không</em> thuộc bảng mà bảng vẫn nhận vơ. Vơ bừa nghĩa là bảng cướp
+  mất câu lẽ ra tri thức trả lời tốt hơn.</p>
+</section>
+
+<section class="trang" id="bang-nguong">
+  <p class="nhomlab">Việc 2</p>
+  <h2>Hai ngưỡng điểm, đừng lẫn</h2>
+  <p class="tomtat">Điểm là độ giống giữa câu khách nói và các cách hỏi đã soạn:
+  1.000 là trùng khít, 0 là không liên quan gì.</p>
+  <table>
+    <tr><th>Điểm</th><th>Chuyện gì xảy ra</th></tr>
+    <tr><td>dưới <b>0.75</b></td><td>Không trúng bảng. Chạy y như trước: tra tri thức, mô hình trả lời.</td></tr>
+    <tr><td><b>0.75</b> đến dưới <b>0.90</b></td><td>Trúng, nhưng khớp lỏng. Nội dung
+    được đưa cho mô hình <em>tham khảo</em>, nó vẫn tự diễn đạt để bám ngữ cảnh.</td></tr>
+    <tr><td>từ <b>0.90</b></td><td>Khách hỏi gần đúng cách đã soạn. Bot <b>đọc nguyên
+    văn</b> nội dung trong bảng, không qua mô hình.</td></tr>
+  </table>
+  <p>Vì sao không đọc nguyên văn ở mọi mức: khớp lỏng nghĩa là khách hỏi hơi khác
+  ý đã soạn. Đọc cứng câu soạn sẵn lúc đó dễ thành trả lời trớt câu hỏi.</p>
+</section>
+
+<section class="trang" id="phanbiet">
+  <p class="nhomlab">Rất dễ nhầm</p>
+  <h2>Ba chỗ trông giống nhau</h2>
+  <p class="tomtat">Trong phần mềm có ba nơi đều liên quan tới "câu hỏi và câu trả
+  lời". Nhập nhầm chỗ thì không báo lỗi, chỉ là không có tác dụng gì.</p>
+  <table>
+    <tr><th>Nơi</th><th>Dùng để làm gì</th><th>Nhập gì vào</th></tr>
+    <tr><td><b>Kịch bản → Ví dụ hỏi-đáp</b></td>
+        <td>Dạy mô hình <b>độ dài và phong cách</b> câu trả lời. Nó được ghép vào
+        lời dặn, mô hình nhìn để bắt chước cách nói.</td>
+        <td>Vài ví dụ tiêu biểu về <em>cách trả lời</em></td></tr>
+    <tr><td><b>Bảng hỏi-đáp</b> <span class="nho">(mới)</span></td>
+        <td>Tra ra <b>nội dung chính xác</b> cho một câu hỏi cụ thể. Trúng thì đọc
+        nguyên văn.</td>
+        <td>Câu trả lời đã duyệt, có số liệu chính xác</td></tr>
+    <tr><td><b>Tri thức AI</b></td>
+        <td>Kho tài liệu dài. Hệ thống cắt nhỏ, tìm đoạn liên quan rồi đưa mô hình
+        tự viết câu trả lời.</td>
+        <td>Tài liệu sản phẩm, quy định, biểu phí</td></tr>
+  </table>
+  <div class="canhbao">
+    <p style="margin:0"><b>Cách nhớ:</b> muốn dạy bot <em>nói kiểu gì</em> thì vào
+    Kịch bản. Muốn bot <em>nói đúng cái gì</em> thì vào Bảng hỏi-đáp. Muốn bot
+    <em>biết thêm nhiều thứ</em> thì vào Tri thức AI.</p>
+  </div>
+</section>
+
+<section class="trang" id="chuaxong">
+  <p class="nhomlab">Nói thẳng</p>
+  <h2>Phần chưa làm xong</h2>
+  <div class="the">
+    <p style="margin:0 0 8px"><b>Cột câu đệm chưa được đọc thành tiếng.</b></p>
+    <p style="margin:0 0 8px">Cột đã có trong bảng và đã được kiểm (bắt buộc kết
+    bằng dấu phẩy), nhưng chưa nối vào phần phát tiếng. Hiện câu mở lời vẫn do kho
+    tình huống chọn như trước.</p>
+    <p style="margin:0" class="nho">Lý do: mỗi câu mở lời mới cần dựng sẵn 42 đoạn
+    tiếng (một cho mỗi câu đuôi). Bốn nhóm chê thêm vào tuần này đã tốn 672 đoạn và
+    khoảng 3 phút dựng. Một bảng 20 dòng sẽ là khoảng 840 đoạn. Đó là quyết định về
+    chi phí, cần bàn trước khi làm.</p>
+  </div>
+  <div class="the">
+    <p style="margin:0 0 8px"><b>Chưa có trang quản lý bảng trên web.</b></p>
+    <p style="margin:0">Hiện nhập bằng tệp rồi chạy lệnh nạp. Nếu cần sửa thường
+    xuyên thì nên làm trang giống trang Câu đệm.</p>
+  </div>
+  <div class="the">
+    <p style="margin:0 0 8px"><b>Lời thoại hiện tại là bản nháp.</b></p>
+    <p style="margin:0">Các câu xử lý phản đối (<em>"Dạ em hiểu băn khoăn của
+    mình,"</em>) và nội dung trong bảng mẫu đều do bên kỹ thuật viết để chạy thử.
+    Người phụ trách nghiệp vụ cần đọc duyệt trước khi dùng với khách thật — nói sai
+    ở đây là chuyện cam kết, không phải chuyện kỹ thuật.</p>
+  </div>
+</section>
+
+<p class="nho" style="margin-top:56px">Tài liệu dựng ngày 05-09-2026. Số đo trong
+bài lấy từ máy Windows admin-pc, mô hình qwen2.5:7b, card RTX 5070.</p>
+</main>
+</div>
+</body>
+</html>
