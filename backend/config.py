@@ -124,7 +124,22 @@ class Settings(BaseSettings):
     # kernel nhỏ chứ không phải tính toán.
     # ĐÁNH ĐỔI: CUDA graphs cần shape CỐ ĐỊNH, mà câu dài ngắn khác nhau -> có
     # thể phải bắt lại đồ thị liên tục và thành CHẬM HƠN. Phải đo, đừng tin.
+    #
+    # ĐÃ ĐO 04-09-2026 (scripts/do_gop_cfg.py): "reduce-overhead" CHẠY ĐƯỢC và
+    # ăn thêm 15% trên nền gộp CFG (290 -> 247ms/câu, câu ngắn 184 -> 140ms).
+    # Lần thử 05-08 chết CppCompileError vì máy Win thiếu cl.exe trong PATH,
+    # không phải vì CUDA graphs không hợp - load() giờ tự nạp vcvars64.bat.
+    # Mỗi ĐỘ DÀI mới gặp lần đầu tốn ~150ms ghi graph, sau đó miễn phí; hâm
+    # hình dạng ở startup đã che phần lớn. Bật bằng F5TTS_COMPILE_MODE trong .env.
     f5tts_compile_mode: str = ""
+    # Gộp hai lượt CFG (cond + uncond) của mỗi bước khuếch tán thành MỘT forward
+    # batch=2, như F5 upstream >= 1.1. Đo: 340 -> 290ms/câu, chất lượng không
+    # đổi (cùng seed, tương quan 0,98-0,9999). Chi tiết ở services/f5_gop_cfg.py.
+    f5tts_gop_cfg: bool = True
+    # >0: chỉ dẫn dắt (CFG) ở N bước đầu, bỏ ở các bước sau. 12/16 bước -34%,
+    # 8/16 bước -41% nhưng TIẾNG KHÁC HẲN (tương quan 0,44-0,98) - chưa ai
+    # nghe, để 0 cho tới khi tai người duyệt.
+    f5tts_cfg_buoc: int = 0
 
     # Database - call history (SQLite)
     db_path: str = "./data/app.db"

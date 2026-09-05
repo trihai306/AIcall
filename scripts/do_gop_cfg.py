@@ -40,82 +40,89 @@ CAU = [
 ]
 
 
-# ---------------------------------------------------------------- DiT cfg_infer
-def dit_forward_cfg(self, x, cond, text, time, drop_audio_cond, drop_text,
-                    mask=None, cache=False, cfg_infer=False):
-    """Bản forward của DiT có thêm cfg_infer, chép ý từ upstream F5-TTS."""
-    batch, seq_len = x.shape[0], x.shape[1]
-    if time.ndim == 0:
-        time = time.repeat(batch)
-    t = self.time_embed(time)
+class LoiDiT(torch.nn.Module):
+    """Phần lõi DiT nhận text-embed ĐÃ tính sẵn. Đây là phần đem compile.
 
-    def text_embed_of(drop):
-        if cache:
-            if drop:
-                if self.text_uncond is None:
-                    self.text_uncond = self.text_embed(text, seq_len, drop_text=True)
-                return self.text_uncond
-            if self.text_cond is None:
-                self.text_cond = self.text_embed(text, seq_len, drop_text=False)
-            return self.text_cond
-        return self.text_embed(text, seq_len, drop_text=drop)
+    Tách text-embed ra ngoài vì với CUDA graphs, tensor cache đặt trên module
+    trong vùng compile là đầu ra của graph -> bị ghi đè ở lượt sau -> lỗi
+    "accessing tensor output of CUDAGraphs that has been overwritten".
+    """
 
-    if cfg_infer:
-        x_cond = self.input_embed(x, cond, text_embed_of(False), drop_audio_cond=False)
-        x_uncond = self.input_embed(x, cond, text_embed_of(True), drop_audio_cond=True)
-        x = torch.cat((x_cond, x_uncond), dim=0)
-        t = torch.cat((t, t), dim=0)
-        mask = torch.cat((mask, mask), dim=0) if mask is not None else None
-    else:
-        x = self.input_embed(x, cond, text_embed_of(drop_text), drop_audio_cond=drop_audio_cond)
+    def __init__(self, raw, cfg: bool):
+        super().__init__()
+        self.raw = raw
+        self.cfg = cfg
 
-    rope = self.rotary_embed.forward_from_seq_len(seq_len)
-    if self.long_skip_connection is not None:
-        residual = x
-    for block in self.transformer_blocks:
-        x = block(x, t, mask=mask, rope=rope)
-    if self.long_skip_connection is not None:
-        x = self.long_skip_connection(torch.cat((x, residual), dim=-1))
-    x = self.norm_out(x, t)
-    return self.proj_out(x)
+    def forward(self, x, cond, tc, tu, time, mask):
+        r = self.raw
+        batch, seq_len = x.shape[0], x.shape[1]
+        if time.ndim == 0:
+            time = time.repeat(batch)
+        t = r.time_embed(time)
+        if self.cfg:
+            x = torch.cat((r.input_embed(x, cond, tc, drop_audio_cond=False),
+                           r.input_embed(x, cond, tu, drop_audio_cond=True)), dim=0)
+            t = torch.cat((t, t), dim=0)
+            mask = torch.cat((mask, mask), dim=0) if mask is not None else None
+        else:
+            x = r.input_embed(x, cond, tc, drop_audio_cond=False)
+        rope = r.rotary_embed.forward_from_seq_len(seq_len)
+        residual = x if r.long_skip_connection is not None else None
+        for block in r.transformer_blocks:
+            x = block(x, t, mask=mask, rope=rope)
+        if residual is not None:
+            x = r.long_skip_connection(torch.cat((x, residual), dim=-1))
+        return r.proj_out(r.norm_out(x, t))
 
 
 class GopCFG(torch.nn.Module):
-    """Bọc ngoài transformer (đã compile): gộp cặp gọi cond/uncond thành một."""
+    """Bọc ngoài transformer: gộp cặp gọi cond/uncond của CFM.sample thành một."""
 
-    def __init__(self, inner, raw):
+    def __init__(self, raw, compile_kw: dict | None, cfg_buoc: int = 0):
         super().__init__()
-        self.inner = inner   # có thể là bản compile
-        self.raw = raw       # DiT gốc, để clear_cache
+        self.raw = raw
+        self.loi = LoiDiT(raw, cfg=True)
+        self.loi_don = LoiDiT(raw, cfg=False)
+        if compile_kw is not None:
+            self.loi = torch.compile(self.loi, **compile_kw)
+            self.loi_don = torch.compile(self.loi_don, **compile_kw)
         self._null = None
+        self._tc = self._tu = None
+        self.cfg_buoc = cfg_buoc  # >0: chỉ dẫn dắt (CFG) ở N bước đầu
+        self._buoc = 0
 
     def clear_cache(self):
         self.raw.clear_cache()
-        self._null = None
+        self._null = self._tc = self._tu = None
+        self._buoc = 0
 
     def forward(self, x, cond, text, time, drop_audio_cond, drop_text, mask=None, cache=False):
+        seq_len = x.shape[1]
         if not drop_audio_cond and not drop_text:
-            out = self.inner(x=x, cond=cond, text=text, time=time,
-                             drop_audio_cond=False, drop_text=False,
-                             mask=mask, cache=cache, cfg_infer=True)
+            if self._tc is None:  # text-embed tính MỘT lần mỗi sample, ngoài graph
+                self._tc = self.raw.text_embed(text, seq_len, drop_text=False)
+                self._tu = self.raw.text_embed(text, seq_len, drop_text=True)
+            self._buoc += 1
+            torch.compiler.cudagraph_mark_step_begin()
+            if self.cfg_buoc and self._buoc > self.cfg_buoc:
+                pred = self.loi_don(x, cond, self._tc, None, time, mask).clone()
+                self._null = pred  # pred + (pred-null)*cfg = pred -> bỏ CFG bước này
+                return pred
+            out = self.loi(x, cond, self._tc, self._tu, time, mask).clone()
             pred, self._null = torch.chunk(out, 2, dim=0)
             return pred
         if drop_audio_cond and drop_text and self._null is not None:
             n, self._null = self._null, None
             return n
-        return self.inner(x=x, cond=cond, text=text, time=time,
-                          drop_audio_cond=drop_audio_cond, drop_text=drop_text,
-                          mask=mask, cache=cache)
+        raise RuntimeError("thứ tự gọi cond/uncond không như CFM.sample mong đợi")
 
 
 # ---------------------------------------------------------------- nạp
-def nap(gop: bool, compile_: bool, dynamic: bool = True, mode: str = ""):
+def nap(gop: bool, compile_: bool, dynamic: bool = True, mode: str = "", cfg_buoc: int = 0):
     from f5_tts.infer.utils_infer import load_model, load_vocoder
     from f5_tts.model import DiT
     from f5_tts.model.backbones import dit as dit_mod
 
-    if gop:
-        dit_mod.DiT.forward = dit_forward_cfg
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.set_float32_matmul_precision("high")
     voc = load_vocoder(vocoder_name="vocos", device=DEVICE)
@@ -127,8 +134,11 @@ def nap(gop: bool, compile_: bool, dynamic: bool = True, mode: str = ""):
         device=DEVICE,
     )
     raw = model.transformer
-    inner = torch.compile(raw, dynamic=dynamic, **({"mode": mode} if mode else {})) if compile_ else raw
-    model.transformer = GopCFG(inner, raw) if gop else inner
+    kw = dict(dynamic=dynamic, **({"mode": mode} if mode else {}))
+    if gop:
+        model.transformer = GopCFG(raw, kw if compile_ else None, cfg_buoc)
+    else:
+        model.transformer = torch.compile(raw, **kw) if compile_ else raw
     return model, voc
 
 
@@ -221,16 +231,17 @@ def main():
     ap.add_argument("--mode", default="")
     ap.add_argument("--lo", type=int, default=0)
     ap.add_argument("--sdpa", default="")
+    ap.add_argument("--cfg_buoc", type=int, default=0)
     ap.add_argument("--ra", default="logs/do_gop_cfg")
     a = ap.parse_args()
     nfe = a.nfe or settings.f5tts_nfe_step
     global _SDPA
     _SDPA = a.sdpa
-    ra = Path(a.ra) / f"gop{a.gop}_c{a.compile}_d{a.dynamic}_m{a.mode or 'x'}_s{a.sdpa or 'x'}_nfe{nfe}"
+    ra = Path(a.ra) / f"gop{a.gop}_c{a.compile}_d{a.dynamic}_m{a.mode or 'x'}_s{a.sdpa or 'x'}_cb{a.cfg_buoc}_nfe{nfe}"
     ra.mkdir(parents=True, exist_ok=True)
 
     t0 = time.perf_counter()
-    model, voc = nap(bool(a.gop), bool(a.compile), bool(a.dynamic), a.mode)
+    model, voc = nap(bool(a.gop), bool(a.compile), bool(a.dynamic), a.mode, a.cfg_buoc)
     ref = nap_ref()
     print(f"nap xong {time.perf_counter()-t0:.1f}s  gop={a.gop} compile={a.compile} dynamic={a.dynamic} mode={a.mode} nfe={nfe}", flush=True)
 

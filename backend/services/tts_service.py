@@ -620,17 +620,32 @@ class F5TTSService:
             # chưa biên dịch, tức là không có tác dụng gì (đã thử và đo ra).
             # Bên trong sample(): odeint chạy 16 bước, mỗi bước gọi transformer 2
             # lần (classifier-free guidance) => 32 lượt. Đó mới là chỗ nóng.
+            # Gộp CFG (services/f5_gop_cfg.py): 32 lượt phóng batch=1 -> 16 lượt
+            # batch=2, và tách text-embed ra ngoài để CUDA graphs dùng được.
+            # Bọc NGOÀI bản compile: phần compile là lõi LoiDiT bên trong.
+            raw = self._model.transformer
+            kw = None
             if settings.f5tts_compile and str(DEVICE).startswith("cuda"):
-                try:
-                    che_do = (settings.f5tts_compile_mode or "").strip()
-                    self._model.transformer = torch.compile(
-                        self._model.transformer, dynamic=True,
-                        **({"mode": che_do} if che_do else {})
-                    )
-                    logger.info("F5-TTS: đã bật torch.compile cho DiT "
-                                "(dynamic=True, mode=%s)", che_do or "mặc định")
-                except Exception as e:
-                    logger.warning(f"F5-TTS: torch.compile hỏng, chạy bản thường: {e}")
+                che_do = (settings.f5tts_compile_mode or "").strip()
+                if che_do == "reduce-overhead":
+                    from backend.services.f5_gop_cfg import nap_moi_truong_msvc
+                    if not nap_moi_truong_msvc():
+                        logger.warning("F5-TTS: không có cl.exe cho CUDA graphs, "
+                                       "rơi về compile mặc định.")
+                        che_do = ""
+                kw = dict(dynamic=True, **({"mode": che_do} if che_do else {}))
+            try:
+                if settings.f5tts_gop_cfg:
+                    from backend.services.f5_gop_cfg import GopCFG
+                    self._model.transformer = GopCFG(raw, kw, settings.f5tts_cfg_buoc)
+                elif kw is not None:
+                    self._model.transformer = torch.compile(raw, **kw)
+                logger.info("F5-TTS: gộp CFG=%s, cắt CFG sau %d bước, compile=%s",
+                            settings.f5tts_gop_cfg, settings.f5tts_cfg_buoc,
+                            (kw.get("mode") or "mặc định") if kw else "tắt")
+            except Exception as e:
+                logger.warning(f"F5-TTS: torch.compile hỏng, chạy bản thường: {e}")
+                self._model.transformer = raw
 
             ref_audio_path = settings.f5tts_ref_audio
             if Path(ref_audio_path).exists():
