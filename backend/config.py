@@ -10,6 +10,17 @@ class Settings(BaseSettings):
     # Chỉ nghiêng bộ giải mã về chính tả chuẩn của các cặp âm vùng đó không phân
     # biệt - xem MOI_VUNG_MIEN trong services/stt_service.py. ĐO TRƯỚC KHI BẬT:
     # mồi lợi hại lẫn lộn, chạy scripts/do_vung_mien.py trên mẫu thu thật.
+    #
+    # 05-09-2026: người dùng cho biết giọng BẮC, đã đo bằng `scripts/do_moi_bac.py`
+    # (14 câu, chạy xen kẽ cả hai chiều qua đúng `STTService.transcribe`) và
+    # vẫn ĐỂ TRỐNG vì mồi "bac" làm TỆ ĐI:
+    #     tiếng sạch 16kHz   không mồi 0,0036  mồi bac 0,0036   (0/14 câu đổi)
+    #     qua kênh 8kHz      không mồi 0,0062  mồi bac 0,0171   (2 câu tệ đi,
+    #                        0 câu tốt lên: "tài khoản" -> "tái khoản")
+    # Lưu ý phạm vi phép đo: câu khách do F5 đọc ĐÚNG chính tả, nên nó chỉ đo
+    # được phần HẠI. Phần LỢI của mồi vùng miền chỉ hiện ra khi người nói thật
+    # sự lẫn l/n, tr/ch - muốn biết thì phải có mẫu thu của chính người dùng
+    # (`data/test_vung_mien/bac/`, hiện CHƯA CÓ) rồi chạy `do_vung_mien.py`.
     stt_vung_mien: str = ""
 
     # Ollama LLM - Vistral-7B-Chat (Vietnamese)
