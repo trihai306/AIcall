@@ -33,7 +33,37 @@ import numpy as np
 # nên phân loại chỉ có phiên âm CỤT ("thế vay tối", "vay tín chấp"). Cùng những
 # câu đó ở dạng trọn vẹn thì phân loại đúng 7/7. Điểm thấp chính là dấu hiệu
 # câu còn cụt - đó là lý do ngưỡng cao lọc được.
+# ĐO LẠI 05-09-2026 trên 102 lượt tiếng khách THẬT (trích từ 47 bản ghi cuộc
+# gọi) bằng `scripts/do_nguong_tinh_huong.py` — kết quả KHÁC HẲN phép đo cũ ở
+# trên, vốn dựa trên một tập nhỏ:
+#
+#     mốc 1000ms   0,75 -> chọn 29, đúng 15, SAI 14   (52%)
+#                  0,85 -> chọn  8, đúng  5, SAI  3   (62%)
+#                  0,90 -> chọn  4, đúng  4, SAI  0   (100%)
+#     mốc 1200ms   0,75 -> chọn 33, đúng 20, SAI 13   (61%)
+#                  0,90 -> chọn  5, đúng  5, SAI  0   (100%)
+#
+# Tức 0,75 để lọt gần MỘT NỬA số lần chọn là sai tình huống. Nguyên tắc ngay
+# trên vẫn đúng nguyên vẹn — chỉ là số đo cũ quá lạc quan.
+#
+# Cái giá đã biết và chấp nhận: chỉ ~5% lượt có câu đệm theo ngữ cảnh, 95% còn
+# lại dùng rổ chung. Đó vẫn hơn hiện trạng, vì rổ chung trung tính còn chọn sai
+# thì nghe như AI hiểu nhầm ý khách.
+#
+# ĐÃ ĐO VÀ BÁC BỎ hướng nới lưới lọc cho riêng đường câu đệm (dùng bản phiên âm
+# thô chưa qua `_dang_ngo`): bản thô NGANG hoặc KÉM bản lọc ở mọi mốc, và ở
+# 800ms nó chọn thêm 8 lượt thì cả 8 đều sai. Xem
+# `scripts/do_noi_luoi_cau_dem.py`.
 NGUONG_DIEM = 0.75
+
+# Ngưỡng RIÊNG cho đường CHỌN CÂU ĐỆM. Không nâng `NGUONG_DIEM` chung vì
+# `_tra_bang_hoi_dap` cũng gọi `chon_tinh_huong` với ngưỡng mặc định — nâng
+# chung là âm thầm siết luôn bảng hỏi-đáp, một tính năng khác hẳn. Bộ test bắt
+# được đúng chuyện này (`test_nguong_doc_thang_cao_hon_nguong_trung`).
+#
+# Hai đường chịu rủi ro khác nhau nên đáng có hai ngưỡng: bảng hỏi-đáp trượt thì
+# rơi về tri thức (vô hại), còn câu đệm chọn sai thì khách nghe AI nói trớt ý.
+NGUONG_CAU_DEM = 0.90
 
 
 def chuan_hoa(v: np.ndarray) -> np.ndarray:

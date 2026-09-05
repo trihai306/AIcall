@@ -31,7 +31,8 @@ from backend.services.filler_pick import can_che_ms
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
-    DIEU_KIEN_NGU_CANH, chon_tinh_huong, chuan_hoa, loc_theo_ngu_canh,
+    DIEU_KIEN_NGU_CANH, NGUONG_CAU_DEM, chon_tinh_huong, chuan_hoa,
+    loc_theo_ngu_canh,
 )
 from backend.core.logging_config import Timer
 
@@ -305,7 +306,7 @@ class StreamingPipeline:
                         # Xem `loc_theo_ngu_canh` - điểm cosine giữa hỏi và chê
                         # chỉ cách nhau 0.026 trên câu cụt, chữ không tự cứu được.
                         id_th, diem = chon_tinh_huong(
-                            q, kho_vec,
+                            q, kho_vec, nguong=NGUONG_CAU_DEM,
                             bo_qua=loc_theo_ngu_canh(DIEU_KIEN_NGU_CANH,
                                                      session.da_tu_van))
                         if id_th:
@@ -559,7 +560,7 @@ class StreamingPipeline:
                 return
             q = chuan_hoa(self.rag.embed([text_stt]))[0]
             id_th, diem = chon_tinh_huong(
-                q, kho_vec,
+                q, kho_vec, nguong=NGUONG_CAU_DEM,
                 bo_qua=loc_theo_ngu_canh(DIEU_KIEN_NGU_CANH, session.da_tu_van))
             if id_th:
                 session.tinh_huong = (n_stt, id_th, diem)

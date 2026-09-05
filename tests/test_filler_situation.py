@@ -63,3 +63,41 @@ def test_nguong_tuy_chinh():
     q = chuan_hoa(v(0.8, 0.6, 0))[0]
     assert chon_tinh_huong(q, kho, nguong=0.9)[0] is None
     assert chon_tinh_huong(q, kho, nguong=0.5)[0] == "a"
+
+
+# --- Ngưỡng siết lên 0,90 ngày 05-09-2026 -------------------------------------
+#
+# Đo lại trên 102 lượt tiếng khách THẬT (trích từ 47 bản ghi cuộc gọi,
+# `scripts/do_nguong_tinh_huong.py`) cho kết quả KHÁC HẲN phép đo cũ vốn dựa
+# trên tập nhỏ:
+#
+#     mốc 1000ms   0,75 -> chọn 29, đúng 15, SAI 14   (52%)
+#                  0,90 -> chọn  4, đúng  4, SAI  0   (100%)
+#     mốc 1200ms   0,75 -> chọn 33, đúng 20, SAI 13   (61%)
+#                  0,90 -> chọn  5, đúng  5, SAI  0   (100%)
+#
+# Comment cũ ghi "0,75 -> phân loại 4 lần, đúng 4 (100%)" — đúng với tập đo lúc
+# đó, nhưng trên tiếng thật thì 0,75 để lọt gần MỘT NỬA số lần chọn là sai.
+#
+# Nguyên tắc không đổi, chỉ có số đo tốt hơn: chọn sai mẩu mở đầu tệ hơn không
+# có mẩu nào, vì rổ chung vốn trung tính còn chọn sai thì nghe như AI hiểu nhầm.
+
+def test_nguong_cau_dem_du_cao_de_bo_cau_cut():
+    """Câu cụt hay cho điểm 0,75-0,85 và chính là chỗ phân loại hay sai."""
+    from backend.services.filler_situation import NGUONG_CAU_DEM
+    assert NGUONG_CAU_DEM >= 0.90, (
+        "hạ ngưỡng câu đệm xuống dưới 0,90 thì tỷ lệ chọn đúng rơi về ~50-60%, "
+        "xem scripts/do_nguong_tinh_huong.py"
+    )
+
+
+def test_nguong_cau_dem_KHONG_dung_chung_voi_nguong_chung():
+    """Nâng `NGUONG_DIEM` chung là âm thầm siết luôn BẢNG HỎI-ĐÁP.
+
+    `_tra_bang_hoi_dap` cũng gọi `chon_tinh_huong` với ngưỡng mặc định. Lần sửa
+    đầu nâng thẳng `NGUONG_DIEM` lên 0,90 và bộ test đã bắt được qua
+    `test_nguong_doc_thang_cao_hon_nguong_trung` (đọc thẳng 0,90 phải CAO HƠN
+    ngưỡng trúng bảng). Hai đường chịu rủi ro khác nhau nên phải có hai ngưỡng.
+    """
+    from backend.services.filler_situation import NGUONG_CAU_DEM
+    assert NGUONG_CAU_DEM > NGUONG_DIEM
