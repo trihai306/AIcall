@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     #
     # Chỉ áp dụng từ mảnh THỨ HAI trở đi - mảnh đầu nằm trên đường găng TTFA.
     f5tts_gop_manh: bool = True
+    # Kho TIẾNG SẴN (services/tieng_san.py): câu trả lời chữ cố định (bảng
+    # hỏi-đáp đọc nguyên văn, lượt thường gặp) dựng tiếng một lần ra đĩa rồi
+    # phát lại, không gọi F5 lúc khách chờ và không còn chỗ nối giữa mảnh.
+    # Dựng cả bảng hỏi-đáp lúc khởi động; lượt thường gặp dựng NỀN sau lần
+    # nói đầu tiên (chữ phụ thuộc tên ngân hàng/nhân viên/sản phẩm của kịch bản).
+    tieng_san_bat: bool = True
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08

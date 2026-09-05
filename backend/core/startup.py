@@ -135,6 +135,23 @@ async def startup(state: AppState):
         await state.tts.dung_fillers(lay_kho())
         logger.info("  TTS: OK")
 
+        # Tiếng sẵn cho bảng hỏi-đáp (services/tieng_san.py): chữ cố định,
+        # dựng một lần ra đĩa; lượt trúng bảng phát thẳng không gọi F5. Vài chục
+        # câu, mỗi câu ~1s - khác hẳn câu đệm (hàng nghìn clip). Hỏng thì bỏ
+        # qua, lượt vẫn đi F5 như trước.
+        if settings.tieng_san_bat and state.hoi_dap:
+            try:
+                from backend.services.tieng_san import kho_tieng_san
+                kq = await kho_tieng_san.dung_nhieu(
+                    state.tts,
+                    {f"hd_{ma}": d.get("tra_loi", "") for ma, d in state.hoi_dap.items()},
+                    state.tts.default_voice_name())
+                logger.info("  Tiếng sẵn bảng hỏi-đáp: dựng %d, đã có %d, bỏ qua %d, "
+                            "hỏng %d (%dms)", kq["dung"], kq["da_co"], kq["bo_qua"],
+                            kq["hong"], kq["ms"])
+            except Exception as e:
+                logger.warning("  Tiếng sẵn bảng hỏi-đáp hỏng, bỏ qua: %s", e)
+
         # HÂM HÌNH DẠNG TTS. Cùng lý lẽ với phần hâm LLM ngay dưới đây.
         #
         # torch.compile lưu đồ thị theo hình dạng tensor, mà `fix_duration` cấp

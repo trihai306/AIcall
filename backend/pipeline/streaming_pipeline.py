@@ -28,6 +28,7 @@ from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import can_che_ms
+from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
     DIEU_KIEN_NGU_CANH, chon_tinh_huong, chuan_hoa, loc_theo_ngu_canh,
@@ -1044,6 +1045,15 @@ class StreamingPipeline:
         # quả là giảm khối lượng Ollama phải sinh (llm_max_tokens).
         first_audio_done = asyncio.Event()
 
+        # TIẾNG SẴN (services/tieng_san.py): lượt có chữ cố định (bảng hỏi-đáp
+        # đọc nguyên văn, lượt thường gặp) đã dựng tiếng cả câu từ trước thì
+        # phát thẳng, không cắt mảnh gọi F5. Chữ vẫn đi qua vòng cắt bên dưới
+        # để `response_chunk` và lịch sử y như cũ; chỉ phần tiếng là lấy sẵn,
+        # đi kèm mảnh đầu, các mảnh sau không có tiếng riêng (như gộp mảnh).
+        tieng_san: bytes | None = None
+        ma_tieng_san: str | None = None
+        chu_tieng_san: str = ""
+
         async def tts_consumer():
             idx = 0
             first_audio_sent = False
@@ -1117,7 +1127,7 @@ class StreamingPipeline:
                 # Chờ cho LLM sinh nốt để gộp được nhiều hơn là đổi độ trễ lấy
                 # ngữ điệu - sai hướng, và khách nghe ra quãng im ngay.
                 gop_mot = False
-                if settings.f5tts_gop_manh and not GOP_LO and idx > 0:
+                if settings.f5tts_gop_manh and not GOP_LO and idx > 0 and tieng_san is None:
                     cho = []
                     het_luot = False
                     # CHỜ CÓ ĐIỀU KIỆN. Không chờ thì gộp chỉ ăn được 25% chỗ
@@ -1164,7 +1174,7 @@ class StreamingPipeline:
                     for goi_du in tra_lai:
                         tts_queue.put_nowait(goi_du)
                     gop_mot = len(dan) > 1
-                if GOP_LO and idx > 0:
+                if GOP_LO and idx > 0 and tieng_san is None:
                     while len(dan) < LO_TOI_DA:
                         try:
                             them = tts_queue.get_nowait()
@@ -1190,6 +1200,10 @@ class StreamingPipeline:
                     # `tieng = None` nên các nhánh `if tieng` tự bỏ qua, không
                     # phải rắc thêm điều kiện xuống dưới.
                     song = [None] * len(dan)
+                elif tieng_san is not None:
+                    # Cả lượt đã có tiếng dựng sẵn: đi kèm mảnh ĐẦU, mảnh sau
+                    # chỉ hiện chữ. Không gọi F5 lần nào trong lượt này.
+                    song = [tieng_san if idx == 0 else None] + [None] * (len(dan) - 1)
                 elif gop_mot:
                     n_lan_sinh += 1
                     # MỘT lần sinh cho cả cụm - đó chính là chỗ chữ ngân biến
@@ -1257,7 +1271,7 @@ class StreamingPipeline:
             # thì không ai biết nó còn chạy hay đã tắt ngóm - `f5tts_gop_manh`
             # tắt đi, hay lượt nào cũng thiếu thời gian, log đều im như nhau.
             ty_le = ty_le_gop(n_manh_sinh, n_lan_sinh)
-            if ty_le is not None:
+            if ty_le is not None and tieng_san is None:
                 metrics["gop_manh"] = f"{n_manh_sinh - n_lan_sinh}/{n_manh_sinh - 1}"
                 metrics["gop_ty_le"] = round(ty_le, 2)
                 logger.info(
@@ -1309,6 +1323,20 @@ class StreamingPipeline:
                     spec_transcript[:40], user_text[:40],
                 )
             nguon_token = self.llm.stream_response(session.history, system_prompt)
+
+        # Lượt chữ cố định -> tra kho tiếng sẵn. Chưa có thì lượt này vẫn đi F5
+        # như cũ và dựng NỀN sau khi xong lượt (xem cuối hàm), lần sau phát sẵn.
+        if dap_san:
+            ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
+        elif dong_bang and doc_thang(dong_bang.get("diem", 0.0)):
+            ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
+        if ma_tieng_san and settings.tieng_san_bat and self._tts_available:
+            tieng_san = kho_tieng_san.lay(
+                self.tts, ma_tieng_san, chu_tieng_san,
+                self.tts._giong_thuc(session.voice_name))
+            metrics["tieng_san"] = ma_tieng_san if tieng_san else "chua_co"
+            if tieng_san:
+                logger.info("Tiếng sẵn: phát %r, không gọi F5", ma_tieng_san)
 
         da_chan_bia = False
 
@@ -1493,6 +1521,17 @@ class StreamingPipeline:
             "full_response": cau_bot_that,
             "metrics": metrics,
         })
+
+        # Dựng tiếng sẵn cho lượt chữ cố định vừa phải đi F5, để lần sau phát
+        # thẳng. Chạy NỀN sau khi khách đã nghe xong, giữ tham chiếu mạnh như
+        # `_schedule_persist`. Lỡ lượt bị cắt thì vẫn dựng: chữ không đổi.
+        if (ma_tieng_san and tieng_san is None and settings.tieng_san_bat
+                and self._tts_available):
+            task = asyncio.create_task(kho_tieng_san.dung_mot(
+                self.tts, ma_tieng_san, chu_tieng_san,
+                self.tts._giong_thuc(session.voice_name)))
+            _bg_writes.add(task)
+            task.add_done_callback(_bg_writes.discard)
 
         metrics["llm_tokens"] = n_tokens
         metrics["tts_chunks"] = chunks_enqueued
