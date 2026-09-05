@@ -175,6 +175,24 @@ _SUA_NGHE_NHAM = [
     # vay" phải để nguyên. Đây là ranh giới giữa sửa đúng và sửa hỏng.
     (re.compile(r"\bvay\s+tính\s+chất\b", re.I), "vay tín chấp"),
     (re.compile(r"\bhạng\s+mức\b", re.I), "hạn mức"),
+    # --- "hạn mức" nghe nhầm, quan sát trên tiếng khách THẬT (05-09-2026) ---
+    #
+    # Đo bằng `scripts/do_xu_ly_tieng_khach.py` trên 7 lượt của cuộc gọi
+    # 4cd44fb7 (đã qua GSM/AMR thật): cùng từ "hạn mức" hỏng theo cùng một kiểu
+    # ở 7/7 cách xử lý âm thanh - lọc nhiễu, cổng phổ, chuẩn hoá mức đều không
+    # cứu được, mà lọc còn làm CER tệ gấp 2,1 lần. Tiếng không mang đủ thông
+    # tin chứ không phải nhiễu che mất, nên chữa ở tầng CHỮ mới đúng chỗ.
+    #
+    # "lợn sơn" / "lớn sơn" không phải cụm tiếng Việt có thật nên sửa thẳng.
+    # Hai chữ đứng RIÊNG thì không đụng tới ("giá thịt lợn", "nghề sơn nhà").
+    (re.compile(r"\bl[ợớ]n\s+sơn\b", re.I), "hạn mức"),
+    # "hắn mừng" LÀ cụm có thật ("hắn mừng lắm"), nên chỉ sửa khi theo sau là
+    # "được" - đúng dạng đã quan sát ("hắn mừng được bao nhiêu"). Khách gọi
+    # ngân hàng gần như không bao giờ nói "hắn mừng được...".
+    (re.compile(r"\bhắn\s+mừng(?=\s+được\b)", re.I), "hạn mức"),
+    # "có sẵn mức" LÀ cách nói có thật trong bán hàng ("có sẵn mức giá tốt"),
+    # nên chặn đúng trường hợp đó bằng lookbehind.
+    (re.compile(r"(?<!có )\bsẵn\s+mức\b", re.I), "hạn mức"),
 ]
 
 
