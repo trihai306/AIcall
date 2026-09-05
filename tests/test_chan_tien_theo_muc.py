@@ -243,3 +243,92 @@ def test_cau_dung_van_khong_bi_dung_toi():
     cau = "Hạn mức vay tín chấp lên đến 500 triệu đồng ạ."
     ra, sua = chan_tien_sai(cau, TL_VAY, khach_noi="")
     assert sua is None and ra == cau
+
+
+# --- Lỗ hổng "nghìn", bắt được 05-09-2026 khi soi ca LỌT của 8 vòng -----------
+#
+# `scripts/do_luoi_nhieu_vong.py` ghi lại câu NÊU SỐ TIỀN mà lưới KHÔNG chặn.
+# Nhóm "hỏi sản phẩm không có tài liệu" lọt 6 ca, 5 trong đó cùng một kiểu:
+#
+#     khách: "sổ tiết kiệm mở tối thiểu bao nhiêu"
+#     AI   : "Anh/chị mở sổ tiết kiệm tối thiểu là 500 NGHÌN đồng ạ."
+#     khách: "gói bảo hiểm rẻ nhất giá bao nhiêu"
+#     AI   : "Gói bảo hiểm nhân thọ rẻ nhất bên em khoảng 600 NGHÌN một năm ạ."
+#
+# `_DON_VI_TIEN` chỉ có ("triệu", "tỷ", "tỉ") nên mọi con số tính bằng NGHÌN đi
+# thẳng ra loa. Đúng khoảng giá mà mô hình hay bịa cho tiết kiệm/bảo hiểm - hai
+# sản phẩm `knowledge/` không có tài liệu nào.
+
+TL_CHI_VAY = "# Vay Tín Chấp\n\n## Hạn mức\n- Hạn mức: lên đến 500 triệu đồng\n"
+
+
+@pytest.mark.parametrize("cau", [
+    "Anh/chị mở sổ tiết kiệm tối thiểu là 500 nghìn đồng ạ.",
+    "Gói bảo hiểm nhân thọ rẻ nhất bên em khoảng 600 nghìn một năm ạ.",
+    "Phí bên em là 800 nghìn đồng ạ.",
+])
+def test_chan_duoc_so_tien_tinh_bang_NGHIN(cau):
+    ra, sua = chan_tien_sai(cau, TL_CHI_VAY, khach_noi="")
+    assert sua is not None, f"tiền tính bằng nghìn lọt hẳn: {ra}"
+    assert "nghìn" not in ra
+
+
+def test_so_nghin_KHACH_neu_thi_van_tha():
+    ra, sua = chan_tien_sai("Dạ anh gửi 500 nghìn đúng không ạ.", TL_CHI_VAY,
+                            khach_noi="anh muốn gửi 500 nghìn")
+    assert sua is None and "500 nghìn" in ra
+
+
+def test_so_nghin_CO_trong_tai_lieu_thi_khong_dung():
+    tl = TL_CHI_VAY + "\n## Phí\n- Phí thường niên: 400 nghìn đồng/năm\n"
+    ra, sua = chan_tien_sai("Phí thường niên là 400 nghìn đồng ạ.", tl, khach_noi="")
+    assert sua is None and "400 nghìn" in ra
+
+
+# --- Số thập phân: chỉ dò ở nhánh NGỮ CẢNH RỖNG SỐ ---------------------------
+#
+# Ca lọt thứ 6 của nhóm B: "bảo hiểm nhân thọ rẻ nhất khoảng 1,5 TRIỆU một năm".
+# `_TIEN_SO_RE` không xử số thập phân nên không thấy con số nào.
+#
+# KHÔNG mở rộng regex chung được: `test_khong_khop_mot_phan_so_thap_phan` bảo vệ
+# đúng ca "mỗi tháng trả khoảng 2.78 triệu đồng" - câu HỢP LỆ, số do tính toán
+# chứ không có trong tài liệu, chặn nó là sai.
+#
+# Phân biệt bằng NGỮ CẢNH: khi tài liệu không có SỐ TIỀN NÀO thì mọi con số
+# trong câu đều là bịa, lúc đó dò khoan dung mới an toàn. Còn khi tài liệu có số
+# thì giữ nguyên hành vi cũ.
+
+def test_chan_so_thap_phan_khi_ngu_canh_rong_so():
+    cau = "Gói bảo hiểm nhân thọ rẻ nhất bên em khoảng 1,5 triệu đồng một năm ạ."
+    ra, sua = chan_tien_sai(cau, NC_RONG_SO, khach_noi="")
+    assert sua is not None, f"so thap phan lot khi ngu canh rong: {ra}"
+    assert ra == CAU_KIEM_TRA_LAI
+
+
+def test_so_thap_phan_HOP_LE_van_duoc_tha_khi_tai_lieu_co_so():
+    """Câu trả góp hàng tháng: số do tính toán, không có trong tài liệu."""
+    cau = "Mỗi tháng anh/chị trả khoảng 2.78 triệu đồng ạ."
+    ra, sua = chan_tien_sai(cau, TL_CHI_VAY, khach_noi="anh cần vay 80 triệu")
+    assert sua is None, f"da chan oan cau tra gop hop le: {ra}"
+
+
+def test_chan_so_viet_bang_chu_so_MOT_NHOM_khi_ngu_canh_rong():
+    """"500.000 đồng" - `_TIEN_CHU_SO_RE` đòi >= 2 nhóm ba chữ số (từ 1.000.000)
+    nên dạng một nhóm lọt hẳn. Ca lọt thật của nhóm B, vòng 5.
+    """
+    cau = "Hiện tại tối thiểu gửi tiết kiệm là 500.000 đồng ạ."
+    ra, sua = chan_tien_sai(cau, NC_RONG_SO, khach_noi="")
+    assert sua is not None, f"so mot nhom lot: {ra}"
+    assert ra == CAU_KIEM_TRA_LAI
+
+
+@pytest.mark.parametrize("cau", [
+    "Hồ sơ duyệt trong 24 giờ ạ.",
+    "Anh sinh năm 1990 phải không ạ.",
+    "Số điện thoại của em là 0912345678 ạ.",
+    "Dạ em xin phép kiểm tra lại thông tin ạ.",
+])
+def test_van_KHONG_chan_cau_khong_co_tien_du_ngu_canh_rong(cau):
+    """Nới phép dò không được biến mọi con số thành 'tiền'."""
+    ra, sua = chan_tien_sai(cau, NC_RONG_SO, khach_noi="")
+    assert sua is None, f"da chan nham: {ra}"

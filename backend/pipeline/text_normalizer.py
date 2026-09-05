@@ -413,8 +413,18 @@ def _so_thap_phan_trong(tai_lieu: str) -> set[tuple[int, int]]:
 #
 # Báo sai hạn mức trong cuộc gọi bán sản phẩm tài chính là lỗi nặng ngang báo sai
 # lãi suất, nên phải chặn ở tầng cuối y như vậy.
-_DON_VI_TIEN = ("triệu", "tỷ", "tỉ")
-_HE_SO = {"triệu": 10 ** 6, "tỷ": 10 ** 9, "tỉ": 10 ** 9}
+# "nghìn" thêm 05-09-2026: soi ca LỌT của `scripts/do_luoi_nhieu_vong.py` thấy
+# 5/6 ca cùng một kiểu - mô hình bịa giá tiết kiệm/bảo hiểm bằng NGHÌN và đi
+# thẳng ra loa vì lưới không biết đơn vị này:
+#     "sổ tiết kiệm tối thiểu là 500 NGHÌN đồng"
+#     "bảo hiểm rẻ nhất khoảng 600 NGHÌN một năm"
+# Đúng khoảng giá mô hình hay bịa cho hai sản phẩm `knowledge/` không có tài liệu.
+#
+# KHÔNG thêm "trăm"/"chục": chúng đứng trong cụm số ("năm trăm triệu") chứ không
+# phải đơn vị tiền đứng một mình, thêm vào là băm nát mọi con số lớn.
+_DON_VI_TIEN = ("triệu", "tỷ", "tỉ", "nghìn", "ngàn")
+_HE_SO = {"triệu": 10 ** 6, "tỷ": 10 ** 9, "tỉ": 10 ** 9,
+          "nghìn": 10 ** 3, "ngàn": 10 ** 3}
 
 # "500 triệu" hoặc "năm trăm triệu" - bắt cả hai dạng vì mô hình viết lẫn lộn.
 # Lookbehind kể cả DẤU CHẤM/PHẨY, không chỉ `\w` và `/`.
@@ -585,6 +595,33 @@ def _tien_theo_chu_de(text: str, tai_lieu: str) -> set[float] | None:
 _DAI_TRUNG_RE = re.compile(r"\btừ\s+(.{1,40}?)\s+đến\s+\1\b", re.IGNORECASE)
 
 
+# Dò tiền KHOAN DUNG hơn `_tien_trong`: bắt cả số thập phân ("1,5 triệu").
+#
+# CHỈ dùng để quyết định "câu này có nêu tiền không" ở nhánh ngữ cảnh RỖNG SỐ,
+# KHÔNG dùng để thay số. Lý do phải tách: mở rộng `_TIEN_SO_RE` chung sẽ bắt cả
+# "mỗi tháng trả khoảng 2.78 triệu" - câu HỢP LỆ, con số do tính toán chứ không
+# có trong tài liệu, chặn nó là sai (xem
+# `test_khong_khop_mot_phan_so_thap_phan`).
+#
+# Khi tài liệu KHÔNG có số tiền nào thì phân biệt đó không còn ý nghĩa: mọi con
+# số trong câu đều là bịa. Ca lọt thật: "bảo hiểm rẻ nhất khoảng 1,5 triệu một
+# năm", tìm bằng `scripts/do_luoi_nhieu_vong.py`.
+# Ba dạng viết mô hình dùng lẫn lộn, gom hết vào ĐÂY chứ đừng nới regex chung:
+#   "1,5 triệu"    số thập phân + đơn vị chữ
+#   "500.000 đồng" chữ số một nhóm ba (`_TIEN_CHU_SO_RE` đòi >= 2 nhóm)
+#   "2 tỷ"         dạng thường, đã có `_tien_trong` lo
+# Đòi có chữ ĐƠN VỊ đi kèm ở cả hai mẫu: không thì "1990" hay "0912345678" cũng
+# thành tiền.
+_TIEN_LONG_RE = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:" + "|".join(_DON_VI_TIEN) + r")\b"
+    r"|(?<![\w/])\d{1,3}(?:[.,]\d{3})+\s*(?:đồng|đ)\b", re.IGNORECASE)
+
+
+def _co_neu_tien(text: str) -> bool:
+    """Câu có nêu một số tiền nào không (kể cả dạng thập phân)."""
+    return bool(_tien_trong(text) or _TIEN_LONG_RE.search(text or ""))
+
+
 def chan_tien_sai(text: str, tai_lieu: str,
                   khach_noi: str = "") -> tuple[str, str | None]:
     """Bỏ số tiền AI nói mà KHÔNG có trong tài liệu và KHÔNG do khách nêu ra.
@@ -609,7 +646,7 @@ def chan_tien_sai(text: str, tai_lieu: str,
         # gọi 4cd44fb7: câu hỏi méo kéo RAG đi lạc, ngữ cảnh thật của lượt đó
         # chỉ 63 ký tự và không có số nào. Xử như lãi suất bịa - thay cả câu,
         # vì bỏ mỗi con số thì còn lại "hạn mức bên em là ạ".
-        if _tien_trong(text):
+        if _co_neu_tien(text):
             return CAU_KIEM_TRA_LAI, "bịa số tiền (ngữ cảnh không có số nào)"
         return text, None
     sua = None

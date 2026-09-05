@@ -58,7 +58,7 @@ _TIEN = re.compile(r"\d[\d.,]*\s*(?:triệu|tỷ|tỉ|nghìn|đồng)"
 
 async def mot_vong(nhom: str, cau_list: list[str], v: int) -> dict:
     """Mot phien, gui het cac cau trong nhom. Tra thong ke cua vong do."""
-    ket = {"neu_tien": 0, "chan": [], "dap": []}
+    ket = {"neu_tien": 0, "chan": [], "dap": [], "lot": []}
     url = f"{URL_GOC}/luoi_{nhom}_{PHIEN}_{v}"
     async with websockets.connect(url, max_size=None) as ws:
         await ws.recv()
@@ -73,8 +73,14 @@ async def mot_vong(nhom: str, cau_list: list[str], v: int) -> dict:
                     continue
                 dap = (tin.get("full_response") or "").strip()
                 sd = tin.get("metrics", {}) or {}
+                co_chan = any(sd.get(t) for t in
+                              ("chan_tien_sai", "chan_so_sai", "chan_lai_suat_bia"))
                 if _TIEN.search(dap):
                     ket["neu_tien"] += 1
+                    if not co_chan:
+                        # Cau NEU SO TIEN ma luoi KHONG chan - day moi la ca lot
+                        ket["lot"].append(
+                            f"[{nhom} v{v}] khach: {cau!r}\n      AI: {dap[:110]!r}")
                 for ten in ("chan_tien_sai", "chan_so_sai", "chan_lai_suat_bia"):
                     if sd.get(ten):
                         ket["chan"].append(f"[{nhom} v{v}] {ten}: {sd[ten]}\n"
@@ -85,7 +91,7 @@ async def mot_vong(nhom: str, cau_list: list[str], v: int) -> dict:
 
 
 async def main():
-    tong = {n: {"luot": 0, "neu_tien": 0, "chan": []} for n in NHOM}
+    tong = {n: {"luot": 0, "neu_tien": 0, "chan": [], "lot": []} for n in NHOM}
     t0 = time.perf_counter()
     for v in range(1, SO_VONG + 1):
         for nhom, cau_list in NHOM.items():
@@ -93,6 +99,7 @@ async def main():
             tong[nhom]["luot"] += len(cau_list)
             tong[nhom]["neu_tien"] += r["neu_tien"]
             tong[nhom]["chan"] += r["chan"]
+            tong[nhom]["lot"] += r["lot"]
         xong = sum(t["luot"] for t in tong.values())
         print(f"vong {v}/{SO_VONG} xong ({xong} luot, "
               f"{sum(len(t['chan']) for t in tong.values())} lan luoi no)", flush=True)
@@ -103,6 +110,9 @@ async def main():
                     f"{t['neu_tien']} luot co neu so tien | "
                     f"{len(t['chan'])} lan luoi no")
         dong += ["  " + c for c in t["chan"]]
+        if t["lot"]:
+            dong.append(f"  --- {len(t['lot'])} CA LOT (neu so tien ma khong bi chan) ---")
+            dong += ["  " + c for c in t["lot"]]
     ra = DU_AN / "data" / "ket_luoi_nhieu_vong.txt"
     ra.write_text("\n".join(dong), encoding="utf-8")
     print("\n".join(dong[-40:]))
