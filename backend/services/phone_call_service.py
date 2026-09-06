@@ -27,6 +27,7 @@ from backend.services.audio_utils import (
     compute_rms, float32_to_int16, int16_to_float32, resample_audio,
     resample_lien_tuc,
 )
+from backend.pipeline.session_manager import viec_cho_doan_ngan
 from backend.services.dem_truoc import DEM_TRUOC_MS, DemTruoc
 from backend.services.gender_detect import doan_gioi_tinh
 from backend.services.loc_gio import la_gio
@@ -1336,10 +1337,26 @@ class PhoneCallBridge:
                         # nhiều cuộc gọi để tìm ra đúng chỗ này.
                         logger.info(f"{self.tag} bỏ đoạn %dms - ngắn hơn MIN_TURN_MS=%d",
                                     talk_ms, MIN_TURN_MS)
+                        # Đoạn ngắn bị vứt, NHƯNG có thể đang treo một câu khách
+                        # nói dở lúc cắt lời. Câu đó chỉ được ghép khi có lượt
+                        # MỚI mở - mà ở đây không có lượt nào. Không xử ở đây thì
+                        # nó mồ côi và khách không bao giờ được trả lời.
+                        # Xem `session_manager.viec_cho_doan_ngan`.
+                        cau_treo = viec_cho_doan_ngan(
+                            talk_ms, MIN_TURN_MS, self.session.cau_bi_cat)
+                        if cau_treo:
+                            self.session.cau_bi_cat = ""
+                            logger.info(
+                                f"{self.tag} còn câu bị cắt chưa trả lời -> "
+                                "trả lời nó: %r", cau_treo[:60])
+                            await self._cho_luot_cu_dung()
+                            self.session.yeu_cau_huy = False
+                            self._luot_task = asyncio.create_task(
+                                self._tra_loi_chu(cau_treo))
                         # Không có lượt nào chạy nên sẽ KHÔNG có `turn_complete`
                         # để đặt lại mốc. Đặt ngay tại đây, nếu không thì mốc
                         # đứng ở `None` và không bao giờ nhắc nữa.
-                        if self._luc_ai_noi_xong is None:
+                        elif self._luc_ai_noi_xong is None:
                             self._luc_ai_noi_xong = time.monotonic()
 
         except (asyncio.IncompleteReadError, asyncio.CancelledError):
@@ -1413,6 +1430,20 @@ class PhoneCallBridge:
             f"{self.tag} giới tính khách: {ket_qua['gioi_tinh']} "
             f"({ket_qua['ly_do']}, tin {ket_qua['do_tin']})"
         )
+
+    async def _tra_loi_chu(self, text: str):
+        """Trả lời một câu ĐÃ CÓ CHỮ, không cần phiên âm lại.
+
+        Dùng cho câu bị cắt lời còn treo: chữ đã có sẵn từ lượt trước, còn đoạn
+        tiếng khách nói tiếp thì quá ngắn để thành một lượt.
+        """
+        try:
+            self.turns += 1
+            await self.pipeline.process_text_turn(
+                text, self.session, self.sink, la_thoai=True)
+        except Exception as e:
+            self.last_error = f"trả lời câu treo lỗi: {e}"
+            logger.warning(f"{self.tag} {self.last_error}", exc_info=True)
 
     async def _handle_turn(self, pcm16k: bytes):
         """Một lượt của khách. Tiếng đã ở 16kHz sẵn từ vòng thu."""

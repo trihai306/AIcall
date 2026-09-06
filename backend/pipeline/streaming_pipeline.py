@@ -31,7 +31,8 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
-from backend.services.filler_pick import (can_che_ms, cho_den_khi,
+from backend.services.filler_pick import (NGUONG_BO_DEM_MS, can_che_ms,
+                                          cho_den_khi, du_doan_cho_ms,
                                           nen_bo_cau_dem, tinh_huong_dung)
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
@@ -679,14 +680,11 @@ class StreamingPipeline:
     # đầu - xem `filler_pick.can_che_ms`.
     _FILLER_MIN_CHAT_MS = 2000.0
 
-    # Dưới mức trễ này thì ĐỪNG phát câu đệm - khoảng lặng ngắn nghe tự nhiên
-    # hơn hẳn một câu "Dạ vâng ạ" chèn vào.
-    #
-    # Vì sao phải thêm: câu đệm sinh ra để che TTFA ~1100ms. Sau khi bật
-    # torch.compile và rút đoạn mẫu, TTS xuống 331ms; cộng cơ chế nghĩ sẵn thì
-    # nhiều lượt có câu trả lời gần như tức thì. Lúc đó câu đệm không che gì cả,
-    # chỉ thành lời thừa - người nghe báo "dạ vâng ạ lặp lại quá nhiều".
-    _FILLER_BO_QUA_MS = 700.0
+    # Luật và số đo nằm ở `filler_pick.NGUONG_BO_DEM_MS` - cùng chỗ với
+    # `du_doan_cho_ms`, thứ nó được đem ra so sánh. Để hai đại lượng đó xa nhau
+    # chính là cách bản cũ hỏng: ngưỡng 700 so với `can_che_ms` (sàn 1800) nên
+    # không bao giờ kích hoạt, mã chết suốt một tháng mà log vẫn sạch.
+    _FILLER_BO_QUA_MS = NGUONG_BO_DEM_MS
 
     # Chờ tối đa bao nhiêu ms để speculate._run() hoàn thành STT và phân loại
     # tình huống. Đặt 0 để tắt hoàn toàn.
@@ -778,22 +776,29 @@ class StreamingPipeline:
             self._FILLER_MIN_THOAI_MS if la_thoai else self._FILLER_MIN_CHAT_MS,
         )
 
-        # 1. Đã nghĩ sẵn câu trả lời -> BỎ được khâu sinh chữ (~220ms), NHƯNG
-        #    vẫn còn STT bản cuối + TTS mảnh đầu, và đó mới là phần lớn.
+        # BỎ câu đệm khi đường này gần đây vốn đã nhanh - khoảng lặng ngắn nghe
+        # tự nhiên hơn hẳn một câu "Dạ vâng ạ" chèn vào.
         #
-        #    Giả định cũ "câu thật tới gần như tức thì" SAI - đo trên ba cuộc gọi
-        #    thật: đúng những lượt dùng bản nghĩ sẵn lại là lượt khách phải nghe
-        #    im lặng LÂU NHẤT (947ms, 1295ms, 1739ms), vì chỉ chúng bị bỏ câu đệm.
-        #    Tức tối ưu này đang làm hỏng chính thứ nó tối ưu.
+        # `spec_answer` (đã nghĩ sẵn câu trả lời) KHÔNG được tự nó quyết. Giả
+        # định cũ "có bản nghĩ sẵn thì câu thật tới gần như tức thì" SAI - đo
+        # trên ba cuộc gọi thật: đúng những lượt dùng bản nghĩ sẵn lại là lượt
+        # khách nghe im lặng LÂU NHẤT (947ms, 1295ms, 1739ms), vì chỉ chúng bị
+        # bỏ câu đệm. Nghĩ sẵn mới bỏ được khâu sinh chữ (~220ms); STT bản cuối
+        # và TTS mảnh đầu vẫn còn, và đó mới là phần lớn. Nên nó chỉ đổi CHỮ ghi
+        # vào metrics, còn quyết định thì để số đo lo.
         #
-        #    Vẫn bỏ câu đệm, nhưng chỉ khi đường này thật sự nhanh - để điều kiện
-        #    2 bên dưới quyết, đừng quyết thay nó.
-        if session.spec_answer and can_che < self._FILLER_BO_QUA_MS:
-            metrics["filler_bo_qua"] = f"đã nghĩ sẵn + nhanh sẵn ({can_che:.0f}ms)"
-            return
-        # 2. Đường này gần đây vốn đã nhanh -> khoảng lặng ngắn tự nhiên hơn.
-        if can_che < self._FILLER_BO_QUA_MS:
-            metrics["filler_bo_qua"] = f"nhanh sẵn ({can_che:.0f}ms)"
+        # `du_doan` KHÁC `can_che`: nó không có sàn 1800/2000ms, nên nói được sự
+        # thật "đường này đang chạy 300ms". Dùng `can_che` ở đây là lý do hai
+        # nhánh dưới chưa từng chạy suốt từ 08-2026 - xem `_FILLER_BO_QUA_MS`.
+        #
+        # None = lượt ĐẦU, chưa có số đo nào. Không biết thì PHẢI phát: lượt đầu
+        # là lượt chậm nhất cuộc gọi (tra hồ sơ nguội, đo được TTFA 8026ms).
+        du_doan = du_doan_cho_ms(session.latency_log, la_thoai)
+        if du_doan is not None and du_doan < self._FILLER_BO_QUA_MS:
+            metrics["filler_bo_qua"] = (
+                f"đã nghĩ sẵn + nhanh sẵn ({du_doan:.0f}ms)" if session.spec_answer
+                else f"nhanh sẵn ({du_doan:.0f}ms)")
+            metrics["du_doan_cho_ms"] = round(du_doan)
             return
 
         kho = lay_kho()
@@ -1073,8 +1078,13 @@ class StreamingPipeline:
         return True
 
     async def process_text_turn(self, text: str, session: CallSession, ws: WebSocket,
-                                soi: bool = False):
+                                soi: bool = False, la_thoai: bool = False):
         """Text-only turn (skip STT).
+
+        `la_thoai=True`: chữ đã có sẵn nhưng lượt này VẪN thuộc đường ĐIỆN THOẠI
+        (câu bị cắt lời còn treo - xem `viec_cho_doan_ngan`). Phải ghi đúng cờ,
+        nếu không `can_che_ms` xếp nó vào lịch sử đường CHAT và ước lượng sai độ
+        dài câu đệm cho các lượt thoại sau.
 
         `soi=True` là chế độ SOI của trang Nhắn tin: đi trọn vòng nghiệp vụ như
         thường (lượt thường gặp, tra hồ sơ, RAG, LLM, lưới chặn số) nhưng bỏ câu
@@ -1082,7 +1092,7 @@ class StreamingPipeline:
         Mặc định `False` để đường thoại và trang Hội thoại không đổi hành vi.
         """
         t_start = time.perf_counter()
-        metrics = {"stt_ms": 0, "la_thoai": False}
+        metrics = {"stt_ms": 0, "la_thoai": la_thoai}
 
         # Đường chat trước đây KHÔNG có filler: khách gõ xong bấm gửi rồi ngồi im
         # 1.2-1.4 giây (đo thật) mới nghe tiếng, trong khi gọi điện thì nghe ngay.

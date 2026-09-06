@@ -4,6 +4,35 @@ import uuid
 from backend.pipeline.so_can_cu import SoCanCu
 
 
+def viec_cho_doan_ngan(talk_ms: float, min_turn_ms: float,
+                      cau_bi_cat: str) -> str | None:
+    """Đoạn tiếng quá ngắn để thành lượt. Có gì phải trả lời không?
+
+    Trả câu ĐANG TREO nếu có, không thì `None` (bỏ đoạn như cũ).
+
+    VÌ SAO CẦN. Khi khách cắt lời, lượt đang chạy bị dừng và câu khách vừa nói
+    được GIỮ LẠI để ghép vào lượt kế (`danh_dau_bi_cat`). Nhưng nó chỉ được ghép
+    khi có lượt MỚI mở - `ghep_cau_bi_cat` nằm trong `process_turn`. Nếu mẩu
+    khách nói tiếp ngắn hơn `MIN_TURN_MS` thì không lượt nào mở, và câu giữ lại
+    nằm đó mãi: khách hỏi xong không bao giờ được trả lời.
+
+    Cuộc gọi thật 06-09-2026 (phiên 13d99921):
+
+        16:43:16  khách: anh vay sáu tháng thì chơi bao nhiêu
+        16:43:17  Lượt dừng vì khách cắt lời. Giữ câu để ghép: 'anh vay sáu…'
+        16:43:18  bỏ đoạn 120ms - ngắn hơn MIN_TURN_MS=130
+        16:43:30  đã đóng cầu tiếng            <- im 12 giây tới hết cuộc gọi
+
+    Đối chiếu bản ghi: đoạn tiếng AI cuối chỉ dài 0,9 giây rồi im hẳn.
+
+    Đoạn ĐỦ DÀI thì không đụng vào - đường thường đã tự ghép đúng.
+    """
+    if talk_ms >= min_turn_ms:
+        return None
+    cau = (cau_bi_cat or "").strip()
+    return cau or None
+
+
 class CallSession:
     """Manages conversation state for a single call."""
 
