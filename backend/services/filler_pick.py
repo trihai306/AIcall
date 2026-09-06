@@ -130,6 +130,25 @@ def tinh_huong_dung(tinh_huong: tuple[int, str, float] | None,
     n_th, id_th, _diem = tinh_huong
     return id_th, n_th / n_audio
 
+
+def nen_bo_cau_dem(id_tinh_huong: str | None, co_audio: bool) -> bool:
+    """Có BỎ HẲN câu đệm lượt này không (thay vì rơi về rổ chung)?
+
+    Người dùng 06-09-2026: "sao vẫn vào none nhiều, nếu none thì thôi không câu
+    đệm cho tôi". Rổ chung trung tính nhưng vô thưởng vô phạt, và khi nó rơi
+    trúng câu cùng nghĩa với lưới chặn số thì thành nói hai lần một ý.
+
+    CÁI GIÁ, đo cùng ngày trên `latency_metrics` (hai phiên 10:25 và 10:31):
+    3/5 lượt có `tinh_huong_id` rỗng. Bỏ đệm ở đó nghĩa là 60% số lượt khách
+    nghe im lặng trọn quãng chờ - đo được 1376-2325ms. Hạ được tỉ lệ None
+    (hiện do ngưỡng 0,90 chặn) thì cái giá này nhỏ đi theo.
+
+    `co_audio = False` là đường GÕ CHỮ: ở đó `n_audio = 0` nên máy chưa từng thử
+    phân loại. "Không rõ tình huống" ở đấy không mang nghĩa gì, áp luật này vào
+    là xoá sạch câu đệm của một đường vốn đang chạy đúng.
+    """
+    return co_audio and id_tinh_huong is None
+
 # Tiểu từ lịch sự ở đầu câu đuôi cần bỏ khi đã có mẩu mở đầu.
 # Thứ tự: dài trước để tránh khớp chặng đầu của từ dài hơn
 # (vd "Vâng ạ" phải thắng "Vâng" khi đuôi là "Vâng ạ, ...").

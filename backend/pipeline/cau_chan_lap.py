@@ -29,10 +29,26 @@ CAU_CHAN: tuple[str, ...] = (
 )
 
 
-def cau_chan(so_lan_lien_tiep: int) -> str:
-    """Câu cho lần chặn thứ `so_lan_lien_tiep` (đếm từ 1). Quá thì lấy câu cuối."""
+def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False) -> str:
+    """Câu cho lần chặn thứ `so_lan_lien_tiep` (đếm từ 1). Quá thì lấy câu cuối.
+
+    `da_co_cau_dem`: lượt này ĐÃ phát câu đệm rồi. Lúc đó câu 1 thành lời hứa
+    lặp - câu đệm vừa nói "em kiểm tra lại thông tin rồi báo lại anh chị", câu
+    chặn nói y hệt, khách nghe hai lần liền trong CÙNG một lượt.
+
+    Người dùng 06-09-2026 báo kèm ảnh: "đã có câu đệm rồi AI lại trả lời thêm
+    câu đệm nữa thì thành ra 2 lần đệm".
+
+    `dem_chan_lien_tiep` không thấy được chuyện này: nó chỉ đếm lặp GIỮA CÁC
+    LƯỢT, còn đây là lặp bên trong một lượt, giữa hai cơ chế khác nhau.
+
+    Nhảy sang câu 2 chứ không bịa câu mới: câu đó vừa không lặp vừa HỎI LẠI con
+    số - đúng thứ gỡ được bế tắc, xem chú thích của `CAU_CHAN`.
+    """
     if so_lan_lien_tiep < 1:
         so_lan_lien_tiep = 1
+    if da_co_cau_dem and so_lan_lien_tiep == 1:
+        so_lan_lien_tiep = 2
     return CAU_CHAN[min(so_lan_lien_tiep, len(CAU_CHAN)) - 1]
 
 

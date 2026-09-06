@@ -30,7 +30,8 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
-from backend.services.filler_pick import can_che_ms, tinh_huong_dung
+from backend.services.filler_pick import (can_che_ms, nen_bo_cau_dem,
+                                          tinh_huong_dung)
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
@@ -677,6 +678,12 @@ class StreamingPipeline:
         if do_phu is not None:
             metrics["tinh_huong_do_phu"] = round(do_phu, 3)
             metrics["tinh_huong_diem"] = round(session.tinh_huong[2], 3)
+
+        # Không nhận ra tình huống -> THÔI, đừng phát rổ chung. Xem
+        # `filler_pick.nen_bo_cau_dem` cho cái giá đã đo của quyết định này.
+        if nen_bo_cau_dem(id_th, n_audio > 0):
+            metrics["filler_bo_qua"] = "khong ro tinh huong"
+            return
 
         # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi. Nay đọc CHÍNH
         # phiên âm dở thay vì suy từ `session.turn_count` như trước: spec_stt có
@@ -1430,7 +1437,11 @@ class StreamingPipeline:
                 getattr(session, "so_lan_chan_lien_tiep", 0))
             session.luot_chan_cuoi = moc
             session.so_lan_chan_lien_tiep = so_lan
-            moi = cau_chan(so_lan)
+            # Truyền `da_co_cau_dem`: câu đệm vừa phát đã hứa "em kiểm tra
+            # lại rồi báo lại", câu chặn số 1 hứa y hệt -> hai lần một ý trong
+            # CÙNG một lượt. `dem_chan_lien_tiep` không thấy được vì nó chỉ
+            # đếm lặp giữa các lượt.
+            moi = cau_chan(so_lan, da_co_cau_dem=bool(metrics.get("filler_text")))
             if moi != ra:
                 logger.info("Câu chặn lặp lần %d - đổi câu: %r", so_lan, moi[:60])
             return moi
