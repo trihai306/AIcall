@@ -17,6 +17,7 @@ SỬA XONG PHẢI LÀM HAI VIỆC, thiếu một là hỏng câm:
                   tình huống vừa thêm KHÔNG BAO GIỜ được chọn, mà không có gì báo
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -124,13 +125,34 @@ def _nhung_lai_vi_du():
 
 
 def _ap_dung():
-    """Nạp lại kho + nhúng lại ví dụ. Lỗi ở đây không được nuốt im."""
+    """Nạp lại kho + nhúng lại ví dụ. Lỗi ở đây không được nuốt im.
+
+    ĐỒNG BỘ và CHẶN. Đừng gọi thẳng từ `async def` - dùng `_ap_dung_nen()`.
+    """
     from backend.services.filler_store import nap_lai
     nap_lai()
     try:
         _nhung_lai_vi_du()
     except Exception as e:
         logger.warning("Không nhúng lại được ví dụ tình huống: %s", e)
+
+
+async def _ap_dung_nen() -> None:
+    """Như `_ap_dung` nhưng chạy ngoài vòng lặp sự kiện.
+
+    VÌ SAO BẮT BUỘC: `_nhung_lai_vi_du` gọi `rag.embed()` một lần cho MỖI tình
+    huống - 34 lần trên GPU. Gọi thẳng trong `async def` thì suốt lúc đó vòng
+    lặp sự kiện đứng im, và mọi thứ khác đứng theo.
+
+    Cuộc gọi thật 06-09-2026 (phiên 78913468): người dùng bấm Lưu trên giao diện
+    giữa lúc đang gọi. Log ghi "Đã nhúng lại ví dụ của 34 tình huống", ngay sau
+    đó "TTS: 8763ms" (thường 300-500ms), rồi "khách cắt lời — bỏ 328 khung tiếng
+    AI". Tức bộ đẩy tiếng xuống điện thoại tắc, khách nghe AI ngắt giữa chừng,
+    tưởng rớt máy nên "a lô" - và chính tiếng đó vứt nốt 6,5 giây đang xếp hàng.
+
+    Xem `tests/test_luu_tinh_huong_khong_chan_vong.py`.
+    """
+    await asyncio.to_thread(_ap_dung)
 
 
 # --- đọc -------------------------------------------------------------------------
@@ -202,7 +224,7 @@ async def luu_tinh_huong(than: dict = Body(...)):
          float(than["speed"]) if than.get("speed") not in (None, "") else None,
          1 if than.get("bat", True) else 0, gio, gio))
     conn.commit()
-    _ap_dung()
+    await _ap_dung_nen()
     logger.info("Câu đệm: lưu tình huống %s", ma)
     return {"ok": True, "id": ma}
 
@@ -214,7 +236,7 @@ async def xoa_tinh_huong(ma: str):
         return {"error": "DB chưa mở"}
     conn.execute("DELETE FROM tinh_huong WHERE id = ?", (ma,))
     conn.commit()
-    _ap_dung()
+    await _ap_dung_nen()
     logger.info("Câu đệm: xoá tình huống %s", ma)
     return {"ok": True, "da_xoa": ma}
 
@@ -237,7 +259,7 @@ async def luu_cau_duoi(than: dict = Body(...)):
          1 if than.get("hop_cau_hoi", True) else 0,
          1 if than.get("bat", True) else 0, gio, gio))
     conn.commit()
-    _ap_dung()
+    await _ap_dung_nen()
     return {"ok": True, "id": than["id"].strip()}
 
 
@@ -256,7 +278,7 @@ async def xoa_cau_duoi(ma: str):
                          "trước đã."}
     conn.execute("DELETE FROM cau_duoi WHERE id = ?", (ma,))
     conn.commit()
-    _ap_dung()
+    await _ap_dung_nen()
     return {"ok": True, "da_xoa": ma}
 
 
