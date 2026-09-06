@@ -28,6 +28,18 @@ CAU_CHAN: tuple[str, ...] = (
     "Dạ em chưa dám chốt số khi chưa tra kỹ, anh chị cho em xin lại thông tin mình muốn ạ.",
 )
 
+# Câu cho lần chặn ĐẦU khi ĐÃ phát câu đệm. Người dùng 06-09-2026, sau khi nghe
+# cuộc gọi thật: "cái câu em xin phép kiểm tra lại rồi báo anh chị nó dài, chỉ
+# cần dạ vâng hoặc 1 câu đệm đã thêm là đủ rồi".
+#
+# Câu đệm vừa hứa "em kiểm tra lại rồi báo lại" xong; nhắc lại trọn lời hứa đó
+# lần nữa vừa thừa vừa dài. Một tiếng đáp là đủ.
+#
+# KHÔNG chứa chữ số, cùng ràng buộc với `CAU_CHAN`. Ngắn hai âm tiết nên dựa vào
+# luật ép thêm thời lượng cho mảnh ≤2 âm tiết, nếu không F5 nuốt đuôi thành
+# "dạ vân" - xem bộ nhớ `chat-ai-da-vang-mat-duoi-o-manh-ngan`.
+CAU_NGAN_SAU_DEM = "Dạ vâng ạ."
+
 
 def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False) -> str:
     """Câu cho lần chặn thứ `so_lan_lien_tiep` (đếm từ 1). Quá thì lấy câu cuối.
@@ -42,13 +54,17 @@ def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False) -> str:
     `dem_chan_lien_tiep` không thấy được chuyện này: nó chỉ đếm lặp GIỮA CÁC
     LƯỢT, còn đây là lặp bên trong một lượt, giữa hai cơ chế khác nhau.
 
-    Nhảy sang câu 2 chứ không bịa câu mới: câu đó vừa không lặp vừa HỎI LẠI con
-    số - đúng thứ gỡ được bế tắc, xem chú thích của `CAU_CHAN`.
+    Trả `CAU_NGAN_SAU_DEM` chứ không phải câu 2: người dùng nghe cuộc gọi thật
+    rồi bảo câu hứa dài quá, "chỉ cần dạ vâng là đủ". Câu 2 để dành cho lần chặn
+    THỨ HAI - lúc đó dài là đáng vì nó hỏi lại con số, thứ gỡ được vòng lặp.
     """
     if so_lan_lien_tiep < 1:
         so_lan_lien_tiep = 1
     if da_co_cau_dem and so_lan_lien_tiep == 1:
-        so_lan_lien_tiep = 2
+        # Lần chặn ĐẦU mà câu đệm vừa nói xong -> chỉ cần đáp ngắn.
+        # Từ lần thứ hai thì câu dài là đáng, vì lúc đó phải HỎI LẠI con số -
+        # đó mới là thứ gỡ được vòng lặp.
+        return CAU_NGAN_SAU_DEM
     return CAU_CHAN[min(so_lan_lien_tiep, len(CAU_CHAN)) - 1]
 
 
