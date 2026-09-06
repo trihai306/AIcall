@@ -375,6 +375,9 @@ class StreamingPipeline:
             # nhường chỗ. KHÔNG await ở đây - vòng thu tiếng không được nghẽn;
             # bản bị huỷ chưa kịp ghi gì vào phiên vì nó chỉ ghi ở bước cuối.
             if session.spec_task is not None and not session.spec_task.done():
+                logger.info("đoán trước: HUỶ bản giữa chừng (đang ở bước %r) "
+                            "để đoán lại trên trọn câu",
+                            getattr(session, "spec_buoc", "?"))
                 session.spec_task.cancel()
             session.spec_running = False
         elif n < self._byte_cho_ms(session, self._SPEC_MIN_MS):
@@ -394,6 +397,7 @@ class StreamingPipeline:
 
         async def _run():
             try:
+                session.spec_buoc = "STT"
                 text = (await self.stt.transcribe(
                     audio, sample_rate=session.audio_rate)).strip()
                 # Cất NGAY sau STT, trước mọi bước sau. Hai lý do: (1) đây là
@@ -440,6 +444,7 @@ class StreamingPipeline:
                 if len(text) < 4:
                     return
                 rag = ""
+                session.spec_buoc = "RAG"
                 try:
                     rag = await self.rag.retrieve(self._truy_van_rag(text, session), top_k=2,
                                                   san_pham=session.product)
@@ -474,10 +479,27 @@ class StreamingPipeline:
                     gioi_tinh=getattr(session, "gender", ""),
                     gioi_tinh_do_tin=getattr(session, "gender_do_tin", None),
                 )
+                session.spec_buoc = "LLM"
                 msgs = history + [{"role": "user", "content": text}]
                 answer = ""
+                da_ham = False
                 async for tok in self.llm.stream_response(msgs, sys_prompt):
                     answer += tok
+                    # Dựng tiếng NGAY khi đủ mảnh đầu, đừng đợi trọn câu.
+                    #
+                    # Đo 06-09-2026 bằng máy đo vòng đời bản đoán: bản nghe được
+                    # TRỌN câu luôn bị lượt mở giết khi đang ở bước LLM, vì sinh
+                    # trọn câu mất 600-2000ms mà cửa sổ im lặng chỉ 700ms. Nhưng
+                    # riêng MẢNH ĐẦU thì kịp: TTFT 265-500ms + gom câu ~150ms.
+                    #
+                    # Nên tách hai việc: `spec_answer` vẫn cần trọn câu để lượt
+                    # sau dùng lại, còn tiếng thì chỉ cần mảnh đầu - và mảnh đầu
+                    # chỉ phụ thuộc mấy từ đầu tiên nên tính được sớm.
+                    if ngay and not da_ham and len(answer.split()) >= 12:
+                        manh_som = self._manh_dau_ham_cache(answer)
+                        if manh_som:
+                            da_ham = True
+                            await self._ham_cache_tts(manh_som, session)
 
                 session.spec_transcript = text
                 session.spec_rag = rag
@@ -560,6 +582,8 @@ class StreamingPipeline:
                 session.spec_rag = rag
                 logger.debug("Nạp sẵn RAG lúc khách gõ: '%s'", text[:44])
             except asyncio.CancelledError:
+                logger.info("đoán trước: BỊ HUỶ ở bước %r - mất trắng công đã làm",
+                            getattr(session, "spec_buoc", "?"))
                 raise
             except Exception as e:
                 logger.debug(f"Nạp sẵn RAG lỗi (bỏ qua): {e}")
@@ -1092,6 +1116,9 @@ class StreamingPipeline:
         spec_transcript = session.spec_transcript
         spec_rag = session.spec_rag
         spec_answer = session.spec_answer
+        logger.info("lượt mở: bản nghĩ sẵn %s (bản đoán đang ở bước %r)",
+                    "CÓ" if spec_answer else "KHÔNG",
+                    getattr(session, "spec_buoc", "?"))
         # Chốt tốc đọc TRƯỚC khi dọn: `clear_speculation()` xoá `tinh_huong`,
         # mà tốc riêng theo tình huống lấy từ đó. Xem `_toc_cho_phien`.
         self._chot_toc_doc(self.tts, session, session.voice_name)
