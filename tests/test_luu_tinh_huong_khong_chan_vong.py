@@ -24,8 +24,8 @@ import time
 def test_luu_tinh_huong_khong_lam_dung_vong_lap(monkeypatch):
     from backend.api import fillers
 
-    def ap_dung_cham():
-        # thay cho: nap_lai() + 34 lần `rag.embed()` trên GPU
+    def ap_dung_cham(*_a, **_kw):
+        # thay cho: nap_lai() + `rag.embed()` trên GPU
         time.sleep(0.30)
 
     monkeypatch.setattr(fillers, "_ap_dung", ap_dung_cham)

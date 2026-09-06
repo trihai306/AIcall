@@ -102,42 +102,101 @@ def _mang(s: str | None) -> list[str]:
         return []
 
 
-def _nhung_lai_vi_du():
-    """Nhúng lại ví dụ để cosine chấm điểm được tình huống vừa sửa.
-
-    Tách hàm riêng để test thay được: nhúng thật cần model embedding, mà điều
-    test cần biết chỉ là bước này CÓ chạy - thiếu nó thì tình huống mới không
-    bao giờ được chọn và không có gì báo.
-    """
-    from backend.main import app_state
-    from backend.services.filler_situation import chuan_hoa
+def lay_kho_cho_nhung():
+    """Kho dùng cho việc nhúng. Tách ra để test thay được mà không cần DB."""
     from backend.services.filler_store import lay_kho
+    return lay_kho()
 
-    if app_state.rag is None:
+
+def _state_va_rag():
+    """(app_state, rag) nếu nhúng được, không thì (None, None) kèm cảnh báo."""
+    from backend.main import app_state
+    if getattr(app_state, "rag", None) is None:
         logger.warning("RAG chưa sẵn sàng, chưa nhúng lại ví dụ tình huống")
+        return None, None
+    return app_state, app_state.rag
+
+
+def _nhung_lai_vi_du():
+    """Nhúng lại ví dụ của TOÀN BỘ kho. Chỉ dùng khi không biết cái gì đã đổi.
+
+    ĐẮT: đo trên máy Win 06-09-2026 là 2891ms cho 34 tình huống, trong khi nhúng
+    một tình huống chỉ 84ms. GPU này dùng chung với F5, nên mỗi giây phí ở đây là
+    một giây tiếng của cuộc gọi phải xếp hàng. Sửa một tình huống thì gọi
+    `_nhung_mot`, xoá thì gọi `_bo_mot`, sửa câu đuôi thì KHÔNG gọi gì cả.
+    """
+    from backend.services.filler_situation import chuan_hoa
+    st, rag = _state_va_rag()
+    if st is None:
         return
-    kho = lay_kho()
-    app_state.kho_vector = {
-        t.id: chuan_hoa(app_state.rag.embed(list(t.vi_du)))
+    kho = lay_kho_cho_nhung()
+    st.kho_vector = {
+        t.id: chuan_hoa(rag.embed(list(t.vi_du)))
         for t in kho.tinh_huong if t.vi_du
     }
-    logger.info("Đã nhúng lại ví dụ của %d tình huống", len(app_state.kho_vector))
+    logger.info("Đã nhúng lại ví dụ của %d tình huống", len(st.kho_vector))
 
 
-def _ap_dung():
-    """Nạp lại kho + nhúng lại ví dụ. Lỗi ở đây không được nuốt im.
+def _nhung_mot(ma: str):
+    """Nhúng lại ví dụ của ĐÚNG MỘT tình huống - rẻ hơn cả kho 34 lần.
+
+    Tình huống không còn trong kho (vừa bị tắt) thì bỏ nó khỏi sổ vector, nếu
+    không nó vẫn được chấm điểm sau khi người dùng đã tắt.
+    """
+    from backend.services.filler_situation import chuan_hoa
+    st, rag = _state_va_rag()
+    if st is None:
+        return
+    t = next((x for x in lay_kho_cho_nhung().tinh_huong if x.id == ma), None)
+    if t is None or not t.vi_du:
+        st.kho_vector.pop(ma, None)
+        logger.info("Câu đệm: bỏ %r khỏi sổ vector (không còn trong kho)", ma)
+        return
+    st.kho_vector[ma] = chuan_hoa(rag.embed(list(t.vi_du)))
+    logger.info("Đã nhúng lại ví dụ của tình huống %r", ma)
+
+
+def _bo_mot(ma: str):
+    """Bỏ một tình huống khỏi sổ vector. KHÔNG cần chạm GPU."""
+    from backend.main import app_state
+    if getattr(app_state, "kho_vector", None) is not None:
+        app_state.kho_vector.pop(ma, None)
+    logger.info("Câu đệm: bỏ %r khỏi sổ vector", ma)
+
+
+def _ap_dung(nhung_mot: str | None = None, bo_mot: str | None = None,
+             nhung_ca_kho: bool = False):
+    """Nạp lại kho, rồi cập nhật sổ vector ĐÚNG PHẦN đã đổi.
 
     ĐỒNG BỘ và CHẶN. Đừng gọi thẳng từ `async def` - dùng `_ap_dung_nen()`.
+
+    Ba mức, đắt dần:
+      - không truyền gì  : chỉ nạp lại kho. Dùng khi sửa CÂU ĐUÔI - câu đuôi
+                           không nằm trong vector tình huống nên khỏi chạm GPU.
+      - `bo_mot`         : bỏ một tình huống khỏi sổ. Cũng không chạm GPU.
+      - `nhung_mot`      : nhúng lại đúng một tình huống (~84ms).
+      - `nhung_ca_kho`   : nhúng lại tất cả (~2891ms). Chỉ khi không biết cái gì
+                           đã đổi.
+
+    Lỗi khi nhúng không được nuốt im: thiếu bước này thì tình huống vừa sửa
+    không bao giờ được chọn mà chẳng có gì báo.
     """
     from backend.services.filler_store import nap_lai
     nap_lai()
     try:
-        _nhung_lai_vi_du()
+        if nhung_ca_kho:
+            _nhung_lai_vi_du()
+        elif nhung_mot:
+            _nhung_mot(nhung_mot)
+        elif bo_mot:
+            _bo_mot(bo_mot)
     except Exception as e:
         logger.warning("Không nhúng lại được ví dụ tình huống: %s", e)
 
 
-async def _ap_dung_nen() -> None:
+async def _ap_dung_nen(nhung_mot: str | None = None,
+                       bo_mot: str | None = None,
+                       nhung_ca_kho: bool = False) -> None:
     """Như `_ap_dung` nhưng chạy ngoài vòng lặp sự kiện.
 
     VÌ SAO BẮT BUỘC: `_nhung_lai_vi_du` gọi `rag.embed()` một lần cho MỖI tình
@@ -152,7 +211,7 @@ async def _ap_dung_nen() -> None:
 
     Xem `tests/test_luu_tinh_huong_khong_chan_vong.py`.
     """
-    await asyncio.to_thread(_ap_dung)
+    await asyncio.to_thread(_ap_dung, nhung_mot, bo_mot, nhung_ca_kho)
 
 
 # --- đọc -------------------------------------------------------------------------
@@ -224,7 +283,8 @@ async def luu_tinh_huong(than: dict = Body(...)):
          float(than["speed"]) if than.get("speed") not in (None, "") else None,
          1 if than.get("bat", True) else 0, gio, gio))
     conn.commit()
-    await _ap_dung_nen()
+    # Chỉ nhúng lại ĐÚNG tình huống này (~84ms) thay vì cả kho (~2891ms).
+    await _ap_dung_nen(nhung_mot=ma)
     logger.info("Câu đệm: lưu tình huống %s", ma)
     return {"ok": True, "id": ma}
 
@@ -236,7 +296,8 @@ async def xoa_tinh_huong(ma: str):
         return {"error": "DB chưa mở"}
     conn.execute("DELETE FROM tinh_huong WHERE id = ?", (ma,))
     conn.commit()
-    await _ap_dung_nen()
+    # Xoá thì chỉ cần bỏ khỏi sổ vector, không chạm GPU.
+    await _ap_dung_nen(bo_mot=ma)
     logger.info("Câu đệm: xoá tình huống %s", ma)
     return {"ok": True, "da_xoa": ma}
 

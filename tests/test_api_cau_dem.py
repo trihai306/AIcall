@@ -97,8 +97,20 @@ def db(tmp_path, monkeypatch):
     conn.commit()
     fs._kho = None
     # Nhúng lại ví dụ cần model embedding; test chỉ cần biết nó CÓ được gọi.
-    goi = {"nap_lai": 0, "nhung_lai": 0}
-    monkeypatch.setattr(fl, "_nhung_lai_vi_du", lambda: goi.__setitem__("nhung_lai", goi["nhung_lai"] + 1))
+    # Đếm CẢ HAI đường nhúng. Từ 06-09-2026 đường lưu dùng `_nhung_mot` (nhúng
+    # đúng một tình huống, ~84ms) thay vì `_nhung_lai_vi_du` (cả kho, ~2891ms).
+    # Bất biến cần giữ không đổi: lưu xong thì tình huống đó PHẢI được nhúng.
+    goi = {"nap_lai": 0, "nhung_lai": 0, "ma": []}
+
+    def _dem_ca_kho():
+        goi["nhung_lai"] += 1
+
+    def _dem_mot(ma):
+        goi["nhung_lai"] += 1
+        goi["ma"].append(ma)
+
+    monkeypatch.setattr(fl, "_nhung_lai_vi_du", _dem_ca_kho)
+    monkeypatch.setattr(fl, "_nhung_mot", _dem_mot)
     yield goi
     asyncio.run(mdb.close_db()) if hasattr(mdb, "close_db") else None
     fs._kho = None
@@ -131,6 +143,7 @@ def test_luu_xong_phai_nhung_lai_vi_du(db):
     mà không có gì báo - kho có mục mới, đường chạy vẫn mù."""
     asyncio.run(fl.luu_tinh_huong(_th()))
     assert db["nhung_lai"] == 1
+    assert db["ma"] == ["hoi_phi"], "phải nhúng ĐÚNG tình huống vừa lưu"
 
 
 def test_tat_tinh_huong_thi_duong_chay_khong_thay_no(db):
