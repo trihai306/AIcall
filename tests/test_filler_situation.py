@@ -82,13 +82,27 @@ def test_nguong_tuy_chinh():
 # Nguyên tắc không đổi, chỉ có số đo tốt hơn: chọn sai mẩu mở đầu tệ hơn không
 # có mẩu nào, vì rổ chung vốn trung tính còn chọn sai thì nghe như AI hiểu nhầm.
 
-def test_nguong_cau_dem_du_cao_de_bo_cau_cut():
-    """Câu cụt hay cho điểm 0,75-0,85 và chính là chỗ phân loại hay sai."""
+def test_nguong_cau_dem_thap_thi_phai_co_luoi_do_phu_bu_lai():
+    """Ngưỡng dưới 0,90 thì vùng ĐỘ PHỦ THẤP phải có lưới khác gác.
+
+    Bản cũ của test này chốt cứng `NGUONG_CAU_DEM >= 0.90`. Đó là một QUYẾT ĐỊNH
+    (đổi "chọn nhiều" lấy "chọn đúng"), không phải quy luật - và ngày 06-09-2026
+    người dùng chọn ngược lại sau khi thấy cái giá: 3/5 lượt không nhận ra tình
+    huống, kéo theo 60% số lượt mất luôn câu đệm.
+
+    Thứ KHÔNG đổi là quy luật đằng sau, đo được bằng cùng một bảng ở hai ngưỡng
+    (`scripts/do_do_phu_tinh_huong.py [nguong]`), phần độ phủ dưới 0,5:
+        chấm ở 0,90 -> 4 đúng / 0 SAI
+        chấm ở 0,75 -> 4 đúng / 7 SAI
+    Tức ngưỡng cao TỰ gác vùng đó; hạ ngưỡng thì phải có lưới khác thế chỗ.
+    """
+    from backend.services.filler_pick import DIEM_DOI_KHI_PHU_THAP
     from backend.services.filler_situation import NGUONG_CAU_DEM
-    assert NGUONG_CAU_DEM >= 0.90, (
-        "hạ ngưỡng câu đệm xuống dưới 0,90 thì tỷ lệ chọn đúng rơi về ~50-60%, "
-        "xem scripts/do_nguong_tinh_huong.py"
-    )
+    if NGUONG_CAU_DEM >= 0.90:
+        return
+    assert DIEM_DOI_KHI_PHU_THAP >= 0.90, (
+        f"ngưỡng câu đệm đang {NGUONG_CAU_DEM} (< 0,90) mà vùng độ phủ thấp "
+        "không đòi điểm cao -> mở cửa cho đúng 7 lần sai đã đo")
 
 
 def test_nguong_cau_dem_KHONG_dung_chung_voi_nguong_chung():
@@ -98,6 +112,11 @@ def test_nguong_cau_dem_KHONG_dung_chung_voi_nguong_chung():
     đầu nâng thẳng `NGUONG_DIEM` lên 0,90 và bộ test đã bắt được qua
     `test_nguong_doc_thang_cao_hon_nguong_trung` (đọc thẳng 0,90 phải CAO HƠN
     ngưỡng trúng bảng). Hai đường chịu rủi ro khác nhau nên phải có hai ngưỡng.
+
+    `>=` chứ không `>`: 06-09-2026 người dùng hạ ngưỡng câu đệm về đúng 0,75 nên
+    hai số TRÙNG NHAU. Điều phải giữ là hai HẰNG SỐ RIÊNG - trùng giá trị lúc này
+    là trùng tình cờ. Cấm chiều ngược lại: câu đệm lỏng hơn bảng hỏi-đáp thì vô
+    lý, vì chọn sai câu đệm nghe tệ hơn trượt bảng hỏi-đáp nhiều.
     """
     from backend.services.filler_situation import NGUONG_CAU_DEM
-    assert NGUONG_CAU_DEM > NGUONG_DIEM
+    assert NGUONG_CAU_DEM >= NGUONG_DIEM

@@ -1,4 +1,5 @@
 """Luật chọn câu đệm. Thuần logic, KHÔNG import torch - xem filler_store."""
+import asyncio
 import random
 import re
 
@@ -127,8 +128,34 @@ def tinh_huong_dung(tinh_huong: tuple[int, str, float] | None,
     """
     if not tinh_huong or n_audio <= 0:
         return None, None
-    n_th, id_th, _diem = tinh_huong
-    return id_th, n_th / n_audio
+    n_th, id_th, diem = tinh_huong
+    do_phu = n_th / n_audio
+    if do_phu < DO_PHU_COI_LA_THAP and diem < DIEM_DOI_KHI_PHU_THAP:
+        return None, do_phu
+    return id_th, do_phu
+
+
+# Dưới mức phủ này thì bản đoán mới nghe được một phần câu, và ĐÒI ĐIỂM CAO HƠN.
+#
+# Vì sao có hai con số thay vì một sàn phẳng: đo cùng một bảng ở hai ngưỡng cho
+# hai kết quả ngược nhau (`scripts/do_do_phu_tinh_huong.py [nguong]`, 102 lượt
+# tiếng khách thật). Phần độ phủ dưới 0,5:
+#
+#     chấm ở 0,90 -> 4 đúng / 0 SAI     (độ phủ là đồ thừa)
+#     chấm ở 0,75 -> 4 đúng / 7 SAI     (độ phủ là lưới thật)
+#
+# Tức rủi ro không nằm ở ĐỘ DÀI mà ở ĐỘ CHẮC CHẮN; độ dài chỉ là proxy. Nên luật
+# đúng là "nghe được ít thì phải chắc hơn", không phải sàn phẳng.
+#
+# Không quay lại sàn phẳng 0,5: nó vứt luôn ca đo được trên máy thật (điểm 0,915
+# ở độ phủ 0,35) - đúng ca người dùng vừa thấy chạy đúng ngày 06-09.
+DO_PHU_COI_LA_THAP = 0.5
+DIEM_DOI_KHI_PHU_THAP = 0.90
+
+
+# Không rõ tình huống thì có BỎ HẲN câu đệm không. Xem `nen_bo_cau_dem` cho số
+# đo và lịch sử của quyết định này.
+BO_DEM_KHI_KHONG_RO = False
 
 
 def nen_bo_cau_dem(id_tinh_huong: str | None, co_audio: bool) -> bool:
@@ -146,8 +173,47 @@ def nen_bo_cau_dem(id_tinh_huong: str | None, co_audio: bool) -> bool:
     `co_audio = False` là đường GÕ CHỮ: ở đó `n_audio = 0` nên máy chưa từng thử
     phân loại. "Không rõ tình huống" ở đấy không mang nghĩa gì, áp luật này vào
     là xoá sạch câu đệm của một đường vốn đang chạy đúng.
+
+    ĐÃ TẮT chiều 06-09-2026 (`BO_DEM_KHI_KHONG_RO = False`). Đo trên cuộc gọi
+    `e036b33b` cho thấy cái giá thật của việc bỏ đệm: khách dứt lời tới lúc AI
+    cất tiếng là 560ms ở lượt CÓ tình huống, nhưng **1920ms và 1880ms** ở hai
+    lượt None. Nâng mốc im lặng lên 1 giây thì quãng đó thành ~2,7 giây - nghe
+    như rớt máy. Câu đệm rổ chung tuy trung tính nhưng vẫn hơn im lặng.
     """
-    return co_audio and id_tinh_huong is None
+    return BO_DEM_KHI_KHONG_RO and co_audio and id_tinh_huong is None
+
+
+# Nhịp hỏi lại khi đang chờ tình huống. 20ms là một khung tiếng - nhỏ hơn thì
+# chỉ tốn vòng lặp, lớn hơn thì cái lợi của việc về sớm bị chính nó ăn mất.
+NHIP_HOI_MS = 20.0
+
+
+async def cho_den_khi(dieu_kien, tran_ms: float,
+                      nhip_ms: float = NHIP_HOI_MS) -> float:
+    """Chờ tới khi `dieu_kien()` đúng, tối đa `tran_ms`. Trả số ms đã chờ THẬT.
+
+    VÌ SAO KHÔNG dùng `asyncio.wait({task})`: tác vụ đoán trước làm năm việc nối
+    nhau - STT, ghi `spec_stt`, CHẤM TÌNH HUỐNG, RAG, rồi LLM soạn sẵn. Câu đệm
+    chỉ cần việc thứ ba, mà chờ theo tác vụ là chờ luôn hai việc cuối, vốn tốn
+    hàng trăm ms tới cả giây và câu đệm không dùng tới.
+
+    Đo trên cuộc gọi thật 0396130621 (phiên e2e7034c, 10:59): ngân sách 650ms mà
+    "AI bắt đầu nói sau 754ms" và "745ms" - lần nào cũng đốt trọn ngân sách,
+    trong khi phiên âm cuối câu chỉ mất 297-365ms. Tức phần lớn quãng chờ đó là
+    chờ RAG và LLM một cách vô ích.
+
+    Trả số ms đã chờ để `_send_filler` ghi vào metrics - không có nó thì lần sau
+    lại phải đoán xem cú chờ tốn bao nhiêu.
+    """
+    t0 = asyncio.get_event_loop().time()
+    tran = tran_ms / 1000.0
+    while True:
+        if dieu_kien():
+            break
+        if asyncio.get_event_loop().time() - t0 >= tran:
+            break
+        await asyncio.sleep(min(nhip_ms / 1000.0, tran))
+    return (asyncio.get_event_loop().time() - t0) * 1000.0
 
 # Tiểu từ lịch sự ở đầu câu đuôi cần bỏ khi đã có mẩu mở đầu.
 # Thứ tự: dài trước để tránh khớp chặng đầu của từ dài hơn

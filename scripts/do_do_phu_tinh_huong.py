@@ -25,6 +25,11 @@ from backend.services.filler_situation import (NGUONG_CAU_DEM, NGUONG_DIEM,  # n
 from backend.services.rag_service import RAGService  # noqa: E402
 from backend.services.stt_service import STTService  # noqa: E402
 
+# Nguong cham ban CAT. Mac dinh la nguong duong that dang dung; truyen tham so
+# de THU truoc khi doi, vi do chinh la luc phai chay lai bang nay.
+#     .venv\\python.exe scripts\\do_do_phu_tinh_huong.py 0.75
+NGUONG = float(sys.argv[1]) if len(sys.argv) > 1 else NGUONG_CAU_DEM
+
 VAO = DU_AN / "data" / "tieng_khach_that"
 SR = 16000
 TY_LE = [0.15, 0.25, 0.35, 0.45, 0.55, 0.7, 0.85]
@@ -54,7 +59,7 @@ async def main():
                             NGUONG_DIEM)
     print(f"{len(files)} luot tieng khach that | cau TRON co nhan (0.75): "
           f"{sum(1 for v in nhan.values() if v)}")
-    print(f"ban CAT cham o nguong {NGUONG_CAU_DEM}\n")
+    print(f"ban CAT cham o nguong {NGUONG}\n")
     print(f"{'do_phu':>7}{'qua nguong':>12}{'DUNG':>7}{'SAI':>6}{'?':>4}   luat hien nay")
     print("-" * 74)
     tong_vut_dung = tong_vut_sai = 0
@@ -64,7 +69,7 @@ async def main():
             b = pcm(f)
             n = max(2, int(len(b) * ty)) // 2 * 2
             r = cham((await stt.transcribe(b[:n], sample_rate=SR)).strip(),
-                     NGUONG_CAU_DEM)
+                     NGUONG)
             if not r:
                 continue
             qua += 1

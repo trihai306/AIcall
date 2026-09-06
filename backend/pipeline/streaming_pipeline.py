@@ -2,6 +2,7 @@ import asyncio
 import base64
 import logging
 import random
+import re
 import time
 
 from fastapi import WebSocket
@@ -30,8 +31,8 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
-from backend.services.filler_pick import (can_che_ms, nen_bo_cau_dem,
-                                          tinh_huong_dung)
+from backend.services.filler_pick import (can_che_ms, cho_den_khi,
+                                          nen_bo_cau_dem, tinh_huong_dung)
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
@@ -113,19 +114,64 @@ class StreamingPipeline:
 
     @staticmethod
     def _toc_cho_phien(tts, session, voice: str | None) -> float | None:
-        """Tốc đọc cho phiên: tốc của tình huống nếu có, không thì tốc của giọng,
-        nhân hệ số nếu là cuộc gọi.
+        """Tốc đọc cho phiên. Ưu tiên ô ĐÃ CHỐT của lượt.
+
+        VÌ SAO PHẢI CÓ Ô CHỐT (lỗi có sẵn, tìm ra 06-09-2026): hàm này đọc
+        `session.tinh_huong`, nhưng `_generate_response` gọi `clear_speculation()`
+        ngay dòng đầu và hàm đó đặt `tinh_huong = None`. Nên tại MỌI lệnh gọi TTS
+        thật, `tinh_huong` luôn rỗng - tốc riêng theo tình huống chưa bao giờ
+        chạy trên đường thoại.
+
+        Hệ quả thứ hai, nặng hơn: `speed` nằm trong khoá cache TTS. Dựng sẵn
+        tiếng lúc `tinh_huong` còn sống rồi phát lúc nó đã bị xoá là hai khoá
+        khác nhau -> cache trượt 100%.
+
+        Xem `tests/test_toc_doc_chot_theo_luot.py`.
 
         Phân biệt thoại/chat bằng `session.audio_rate` - 8000 là đường thoại.
         Đó là mốc sẵn có và luôn đúng, không phải cờ tự đặt thêm.
 
         GIÁ PHẢI TRẢ, ghi lại cho rõ: tốc riêng theo tình huống làm khoá cache
-        câu bị CHIA theo tình huống, nên tỉ lệ trúng cache giảm. Phải đo lại.
-        Task 12 sẽ đo lại.
+        câu bị CHIA theo tình huống, nên tỉ lệ trúng cache giảm.
         """
+        da_chot = getattr(session, "toc_doc_luot", None)
+        if da_chot is not None:
+            return da_chot
+        return StreamingPipeline._tinh_toc_doc(tts, session, voice)
+
+    @staticmethod
+    def _chot_toc_doc(tts, session, voice: str | None) -> float | None:
+        """Chốt tốc đọc cho lượt này. Gọi MỘT LẦN, trước `clear_speculation()`.
+
+        Ghi đè vô điều kiện: mỗi lượt tình huống một khác nên phải tính lại.
+        """
+        session.toc_doc_luot = StreamingPipeline._tinh_toc_doc(tts, session, voice)
+        return session.toc_doc_luot
+
+    # Tốc đọc có đi theo TÌNH HUỐNG không. Đang TẮT, và đây là quyết định có đo:
+    #
+    # Nhánh đó chưa bao giờ chạy - `clear_speculation()` xoá `tinh_huong` trước
+    # mọi lệnh gọi TTS (xem `_toc_cho_phien`). Nên "bật lại" không phải khôi phục
+    # hành vi cũ mà là đổi hành vi sang thứ chưa ai nghe thử.
+    #
+    # Đo trên DB đang chạy 06-09-2026: 34 tình huống đang bật, ĐÚNG MỘT cái đặt
+    # tốc riêng - `khach_noi_khong_ro` đặt 1.0. Mà dự án đã đo tốc đọc quyết định
+    # độ nghe rõ thế nào: 0,90 cho 28/30 câu nghe đúng, 1,00 chỉ 23/30. Bật lên
+    # nghĩa là đọc NHANH HƠN đúng vào lúc khách vừa báo nghe không rõ - ngược
+    # hẳn thứ cần làm.
+    #
+    # Thêm nữa nó chia nhỏ khoá cache TTS theo tình huống, chống lại chính việc
+    # dựng sẵn tiếng đang làm.
+    #
+    # Muốn bật thì đặt True và đo lại hai thứ: độ nghe rõ, và tỉ lệ trúng cache.
+    TOC_DOC_THEO_TINH_HUONG = False
+
+    @staticmethod
+    def _tinh_toc_doc(tts, session, voice: str | None) -> float | None:
+        """Phép tính thuần: (tình huống nếu bật) -> giọng -> hệ số thoại."""
         try:
             goc = None
-            if session.tinh_huong:
+            if StreamingPipeline.TOC_DOC_THEO_TINH_HUONG and session.tinh_huong:
                 # Import trong thân hàm: filler_store không kéo torch nhưng
                 # streaming_pipeline thì có - import ở tầng module làm mọi lượt
                 # gọi chịu chi phí, và tạo vòng phụ thuộc khi khởi động.
@@ -181,6 +227,64 @@ class StreamingPipeline:
             logger.warning("TTS gộp lô hỏng (%s) - lùi về sinh từng mảnh", e)
             return [await self._try_synthesize(t, voice=voice, session=session)
                     for t in texts]
+
+    # --- Hâm nóng cache TTS trong quãng im cuối lượt --------------------------
+
+    # Tiểu từ mở đầu mà `_don_loi` có thể bỏ (tuỳ lượt chẵn/lẻ, tuỳ có câu đệm).
+    # Không đoán nổi lúc dựng sẵn nên thấy là bỏ qua - thà MISS còn hơn sinh một
+    # mảnh chắc chắn sai khoá cache.
+    _TIEU_TU_MO_DAU = re.compile(r"^(dạ|vâng)\b", re.IGNORECASE)
+
+    @staticmethod
+    def _manh_dau_ham_cache(spec_answer: str) -> str | None:
+        """Mảnh đầu đáng hâm cache, hoặc None nếu không chắc khớp lượt thật.
+
+        Dùng `chia_ca_luot` - NGUỒN DUY NHẤT của luật cắt cả lượt. Tuyệt đối
+        không viết lại luật cắt ở đây: dự án đã hỏng đúng kiểu đó một lần, khi
+        `api/voices.py` giữ một bản chép riêng và trang nghe thử cắt khác cuộc
+        gọi thật mà không có gì báo lỗi.
+        """
+        if not (spec_answer or "").strip():
+            return None
+        from backend.pipeline.text_chunker import chia_ca_luot
+        manh = chia_ca_luot(spec_answer)
+        if not manh:
+            return None
+        dau = manh[0].strip()
+        if not dau or StreamingPipeline._TIEU_TU_MO_DAU.match(dau):
+            return None
+        return dau
+
+    async def _ham_cache_tts(self, manh: str, session: CallSession) -> None:
+        """Sinh trước `manh` CHỈ để nạp cache. Không cất, không phát, vứt kết quả.
+
+        VÌ SAO AN TOÀN: cache của `synthesize` khoá theo nguyên văn chữ, và
+        đường phát chỉ tra bằng đúng chữ nó sắp phát. Nên đoán sai chỉ thành
+        MISS, không thể thành SAI TIẾNG. Không có bytes nào chạm tới `session` -
+        `tests/test_ham_cache_tts.py` canh đúng bất biến đó.
+
+        Bỏ qua khi worker F5 đang bận: executor chỉ có MỘT worker, chen vào là
+        đẩy lùi mảnh kế của lượt đang phát và tạo quãng im giữa câu.
+
+        Chạy nền và giữ tham chiếu mạnh theo khuôn `_bg_writes`: dòng ghi cache
+        nằm SAU `run_in_executor`, nên task bị huỷ giữa chừng thì thread F5 vẫn
+        chạy hết mà cache không được ghi - vừa mất GPU vừa giữ worker.
+        """
+        if getattr(self.tts, "dang_ban", 1) != 0:
+            logger.info("hâm cache TTS: BỎ - worker F5 đang bận")
+            return
+        logger.info("hâm cache TTS: dựng trước mảnh đầu %r", manh[:40])
+
+        async def _chay():
+            try:
+                await self._try_synthesize(
+                    manh, fast=True, voice=session.voice_name, session=session)
+            except Exception as e:
+                logger.debug("hâm cache TTS bỏ qua: %s", e)
+
+        task = asyncio.create_task(_chay())
+        _bg_writes.add(task)
+        task.add_done_callback(_bg_writes.discard)
 
     # --- Đoán trước trong lúc khách còn đang nói ------------------------------
     # Đặt theo THỜI GIAN, không theo số byte. Đệm của phiên mang tần số riêng
@@ -317,6 +421,22 @@ class StreamingPipeline:
                             session.tinh_huong = (n, id_th, diem)
                 except Exception as e:
                     logger.debug("phan loai tinh huong truot (bo qua): %s", e)
+
+                # HÂM CACHE, đường thứ nhất: dùng bản trả lời đã soạn từ lần
+                # đoán GIỮA CHỪNG, nếu nó còn khớp phiên âm trọn câu.
+                #
+                # Cần cả hai đường vì chúng bù nhau: đường này ăn khi khách nói
+                # đủ dài để lần đoán giữa chừng kịp soạn xong (`_answer_hit` đòi
+                # tối thiểu 4 từ); đường kia - đặt sau khi `spec_answer` của
+                # chính lần này có - ăn khi LLM kịp xong trong cửa sổ im lặng.
+                # Đo trên cuộc gọi f37bc210: 0/5 lượt LLM kịp xong, nên chỉ có
+                # đường kia thôi là không lần nào chạy.
+                if ngay and session.spec_answer and self._answer_hit(
+                        session.spec_transcript, text):
+                    manh_cu = self._manh_dau_ham_cache(session.spec_answer)
+                    if manh_cu:
+                        await self._ham_cache_tts(manh_cu, session)
+
                 if len(text) < 4:
                     return
                 rag = ""
@@ -362,6 +482,25 @@ class StreamingPipeline:
                 session.spec_transcript = text
                 session.spec_rag = rag
                 session.spec_answer = answer.strip()
+
+                # Quãng im cuối lượt (nay 1 giây) đang bỏ không, trong khi mảnh
+                # đầu tốn 287-472ms SAU khi lượt mở. Sinh trước mảnh đầu để nạp
+                # cache; lượt thật phát lại đúng `spec_answer` này nên tra trúng.
+                #
+                # PHẢI đặt ở đây, sau khi `spec_answer` đã có. Bản đầu tôi đặt
+                # ngay sau STT và dùng `spec_answer` CŨ từ lần đoán giữa chừng -
+                # lần đó thường chỉ nghe được vài từ ("lãi suất"), mà
+                # `_answer_hit` đòi tối thiểu 4 từ, nên khối đó không chạy lần
+                # nào. Đo trên cuộc gọi 25fc015e: 0/5 lượt hâm được cache.
+                #
+                # Chỉ ở lần đoán cuối câu: bản giữa chừng còn đổi liên tục, sinh
+                # theo nó là đốt worker cho chữ sắp bị thay.
+                #
+                # KHÔNG cất tiếng vào phiên, KHÔNG phát. Xem `_ham_cache_tts`.
+                if ngay:
+                    manh_dau = self._manh_dau_ham_cache(session.spec_answer)
+                    if manh_dau:
+                        await self._ham_cache_tts(manh_dau, session)
                 logger.info(
                     "Đã nghĩ sẵn [%.1fs] hỏi='%s' -> trả lời %d chữ",
                     n / (session.audio_rate * 2), text[:44], len(session.spec_answer),
@@ -648,11 +787,27 @@ class StreamingPipeline:
         if self._CHO_TINH_HUONG_MS > 0 and n_audio > 0 and session.tinh_huong is None:
             # CHỜ chỉ khi task đoán trước còn đang chạy...
             if session.spec_task is not None and not session.spec_task.done():
-                _t_cho = time.perf_counter()
-                await asyncio.wait({session.spec_task},
-                                   timeout=self._CHO_TINH_HUONG_MS / 1000)
+                # Chờ tới khi CÓ TÌNH HUỐNG, không phải tới khi tác vụ xong.
+                # Tác vụ còn làm RAG + LLM soạn sẵn sau khi đã chấm xong tình
+                # huống; chờ theo tác vụ là đốt trọn ngân sách cho hai việc câu
+                # đệm không dùng. Đo trên cuộc gọi thật: ngân sách 650ms thì lần
+                # nào cũng chờ 745-754ms, trong khi phiên âm chỉ mất 297-365ms.
+                #
+                # Ba lối thoát, lối nào tới trước cũng dừng:
+                #   - đã có tình huống          -> thứ ta cần, xong
+                #   - `spec_stt` đã đổi          -> phiên âm cuối câu về rồi mà
+                #     vẫn không ra tình huống, chờ thêm cũng vô ích
+                #   - tác vụ xong/biến mất       -> không còn gì để đợi
+                _moc_stt = session.spec_stt
+
+                def _xong() -> bool:
+                    t = session.spec_task
+                    return (session.tinh_huong is not None
+                            or session.spec_stt is not _moc_stt
+                            or t is None or t.done())
+
                 metrics["tinh_huong_cho_ms"] = round(
-                    (time.perf_counter() - _t_cho) * 1000)
+                    await cho_den_khi(_xong, self._CHO_TINH_HUONG_MS))
             # ...nhưng LUÔN thử phân loại nếu vẫn chưa có.
             #
             # Bản cũ đặt `_phan_loai_dong_bo` BÊN TRONG điều kiện "task chưa
@@ -937,6 +1092,9 @@ class StreamingPipeline:
         spec_transcript = session.spec_transcript
         spec_rag = session.spec_rag
         spec_answer = session.spec_answer
+        # Chốt tốc đọc TRƯỚC khi dọn: `clear_speculation()` xoá `tinh_huong`,
+        # mà tốc riêng theo tình huống lấy từ đó. Xem `_toc_cho_phien`.
+        self._chot_toc_doc(self.tts, session, session.voice_name)
         session.clear_speculation()
 
         # Lượt thường gặp (chào máy, "ai đấy", "đang bận", từ chối...) trả lời
@@ -1441,7 +1599,16 @@ class StreamingPipeline:
             # lại rồi báo lại", câu chặn số 1 hứa y hệt -> hai lần một ý trong
             # CÙNG một lượt. `dem_chan_lien_tiep` không thấy được vì nó chỉ
             # đếm lặp giữa các lượt.
-            moi = cau_chan(so_lan, da_co_cau_dem=bool(metrics.get("filler_text")))
+            #
+            # CHỈ ở mảnh ĐẦU. Câu đệm đứng đầu lượt, nên chỉ mảnh đầu mới trùng
+            # với nó. Chặn ở giữa lượt mà đổi câu là chèn một CÂU HỎI vào giữa
+            # câu đang nói dở - nghe thật 06-09-2026, lượt 3 cuộc gọi 1d690897:
+            #   "Nếu anh vay trong 60 tháng, Dạ để em khỏi nói sai, anh chị
+            #    nhắc lại giúp em con số mình đang cần"
+            # Giữa lượt thì không có gì để trùng, cứ dùng câu cũ.
+            moi = cau_chan(so_lan,
+                           da_co_cau_dem=bool(metrics.get("filler_text"))
+                           and chunks_enqueued == 0)
             if moi != ra:
                 logger.info("Câu chặn lặp lần %d - đổi câu: %r", so_lan, moi[:60])
             return moi

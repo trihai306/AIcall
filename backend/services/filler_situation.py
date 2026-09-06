@@ -63,7 +63,27 @@ NGUONG_DIEM = 0.75
 #
 # Hai đường chịu rủi ro khác nhau nên đáng có hai ngưỡng: bảng hỏi-đáp trượt thì
 # rơi về tri thức (vô hại), còn câu đệm chọn sai thì khách nghe AI nói trớt ý.
-NGUONG_CAU_DEM = 0.90
+#
+# 0,90 -> 0,75 (06-09-2026), NGƯỜI DÙNG CHỌN sau khi thấy cái giá của 0,90:
+# 3/5 lượt không nhận ra tình huống (`latency_metrics` hai phiên 10:25 và 10:31),
+# và vì "không rõ thì thôi không phát đệm" nên 60% số lượt khách nghe im lặng
+# trọn quãng chờ.
+#
+# CÁI GIÁ CỦA CHIỀU NGƯỢC LẠI, đã đo và đã nói rõ trước khi đổi
+# (`scripts/do_nguong_tinh_huong.py`, 102 lượt tiếng khách thật):
+#     mốc 1000ms  0,75 -> chọn 29, đúng 15, SAI 14   (52%)
+#                 0,90 -> chọn  4, đúng  4, SAI  0   (100%)
+#     mốc 1200ms  0,75 -> chọn 33, đúng 20, SAI 13   (61%)
+#                 0,90 -> chọn  5, đúng  5, SAI  0   (100%)
+# Tức đổi "không chọn" lấy "chọn nhiều hơn nhưng khoảng một nửa là sai tình
+# huống". Đây là đánh đổi người dùng chọn, không phải số đo mới bác bỏ số cũ.
+#
+# BẮT BUỘC ĐI KÈM: hạ xuống dưới 0,90 thì vùng ĐỘ PHỦ THẤP hết an toàn - đo lại
+# cùng một bảng ở hai ngưỡng cho hai kết quả ngược nhau, phần độ phủ dưới 0,5 là
+# "4 đúng / 0 sai" ở 0,90 nhưng "4 đúng / 7 SAI" ở 0,75. Vùng đó nay do
+# `filler_pick.DIEM_DOI_KHI_PHU_THAP` gác, và
+# `tests/test_do_phu_tinh_huong.py` có lưới canh đúng ràng buộc này.
+NGUONG_CAU_DEM = 0.75
 
 
 def chuan_hoa(v: np.ndarray) -> np.ndarray:

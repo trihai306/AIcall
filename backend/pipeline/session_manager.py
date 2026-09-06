@@ -120,6 +120,12 @@ class CallSession:
         # `_send_filler` đọc ô này để chọn mẩu mở đầu. Số byte để biết đoán này
         # phủ được bao nhiêu phần câu - đoán trên câu cụt thì dễ trượt.
         self.tinh_huong: tuple[int, str, float] | None = None
+        # Tốc đọc ĐÃ CHỐT cho lượt này. Chốt một lần ở đầu lượt rồi mọi lệnh gọi
+        # TTS đọc từ đây, vì `tinh_huong` bị `clear_speculation()` xoá ngay đầu
+        # `_generate_response` - trước cả lệnh gọi TTS đầu tiên. Không có ô này
+        # thì tốc riêng theo tình huống là mã chết, và `speed` trong khoá cache
+        # TTS lệch giữa lúc dựng sẵn và lúc phát thật.
+        self.toc_doc_luot: float | None = None
         # Đếm số lần mỗi câu đệm đã dùng TRONG CUỘC GỌI NÀY, để chọn câu ít
         # dùng nhất. Thuộc về phiên: khách mới thì không việc gì phải tránh
         # câu đã dùng với khách trước.

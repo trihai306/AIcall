@@ -4,6 +4,7 @@ import zlib
 import re
 import time
 import concurrent.futures
+import contextlib
 from collections import OrderedDict
 from contextlib import nullcontext
 from pathlib import Path
@@ -540,6 +541,11 @@ class F5TTSService:
         # interleave. Voice registration runs on the same thread, so _voices is
         # only ever mutated there.
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        # Số việc đang chiếm worker F5. Executor chỉ có MỘT worker nên đây là
+        # thước duy nhất cho biết có nên chen thêm việc hay không - dựng sẵn
+        # tiếng lúc worker đang bận sẽ đẩy lùi mảnh kế của lượt đang phát và tạo
+        # quãng im giữa câu. Xem `dang_ban` / `_ghi_ban`.
+        self._dang_ban = 0
         self._default_voice = Path(settings.f5tts_ref_audio).stem
         self._voices: dict[str, tuple] = {}          # name -> (wave, sr, ref_text)
         # Khoá gồm CHỈ SỐ MẨU MỞ ĐẦU. Thiếu nó thì bốn mẩu của cùng tình huống
@@ -864,10 +870,11 @@ class F5TTSService:
 
         loop = asyncio.get_event_loop()
         try:
-            await loop.run_in_executor(
-                self._executor, self._register_voice_sync,
-                name, voice["wav_path"], voice["ref_text"],
-            )
+            with self._ghi_ban():
+                await loop.run_in_executor(
+                    self._executor, self._register_voice_sync,
+                    name, voice["wav_path"], voice["ref_text"],
+                )
         except Exception as e:
             logger.warning(f"Failed to load voice '{name}': {e}. Using default.")
             return self._default_voice
@@ -1059,9 +1066,10 @@ class F5TTSService:
 
         loop = asyncio.get_event_loop()
         with Timer("TTS lô", logger) as t:
-            song, sr = await loop.run_in_executor(
-                self._executor, self._synthesize_lo_sync, chu, voice, nfe_step, speed
-            )
+            with self._ghi_ban():
+                song, sr = await loop.run_in_executor(
+                    self._executor, self._synthesize_lo_sync, chu, voice, nfe_step, speed
+                )
         ra = []
         for x in song:
             x = cat_lang_bia(trim_silence(x, sr), sr)
@@ -1113,6 +1121,24 @@ class F5TTSService:
         ms = (time.perf_counter() - t0) * 1000
         logger.info("TTS: hâm %d hình dạng trong %.0fms (%d hỏng)", xong, ms, hong)
         return {"hinh_dang": xong, "hong": hong, "ms": round(ms)}
+
+    @property
+    def dang_ban(self) -> int:
+        """Số việc đang chiếm worker F5. 0 nghĩa là chen thêm được.
+
+        Đừng thay bằng `self._executor._work_queue.qsize()`: đó là nội bộ, và
+        nó KHÔNG đếm job ĐANG chạy - đúng cái ta cần biết.
+        """
+        return getattr(self, "_dang_ban", 0)
+
+    @contextlib.contextmanager
+    def _ghi_ban(self):
+        """Đánh dấu worker đang bận trong suốt thân `with`, kể cả khi nổ lỗi."""
+        self._dang_ban = getattr(self, "_dang_ban", 0) + 1
+        try:
+            yield
+        finally:
+            self._dang_ban -= 1
 
     async def synthesize(
         self,
@@ -1166,10 +1192,11 @@ class F5TTSService:
                            else settings.f5tts_nfe_step)
 
         with Timer("TTS", logger) as t:
-            audio, sr = await loop.run_in_executor(
-                self._executor, self._synthesize_sync, text, voice, nfe, speed,
-                he_so_bu
-            )
+            with self._ghi_ban():
+                audio, sr = await loop.run_in_executor(
+                    self._executor, self._synthesize_sync, text, voice, nfe, speed,
+                    he_so_bu
+                )
 
         # F5-TTS trả về mỗi mảnh kèm khoảng lặng riêng: đo được 224-607ms ở ĐẦU
         # (trung bình 376ms) và ~38ms ở cuối. Ghép các mảnh lại thì mỗi ranh giới
