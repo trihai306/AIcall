@@ -1,6 +1,8 @@
 import time
 import uuid
 
+from backend.pipeline.so_can_cu import SoCanCu
+
 
 class CallSession:
     """Manages conversation state for a single call."""
@@ -127,6 +129,16 @@ class CallSession:
         # chỗ đọc đệm phải theo số này chứ đừng đoán 16kHz.
         self.audio_rate: int = 16000
 
+        # Căn cứ đã xuất hiện trong CUỘC GỌI NÀY, cho lưới chặn số đối chiếu.
+        # Không có nó thì lưới chỉ thấy tài liệu của lượt đang chạy, và con số
+        # vừa nói đúng ở lượt trước thành "bịa" ở lượt sau - xem `so_can_cu.py`.
+        self.so_can_cu = SoCanCu()
+
+        # Lượt gần nhất bị lưới chặn số thay cả câu, và số lần chặn LIÊN TIẾP.
+        # Để khỏi phát y hệt một câu hai lượt liền - xem `cau_chan_lap.py`.
+        self.luot_chan_cuoi: int | None = None
+        self.so_lan_chan_lien_tiep: int = 0
+
     # --- đệm audio ---------------------------------------------------------
 
     def push_audio(self, chunk: bytes):
@@ -188,6 +200,15 @@ class CallSession:
         if self.spec_task is not None and not self.spec_task.done():
             self.spec_task.cancel()
         self.spec_task = None
+        # PHẢI hạ cờ tại đây. `finally` của bản đoán chỉ hạ khi
+        # `spec_task is current_task()`, mà dòng ngay trên vừa đặt `spec_task`
+        # về None - nên bản vừa bị huỷ KHÔNG hạ được cờ, và nó kẹt True vĩnh
+        # viễn. Từ đó `speculate(ngay=False)` thoát ngay ở dòng đầu, tức đoán
+        # trước giữa chừng chết hẳn tới cuối cuộc gọi: `spec_stt` rỗng lúc chọn
+        # câu đệm nên không chấm được tình huống nào.
+        # Đo 06-09-2026: 4/5 lượt của một cuộc gọi thật ghi "KHÔNG phân loại
+        # được - chưa có spec_stt". Xem `tests/test_doan_truoc_ket_co.py`.
+        self.spec_running = False
         self.spec_transcript = ""
         self.spec_rag = ""
         self.spec_answer = ""

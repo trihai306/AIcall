@@ -240,6 +240,30 @@ class Settings(BaseSettings):
     # Đo lại bằng scripts/do_khoang_nghi_khach.py trên bản ghi cuộc gọi thật.
     phone_silence_end_ms: int = 750
 
+    # NHẮC KHI HAI BÊN CÙNG IM. Bắt trong cuộc gọi thật `99ee5360`: AI trả lời
+    # xong rồi im tuyệt đối 6 giây (đo trên bản ghi, kênh AI bằng 0), khách tưởng
+    # đứt máy nên cúp. Pipeline chỉ chạy khi VAD cắt được lượt của khách, mà
+    # khách không nói thì không có lượt nào - nên không có gì phá vỡ im lặng.
+    #
+    # 4 giây: dài hơn quãng nghỉ tự nhiên giữa hai câu (đo trên các cuộc gọi
+    # thật là 1-2s), ngắn hơn mốc 6 giây mà khách đã cúp.
+    # TẮT từ 06-09-2026 theo yêu cầu người dùng: *"bỏ cơ chế hỏi, nếu AI không
+    # nghe thấy chữ mới hỏi hoặc chữ có vấn đề"*.
+    #
+    # Nhắc theo ĐỒNG HỒ sai về nguyên tắc - im lặng không có nghĩa là hỏng,
+    # người ta im để nghĩ. Và nó đã đẻ ra năm lỗi liên tiếp trên cuộc gọi thật:
+    # bám ngay sau mỗi câu trả lời, lọt vào lịch sử làm mô hình mất mạch, cờ kẹt
+    # làm chết cơ chế, quãng STT+LLM không ai canh, ngưỡng dùng chung cho cả hai
+    # lần. Thay bằng `pipeline/hoi_lai.py`: chỉ hỏi khi CÓ LÝ DO NGHE ĐƯỢC.
+    #
+    # Mã và test giữ nguyên, bật lại bằng biến môi trường nếu cần đối chứng.
+    phone_nhac_im_lang: bool = False
+    # 6 giây, KHÔNG phải 4. Đo trên cuộc gọi thật `f2f61c42`: ngưỡng 4 giây bắn
+    # 6 câu nhắc trong 47 giây, giục khách ngay lúc họ đang nghĩ. Lần nhắc thứ
+    # hai còn được nới thêm (xem `HE_SO_LAN_SAU` trong `nhac_im_lang`).
+    phone_nhac_sau_giay: float = 6.0
+    phone_nhac_toi_da: int = 2
+
     # Đường đưa tiếng AI vào chiều lên của cuộc gọi:
     #   "codec" - trộn trong codec ở AIF1TX1 Input 2. Chạy được nhưng nghe "dè".
     #   "usb"   - đường thiết bị ngoài Samsung dựng sẵn cho tai nghe USB, kèm cờ

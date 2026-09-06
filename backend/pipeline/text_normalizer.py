@@ -493,6 +493,29 @@ _TIEN_CHU_SO_RE = re.compile(
     re.IGNORECASE)
 
 
+# Số TRẦN - không có chữ đơn vị tiền đi kèm. Khách hay nói kiểu này: "anh muốn
+# vay bốn trăm", "anh vay 400". Xem `tests/test_so_khach_thieu_don_vi.py`.
+_SO_TRAN_CHU_RE = re.compile(r"\b(" + _MOT_TU + r"(?:\s+" + _MOT_TU + r"){0,4})\b",
+                             re.IGNORECASE)
+_SO_TRAN_SO_RE = re.compile(r"(?<![\w/.,])(\d{1,4})(?![\d.,])")
+
+
+def _so_tran_trong(van_ban: str) -> set[int]:
+    """Mọi con số khách nêu ra, KHÔNG kèm đơn vị tiền.
+
+    Dùng riêng cho lời KHÁCH, không dùng cho câu AI: đây là chỗ nới lưới, mà
+    nới trên chính chữ mô hình sinh ra thì lưới hết tác dụng.
+    """
+    ra: set[int] = set()
+    for m in _SO_TRAN_SO_RE.findall(van_ban or ""):
+        ra.add(int(m))
+    for cum in _SO_TRAN_CHU_RE.findall(van_ban or ""):
+        n = _chu_thanh_so(cum)
+        if n:
+            ra.add(n)
+    return ra
+
+
 def _tien_trong(van_ban: str) -> set[float]:
     """Mọi số tiền (quy về đồng) xuất hiện trong văn bản."""
     ra = set()
@@ -623,7 +646,8 @@ def _co_neu_tien(text: str) -> bool:
 
 
 def chan_tien_sai(text: str, tai_lieu: str,
-                  khach_noi: str = "") -> tuple[str, str | None]:
+                  khach_noi: str = "",
+                  can_cu_them: str = "") -> tuple[str, str | None]:
     """Bỏ số tiền AI nói mà KHÔNG có trong tài liệu và KHÔNG do khách nêu ra.
 
     Ba ràng buộc cố ý:
@@ -637,8 +661,27 @@ def chan_tien_sai(text: str, tai_lieu: str,
     """
     # Thu hẹp về ĐÚNG MỤC mà câu đang nói tới, nếu nhận ra được.
     rieng = _tien_theo_chu_de(text, tai_lieu)
+    # `can_cu_them` KHÔNG đi qua `_tien_theo_chu_de`: hàm đó thu hẹp theo tên
+    # mục tìm thấy trong `tai_lieu`, đưa sổ vào đó thì mục của lượt cũ tranh
+    # chỗ với mục của lượt này. Chỉ hợp nhất TẬP GIÁ TRỊ, đúng như `khach_noi`.
     hop_le = (_tien_trong(tai_lieu) if rieng is None else rieng) \
-        | _tien_trong(khach_noi)
+        | _tien_trong(khach_noi) | _tien_trong(can_cu_them)
+
+    # Khách nêu con số mà QUÊN đơn vị ("anh muốn vay bốn trăm") thì AI nhắc lại
+    # kèm đơn vị vẫn là nhắc lại số của khách - đúng ràng buộc #1 ở trên. Bản
+    # cũ không thấy vì `_tien_trong` đòi phải có chữ đơn vị, và nó chặn nhầm
+    # hai cuộc gọi thật liên tiếp (`885911a9`, `ccb61c05`).
+    #
+    # HAI cái khoá giữ cho chỗ nới này khỏi thành lỗ hổng:
+    #   1. phải ĐÚNG con số khách nêu, không được đổi (400 -> 450 vẫn chặn);
+    #   2. không vượt số tiền lớn nhất trong tài liệu. Thiếu khoá này thì khách
+    #      nói "anh vay trong một năm" là AI được phép nói "1 tỷ".
+    tran = max(_tien_trong(tai_lieu) or {0})
+    if tran:
+        for n in _so_tran_trong(khach_noi):
+            for hs in set(_HE_SO.values()):
+                if 0 < n * hs <= tran:
+                    hop_le.add(float(n * hs))
     if not hop_le:
         # Tài liệu KHÔNG có số tiền nào mà câu lại nêu -> con số đó lấy từ TRÍ
         # NHỚ mô hình. Bản cũ trả nguyên ở đây, và đó chính là đường mà câu
@@ -774,7 +817,8 @@ def _tri_phan_tram(s: str) -> set[float]:
     return ra
 
 
-def chan_lai_suat_bia(text: str, tai_lieu: str) -> tuple[str, str | None]:
+def chan_lai_suat_bia(text: str, tai_lieu: str,
+                      can_cu_them: str = "") -> tuple[str, str | None]:
     """Câu trả lời nêu một mức phần trăm KHÔNG có trong tài liệu -> con số đó BỊA.
 
     Vì sao phải chặn bằng code: đo 14-08-2026 sau khi lưới lọc sản phẩm thôi cho
@@ -810,7 +854,10 @@ def chan_lai_suat_bia(text: str, tai_lieu: str) -> tuple[str, str | None]:
     trong_cau = _tri_phan_tram(text)
     if not trong_cau:
         return text, None
-    co_can_cu = _tri_phan_tram(tai_lieu)
+    # `can_cu_them` = sổ căn cứ của CẢ cuộc gọi (xem `so_can_cu.py`). Thiếu nó
+    # thì mức lãi vừa nói đúng ở lượt trước thành 'bịa' ở lượt sau, chỉ vì RAG
+    # lượt này lôi về mảnh khác - đo được trên cuộc gọi thật `009d9fb3`.
+    co_can_cu = _tri_phan_tram(tai_lieu) | _tri_phan_tram(can_cu_them)
     la_bia = sorted(trong_cau - co_can_cu)
     if not la_bia:
         return text, None
@@ -820,7 +867,8 @@ def chan_lai_suat_bia(text: str, tai_lieu: str) -> tuple[str, str | None]:
            if co_can_cu else " (tài liệu không có phần trăm nào)"))
 
 
-def chan_so_sai(text: str, tai_lieu: str) -> tuple[str, str | None]:
+def chan_so_sai(text: str, tai_lieu: str,
+                can_cu_them: str = "") -> tuple[str, str | None]:
     """Sửa số thập phân AI nói nếu nó KHÔNG có trong tài liệu.
 
     Chỉ sửa khi tài liệu có ĐÚNG MỘT số thập phân - lúc đó không có gì mơ hồ về
@@ -828,7 +876,11 @@ def chan_so_sai(text: str, tai_lieu: str) -> tuple[str, str | None]:
 
     Trả (văn bản đã sửa, mô tả chỗ sửa hoặc None).
     """
-    hop_le = _so_thap_phan_trong(tai_lieu)
+    # Gộp sổ căn cứ vào TRƯỚC phép đếm: mức 7.9% đã dùng ở lượt trước mà lượt
+    # này tài liệu chỉ còn 8.5% thì đếm ra ĐÚNG MỘT số, và hàm lặng lẽ đổi
+    # 7.9 thành 8.5. Gộp vào thành hai số -> mơ hồ -> để nguyên, đúng ý
+    # 'đoán bừa còn tệ hơn' ở ngay dưới.
+    hop_le = _so_thap_phan_trong(tai_lieu) | _so_thap_phan_trong(can_cu_them)
     if len(hop_le) != 1:
         return text, None
     ng, le = next(iter(hop_le))
@@ -1327,6 +1379,76 @@ def dong_dau_cuoi(text: str) -> str:
 # lời mất tin cậy. Prompt KHÔNG dứt được (đã thử nói thẳng trong quy tắc 3 và
 # thêm quy tắc 12, vẫn còn), nên chặn bằng code - cùng cách dự án đã xử lý số
 # đọc sai và "ạ" lải nhải.
+# Câu HỨA đứng CUỐI lượt: "... 142.500.000 đồng ạ. Em sẽ kiểm tra thông tin cho
+# anh ngay." Bắt trong cuộc gọi thật `99ee5360` (05-09-2026). Khách nghe câu này
+# thì ngồi chờ một cuộc gọi lại không bao giờ tới, rồi cúp máy sau 6 giây im lặng
+# (`dumpsys telecom` báo REMOTE/NORMAL) - dù câu trả lời đã có ngay trước đó.
+#
+# `_CAU_LUI_RE` bên dưới không bắt được vì nó dùng `re.match`, tức chỉ xét ĐẦU
+# chuỗi. Ở đây câu hứa đứng cuối, và thường rơi vào một MẢNH RIÊNG khi stream.
+#
+# Cố ý HẸP - chỉ bắt hứa TRA CỨU:
+#   - "em xin phép gọi lại vào thời điểm khác" là lời hẹn thật, không bắt.
+#   - Câu có CHỮ SỐ không bắt: "em kiểm tra thấy hạn mức của anh là 300 triệu"
+#     mở đầu giống hệt nhưng là câu trả lời.
+_CAU_HUA_RE = re.compile(
+    r"(?:^|(?<=[.!?]))\s*(?:dạ[\s,]*)?em\s+(?:sẽ\s+|xin\s+phép\s+)?"
+    r"(?:kiểm\s+tra|tra\s+lại|xem\s+lại|báo\s+lại)\b[^.!?]*[.!?]*",
+    re.IGNORECASE,
+)
+
+
+class BoHuaSuong:
+    """Bỏ câu hứa tra cứu khi lượt ĐÃ nói ra nội dung thật. Một đối tượng MỖI LƯỢT.
+
+    Vì sao phải giữ trạng thái thay vì xét từng mảnh: bộ cắt mảnh chia câu trả lời
+    thành nhiều mảnh rồi đẩy xuống TTS từng cái, và mảnh chứa câu hứa thường không
+    chứa gì khác. Nhìn trong phạm vi một mảnh thì "hứa thừa sau khi đã trả lời"
+    trông y hệt "thật sự không tra được" - mà hai cái đó phải xử ngược nhau: cái
+    đầu phải bỏ, cái sau là câu trả lời DUY NHẤT của lượt, bỏ đi thì lượt rỗng.
+
+    Dùng chung khuôn với `BotLichSu`: gọi được trên từng mảnh khi đang stream.
+    """
+
+    def __init__(self) -> None:
+        self.da_co_noi_dung = False
+
+    @staticmethod
+    def _la_noi_dung(s: str) -> bool:
+        """Có chữ số, hoặc ít nhất 4 từ - cùng ngưỡng `bo_cau_lui_thua` đang dùng."""
+        return bool(re.search(r"\d", s or "")) or len((s or "").split()) >= 4
+
+    def __call__(self, doan: str) -> str:
+        if not (doan or "").strip():
+            return doan
+        # Duyệt THEO VỊ TRÍ chứ không sub cả mảnh: nội dung và câu hứa có thể nằm
+        # chung một mảnh ("... 142.500.000 đồng ạ. Em sẽ kiểm tra ... ngay."), lúc
+        # đó phải quyết theo phần đứng TRƯỚC câu hứa, không phải theo trạng thái
+        # lúc mảnh mới tới.
+        ra: list[str] = []
+        vi_tri = 0
+        for m in _CAU_HUA_RE.finditer(doan):
+            truoc = doan[vi_tri:m.start()]
+            ra.append(truoc)
+            if self._la_noi_dung(truoc):
+                self.da_co_noi_dung = True
+            co_so = bool(re.search(r"\d", m.group(0)))
+            if self.da_co_noi_dung and not co_so:
+                pass                      # hứa thừa - bỏ
+            else:
+                ra.append(m.group(0))     # câu trả lời DUY NHẤT, hoặc có số
+                if co_so:
+                    self.da_co_noi_dung = True
+            vi_tri = m.end()
+        con_lai = doan[vi_tri:]
+        ra.append(con_lai)
+        if self._la_noi_dung(con_lai):
+            self.da_co_noi_dung = True
+        # Cắt sạch cả mảnh thì trả chuỗi rỗng - vòng gọi bỏ mảnh rỗng, không đẩy
+        # xuống TTS.
+        return "".join(ra).strip()
+
+
 _CAU_LUI_RE = re.compile(
     r"^\s*(?:dạ[\s,]*)?em\s+(?:xin\s+phép\s+)?(?:sẽ\s+)?kiểm\s+tra\s+lại"
     # Nhánh DÀI phải đứng trước: regex lấy nhánh khớp đầu tiên, để "anh" lên đầu

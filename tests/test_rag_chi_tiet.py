@@ -103,9 +103,36 @@ def test_kho_rong_tra_ve_rong():
     assert chi_tiet == []
 
 
-def test_khong_neo_san_pham_thi_khong_loc_gi():
+def test_khong_neo_san_pham_ma_nhieu_san_pham_thi_LOC_HET():
+    """ĐÃ ĐẢO NGƯỢC 06-09-2026. Trước đây: không neo sản phẩm thì không lọc gì.
+
+    Lý do cũ vẫn đúng ở thời điểm đó: không có mốc thì không biết mảnh nào lạc,
+    mà lọc bừa là bỏ mất câu trả lời đang đúng.
+
+    Nay đảo vì lý do cũ bỏ sót đúng ca nguy hiểm nhất: phiên KHÔNG có sản phẩm
+    (liên hệ chưa khai) mà truy vấn chạm nhiều sản phẩm thì mô hình chọn bừa -
+    và nó chọn con số to nhất. Cuộc gọi thật `9874c82c`: khách hỏi hạn mức, AI
+    đáp "10 TỶ đồng" (số của vay mua nhà), sai 20 lần hạn mức tín chấp thật.
+    Cái giá nhận về: mất câu trả lời khi phiên chưa rõ sản phẩm - đổi lại mô
+    hình phải hỏi khách đang quan tâm gì, đúng thứ nên làm khi chưa ai nói.
+    """
     rag = _dich_vu(["mảnh A", "mảnh B"],
                    [{"source": VAY_TIN_CHAP}, {"source": VAY_MUA_NHA}],
+                   [0.1, 0.2])
+    ngu_canh, chi_tiet = _chay(rag)
+
+    assert [c["bi_loc"] for c in chi_tiet] == [True, True]
+    # Ngữ cảnh KHÔNG rỗng: còn dòng chỉ dẫn `CHUA_RO_SAN_PHAM`. Trả rỗng hẳn thì
+    # mô hình không biết vì sao trống và bịa số từ trí nhớ - đo được câu ra
+    # "Hạn mức tín dụng thường5003000", vỡ vụn.
+    assert "mảnh A" not in ngu_canh and "mảnh B" not in ngu_canh
+    assert "CHƯA RÕ SẢN PHẨM" in ngu_canh
+
+
+def test_khong_neo_san_pham_nhung_CHI_MOT_san_pham_thi_giu():
+    """Một sản phẩm thì không có gì để lẫn - đây là chỗ giữ lại lý do cũ."""
+    rag = _dich_vu(["mảnh A", "mảnh B"],
+                   [{"source": VAY_TIN_CHAP}, {"source": VAY_TIN_CHAP}],
                    [0.1, 0.2])
     ngu_canh, chi_tiet = _chay(rag)
 

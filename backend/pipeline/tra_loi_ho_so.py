@@ -30,7 +30,23 @@ import unicodedata
 BANG = [
     ("du_no",
      [r"\bdu no\b", r"\bno (con )?(bao nhieu|the nao)", r"\bcon no bao nhieu",
-      r"\bcon (thieu|no) (bao nhieu|may)"],
+      r"\bcon (thieu|no) (bao nhieu|may)",
+      # "DOANH THU khoản vay" - bản phiên âm của "dư nợ" trên kênh 8kHz. Bắt
+      # được trong cuộc gọi thật 99ee5360: khách hỏi "doanh thu khoản vay với
+      # mình là bao nhiêu", câu trượt hết mẫu trên nên rơi xuống LLM, và mô hình
+      # đọc ĐÚNG số 142.500.000 từ hồ sơ nhưng gọi nó là "doanh thu" - khoản vay
+      # thì không có doanh thu. Prompt đã có quy tắc "đừng nhắc lại chữ sai" mà
+      # không ăn, nên chặn ở đây.
+      #
+      # PHẢI đòi thêm dấu hiệu KHOẢN VAY: "doanh thu" là từ hợp lệ khi khách khai
+      # thu nhập của chính mình - phiên c5538fc0 có thật câu "anh có doanh thu
+      # một tháng là hai mươi triệu". Bắt trơ chữ "doanh thu" là chặn nhầm đúng
+      # câu đó và đọc dư nợ ra giữa lúc khách đang khai thu nhập.
+      #
+      # Khoảng cách tối đa 12 ký tự cũng là cố ý: nó cho qua "doanh thu CỦA
+      # khoản vay" nhưng không cho qua "doanh thu bao nhiêu thì được khoản vay"
+      # (19 ký tự) - câu sau là hỏi ĐIỀU KIỆN vay, không phải hỏi hồ sơ.
+      r"\bdoanh thu\b.{0,12}\b(khoan vay|hop dong|khoan no)\b"],
      "du_no",
      ["Dạ dư nợ hiện tại của {xung_ho} là {gia_tri} ạ.",
       "Dạ {xung_ho} đang còn dư nợ {gia_tri} ạ."]),

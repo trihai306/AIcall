@@ -33,6 +33,22 @@ def cat_manh(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     return chunks
 
 
+# Chèn vào đầu ngữ cảnh khi phiên chưa rõ sản phẩm và mảnh sản phẩm đã bị bỏ.
+# Viết như một CHỈ DẪN chứ không như dữ liệu: mô hình đọc ngữ cảnh để lấy số,
+# nên phải nói thẳng rằng ở đây không có số nào để lấy.
+CHUA_RO_SAN_PHAM = (
+    "[CHƯA RÕ SẢN PHẨM] Khách chưa cho biết đang quan tâm sản phẩm nào, nên "
+    "không có số liệu nào áp dụng được. TUYỆT ĐỐI không nêu lãi suất, hạn mức "
+    "hay số tiền. Hãy hỏi khách đang quan tâm vay tín chấp, vay mua nhà hay "
+    "thẻ tín dụng."
+)
+
+
+def _la_manh_products(meta: dict | None) -> bool:
+    src = ((meta or {}).get("source") or "").replace("\\", "/")
+    return PurePath(src).parent.name == "products"
+
+
 class RAGService:
     """ChromaDB + embedding model for retrieval-augmented generation."""
 
@@ -43,6 +59,9 @@ class RAGService:
         self._is_loaded = False
         # Danh mục sản phẩm có tài liệu riêng, dựng lười. None = chưa biết.
         self._ma_sp_co_tai_lieu: set[str] | None = None
+        # Mảnh ĐẦU tài liệu của từng sản phẩm (tiêu đề + định nghĩa). Nhớ lại
+        # vì `retrieve` chạy ba lần mỗi lượt, ngay trên đường găng độ trễ.
+        self._manh_dau_nho: dict[str, str] = {}
 
     def load(self):
         if self._is_loaded:
@@ -148,6 +167,20 @@ class RAGService:
         dists = (results.get("distances") or [[]])[0] or []
 
         co_tl = self._san_pham_co_tai_lieu()
+
+        # PHIÊN chưa biết sản phẩm, nhưng CÂU KHÁCH có thể đã nói rõ. Neo theo
+        # câu trước khi tính tới chuyện bỏ hết mảnh sản phẩm.
+        #
+        # Thiếu mắt này thì bản sửa ca (c) đi quá tay: đo được ngay sau khi thêm,
+        # lượt "máy tín chấp hạn mức bao nhiêu" - khách đã nói rõ TÍN CHẤP - vẫn
+        # bị bỏ sạch mảnh và AI đáp "em xin phép kiểm tra lại" ba lượt liền y hệt
+        # nhau. Neo theo câu thì lượt đó trả lời đúng 500 triệu.
+        if not san_pham:
+            tu_cau = self._san_pham_trong_cau(query, co_tl)
+            if tu_cau and tu_cau != "khong_co_tai_lieu":
+                san_pham = tu_cau
+                logger.info("RAG: phiên chưa rõ sản phẩm - neo theo CÂU KHÁCH: %r",
+                            tu_cau)
         # Câu hỏi nêu rõ một sản phẩm mà kho KHÔNG có tài liệu -> bỏ hết mảnh
         # `products`, giữ FAQ/chính sách. Phải xét TRƯỚC `_mat_na_loc` vì hàm đó
         # chỉ soi sản phẩm của phiên, mà phiên thường là sản phẩm CÓ tài liệu.
@@ -178,7 +211,42 @@ class RAGService:
                 "bi_loc": not giu[i],
             })
 
-        return "\n---\n".join(d for d, k in zip(docs, giu) if k), chi_tiet
+        ngu_canh = "\n---\n".join(d for d, k in zip(docs, giu) if k)
+
+        # MANG THEO mảnh mở đầu của sản phẩm đang neo, kể cả khi nó thua điểm.
+        #
+        # Cuộc gọi thật `009d9fb3`: khách hỏi "khoản vay bên mình vay tín chấp",
+        # hai mảnh thắng điểm là bảng trả góp (0.377) và câu xử lý từ chối
+        # (0.284); mảnh định nghĩa xếp sau nên không vào ngữ cảnh. Mô hình đáp
+        # "vay tín chấp là hình thức cho vay CÓ BẢO ĐẢM BẰNG TÀI SẢN" - ngược
+        # hẳn tài liệu của chính nó.
+        #
+        # Đặt LÊN ĐẦU: đây là câu trả lời cho "sản phẩm này là gì", phải đứng
+        # trước mọi con số. Chỉ làm khi ĐÃ neo sản phẩm - chưa neo mà tự kéo
+        # định nghĩa vào là chọn hộ khách sản phẩm họ chưa nói.
+        if san_pham:
+            ma_neo = self._ma_san_pham(san_pham)
+            mo_dau = self._manh_mo_dau(ma_neo)
+            dau = (mo_dau or "")[:60]
+            if mo_dau and not any(dau in (d or "") for d, k in zip(docs, giu) if k):
+                ngu_canh = mo_dau + ("\n---\n" + ngu_canh if ngu_canh else "")
+                chi_tiet.append({"doan": mo_dau, "diem": None,
+                                 "nguon": f"{ma_neo}.md", "bi_loc": False,
+                                 "mang_theo": True})
+                logger.info("RAG: mang theo mảnh mở đầu của %s (không thắng điểm "
+                            "nhưng chứa định nghĩa sản phẩm)", ma_neo)
+
+        # Ca (c) đã bỏ hết mảnh sản phẩm: NÓI THẲNG cho mô hình biết vì sao ngữ
+        # cảnh trống, nếu không nó bịa số từ trí nhớ rồi bị lưới chặn cắt dở.
+        # Đo được ngay sau khi thêm ca (c): câu ra "Hạn mức tín dụng
+        # thường5003000" - vỡ vụn, tệ hơn cả câu sai ban đầu.
+        if not san_pham and metas and len(metas) == len(docs):
+            bo_products = [i for i, k in enumerate(giu)
+                           if not k and _la_manh_products(metas[i])]
+            if bo_products:
+                ngu_canh = (CHUA_RO_SAN_PHAM + ("\n---\n" + ngu_canh if ngu_canh else ""))
+
+        return ngu_canh, chi_tiet
 
     # Từ khoá nhận ra sản phẩm KHÁCH ĐANG HỎI, không phải sản phẩm của phiên.
     #
@@ -222,6 +290,24 @@ class RAGService:
                 return ma
         return ""
 
+    def san_pham_neo(self, query: str, san_pham: str = "") -> str:
+        """Mã sản phẩm mà lượt này THẬT SỰ neo vào; "" khi không xác định được.
+
+        Cùng phép neo mà `retrieve_chi_tiet` đang dùng, tách ra cho bên ngoài
+        đọc được. `so_can_cu.SoCanCu` cần nó để biết lúc nào phải xoá sổ: căn cứ
+        của vay mua nhà mà còn nằm lại khi đã chuyển sang vay tín chấp thì nó
+        bảo chứng cho đúng con số "10 tỷ" mà `test_chua_ro_san_pham` sinh ra để
+        chặn.
+
+        KHÔNG tự nạp kho: hàm chạy trên đường găng độ trễ của cuộc gọi. Kho chưa
+        nạp thì neo theo mỗi câu hỏi, không đối chiếu danh mục.
+        """
+        if san_pham:
+            return self._ma_san_pham(san_pham)
+        co_tl = self._san_pham_co_tai_lieu() if self._is_loaded else None
+        ma = self._san_pham_trong_cau(query, co_tl)
+        return "" if ma == "khong_co_tai_lieu" else ma
+
     @staticmethod
     def _ma_san_pham(s: str) -> str:
         """"Vay Tín Chấp" / "vay_tin_chap.md" -> "vay_tin_chap"."""
@@ -262,9 +348,34 @@ class RAGService:
                         ", ".join(sorted(ma)) or "(không có)")
         return self._ma_sp_co_tai_lieu
 
+    def _manh_mo_dau(self, ma: str) -> str:
+        """Mảnh ĐẦU tài liệu của sản phẩm `ma` (tiêu đề + định nghĩa); "" nếu không có.
+
+        Mảnh 0 là chỗ người soạn viết sản phẩm này LÀ GÌ. Nó hiếm khi thắng
+        điểm cosine - câu khách hỏi thường chạm bảng số hoặc câu xử lý từ chối -
+        nên với `top_k=2` nó gần như không bao giờ vào ngữ cảnh. Xem
+        `tests/test_mang_theo_dinh_nghia.py` để biết cái giá thật của việc đó.
+
+        Nhớ cả kết quả RỖNG: kho không đổi giữa cuộc gọi, mà hàm này nằm trên
+        đường găng. `_quen_danh_muc` xoá bộ nhớ khi nạp/xoá tài liệu.
+        """
+        if ma in self._manh_dau_nho:
+            return self._manh_dau_nho[ma]
+        ra = ""
+        try:
+            co = self._collection.get(ids=[f"{ma}_chunk_0"],
+                                      include=["documents"]) or {}
+            docs = co.get("documents") or []
+            ra = (docs[0] or "") if docs else ""
+        except Exception as e:
+            logger.warning("Không đọc được mảnh mở đầu của %r: %s", ma, e)
+        self._manh_dau_nho[ma] = ra
+        return ra
+
     def _quen_danh_muc(self):
         """Kho vừa đổi -> dựng lại danh mục sản phẩm ở lần hỏi sau."""
         self._ma_sp_co_tai_lieu = None
+        self._manh_dau_nho.clear()
 
     @classmethod
     def _mat_na_loc(cls, docs: list[str], metas: list[dict] | None,
@@ -316,7 +427,7 @@ class RAGService:
         này không đổi hành vi âm thầm.
         """
         moc = cls._ma_san_pham(san_pham) if san_pham else ""
-        if not moc or not metas or len(metas) != len(docs):
+        if not metas or len(metas) != len(docs):
             return [True] * len(docs)
 
         def cua_san_pham(meta: dict | None) -> str:
@@ -325,6 +436,34 @@ class RAGService:
             return cls._ma_san_pham(p.name) if p.parent.name == "products" else ""
 
         ma = [cua_san_pham(m) for m in metas]
+
+        # CA (c): PHIÊN CHƯA BIẾT SẢN PHẨM và truy vấn lôi về mảnh của NHIỀU sản
+        # phẩm. Không có mốc để neo, giữ nguyên là mời mô hình chọn bừa - và nó
+        # chọn con số to nhất.
+        #
+        # Đo trên cuộc gọi thật `9874c82c` (06-09-2026), liên hệ chưa khai sản
+        # phẩm nên `session.product` rỗng: khách hỏi "hạn mức bao nhiêu", AI đáp
+        # "tối đa 10 TỶ đồng" rồi hỏi tài sản đảm bảo - số của `vay_mua_nha.md`,
+        # sai 20 lần so với hạn mức tín chấp thật. `chan_tien_sai` cho qua ĐÚNG
+        # LUẬT vì 10 tỷ CÓ trong ngữ cảnh: lưới không hỏng, nó bị bịt mắt.
+        #
+        # Bỏ hết mảnh `products`, GIỮ FAQ/chính sách - y như ca (b). Ngữ cảnh
+        # hết số sản phẩm thì `chan_tien_sai` tự chặn mọi số, và mô hình chỉ còn
+        # đường hỏi lại khách đang quan tâm sản phẩm nào. Đúng nghiệp vụ: thật
+        # sự chưa ai nói khách muốn gì.
+        #
+        # MỘT sản phẩm thì KHÔNG cắt - không có gì để lẫn, mà cắt đi là bỏ mất
+        # câu trả lời đang đúng.
+        if not moc:
+            khac_nhau = {m for m in ma if m}
+            if len(khac_nhau) >= 2:
+                logger.info(
+                    "RAG: phiên CHƯA RÕ sản phẩm mà truy vấn chạm %d sản phẩm "
+                    "(%s) - bỏ hết mảnh products để mô hình khỏi đọc số của "
+                    "sản phẩm khách không hỏi", len(khac_nhau),
+                    ", ".join(sorted(khac_nhau)))
+                return [not m for m in ma]
+            return [True] * len(docs)
         if moc not in ma:
             if ma_co_tai_lieu is not None and moc not in ma_co_tai_lieu:
                 # ca (b): sản phẩm này không có tài liệu nào -> mọi mảnh sản

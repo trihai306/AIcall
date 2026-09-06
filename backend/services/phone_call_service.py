@@ -29,6 +29,9 @@ from backend.services.audio_utils import (
 )
 from backend.services.dem_truoc import DEM_TRUOC_MS, DemTruoc
 from backend.services.gender_detect import doan_gioi_tinh
+from backend.services.loc_gio import la_gio
+from backend.services.nhac_im_lang import (chon_cau_nhac, co_nen_nhac,
+                                            dang_xu_ly_luot, moc_dem_im)
 from backend.services.recorder import GhiAmCuocGoi
 from backend.services.voicemail_detect import BoDoHopThuThoai
 
@@ -442,11 +445,16 @@ class PhoneAudioSink:
                 # lúc `turn_complete`. Ngoài cửa sổ đó, hàng đợi rỗng là chuyện
                 # bình thường (đang chờ khách nói) chứ không phải TTS đẻ không kịp.
                 self.bridge._luot_dang_chay = True
+                # AI mở miệng -> thôi đếm im lặng.
+                self.bridge._luc_ai_noi_xong = None
                 await self.bridge.play(wav)
             return
 
         if kind == "transcript":
             self.last_transcript = msg.get("text", "")
+            # Khách đã nói -> vòng nhắc bắt đầu lại từ đầu cho lượt sau.
+            self.bridge._luc_ai_noi_xong = None
+            self.bridge._so_lan_da_nhac = 0
             logger.info(f"{self.bridge.tag} khách: {self.last_transcript}")
             # Từ khoá hộp thư thoại chỉ lộ ra ở bản ghi, nên đây là chỗ duy nhất
             # bắt được dấu hiệu mạnh nhất trong ba dấu hiệu.
@@ -458,6 +466,11 @@ class PhoneAudioSink:
             # Đóng cửa sổ đếm đói khung. Tiếng còn xếp hàng vẫn phát nốt, nhưng
             # từ đây TTS không còn nợ gì nên chờ lâu không phải lỗi của nó.
             self.bridge._luot_dang_chay = False
+            # Mốc để đếm im lặng. Đặt ở ĐÂY chứ không ở lúc hàng đợi rỗng: hàng
+            # đợi rỗng giữa hai mảnh là chuyện thường, còn `turn_complete` mới
+            # là lúc AI thật sự hết chuyện để nói.
+            self.bridge._luc_ai_noi_xong = time.monotonic()
+            self.bridge._khach_dang_noi = False
             logger.info(f"{self.bridge.tag} AI: {self.last_reply[:80]}")
         elif kind == "error":
             self.bridge.last_error = msg.get("message", "lỗi không rõ")
@@ -527,6 +540,21 @@ class PhoneCallBridge:
         # Con số sai kiểu này đắt: log tự đổ cho `phone_dem_mo_ms` và chỉ người
         # ta đi chỉnh đệm mồi - một chỗ KHÔNG hỏng.
         self._luot_dang_chay = False
+
+        # Nhắc khi hai bên cùng im - xem `services/nhac_im_lang.py`. `None` =
+        # chưa có lượt nào kết thúc, tức chưa tới lúc đếm im lặng.
+        self._luc_ai_noi_xong: float | None = None
+        self._so_lan_da_nhac = 0
+        # Khách đã cất tiếng và lượt CHƯA đi hết đường (STT -> LLM -> TTS).
+        # Thiếu cờ này thì vòng nhắc bắn vào GIỮA lượt: đo trên cuộc gọi thật
+        # `f2f61c42` (06-09), câu "em xin phép gọi lại sau" chen vào giữa câu đệm
+        # và câu trả lời lãi suất. `_luot_dang_chay` không đủ - nó chỉ bật khi
+        # mảnh tiếng ĐẦU TIÊN về, còn quãng khách đang nói và quãng STT+LLM chạy
+        # (1-2 giây) thì nó vẫn tắt.
+        self._khach_dang_noi = False
+        # Đếm khung bị bỏ vì là gió - để biết cuộc gọi có ồn gió hay không mà
+        # không phải mở bản ghi ra nghe.
+        self._khung_gio_bo = 0
 
         # Chưa nối máy thì đường xuống chỉ có nhạc chờ / hồi âm chuông. Để
         # pipeline nghe cái đó thì STT phiên âm ra rác và AI trả lời vào hư
@@ -635,8 +663,71 @@ class PhoneCallBridge:
         self._tasks = [
             asyncio.create_task(self._read_loop(), name="phone-read"),
             asyncio.create_task(self._write_loop(), name="phone-write"),
+            asyncio.create_task(self._nhac_loop(), name="phone-nhac"),
         ]
         logger.info(f"{self.tag} đã nối cầu tiếng {self.host}:{self.port}")
+
+    async def _nhac_loop(self):
+        """Nhắc khách khi hai bên cùng im sau lúc AI trả lời xong.
+
+        Vì sao cần: pipeline chỉ chạy khi VAD cắt được một lượt của khách. Khách
+        không nói thì không có lượt, không có lượt thì không có gì phát ra - và
+        cuộc gọi rơi vào im lặng hai chiều. Đo trên bản ghi `99ee5360`: 6 giây
+        liền kênh AI bằng 0, rồi khách cúp (`dumpsys telecom`: REMOTE/NORMAL).
+
+        Chạy như một task nền riêng chứ không gắn vào `_write_loop`: vòng ghi
+        phải bám nhịp 20ms/khung, nhét thêm việc vào đó là đụng đúng chỗ nhạy
+        nhất của đường tiếng.
+        """
+        if not settings.phone_nhac_im_lang:
+            return
+        nguong = settings.phone_nhac_sau_giay
+        toi_da = settings.phone_nhac_toi_da
+        while self.running:
+            await asyncio.sleep(0.5)
+            # Dời mốc chừng nào tiếng còn đang phát: đếm im lặng phải bắt đầu
+            # từ lúc khách NGHE XONG, không phải lúc mô hình sinh xong chữ.
+            con_tieng = not self._out.empty()
+            self._luc_ai_noi_xong = moc_dem_im(
+                self._luc_ai_noi_xong, con_tieng, time.monotonic())
+            moc = self._luc_ai_noi_xong
+            if moc is None:
+                continue
+            if not co_nen_nhac(
+                    im_giay=time.monotonic() - moc,
+                    so_lan_da_nhac=self._so_lan_da_nhac,
+                    ai_dang_noi=dang_xu_ly_luot(
+                        khach_dang_noi=self._khach_dang_noi,
+                        luot_dang_chay=self._luot_dang_chay,
+                        # Quãng STT+LLM chạy: khách đã nói xong, mảnh tiếng đầu
+                        # chưa về, nên hai cờ kia đều TẮT.
+                        luot_task_con_chay=(self._luot_task is not None
+                                            and not self._luot_task.done())),
+                    # Lượt sinh xong rồi nhưng tiếng còn trong hàng đợi thì khách
+                    # VẪN ĐANG NGHE - cửa này dễ quên nhất.
+                    con_tieng_cho_phat=con_tieng,
+                    nguong_giay=nguong, toi_da=toi_da):
+                continue
+            cau = chon_cau_nhac(self._so_lan_da_nhac)
+            self._so_lan_da_nhac += 1
+            # Đặt lại mốc NGAY, trước cả khi sinh tiếng: TTS mất vài trăm ms, mà
+            # vòng này quay mỗi 0,5s - không đặt lại thì nó bắn liên tiếp mấy câu.
+            self._luc_ai_noi_xong = time.monotonic()
+            try:
+                giong = getattr(self.session, "voice_name", None) or "default"
+                wav = await self.pipeline.tts.synthesize(cau, voice=giong)
+                # KHÔNG ghi câu nhắc vào lịch sử hội thoại. Lịch sử được nạp
+                # ngược vào prompt của lượt sau, mà "Dạ anh chị còn nghe em nói
+                # không ạ?" xen giữa các lượt tư vấn làm mô hình mất mạch: đo
+                # trên cuộc gọi thật `55069e44` (06-09-2026), sau hai câu nhắc
+                # lọt vào lịch sử thì câu "hạn mức bao nhiêu" bị đáp bằng "em
+                # xin phép kiểm tra lại", dù tài liệu ghi rõ hạn mức 500 triệu.
+                # Câu nhắc vẫn còn nguyên trong bản ghi âm và trong log.
+                await self.play(wav)
+                logger.info("%s im %.0fs -> nhắc: %r", self.tag, nguong, cau)
+            except Exception as e:
+                # Nhắc hỏng thì cuộc gọi vẫn phải chạy tiếp.
+                logger.warning("%s nhắc khi im lặng hỏng (bỏ qua): %s", self.tag, e)
 
     async def stop(self):
         self.running = False
@@ -1016,6 +1107,22 @@ class PhoneCallBridge:
                 # Vẫn phải ĐỌC cho hết chứ không được ngừng đọc: ngừng thì đệm
                 # socket đầy, app trên máy nghẽn, và khi mở lại ta nhận nguyên
                 # một cục tiếng cũ.
+                # Chiều lên là dòng liên tục 20ms kể cả lúc im lặng, nên nó là
+                # ĐỒNG HỒ của bản ghi - xem services/recorder.py.
+                #
+                # PHẢI ghi kể cả khi đang `tam_dung_nghe`, và phải đứng TRƯỚC
+                # khối đó. Trước đây nó nằm sau, nên suốt quãng phát câu chào
+                # (lúc `tam_dung_nghe` còn bật) trục thời gian của bản ghi đứng
+                # yên ở 0, còn `them_bot` vẫn chạy - cả 141 khung câu chào cùng
+                # đóng dấu vị trí ~0 rồi bị `_lay_khoi` vứt vì "quá hạn".
+                # Đo được: chỉ 26/141 khung sống sót. Ba cuộc gọi thật liên tiếp
+                # đều cho kênh AI đoạn đầu đúng 1,4s trong khi TTS sinh 2,83s,
+                # và tôi đã lần lượt đổ oan cho TTS, cho khách nói đè, cho gió.
+                # Khách VẪN NGHE ĐỦ - log cùng cuộc gọi ghi "không đói khung lần
+                # nào". Chỉ bản ghi hỏng, mà bản ghi lại là bằng chứng chính.
+                if self.ghi_am is not None:
+                    self.ghi_am.them_khach(int16_to_float32(frame))
+
                 if self.tam_dung_nghe:
                     speaking, on_streak, silence_ms, speech_ms = False, 0, 0, 0
                     spec_cho.clear()
@@ -1068,18 +1175,29 @@ class PhoneCallBridge:
                 # thì mãi tới lúc hộp thư nói xong mới biết - quá muộn.
                 self._nghe_de_do(frame, rms >= self.nguong_tat())
 
-                # Chiều lên là dòng liên tục 20ms kể cả lúc im lặng, nên nó là
-                # ĐỒNG HỒ của bản ghi - xem services/recorder.py.
-                if self.ghi_am is not None:
-                    self.ghi_am.them_khach(int16_to_float32(frame))
-
                 # Nạp vòng đệm ở MỌI khung, kể cả khung im: chỗ trũng giữa hai
                 # âm tiết mà xoá đệm thì mất đúng phần đầu câu (lỗi cũ của
                 # `xuLyCatLoi` bên frontend).
                 dem_truoc.them(frame)
 
                 if not speaking:
-                    on_streak = on_streak + 1 if rms >= self.nguong_on() else 0
+                    # GIÓ KHÔNG PHẢI KHÁCH NÓI. VAD chỉ xét mức, nên một cơn gió
+                    # thổi vào micro cũng vượt ngưỡng rồi bị coi là khách chen
+                    # ngang -> `drop_pending_audio()` xoá tiếng AI đang phát.
+                    #
+                    # Đo trên cuộc gọi thật `f2f61c42` (06-09-2026): giây 1,44
+                    # kênh khách mức 1507 (ngưỡng 700) nhưng 99,1% năng lượng
+                    # nằm dưới 300Hz - gió, không phải lời. Câu chào 2,83s bị
+                    # cắt còn 1,4s ngay tại đó. Tiếng nói thật trong cùng cuộc
+                    # gọi chỉ 0,3-21%, nên hai bên tách nhau rất rõ.
+                    #
+                    # Chỉ tính phổ khi mức ĐÃ vượt ngưỡng: khung im thì bỏ qua
+                    # ngay, không tốn FFT.
+                    du_muc = rms >= self.nguong_on()
+                    if du_muc and la_gio(int16_to_float32(frame), RATE_LEN):
+                        du_muc = False
+                        self._khung_gio_bo += 1
+                    on_streak = on_streak + 1 if du_muc else 0
                     if on_streak >= VAD_ON_FRAMES:
                         on_streak = 0
                         # Khách bắt đầu nói. Nếu AI đang nói dở thì đây là CẮT LỜI:
@@ -1101,6 +1219,11 @@ class PhoneCallBridge:
                             # lúc đó mới cắt cứng. Chạy nền để vòng thu không nghẽn.
                             asyncio.create_task(self._cat_cung_neu_khong_dung())
                         speaking, silence_ms, speech_ms = True, 0, 0
+                        # Khách mở miệng -> thôi đếm im lặng NGAY, đừng đợi
+                        # `transcript` (nó chỉ về sau khi STT xong, tức muộn
+                        # hơn cả giây - đủ để vòng nhắc chen vào).
+                        self._khach_dang_noi = True
+                        self._luc_ai_noi_xong = None
                         spec_cuoi_bytes = 0
                         # Dọn tiếng thừa và bản đoán của lượt trước trước khi gom
                         # lượt mới, không thì đoán trước ăn nhầm câu cũ.
@@ -1172,6 +1295,12 @@ class PhoneCallBridge:
 
                 if silence_ms >= SILENCE_END_MS or speech_ms >= MAX_TURN_MS:
                     speaking = False
+                    # Khách ngừng nói -> hạ cờ NGAY, bất kể đoạn này có thành
+                    # một lượt hay không. Trước đây chỉ hạ ở `turn_complete`,
+                    # nên một tiếng hắng giọng ngắn hơn MIN_TURN_MS (không sinh
+                    # lượt, không có turn_complete) làm cờ KẸT True vĩnh viễn và
+                    # cơ chế nhắc chết hẳn từ đó tới cuối cuộc gọi.
+                    self._khach_dang_noi = False
                     if tieng_8k:
                         # Cắt đúng mốc đã đoán ở trên để hai bên nhìn CÙNG một
                         # đoạn tiếng, nhờ vậy dùng lại được bản phiên âm.
@@ -1207,6 +1336,11 @@ class PhoneCallBridge:
                         # nhiều cuộc gọi để tìm ra đúng chỗ này.
                         logger.info(f"{self.tag} bỏ đoạn %dms - ngắn hơn MIN_TURN_MS=%d",
                                     talk_ms, MIN_TURN_MS)
+                        # Không có lượt nào chạy nên sẽ KHÔNG có `turn_complete`
+                        # để đặt lại mốc. Đặt ngay tại đây, nếu không thì mốc
+                        # đứng ở `None` và không bao giờ nhắc nữa.
+                        if self._luc_ai_noi_xong is None:
+                            self._luc_ai_noi_xong = time.monotonic()
 
         except (asyncio.IncompleteReadError, asyncio.CancelledError):
             pass
@@ -1309,6 +1443,7 @@ class PhoneCallManager:
         return [
             {
                 "serial": s, "port": c.port, "running": c.running,
+                "khung_gio_bo": c._khung_gio_bo,
                 "turns": c.turns, "last_error": c.last_error,
                 "khach_noi": c.sink.last_transcript, "ai_noi": c.sink.last_reply,
             }

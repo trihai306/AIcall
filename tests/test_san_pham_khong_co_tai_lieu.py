@@ -66,8 +66,16 @@ def test_khong_truyen_danh_muc_thi_giu_hanh_vi_CU():
 
 
 @pytest.mark.parametrize("sp", ["", None])
-def test_khong_co_san_pham_thi_khong_loc(sp):
-    assert RAGService._mat_na_loc(DOCS, METAS, sp or "", CO_TAI_LIEU) == [True] * 3
+def test_khong_co_san_pham_ma_nhieu_san_pham_thi_LOC_HET(sp):
+    """ĐÃ ĐẢO NGƯỢC 06-09-2026 - xem ca (c) trong `_mat_na_loc`.
+
+    Lý do cũ: không có mốc neo thì lọc bừa là bỏ mất câu trả lời đúng.
+    Lý do đảo: cuộc gọi thật `9874c82c` cho thấy giữ nguyên còn tệ hơn - phiên
+    chưa khai sản phẩm, AI đọc hạn mức "10 tỷ" của vay mua nhà cho khách hỏi vay
+    tín chấp. Giữ FAQ để mô hình còn ngữ cảnh chung mà hỏi lại.
+    """
+    giu = RAGService._mat_na_loc(DOCS, METAS, sp or "", CO_TAI_LIEU)
+    assert giu == [False, False, True], giu
 
 
 def test_danh_muc_rong_van_khong_loc_sach_khi_khong_biet():
