@@ -33,6 +33,7 @@ from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
 from backend.services.filler_pick import (NGUONG_BO_DEM_MS, can_che_ms,
                                           cho_den_khi, du_doan_cho_ms,
+                                          loc_cau_dem_llm,
                                           nen_bo_cau_dem, tinh_huong_dung)
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
@@ -256,6 +257,92 @@ class StreamingPipeline:
             return None
         return dau
 
+    # Lời nhắc sinh câu đệm. NGẮN và tách hẳn khỏi prompt tư vấn - dự án đã có
+    # bài học: nhét prompt tư vấn vào một lượt có mục đích khác thì mô hình bỏ
+    # việc được giao và quay về tư vấn (xem lượt định tuyến gọi hàm).
+    #
+    # Cấm số ngay trong lời nhắc DÙ ĐÃ có lưới `loc_cau_dem_llm`: nhắc trước thì
+    # phần lớn lượt không sinh số, lưới chỉ còn phải chặn số ít - mà mỗi lần lưới
+    # chặn là một lượt khách nghe im lặng.
+    _NHAC_CAU_DEM = (
+        "Khách vừa hỏi: {hoi}\n\n"
+        "Viết MỘT câu dẫn ngắn để nhân viên nữ ngân hàng nói ngay trước khi trả "
+        "lời, thể hiện đã nghe rõ chủ đề. Luật:\n"
+        "- Tối đa 10 từ, kết bằng dấu phẩy\n"
+        "- Nhắc lại CHỦ ĐỀ khách hỏi, KHÔNG trả lời\n"
+        "- TUYỆT ĐỐI không có chữ số, không hứa hẹn con số nào\n"
+        "- Xưng em, gọi anh chị\n"
+        "Ví dụ: 'Dạ về thời gian giải ngân thì,'\n\n"
+        "Chỉ trả về đúng câu đó, không giải thích."
+    )
+
+    # Dưới bấy nhiêu ký tự thì câu còn quá cụt để dẫn chủ đề. Đo trên lượt
+    # thật: "a lô ai đấy ạ" (13) và "ừ em nói đi" (11) bị chặn - đúng ý, hai
+    # lượt đó không có chủ đề nào để dẫn, dẫn bừa còn tệ hơn im lặng.
+    _TOI_THIEU_KY_TU_CAU_DEM = 20
+
+    def _xep_nghi_cau_dem(self, session: CallSession) -> None:
+        """Xếp một task nền nghĩ câu đệm, nếu lượt này đang cần và chưa có.
+
+        KHÔNG await: hàm gọi nó (`speculate`) chạy trong vòng thu tiếng, nghẽn
+        ở đây là nghẽn cả đường nhận audio.
+
+        Ba chốt chặn cái giá:
+          `tinh_huong is None`  kho khớp rồi thì đã có clip dựng sẵn, khỏi tốn
+          `not spec_cau_dem`    mỗi lượt sinh ĐÚNG MỘT lần
+          chữ đủ dài            xem `_TOI_THIEU_KY_TU_CAU_DEM`
+
+        Giữ tham chiếu mạnh trong `_bg_writes` theo đúng khuôn `_ham_cache_tts`:
+        task rơi khỏi tầm tham chiếu thì bị thu gom giữa chừng.
+        """
+        if session.tinh_huong is not None or session.spec_cau_dem:
+            return
+        if getattr(session, "_cau_dem_dang_nghi", False):
+            return
+        chu = (session.spec_stt or (0, ""))[1]
+        if len(chu) < self._TOI_THIEU_KY_TU_CAU_DEM:
+            return
+
+        session._cau_dem_dang_nghi = True
+
+        async def _chay():
+            try:
+                await self._nghi_cau_dem(chu, session)
+            finally:
+                session._cau_dem_dang_nghi = False
+
+        task = asyncio.create_task(_chay())
+        _bg_writes.add(task)
+        task.add_done_callback(_bg_writes.discard)
+
+    async def _nghi_cau_dem(self, hoi: str, session: CallSession) -> None:
+        """Nhờ mô hình nghĩ câu đệm cho lượt mà kho tình huống không khớp.
+
+        Chạy trong lúc khách còn đang nói nên GPU rảnh và không chạm đường găng.
+        Sinh xong thì dựng tiếng luôn qua `_ham_cache_tts` - đường phát tra cache
+        bằng nguyên văn chữ nên lúc lượt mở gần như 0ms.
+
+        MỌI lỗi đều nuốt: đây là đường phụ, hỏng thì rơi về im lặng đúng như
+        trước khi có nó. Không được để nó làm chết bản đoán câu trả lời chạy
+        ngay sau.
+
+        Lưới lọc nằm ở `filler_pick.loc_cau_dem_llm` (thuần logic, test được
+        không cần GPU). Chuỗi ghi vào `session.spec_cau_dem` là chuỗi SẴN SÀNG
+        ĐỌC - nơi dùng không lọc lại.
+        """
+        try:
+            tho = await self.llm.generate_simple(self._NHAC_CAU_DEM.format(hoi=hoi))
+        except Exception as e:
+            logger.debug("nghĩ câu đệm bỏ qua: %s", e)
+            return
+        cau = loc_cau_dem_llm(tho)
+        if not cau:
+            logger.info("câu đệm LLM bị lưới chặn: %r", (tho or "")[:60])
+            return
+        session.spec_cau_dem = cau
+        logger.info("câu đệm LLM: %r", cau)
+        await self._ham_cache_tts(cau, session)
+
     async def _ham_cache_tts(self, manh: str, session: CallSession) -> None:
         """Sinh trước `manh` CHỈ để nạp cache. Không cất, không phát, vứt kết quả.
 
@@ -368,6 +455,20 @@ class StreamingPipeline:
         của cả lượt - audio đã đủ cả câu nên `_answer_hit` gần như chắc trúng,
         khác hẳn những lần giữa chừng vốn chỉ có câu cụt. Xem `_read_loop`.
         """
+        # Câu đệm sinh trong task RIÊNG, đặt TRƯỚC mọi lưới return của hàm này.
+        #
+        # Hai bản trước đặt nó bên trong `_run()` và cả hai đều CHƯA BAO GIỜ
+        # chạy. Lý do là lưới ngay dưới: bản đoán giữa chừng mất 1-2 giây (STT +
+        # RAG + LLM), nên `spec_running` gần như luôn True và mọi lần gọi
+        # `speculate(ngay=False)` sau đó thoát ngay tại dòng đầu. Log 06-09-2026
+        # ghi thẳng: "HUỶ bản giữa chừng (đang ở bước 'LLM')" - tức lúc khách
+        # dứt lời nó vẫn đang chạy dở.
+        #
+        # Tách ra task riêng thì câu đệm không còn phụ thuộc vòng đời bản đoán:
+        # nó chỉ cần `spec_stt` (ghi ngay sau STT, sớm nhất có chữ) chứ không
+        # cần RAG hay LLM của bản đoán.
+        self._xep_nghi_cau_dem(session)
+
         n = session.audio_len()
         if session.spec_running:
             if not ngay:
@@ -426,6 +527,17 @@ class StreamingPipeline:
                             session.tinh_huong = (n, id_th, diem)
                 except Exception as e:
                     logger.debug("phan loai tinh huong truot (bo qua): %s", e)
+
+                # Kho tình huống KHÔNG khớp -> nhờ mô hình nghĩ một câu dẫn.
+                #
+                # Đây là chỗ duy nhất còn im lặng: đo 06-09-2026 trên cuộc gọi
+                # thử, 3/9 lượt không câu nào đạt ngưỡng 0,90 nên không có clip
+                # nào để phát, khách nghe im 0,8-2,2 giây.
+                #
+                # Sinh TRƯỚC câu trả lời (khối LLM bên dưới) vì nó ngắn và cần
+                # gấp hơn: câu đệm phải kịp lúc lượt mở, còn câu trả lời thì
+                # dù sao cũng có câu đệm che.
+                #
 
                 # HÂM CACHE, đường thứ nhất: dùng bản trả lời đã soạn từ lần
                 # đoán GIỮA CHỪNG, nếu nó còn khớp phiên âm trọn câu.
@@ -686,6 +798,22 @@ class StreamingPipeline:
     # không bao giờ kích hoạt, mã chết suốt một tháng mà log vẫn sạch.
     _FILLER_BO_QUA_MS = NGUONG_BO_DEM_MS
 
+    # Chờ tối đa bấy nhiêu để câu đệm LLM thành tiếng. Bình thường nó đã nằm sẵn
+    # trong cache (dựng lúc khách còn nói) nên gần như 0ms; trần này chỉ để chặn
+    # ca xấu - worker F5 đang bận nên `_ham_cache_tts` đã bỏ qua, và đây phải
+    # sinh thật. Thà im như trước còn hơn đẩy lùi chính câu trả lời.
+    _CHO_CAU_DEM_LLM_MS = 400.0
+
+    # Chờ tối đa bấy nhiêu để task nghĩ câu đệm SINH XONG CHỮ (khác
+    # `_CHO_CAU_DEM_LLM_MS` ở trên - cái đó chờ chữ thành TIẾNG).
+    #
+    # Cái giá: 3 lượt hiện im lặng sẽ đẩy câu trả lời thật lùi tối đa 300ms.
+    # Đáng, vì chính 3 lượt đó đang để khách nghe im 1,7-3,2 giây.
+    #
+    # Chỉ chờ khi task đang chạy thật (`_cau_dem_dang_nghi`), nếu không thì mọi
+    # lượt không có câu đệm đều mất trắng 300ms.
+    _CHO_SINH_CAU_DEM_MS = 300.0
+
     # Chờ tối đa bao nhiêu ms để speculate._run() hoàn thành STT và phân loại
     # tình huống. Đặt 0 để tắt hoàn toàn.
     # NGOẠI LỆ có chủ đích: ràng buộc "không thêm await vào _send_filler" tồn tại
@@ -771,6 +899,14 @@ class StreamingPipeline:
         ttfa_ms bên dưới đo tới mảnh THẬT đầu tiên và bỏ qua hoàn toàn filler,
         nên nhìn một mình ttfa_ms sẽ tưởng khách phải chờ im lặng lâu hơn thực tế.
         """
+        # Vừa đọc nốt phần câu cũ khách chưa nghe (đường thoại đặt cờ này
+        # trong `PhoneCallBridge._handle_turn`): quãng chờ đã được che rồi, phát
+        # thêm câu đệm là hai đoạn dạo đầu liên tiếp.
+        if getattr(session, "da_doc_not", False):
+            session.da_doc_not = False
+            metrics["filler_bo_qua"] = "vua doc not cau do"
+            return
+
         can_che = self._filler_min_ms(
             session, la_thoai,
             self._FILLER_MIN_THOAI_MS if la_thoai else self._FILLER_MIN_CHAT_MS,
@@ -882,11 +1018,52 @@ class StreamingPipeline:
         if dem is None:
             dem = session.dem_filler = {}
 
+        # `chi_duoi=None` khi kho đuôi RỖNG, không phải set rỗng: set rỗng đi
+        # qua `k[3] in chi_duoi` là loại SẠCH ứng viên, kể cả clip "chỉ mẩu mở
+        # đầu" (id_duoi="") vừa dựng - câu đệm biến mất hoàn toàn mà log vẫn
+        # sạch. Người dùng bỏ hẳn kho đuôi 06-09-2026 nên đây là đường thật.
         filler_audio, id_duoi, th_dung = self.tts.pick_filler(
             kho, session.voice_name, min_ms=can_che, dem=dem,
-            id_tinh_huong=id_th, chi_duoi={d.id for d in duoi},
+            id_tinh_huong=id_th, chi_duoi={d.id for d in duoi} or None,
         )
         if not filler_audio:
+            # Kho không có gì hợp -> dùng câu đệm mô hình đã nghĩ trong lúc
+            # khách nói. Đây là lượt vốn im lặng hoàn toàn (đo 06-09: 3/9 lượt).
+            #
+            # `synthesize` tra cache theo nguyên văn chữ, mà `_nghi_cau_dem` đã
+            # dựng sẵn đúng chuỗi này - nên gần như 0ms. Chưa dựng kịp thì rơi
+            # vào sinh thật; bọc trong `wait_for` để nó KHÔNG BAO GIỜ đẩy lùi
+            # câu trả lời: thà im như trước còn hơn nói muộn.
+            # Chờ task nghĩ câu đệm nếu nó ĐANG chạy. Đo 06-09-2026: câu đệm
+            # sinh được và dựng tiếng xong ("Dạ về số lượng anh còn nợu,") nhưng
+            # xong SAU lúc lượt mở, nên nhánh này đọc phải chuỗi rỗng rồi bỏ đi.
+            #
+            # `_cau_dem_dang_nghi` là điều kiện then chốt: không có nó thì mọi
+            # lượt không-có-câu-đệm đều đứng chờ trọn 300ms một thứ không bao giờ
+            # tới - tức trì hoãn chính câu trả lời ở đúng những lượt đã chậm nhất.
+            if not session.spec_cau_dem and getattr(session, "_cau_dem_dang_nghi", False):
+                metrics["cau_dem_llm_cho_ms"] = round(await cho_den_khi(
+                    lambda: bool(session.spec_cau_dem), self._CHO_SINH_CAU_DEM_MS))
+            cau = session.spec_cau_dem
+            if not cau:
+                return
+            try:
+                wav = await asyncio.wait_for(
+                    self._try_synthesize(cau, fast=True, voice=session.voice_name,
+                                         session=session),
+                    timeout=self._CHO_CAU_DEM_LLM_MS / 1000)
+            except Exception as e:
+                # Gồm cả TimeoutError (từ 3.11 nó là subclass của Exception).
+                logger.info("câu đệm LLM không kịp thành tiếng (%s), bỏ qua",
+                            type(e).__name__)
+                return
+            if not wav:
+                return
+            await self._send_audio(ws, wav, is_filler=True, turn_id=session.turn_id)
+            metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
+            metrics["filler_text"] = cau
+            metrics["filler_id"] = "llm"
+            metrics["tinh_huong_id"] = None
             return
         dem[id_duoi] = dem.get(id_duoi, 0) + 1
         await self._send_audio(ws, filler_audio, is_filler=True,
@@ -894,7 +1071,10 @@ class StreamingPipeline:
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)
         duoi_id_theo_id = {d.id: d for d in kho.duoi}
         d_obj = duoi_id_theo_id.get(id_duoi)
-        metrics["filler_text"] = d_obj.text if d_obj else id_duoi
+        # id_duoi rỗng = clip chỉ có mẩu mở đầu (kho đuôi rỗng). Ghi rõ thay vì
+        # để metrics mang chuỗi rỗng - đọc log mà thấy "" thì tưởng lỗi.
+        metrics["filler_text"] = (d_obj.text if d_obj
+                                  else (id_duoi or "(chỉ mẩu mở đầu)"))
         metrics["filler_id"] = id_duoi
         # th_dung là tình huống ĐÃ DÙNG THẬT (None khi rơi về đuôi trần), khác
         # với id_th (tình huống ĐOÁN ĐƯỢC). Ghi đúng cái đã dùng để đối soát log.
@@ -1539,7 +1719,8 @@ class StreamingPipeline:
 
                     if tieng:
                         await self._send_audio(ws, tieng, chunk_id=idx,
-                                               turn_id=session.turn_id)
+                                               turn_id=session.turn_id,
+                                               text=t_chu)
                         if t_am_dau is None:
                             t_am_dau = time.perf_counter()
                         da_gui_ms += dai_wav_ms(tieng)
@@ -1915,14 +2096,20 @@ class StreamingPipeline:
         )
 
     async def _send_audio(self, ws: WebSocket, wav_bytes: bytes, chunk_id: int = 0,
-                          is_filler: bool = False, turn_id: int = 0):
+                          is_filler: bool = False, turn_id: int = 0,
+                          text: str = ""):
         # turn_id: client so với lượt nó đang chờ, lệch thì bỏ. Huỷ lượt cũ ở
         # phía server đã chặn gần hết, nhưng mảnh đã nằm trong đệm socket thì
         # vẫn tới nơi - đây là chốt chặn cuối.
+        #
+        # `text` là chữ của chính mảnh này. Đường thoại ghi nó vào sổ mảnh phát
+        # (`SoManhPhat`) để biết khách nghe tới đâu khi bị cắt lời - không có nó
+        # thì lúc cắt chỉ biết bỏ bao nhiêu KHUNG, không biết đó là những CHỮ
+        # nào, và không thể đọc nốt phần dở. Trình duyệt bỏ qua trường lạ.
         data = base64.b64encode(wav_bytes).decode()
         await ws.send_json({
             "type": "audio", "data": data, "chunk_id": chunk_id,
-            "is_filler": is_filler, "turn_id": turn_id,
+            "is_filler": is_filler, "turn_id": turn_id, "text": text,
         })
 
     async def _send_event(self, ws: WebSocket, event_type: str, payload: dict):

@@ -137,6 +137,10 @@ class CallSession:
         self.spec_transcript: str = ""
         self.spec_rag: str = ""
         self.spec_answer: str = ""    # câu trả lời LLM đã soạn sẵn (CHƯA thành tiếng)
+        # Câu đệm LLM soạn trong lúc khách nói, dùng khi kho tình huống không
+        # khớp. Đã qua `filler_pick.loc_cau_dem_llm` nên chuỗi ở đây là chuỗi
+        # SẴN SÀNG ĐỌC - nơi dùng không phải lọc lại.
+        self.spec_cau_dem: str = ""
         self.spec_bytes: int = 0      # đã đoán ở mốc bao nhiêu byte
         self.spec_running: bool = False
         self.spec_task = None         # tác vụ đoán đang chạy, để huỷ khi khách nói tiếp
@@ -247,6 +251,7 @@ class CallSession:
         self.spec_transcript = ""
         self.spec_rag = ""
         self.spec_answer = ""
+        self.spec_cau_dem = ""
         self.spec_bytes = 0
         self.spec_stt = None
         self.tinh_huong = None

@@ -133,22 +133,55 @@ def nap_tu_db(conn) -> Kho:
                             hop_cau_hoi=bool(hop), bat=bool(bat)))
 
     if not duoi:
-        # Raise cả khi bảng có dòng nhưng tất cả bat=0: tắt hết câu đuôi thì
-        # khách nghe im lặng trọn quãng chờ, hỏng y hệt như bảng rỗng. Phải nổ
-        # to lúc khởi động thay vì để lọt ra cuộc gọi thật mới biết.
-        raise LoiKho(
-            "không có câu đuôi nào đang bật - rổ đuôi là đường xuống cấp cuối "
-            "cùng, rỗng nó là khách nghe im lặng trọn quãng chờ")
+        # KHÔNG raise nữa (đổi 06-09-2026). Lý do cũ vẫn đúng ở thời điểm đó:
+        # hồi ấy câu đệm CHỈ có đuôi, nên rỗng nó là khách nghe im lặng trọn
+        # quãng chờ, và nổ to lúc khởi động còn hơn để lọt ra cuộc gọi thật.
+        #
+        # Nay khác vì đã có mẩu mở đầu theo tình huống - câu đệm đứng được một
+        # mình. Người dùng 06-09: "tôi không cần đuôi luôn vì có câu đệm rồi,
+        # nhiều cái lặp lại rất có vấn đề" (29/42 câu đuôi cùng một ý
+        # "để em xem lại", nghe lặp suốt cuộc gọi).
+        #
+        # CÁI GIÁ đã chấp nhận: lượt KHÔNG nhận ra tình huống thì không còn gì
+        # để phát, khách nghe im lặng trọn quãng chờ. Đo trên cuộc gọi thử
+        # 06-09: 7/9 lượt rơi vào đây, im 1,3-2,3 giây.
+        logger.warning(
+            "Kho câu đệm KHÔNG có câu đuôi nào - lượt không nhận ra tình huống "
+            "sẽ không có câu đệm, khách nghe im lặng trọn quãng chờ")
     return Kho(tinh_huong=tuple(ths), duoi=tuple(duoi))
 
 
-def do_json_vao_db(conn, duong_dan: Path) -> int:
-    """Đổ `fillers.json` vào bảng `cau_duoi` NẾU bảng đang rỗng. Trả số câu đã đổ.
+CO_DA_SEED = "cau_duoi_da_seed"
 
-    Chỉ chạy khi rỗng: gọi lại nhiều lần không được ghi đè thứ người dùng đã
-    sửa trên trang quản lý. 42 câu cũ đều là câu đứng một mình nên vào rổ đuôi.
+
+def _da_seed(conn) -> bool:
+    """Đã từng đổ `fillers.json` vào DB này chưa.
+
+    Cần cờ RIÊNG chứ không thể suy từ "bảng có dòng nào không": người dùng xoá
+    hết câu đuôi là bảng rỗng, và lần khởi động sau `do_json_vao_db` lại đổ về
+    nguyên 42 câu. Xoá bao nhiêu lần thì mọc lại bấy nhiêu lần, không có gì báo.
     """
+    try:
+        return conn.execute(
+            "SELECT 1 FROM kho_meta WHERE key = ?", (CO_DA_SEED,)).fetchone() is not None
+    except Exception:
+        # DB cũ chưa có bảng kho_meta -> coi như chưa seed, giữ nguyên hành vi cũ.
+        return False
+
+
+def do_json_vao_db(conn, duong_dan: Path) -> int:
+    """Đổ `fillers.json` vào bảng `cau_duoi` LẦN ĐẦU. Trả số câu đã đổ.
+
+    Chạy đúng một lần cho mỗi DB, đánh dấu bằng cờ `kho_meta`. Bảng có dòng
+    cũng bỏ qua (DB cũ chưa có cờ), nhưng bảng RỖNG mà đã có cờ thì cũng bỏ
+    qua - đó là người dùng đã cố ý xoá hết, không phải máy mới.
+    """
+    if _da_seed(conn):
+        return 0
     if conn.execute("SELECT 1 FROM cau_duoi LIMIT 1").fetchone():
+        # DB cũ đã có dữ liệu từ trước khi có cờ: đánh dấu để lần sau khỏi hỏi
+        # lại, nếu không thì lần đầu người dùng xoá sạch là nó đổ về ngay.
+        _danh_dau_seed(conn)
         return 0
     raw = json.loads(Path(duong_dan).read_text(encoding="utf-8"))
     now = time.time()
@@ -158,8 +191,20 @@ def do_json_vao_db(conn, duong_dan: Path) -> int:
     conn.executemany(
         "INSERT INTO cau_duoi (id,text,hop_cau_hoi,bat,created_at,updated_at) "
         "VALUES (?,?,?,?,?,?)", rows)
+    _danh_dau_seed(conn)
     conn.commit()
     return len(rows)
+
+
+def _danh_dau_seed(conn) -> None:
+    """Ghi cờ "đã seed". Nuốt lỗi: DB cũ chưa có bảng `kho_meta` thì thà chạy
+    như trước còn hơn chặn cả lần khởi động."""
+    try:
+        conn.execute("INSERT OR REPLACE INTO kho_meta (key, value) VALUES (?, ?)",
+                     (CO_DA_SEED, str(time.time())))
+        conn.commit()
+    except Exception as e:
+        logger.warning("Không ghi được cờ %s (bỏ qua): %s", CO_DA_SEED, e)
 
 
 DUONG_DAN_MAC_DINH = Path("data/fillers.json")

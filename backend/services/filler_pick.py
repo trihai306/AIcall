@@ -42,16 +42,77 @@ def can_che_ms(lich_su: list[dict], la_thoai: bool, mac_dinh: float) -> float:
     trước - lưu ý cách suy này SAI ở những lượt dùng lại bản phiên âm đoán trước
     (stt_ms = 0), đó là lý do có khoá tường minh.
     """
+    du_doan = du_doan_cho_ms(lich_su, la_thoai)
+    if du_doan is None:
+        return mac_dinh
+    return max(du_doan, mac_dinh)
+
+
+def _ttfa_dung_duong(lich_su: list[dict], la_thoai: bool) -> list[float]:
+    """Những TTFA dùng được để đoán cho lượt tới. Luật lọc dùng chung.
+
+    Tách ra để `can_che_ms` và `du_doan_cho_ms` không thể lệch luật: một hàm
+    quyết định CÓ phát câu đệm không, hàm kia quyết định câu đệm DÀI bao nhiêu -
+    hai câu hỏi khác nhau nhưng phải nhìn cùng một lịch sử.
+    """
     def dung_duong(m: dict) -> bool:
         if "la_thoai" in m:
             return bool(m["la_thoai"]) == la_thoai
         return bool(m.get("stt_ms")) == la_thoai
 
-    qua = [m["ttfa_ms"] for m in lich_su[-6:]
-           if m.get("ttfa_ms") and not m.get("luot_thuong_gap") and dung_duong(m)]
+    return [m["ttfa_ms"] for m in lich_su[-6:]
+            if m.get("ttfa_ms") and not m.get("luot_thuong_gap") and dung_duong(m)]
+
+
+# Dưới mức chờ dự kiến này thì ĐỪNG phát câu đệm - khoảng lặng ngắn nghe tự
+# nhiên hơn hẳn một câu "Dạ vâng ạ" chèn vào.
+#
+# Nằm ở đây chứ không ở `streaming_pipeline` vì hai lẽ. Một: cùng chỗ với
+# `du_doan_cho_ms`, thứ nó so sánh - đặt xa nhau chính là cách bản cũ hỏng mà
+# không ai thấy. Hai: module này không import torch nên test canh được ràng
+# buộc "ngưỡng phải nằm trong tầm với" trên máy không GPU.
+#
+# 700 -> 1000 (06-09-2026). Số cũ CHƯA TỪNG kích hoạt: nó so với `can_che_ms`,
+# hàm có sàn 1800/2000ms nên không bao giờ trả dưới 700 - lịch sử toàn lượt
+# 200ms vẫn cho 1800. Nhánh bỏ câu đệm là mã chết suốt một tháng, log vẫn sạch.
+#
+# Người dùng 06-09: "khi khách ngắt trong 1s đó thì tạo âm và trả lời luôn,
+# nghĩa là có 1s để im lặng rồi nói".
+#
+# CÁI GIÁ, đo trên 130 lượt thật cùng ngày: chỉ 3 lượt được bỏ đệm (2%), không
+# lượt nào đoán trượt. Đường này thật sự chậm - TTFA p50 1774ms, chỉ 14/130 lượt
+# dưới 1000ms. Sửa chỗ này KHÔNG làm khách bớt nghe câu đệm lặp; muốn thế phải
+# sửa nội dung kho câu đuôi (29/42 câu cùng một ý "để em xem lại").
+NGUONG_BO_DEM_MS = 1000.0
+
+
+def du_doan_cho_ms(lich_su: list[dict], la_thoai: bool) -> float | None:
+    """Quãng chờ dự kiến của lượt tới, KHÔNG có sàn. None khi chưa có số đo.
+
+    Đây là số dùng để trả lời "CÓ phát câu đệm không". `can_che_ms` trả lời câu
+    khác - "câu đệm phải DÀI bao nhiêu" - và có sàn 1800/2000ms vì đoán ngắn ở
+    đó là khách nghe hụt.
+
+    Dùng chung một số cho cả hai câu hỏi là bẫy đã mắc: `_FILLER_BO_QUA_MS = 700`
+    nằm trong `streaming_pipeline` từ 08-2026 nhưng chưa từng kích hoạt lần nào,
+    vì `can_che_ms` không bao giờ trả dưới sàn. Kiểm chứng 06-09-2026: lịch sử
+    toàn lượt 200ms vẫn cho `can_che = 1800`, nên `can_che < 700` luôn False.
+    Hậu quả: câu đệm phát ở MỌI lượt, kể cả những lượt câu trả lời thật tới sau
+    vài trăm ms - đúng thứ ngưỡng đó sinh ra để chặn.
+
+    **Trả None chứ không trả 0 khi chưa có số đo.** 0 nghĩa là "đoán được, và
+    rất nhanh", tức bỏ câu đệm ngay lượt ĐẦU - mà lượt đầu là lượt chậm nhất
+    cuộc gọi (tra hồ sơ nguội, đo được TTFA 8026ms). None buộc nơi gọi phải phát.
+
+    Vẫn giữ `BIEN_AN_TOAN` và vẫn lấy MAX của cửa sổ: bỏ câu đệm nhầm đắt hơn
+    phát thừa một câu. Đo trên 130 lượt thật ngày 06-09, ngưỡng 1000ms: bỏ được
+    3 lượt, không lượt nào đoán trượt. Đổi max sang trung vị thì bỏ được 8 lượt
+    nhưng có 1 lượt khách nghe im 1797ms.
+    """
+    qua = _ttfa_dung_duong(lich_su, la_thoai)
     if not qua:
-        return mac_dinh
-    return max(float(max(qua[-6:])) * BIEN_AN_TOAN, mac_dinh)
+        return None
+    return float(max(qua)) * BIEN_AN_TOAN
 
 
 def chon(ung_vien: list[tuple[str, float]], min_ms: float,
@@ -246,6 +307,16 @@ def ghep(mo_dau: str, duoi: str) -> str:
     a, b = (mo_dau or "").strip(), (duoi or "").strip()
     if not a:
         return b  # suy biến: đúng hành vi khi không có tình huống
+    if not b:
+        # Kho đuôi rỗng (người dùng bỏ hẳn 06-09-2026): mẩu mở đầu đứng một
+        # mình. Trả `a` chứ KHÔNG rơi xuống `f"{a} {b}"` - chuỗi đó thừa một
+        # khoảng trắng cuối, đủ để đổi vân tay và bắt dựng lại toàn bộ clip
+        # thay vì dùng lại clip đã có trên đĩa.
+        #
+        # GIỮ dấu phẩy cuối: câu trả lời thật nối ngay sau, phẩy là thứ giữ F5
+        # không hạ giọng kết câu giữa lượt. Cùng lý do `kiem_tinh_huong` bắt mọi
+        # mẩu mở đầu phải kết bằng phẩy.
+        return a
 
     m = _TIEU_TU_RE.match(b)
     if m:
@@ -261,6 +332,56 @@ def ghep(mo_dau: str, duoi: str) -> str:
         b_tran = b  # không có tiểu từ → giữ nguyên
 
     return f"{a} {b_tran}"
+
+
+# Câu đệm do LLM sinh dài quá bao nhiêu từ thì vứt. Nó đè lên chính câu trả lời
+# thật đang tới - mà câu đệm chỉ có mỗi việc bắc cầu tới đó.
+TOI_DA_TU_CAU_DEM = 12
+
+_SO_RE = re.compile(r"\d")
+_NHAY = '"\'"“”‘’'
+
+
+def loc_cau_dem_llm(cau: str | None) -> str | None:
+    """Lọc câu đệm mô hình vừa sinh. Trả None nghĩa là ĐỪNG DÙNG.
+
+    Khác hẳn kho dựng sẵn: kho được người vận hành duyệt từng câu, còn đây là
+    chữ mô hình vừa đẻ ra và sắp ĐỌC THẲNG cho khách nghe. Vứt thì rơi về đúng
+    hành vi cũ (im lặng ở lượt không nhận ra chủ đề), nên lưới thà chặt quá.
+
+    Bốn luật, theo thứ tự:
+
+    1. CÓ CHỮ SỐ -> vứt cả câu. Lúc sinh câu đệm, mô hình CHƯA tra dữ liệu, nên
+       mọi con số nó nói đều là bịa. Không cắt số rồi giữ phần còn lại: "lãi
+       suất 7.9% thì" bỏ số thành "lãi suất thì" nghe vẫn xuôi mà đã mất nghĩa
+       - vứt hẳn thì rõ ràng hơn. Chặn CHỮ SỐ chứ không chặn từ chỉ lượng ("một
+       chút", "vài phút"), chặn cả thì gần như không câu nào lọt.
+    2. QUÁ `TOI_DA_TU_CAU_DEM` TỪ -> vứt.
+    3. THIẾU/SAI DẤU CUỐI -> SỬA thành dấu phẩy, không vứt. Cùng luật với mẩu mở
+       đầu trong kho (`kiem_tinh_huong`): thiếu phẩy thì F5 hạ giọng kết câu
+       ngay giữa lượt, khách nghe như AI đã nói xong trong khi câu trả lời thật
+       chưa tới. Đây là lỗi sửa được nên sửa.
+    4. RỖNG sau khi dọn -> vứt.
+
+    Cũng dọn hai thói quen của mô hình: bọc câu trong dấu nháy, và giải thích
+    thêm ở dòng sau.
+    """
+    if not cau or not cau.strip():
+        return None
+    # Mô hình hay giải thích thêm sau câu trả lời -> chỉ lấy dòng đầu.
+    c = cau.strip().splitlines()[0].strip().strip(_NHAY).strip()
+    if not c:
+        return None
+    if _SO_RE.search(c):
+        return None
+    # Bỏ mọi dấu kết câu ở cuối rồi đặt lại đúng một dấu phẩy. Dấu chấm còn tệ
+    # hơn thiếu dấu: nó bảo F5 hạ giọng dứt khoát.
+    loi = c.rstrip(" ,.!?…:;")
+    if not loi:
+        return None
+    if len(loi.split()) > TOI_DA_TU_CAU_DEM:
+        return None
+    return loi + ","
 
 
 # Dải độ dài câu đệm phải phủ. Dưới 700ms thì `_FILLER_BO_QUA_MS` đã bỏ đệm;

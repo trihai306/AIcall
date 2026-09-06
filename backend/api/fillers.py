@@ -83,6 +83,12 @@ def dem_clip(so_mau_tong: int, so_duoi: int) -> int:
     Cái giá là số clip nhân theo TÍCH, nên con số này phải hiện ra trước khi ai
     đó bấm Dựng tiếng rồi ngồi đợi hai mươi phút.
     """
+    # Kho đuôi RỖNG (hợp lệ từ 06-09-2026, người dùng bỏ hẳn) thì mỗi mẩu mở đầu
+    # vẫn ra ĐÚNG MỘT clip - chính nó, đứng một mình. Nhân thẳng với 0 thì trang
+    # quản lý báo "0 clip" trong khi trên đĩa có hàng trăm, và người vận hành
+    # tưởng chưa dựng gì.
+    if so_duoi <= 0:
+        return so_mau_tong
     return so_mau_tong * so_duoi + so_duoi
 
 

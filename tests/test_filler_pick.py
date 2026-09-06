@@ -409,3 +409,58 @@ def test_khoa_tinh_chat_khong_co_lap_tieu_tu():
         f"{len(lap)}/{tong} tổ hợp vẫn còn lặp tiểu từ:\n"
         + "\n".join(lap[:5])
     )
+
+
+# --- du_doan_cho_ms: dự đoán THẬT, không sàn -----------------------------
+#
+# Vì sao phải có hàm riêng bên cạnh `can_che_ms`: hai câu hỏi khác nhau dùng
+# chung một con số thì một trong hai phải chịu thiệt.
+#
+#   "CHỌN CÂU ĐỆM DÀI BAO NHIÊU?"  -> phải bi quan, phải có sàn. Đoán ngắn là
+#                                     khách nghe hụt đúng phần thiếu.
+#   "CÓ PHÁT CÂU ĐỆM KHÔNG?"       -> phải trung thực. Sàn 1800 làm câu trả lời
+#                                     luôn là "có", kể cả khi đường đang chạy
+#                                     200ms.
+#
+# Đo 06-09-2026: `_FILLER_BO_QUA_MS = 700` là MÃ CHẾT - `can_che_ms` không bao
+# giờ trả dưới sàn 1800/2000 nên hai nhánh bỏ câu đệm chưa từng chạy lần nào.
+
+from backend.services.filler_pick import du_doan_cho_ms  # noqa: E402
+
+
+def test_du_doan_KHONG_co_san():
+    """Khác biệt cốt lõi với `can_che_ms`: lịch sử nhanh thì trả số nhỏ THẬT.
+
+    `can_che_ms` cùng lịch sử này trả 1800 (sàn) - đó là lý do ngưỡng bỏ câu
+    đệm chưa bao giờ kích hoạt được.
+    """
+    su = [_luot(200), _luot(240)]
+    assert du_doan_cho_ms(su, la_thoai=True) == pytest.approx(240 * BIEN_AN_TOAN)
+    assert can_che_ms(su, la_thoai=True, mac_dinh=1800.0) == 1800.0
+
+
+def test_chua_co_so_do_thi_tra_None():
+    """Lượt ĐẦU mỗi cuộc chưa có gì để đoán.
+
+    Trả None chứ không trả 0: 0 nghĩa là "đoán được, và rất nhanh" -> bỏ câu
+    đệm ngay lượt đầu, đúng lượt chậm nhất cuộc gọi (tra hồ sơ nguội, đo được
+    TTFA 8026ms). None nghĩa là "không biết", nơi gọi phải phát đệm.
+    """
+    assert du_doan_cho_ms([], la_thoai=True) is None
+    assert du_doan_cho_ms([{"ttfa_ms": None, "la_thoai": True}], la_thoai=True) is None
+
+
+def test_du_doan_dung_cung_luat_loc_voi_can_che():
+    """Cùng bỏ lượt trả bằng bảng câu sẵn, cùng lọc đúng đường, cùng lấy max.
+
+    Hai hàm PHẢI đồng luật - lệch nhau là đường quyết-định-bỏ và đường
+    chọn-độ-dài nhìn hai lịch sử khác nhau.
+    """
+    su = [_luot(450, cau_san=True), _luot(600), {"ttfa_ms": 9000, "la_thoai": False}]
+    assert du_doan_cho_ms(su, la_thoai=True) == pytest.approx(600 * BIEN_AN_TOAN)
+
+
+def test_toan_luot_cau_san_thi_tra_None():
+    """Lọc xong không còn lượt nào -> không biết, không phải "nhanh"."""
+    su = [_luot(450, cau_san=True), _luot(458, cau_san=True)]
+    assert du_doan_cho_ms(su, la_thoai=True) is None

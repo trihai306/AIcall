@@ -307,18 +307,33 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 if not audio_bytes:
                     await websocket.send_json({"type": "turn_complete", "full_response": "", "metrics": {}})
                 else:
-                    # Khách vừa ngừng tiếng → đoán lại trên toàn câu, giống hệt
-                    # phone_call_service dòng ~1129. Đường chat KHÔNG có luồng
-                    # phát hiện im lặng, nên speculate(ngay=True) phải gọi thẳng
-                    # tại đây. Gọi SAU take_audio() để đệm rỗng:
-                    #   - Nếu spec_running=False (task cũ đã xong): n=0 < 600ms
-                    #     → thoát sớm, task cũ không bị huỷ, tinh_huong được giữ.
-                    #   - Nếu spec_running=True (task cũ trong RAG/LLM): huỷ nó,
-                    #     nhưng STT + phân loại đã chạy xong (ghi trước khi vào
-                    #     RAG) → tinh_huong vẫn còn và _send_filler dùng được.
-                    # Đo thực tế (2026-08-11, commit 290b9af): 5/9 lượt có
-                    # tình huống với cách này.
+                    # Khách vừa ngừng tiếng → đoán lại trên TOÀN CÂU, giống
+                    # hệt `phone_call_service` (đặt trọn tiếng vào phiên rồi mới
+                    # gọi). Đường chat không có luồng phát hiện im lặng nên phải
+                    # gọi thẳng tại đây.
+                    #
+                    # BẢN CŨ gọi sau `take_audio()`, tức trên đệm RỖNG, và ghi
+                    # trong chú thích rằng đó là cố ý (giữ `tinh_huong` của task
+                    # cũ). Cái giá không ai đo lúc đó: lần đoán GIÁ TRỊ NHẤT của
+                    # cả lượt không bao giờ chạy. Với n=0 thì `speculate` hoặc
+                    # thoát ngay ở lưới `n < _SPEC_MIN_MS`, hoặc phiên âm trên
+                    # đệm rỗng rồi ghi đè `spec_stt = (0, "")`. Cả hai đường đều
+                    # để `spec_answer` đứng nguyên ở bản soạn GIỮA CHỪNG theo câu
+                    # cụt, nên `_answer_hit` (đòi phần nói thêm chỉ được là từ
+                    # đệm cuối câu, tối đa 3 từ) gần như luôn trượt.
+                    #
+                    # Đo 06-09-2026 trên ba cuộc gọi thử liên tiếp: `nghi_san`
+                    # FALSE ở 9/9 lượt, log ghi thẳng nguyên nhân —
+                    #   nghĩ theo 'thế vay tối đa'
+                    #   nhưng khách nói 'thế vay tối đa được bao nhiêu tiền'
+                    #
+                    # `set_audio` rồi `take_audio` chứ không bỏ hẳn `take_audio`:
+                    # `speculate` chụp audio ĐỒNG BỘ (`peek_audio()` chạy trước
+                    # khi tạo task nền), nên dọn đệm ngay sau là an toàn, và đệm
+                    # phải sạch trước lượt kế tiếp.
+                    session.set_audio(audio_bytes)
                     await app_state.pipeline.speculate(session, ngay=True)
+                    session.take_audio()
                     await bat_dau_luot(data, lambda: app_state.pipeline.process_turn(
                         audio_bytes=audio_bytes, session=session, ws=websocket,
                     ))

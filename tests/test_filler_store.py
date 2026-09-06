@@ -59,11 +59,25 @@ def test_bo_qua_tinh_huong_da_tat(conn):
     assert len(kho.duoi) == 1
 
 
-def test_cau_duoi_tat_het_thi_loi(conn):
+def test_tat_het_cau_duoi_KHONG_con_la_loi(conn):
+    """ĐÃ ĐẢO NGƯỢC 06-09-2026.
+
+    Lý do cũ vẫn đúng ở thời điểm đó: hồi ấy câu đệm CHỈ có câu đuôi, nên tắt
+    hết là khách nghe im lặng trọn quãng chờ - phải nổ to lúc khởi động còn hơn
+    để lọt ra cuộc gọi thật mới biết.
+
+    Nay đảo vì đã có mẩu mở đầu theo tình huống, câu đệm đứng được một mình.
+    Người dùng nói ba lần: "tôi không cần đuôi luôn vì có câu đệm rồi, nhiều cái
+    lặp lại rất có vấn đề" - 29/42 câu đuôi cùng một ý "để em xem lại".
+
+    CÁI GIÁ nhận về: lượt không nhận ra tình huống thì không còn gì để phát.
+    Đo trên cuộc gọi thử cùng ngày: 7/9 lượt rơi vào đây, im 1,3-2,3 giây.
+    """
     them_th(conn)
     them_duoi(conn, bat=0)
-    with pytest.raises(LoiKho, match="đuôi"):
-        nap_tu_db(conn)
+    kho = nap_tu_db(conn)
+    assert kho.duoi == ()
+    assert len(kho.tinh_huong) == 1, "tình huống phải còn nguyên"
 
 
 def test_vi_du_duoi_hai_cau_thi_loi(conn):
@@ -85,11 +99,14 @@ def test_duoi_text_rong_thi_loi(conn):
         nap_tu_db(conn)
 
 
-def test_khong_co_duoi_nao_thi_loi(conn):
-    """Rổ đuôi rỗng là mất hoàn toàn đường xuống cấp - khách nghe im lặng."""
+def test_bang_cau_duoi_rong_KHONG_con_la_loi(conn):
+    """Cùng một quyết định đã đảo - xem `test_tat_het_cau_duoi_KHONG_con_la_loi`.
+
+    Bảng rỗng và tắt hết phải đi CÙNG một đường: người dùng xoá trên giao diện
+    ra bảng rỗng, còn tắt công tắc ra bat=0, mà ý định thì y hệt nhau.
+    """
     them_th(conn)
-    with pytest.raises(LoiKho, match="đuôi"):
-        nap_tu_db(conn)
+    assert nap_tu_db(conn).duoi == ()
 
 
 def test_do_json_vao_db_khi_bang_rong(conn, tmp_path):

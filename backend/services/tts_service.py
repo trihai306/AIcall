@@ -1351,7 +1351,9 @@ class F5TTSService:
         voice = await self.ensure_voice(voice or self._default_voice)
         toc_giong = self.toc_do_cua(voice)
 
-        n_to_hop = sum(len(t.mo_dau) for t in kho.tinh_huong) * len(kho.duoi)
+        # max(...,1): kho đuôi rỗng thì mỗi mẩu mở đầu vẫn ra ĐÚNG MỘT clip
+        # (chính nó, đứng một mình) - nhân 0 là báo "0 clip" rồi dựng thật vài trăm.
+        n_to_hop = sum(len(t.mo_dau) for t in kho.tinh_huong) * max(len(kho.duoi), 1)
         logger.info(
             "Câu đệm [%s]: sắp dựng %d đuôi trần + %d tổ hợp (%d tình huống × "
             "%d mẩu TB × %d đuôi = %d clip tổng cộng)",
@@ -1379,15 +1381,26 @@ class F5TTSService:
             elif ket == "dung_moi":
                 dung_moi += 1
 
-        # Sau khi đuôi trần đã sẵn sàng mới dựng tổ hợp
+        # Sau khi đuôi trần đã sẵn sàng mới dựng tổ hợp.
+        #
+        # Kho đuôi RỖNG là hợp lệ từ 06-09-2026 (người dùng bỏ hẳn kho đuôi vì
+        # 29/42 câu cùng một ý nghe lặp). Lúc đó mẩu mở đầu đứng một mình, và
+        # `[None]` giữ vòng lặp chạy đúng một lượt cho mỗi mẩu - viết
+        # `for d in kho.duoi` thẳng thì kho rỗng KHÔNG dựng clip nào và mọi
+        # lượt đều im lặng, hỏng câm đúng lúc người dùng vừa bỏ đuôi.
+        cac_duoi = list(kho.duoi) or [None]
         for t in kho.tinh_huong:
             toc = t.speed if t.speed is not None else toc_giong
             for i_mau, m in enumerate(t.mo_dau):
-                for d in kho.duoi:
-                    van = ghep(m, d.text)
+                for d in cac_duoi:
+                    # d=None -> chỉ mẩu mở đầu. `ghep(m, "")` trả về chính m.
+                    # id_duoi="" để khoá cache vẫn đủ bốn phần và `pick_filler`
+                    # không phải biết trường hợp riêng nào.
+                    id_duoi, text_duoi = ("", "") if d is None else (d.id, d.text)
+                    van = ghep(m, text_duoi)
                     can_giu.add(self._duong_dan_filler(
-                        voice, t.id, d.id, self._van_tay_filler(van, voice, toc), i_mau))
-                    ket = await self._dung_mot_filler(voice, t.id, d.id, van, toc, i_mau)
+                        voice, t.id, id_duoi, self._van_tay_filler(van, voice, toc), i_mau))
+                    ket = await self._dung_mot_filler(voice, t.id, id_duoi, van, toc, i_mau)
                     if ket == "doc_dia":
                         doc_dia += 1
                     elif ket == "dung_moi":
@@ -1496,6 +1509,14 @@ class F5TTSService:
                 return (self._filler_cache[(name, th, int(i_mau), chon_id)],
                         chon_id, th or None)
         # Về tay không là khách nghe im lặng trọn TTFA — ghi rõ nguyên nhân.
+        #
+        # Nhưng KHÔNG kêu WARNING khi kho đuôi rỗng và lượt này không nhận ra
+        # tình huống: đó là trạng thái người dùng cố ý chọn (06-09-2026, bỏ hẳn
+        # kho đuôi), không phải hỏng. Kêu ở đây là mỗi lượt một dòng WARNING,
+        # và log kêu suốt thì lần sau có hỏng thật cũng không ai nhìn nữa.
+        if not kho.duoi and not id_tinh_huong:
+            logger.debug("Không có câu đệm: kho đuôi rỗng và chưa nhận ra tình huống")
+            return None, None, None
         logger.warning(
             "pick_filler về tay không: xin giọng='%s' -> quy về '%s', "
             "tình huống=%s; cache giọng này %d mục",

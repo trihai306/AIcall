@@ -97,6 +97,15 @@ CREATE TABLE IF NOT EXISTS hoi_dap (
     updated_at REAL
 );
 
+-- Ghi nho quyet dinh cua nguoi van hanh ve kho cau dem. Can mot cho de danh
+-- dau "da co y xoa het cau duoi" - khong co no thi `do_json_vao_db` thay bang
+-- rong se do lai nguyen 42 cau tu fillers.json, va nguoi dung xoa bao nhieu lan
+-- cung mo lai bay nhieu lan.
+CREATE TABLE IF NOT EXISTS kho_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cau_duoi (
     id          TEXT PRIMARY KEY,
     text        TEXT NOT NULL,

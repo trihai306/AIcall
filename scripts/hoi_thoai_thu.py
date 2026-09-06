@@ -139,6 +139,24 @@ async def main():
                     "data": base64.b64encode(raw[k:k + MAU]).decode()}))
                 await asyncio.sleep(MAU / (SR_GUI * 2))
             t_dut = time.perf_counter()
+
+            # Gửi thêm QUÃNG IM trước khi báo hết lượt - micro thật vẫn thu
+            # trong lúc khách đã ngừng nói, và đường thoại đợi đủ
+            # PHONE_SILENCE_END_MS (đang là 1000ms) mới đóng lượt.
+            #
+            # Thiếu quãng này là BẪY ĐO: bản đoán cuối câu có ĐÚNG 0ms để chạy,
+            # nên nó mới tới bước RAG thì lượt đã mở, và `llm_nghi_san` báo
+            # false ở 9/9 lượt - trong khi đường thật cho nó tới 700ms
+            # (SILENCE_END_MS 1000 trừ SPEC_CUOI_MS 300). Đo 06-09-2026: bỏ
+            # quãng im thì mọi kết luận về cơ chế nghĩ sẵn đều sai chỗ.
+            IM_MS = 1000
+            im = np.zeros(int(SR_GUI * IM_MS / 1000), dtype=np.int16).tobytes()
+            for k in range(0, len(im), MAU):
+                await ws.send(json.dumps({
+                    "type": "audio_chunk",
+                    "data": base64.b64encode(im[k:k + MAU]).decode()}))
+                await asyncio.sleep(MAU / (SR_GUI * 2))
+
             await ws.send(json.dumps({"type": "audio_end", "turn_id": i}))
 
             t_dau, phien_am, tra_loi, mt = None, "", "", {}
