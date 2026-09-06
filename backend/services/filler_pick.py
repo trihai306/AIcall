@@ -85,6 +85,51 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
     return max(it_dung_nhat(ung_vien), key=lambda x: x[1])[0]
 
 
+
+def tinh_huong_dung(tinh_huong: tuple[int, str, float] | None,
+                    n_audio: int) -> tuple[str | None, float | None]:
+    """Tình huống dùng cho lượt này, kèm ĐỘ PHỦ của bản đoán (chỉ để ghi số).
+
+    `tinh_huong` = (số byte bản đoán đã nghe, id, điểm) - do `speculate` hoặc
+    `_phan_loai_dong_bo` ghi. `n_audio` = tổng byte tiếng của lượt.
+
+    KHÔNG còn lưới chặn theo độ phủ. Luật cũ vứt mọi phân loại có độ phủ dưới
+    0,5 và tự ghi trong code là "TẠM 0.5, CHƯA ĐO". Đo 06-09-2026 trên 102 lượt
+    tiếng khách thật, chấm ở đúng ngưỡng đường thật dùng (0,90), cắt theo tỉ lệ
+    BYTE AUDIO đúng như `do_phu` thật:
+
+        do_phu   vượt ngưỡng   ĐÚNG   SAI      luật cũ
+          0.15         0          0     0      vứt đi
+          0.25         0          0     0      vứt đi
+          0.35         1          1     0      vứt đi
+          0.45         3          3     0      vứt đi
+          0.55         3          3     0      giữ lại
+          0.70         4          4     0      giữ lại
+          0.85         6          6     0      giữ lại
+
+    SAI = 0 ở MỌI mức, và phần bị vứt là 4 đúng / 0 sai. Nó không chặn được lần
+    sai nào, chỉ bỏ đi kết quả tốt - trên máy thật đã bỏ đúng một lượt hỏi lãi
+    suất chấm 0,915.
+
+    VÌ SAO bỏ được: ngưỡng ĐIỂM đã làm sẵn việc này. Chú thích của `NGUONG_DIEM`
+    viết thẳng "điểm thấp chính là dấu hiệu câu còn cụt" - điểm đo trực tiếp cái
+    mà độ phủ chỉ đo gián tiếp qua độ dài. Số đo trên xác nhận: không bản cắt nào
+    lọt 0,90 khi độ phủ dưới 0,35.
+
+    HỆ QUẢ phải nhớ: giờ CHỈ còn ngưỡng điểm gánh việc này. Hạ `NGUONG_CAU_DEM`
+    xuống là phải đo lại bảng trên - `tests/test_do_phu_tinh_huong.py` có lưới
+    canh đúng ràng buộc đó.
+
+    Vẫn trả `do_phu` để `_send_filler` ghi vào metrics: bỏ luật thì bỏ, nhưng bỏ
+    luôn số đo là lần sau lại phải đoán.
+
+    `n_audio <= 0` là đường gõ chữ - không có tiếng nên không có gì để phủ.
+    """
+    if not tinh_huong or n_audio <= 0:
+        return None, None
+    n_th, id_th, _diem = tinh_huong
+    return id_th, n_th / n_audio
+
 # Tiểu từ lịch sự ở đầu câu đuôi cần bỏ khi đã có mẩu mở đầu.
 # Thứ tự: dài trước để tránh khớp chặng đầu của từ dài hơn
 # (vd "Vâng ạ" phải thắng "Vâng" khi đuôi là "Vâng ạ, ...").

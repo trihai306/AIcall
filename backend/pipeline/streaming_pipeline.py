@@ -30,7 +30,7 @@ from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
 from backend.services.filler_store import lay_kho
-from backend.services.filler_pick import can_che_ms
+from backend.services.filler_pick import can_che_ms, tinh_huong_dung
 from backend.services.tieng_san import kho_tieng_san
 from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
 from backend.services.filler_situation import (
@@ -524,19 +524,29 @@ class StreamingPipeline:
     # chỉ thành lời thừa - người nghe báo "dạ vâng ạ lặp lại quá nhiều".
     _FILLER_BO_QUA_MS = 700.0
 
-    # Phân loại đoán trên câu CỤT thì dễ trượt: khách có thể đổi ý giữa lượt
-    # ("lãi suất bao nhiêu... à không, hồ sơ cần gì"). Chỉ dùng khi bản đoán đã
-    # nghe được ít nhất bằng này phần audio cuối cùng.
-    # TẠM 0.5, CHƯA ĐO. `tinh_huong_do_phu` trong metrics để chốt bằng số thật.
-    # Chọn sai mẩu mở đầu tệ hơn không có mẩu nào -> lưỡng lự thì về rổ chung.
-    _TINH_HUONG_DO_PHU_MIN = 0.5
-
     # Chờ tối đa bao nhiêu ms để speculate._run() hoàn thành STT và phân loại
-    # tình huống. Câu đệm che ~1800ms; mất 150ms vẫn còn 1650ms — đánh đổi đã đo
-    # và đã chốt ngày 2026-08-11 (task-11d). Đặt 0 để tắt hoàn toàn.
+    # tình huống. Đặt 0 để tắt hoàn toàn.
     # NGOẠI LỆ có chủ đích: ràng buộc "không thêm await vào _send_filler" tồn tại
     # để bảo vệ TTFA; một lần chờ CÓ TRẦN CỨNG là đánh đổi đã đo, khác hẳn chờ vô hạn.
-    _CHO_TINH_HUONG_MS: int = 150
+    #
+    # 150 -> 650 (06-09-2026). Số cũ chốt ngày 11-08 khi chỉ nhìn "câu đệm che
+    # ~1800ms nên mất 150ms vẫn còn 1650ms" - đúng về phía TTFA nhưng KHÔNG hề
+    # so với thứ nó đang đợi. Ngân sách thật cho STT là:
+    #
+    #     (SILENCE_END_MS - SPEC_CUOI_MS) + _CHO_TINH_HUONG_MS
+    #      = quãng bản đoán cuối câu được chạy trước khi lượt bắt đầu, cộng chờ
+    #
+    # Máy đang chạy để PHONE_SILENCE_END_MS=500 và SPEC_CUOI_MS=300, tức chỉ
+    # 200 + 150 = 350ms. Chín lần phiên âm đoán trước trên cuộc gọi thật sáng
+    # 06-09 mất 178/230/306/375/426/449/520/621/829ms - SÁU lần vượt 350ms, và
+    # mỗi lần vượt là một lượt ghi "chưa có spec_stt" rồi rơi về rổ chung.
+    # 650 phủ hết dải đo được (200 + 650 = 850 >= 829).
+    #
+    # Đây là TRẦN, không phải quãng chờ cố định: `asyncio.wait` về ngay khi bản
+    # đoán xong, nên lượt STT nhanh vẫn phát câu đệm sớm như cũ. Giá chỉ trả ở
+    # đúng những lượt trước đây mất trắng tình huống.
+    # Ràng buộc chéo ba hằng số này có test canh: tests/test_ngan_sach_cho_tinh_huong.py
+    _CHO_TINH_HUONG_MS: int = 650
 
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
@@ -661,17 +671,12 @@ class StreamingPipeline:
         # (một số rất lớn), điều kiện >= ngưỡng LUÔN ĐÚNG, và luật độ phủ trở
         # thành mã chết không chặn được gì. Nay dùng tham số truyền vào.
         # n_audio = 0 trên đường chat (không audio) → bỏ qua phân loại hoàn toàn.
-        id_th = None
-        if n_audio > 0 and session.tinh_huong:
-            n_th, th, diem = session.tinh_huong
-            do_phu = n_th / n_audio
+        # Luật nằm ở `filler_pick.tinh_huong_dung` để test được không cần GPU -
+        # cùng lý do với `can_che_ms`. Ở đó có bảng số đo vì sao BỎ lưới độ phủ.
+        id_th, do_phu = tinh_huong_dung(session.tinh_huong, n_audio)
+        if do_phu is not None:
             metrics["tinh_huong_do_phu"] = round(do_phu, 3)
-            metrics["tinh_huong_diem"] = round(diem, 3)
-            if do_phu >= self._TINH_HUONG_DO_PHU_MIN:
-                id_th = th
-            else:
-                # Bản đoán nghe trên đoạn quá ngắn → dễ trượt; về rổ chung an toàn hơn.
-                metrics["tinh_huong_bo"] = f"do phu {do_phu:.2f} qua thap"
+            metrics["tinh_huong_diem"] = round(session.tinh_huong[2], 3)
 
         # Khách vừa HỎI thì "em nắm được rồi" nghe như gạt đi. Nay đọc CHÍNH
         # phiên âm dở thay vì suy từ `session.turn_count` như trước: spec_stt có
