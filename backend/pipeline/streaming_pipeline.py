@@ -12,6 +12,7 @@ from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.pipeline.chan_tuan_thu import chan_gan_thu_nhap, chan_tu_cam
+from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
 from backend.pipeline.text_normalizer import noi_tiep_ve_dang_do
 from backend.pipeline import cong_cu_llm
 from backend.pipeline.cau_chan_lap import cau_chan, dem_chan_lien_tiep
@@ -147,6 +148,20 @@ class StreamingPipeline:
         self.tts = tts
         self.rag = rag
         self._da_bao_tts_chet = False
+        # Đọc MỘT LẦN lúc dựng pipeline: đường sinh không được đụng SQLite.
+        # Hỏng thì rơi về bảng gốc trong code chứ không tắt lưới - mất lưới lặng
+        # lẽ nguy hiểm hơn nhiều so với dùng bảng cũ.
+        try:
+            from backend.models import db as _db
+            from backend.models.luat_kiem_db import doc_bang_sync
+            _c = _db.connection()
+            if _c is None:
+                raise RuntimeError("DB chưa mở")
+            self._bang_thuoc_tinh = doc_bang_sync(_c)
+        except Exception as e:
+            from backend.pipeline.thuoc_tinh import THUOC_TINH_MAC_DINH
+            logger.warning("Không đọc được bảng thuộc tính (%s) - dùng mặc định", e)
+            self._bang_thuoc_tinh = THUOC_TINH_MAC_DINH
 
     @property
     def _tts_available(self) -> bool:
@@ -2088,6 +2103,17 @@ class StreamingPipeline:
             if sua:
                 logger.warning("CHẶN SỐ SAI: %s | %r -> %r", sua, doan[:50], ra[:50])
                 metrics["chan_so_sai"] = sua
+            # Lưới THUỘC TÍNH: con số đúng vẫn có thể gán sai chủ thể. Chạy sau
+            # `chan_so_sai` để phán trên bản đã sửa số đọc nhầm.
+            #
+            # CHỈ GHI NHẬT KÝ, chưa thay câu: kết quả văn bản bị bỏ đi có chủ ý.
+            # Bật chặn thật sau khi nhật ký trên cuộc gọi thật cho thấy chặn nhầm
+            # <= 5%. `tests/test_thuoc_tinh_duong_sinh.py` canh đúng điều này.
+            _, sua_tt = chan_thuoc_tinh_sai(
+                ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text)
+            if sua_tt:
+                logger.warning("THUỘC TÍNH LỆCH: %s | %r", sua_tt, ra[:60])
+                metrics["chan_thuoc_tinh"] = sua_tt
             # Hàng rào thứ hai: SỐ TIỀN. Truyền cả câu khách vừa nói để không
             # "sửa" con số do chính khách nêu ra - AI nhắc lại số của khách là
             # đúng, chặn nó mới là sai.
