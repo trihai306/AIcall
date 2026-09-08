@@ -12,6 +12,7 @@ from backend.api import (
     fillers as fillers_api,
     knowledge as knowledge_api,
     logs as logs_api,
+    luat_kiem as luat_kiem_api,
 )
 
 setup_logging(settings.log_level)
@@ -51,6 +52,7 @@ app.include_router(data_sources.router)
 app.include_router(logs_api.router)
 app.include_router(knowledge_api.router)
 app.include_router(fillers_api.router)
+app.include_router(luat_kiem_api.router)
 
 # Frontend must never be cached: without Cache-Control, Chromium applies
 # heuristic freshness (10% of file age) and Electron can keep serving a
