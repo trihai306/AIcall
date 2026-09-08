@@ -82,3 +82,52 @@ def test_bug3_dai_so_bat_ca_hai_dau():
     ket_qua = cap_trong(cau, THUOC_TINH_MAC_DINH)
     assert ("thời hạn", "12", "tháng") in ket_qua
     assert ("thời hạn", "60", "tháng") in ket_qua
+
+
+def test_gia_tri_khop_thi_cho_qua():
+    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+    tl = "- Lãi suất: từ 7.9%/năm\n"
+    ra, sua = chan_thuoc_tinh_sai("Lãi suất từ 7.9% một năm ạ", tl, THUOC_TINH_MAC_DINH)
+    assert sua is None and ra == "Lãi suất từ 7.9% một năm ạ"
+
+
+def test_gia_tri_lech_thi_bao_lech():
+    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+    tl = "- Lãi suất: từ 7.9%/năm\n"
+    _, sua = chan_thuoc_tinh_sai("Lãi suất chỉ 5% một năm ạ", tl, THUOC_TINH_MAC_DINH)
+    assert sua is not None and "lãi suất" in sua and "5" in sua
+
+
+def test_so_do_KHACH_neu_thi_khong_chan():
+    """AI nhắc lại số của khách là ĐÚNG. Cùng ranh giới `so_can_cu` đã đặt."""
+    from backend.pipeline.thuoc_tinh import cap_trong, chan_thuoc_tinh_sai
+    tl = "- Hạn mức: lên đến 500 triệu đồng\n"
+    # Câu thử PHẢI trích được cặp, không thì test xanh vì `cap_trong` trả rỗng
+    # chứ không phải vì lưới nhận ra số đó của khách.
+    assert cap_trong("Hạn mức anh cần là 400 triệu ạ", THUOC_TINH_MAC_DINH)
+    _, sua = chan_thuoc_tinh_sai("Hạn mức anh cần là 400 triệu ạ", tl, THUOC_TINH_MAC_DINH,
+                                 khach_noi="anh muốn vay tầm 400 triệu")
+    assert sua is None
+
+
+def test_ty_va_trieu_quy_doi_duoc():
+    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+    tl = "- Hạn mức: lên đến 10 tỷ đồng\n"
+    _, sua = chan_thuoc_tinh_sai("Hạn mức lên đến 10000 triệu đồng ạ", tl, THUOC_TINH_MAC_DINH)
+    assert sua is None
+
+
+def test_thuoc_tinh_KHONG_CO_trong_tai_lieu_thi_khong_phan():
+    """Tài liệu không nói gì về thuộc tính đó thì lưới này im - việc của lưới NLI."""
+    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+    _, sua = chan_thuoc_tinh_sai("Miễn lãi 45 ngày ạ", "- Lãi suất: từ 7.9%/năm\n",
+                                 THUOC_TINH_MAC_DINH)
+    assert sua is None
+
+
+def test_van_ban_KHONG_bi_thay_ca_cau():
+    """Ràng buộc lõi: lưới trả về mô tả để chỗ gọi xử lý, KHÔNG tự thay câu."""
+    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+    goc = "Lãi suất chỉ 5% một năm ạ"
+    ra, _ = chan_thuoc_tinh_sai(goc, "- Lãi suất: từ 7.9%/năm\n", THUOC_TINH_MAC_DINH)
+    assert ra == goc

@@ -91,3 +91,45 @@ def gia_tri_tai_lieu(tai_lieu: str, bang: dict) -> dict[str, set[tuple[str, str]
         for ten, so, dvi in cap_trong(dong, bang):
             kho.setdefault(ten, set()).add((so, dvi))
     return kho
+
+
+def _quy_doi(so: str, dvi: str) -> list[tuple[str, str]]:
+    """Các cách viết tương đương của cùng một lượng."""
+    ra = [(so, dvi)]
+    try:
+        v = float(so)
+    except ValueError:
+        return ra
+    if dvi == "tỷ":
+        ra.append((chuan_so(str(v * 1000)), "triệu"))
+    elif dvi == "triệu":
+        ra.append((chuan_so(str(v / 1000)), "tỷ"))
+    return ra
+
+
+def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
+                        khach_noi: str = "") -> tuple[str, str | None]:
+    """Con số gán cho một thuộc tính có đúng như tài liệu không?
+
+    Trả `(văn bản nguyên vẹn, mô tả chỗ lệch hoặc None)` - CÙNG DẠNG với
+    `chan_so_sai` để chỗ gọi xử lý thống nhất. Hàm này KHÔNG tự thay câu.
+
+    Ba trường hợp im lặng, đều có chủ ý:
+      - thuộc tính không có trong tài liệu -> việc của lưới NLI, không phải của đây
+      - con số do chính KHÁCH nêu -> AI nhắc lại là đúng
+      - không trích được cặp nào -> không có gì để phán
+    """
+    kho = gia_tri_tai_lieu(tai_lieu, bang)
+    if not kho:
+        return text, None
+    so_khach = {s for s, _ in cap_trong(khach_noi, bang)} | set(
+        re.findall(r"\d+(?:[.,]\d+)?", (khach_noi or "")))
+    lech = []
+    for ten, so, dvi in cap_trong(text, bang):
+        if ten not in kho or so in so_khach:
+            continue
+        if any(c in kho[ten] for c in _quy_doi(so, dvi)):
+            continue
+        dung = ", ".join(f"{a}{b}" for a, b in sorted(kho[ten]))
+        lech.append(f"{ten} {so}{dvi} (tài liệu: {dung})")
+    return text, ("; ".join(lech) if lech else None)
