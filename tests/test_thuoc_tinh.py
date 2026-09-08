@@ -131,3 +131,19 @@ def test_van_ban_KHONG_bi_thay_ca_cau():
     goc = "Lãi suất chỉ 5% một năm ạ"
     ra, _ = chan_thuoc_tinh_sai(goc, "- Lãi suất: từ 7.9%/năm\n", THUOC_TINH_MAC_DINH)
     assert ra == goc
+
+
+def test_loi_khach_TRICH_DUOC_cap_thi_khong_no():
+    """`cap_trong` trả BỘ BA (tên, số, đơn vị) - đọc thành bộ đôi là nổ giữa cuộc gọi.
+
+    Test cũ dùng lời khách "anh muốn vay tầm 400 triệu", câu này KHÔNG có từ khoá
+    nào nên `cap_trong` trả rỗng và vòng lặp không chạy - lỗi giải nén không lộ.
+    Bộ chấm trên 250 lượt thật mới bắt được. Lời khách ở đây phải trích ĐƯỢC cặp.
+    """
+    from backend.pipeline.thuoc_tinh import cap_trong, chan_thuoc_tinh_sai
+    khach = "hạn mức của anh là 400 triệu"
+    assert cap_trong(khach, THUOC_TINH_MAC_DINH), "câu thử phải trích được cặp"
+    ra, sua = chan_thuoc_tinh_sai("Hạn mức lên đến 400 triệu ạ",
+                                  "- Hạn mức: lên đến 500 triệu đồng\n",
+                                  THUOC_TINH_MAC_DINH, khach_noi=khach)
+    assert sua is None, "số do khách nêu thì không được chặn"

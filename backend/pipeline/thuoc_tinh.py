@@ -122,7 +122,9 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
     kho = gia_tri_tai_lieu(tai_lieu, bang)
     if not kho:
         return text, None
-    so_khach = {s for s, _ in cap_trong(khach_noi, bang)} | set(
+    # `cap_trong` trả BỘ BA (tên, số, đơn vị). Đọc thành bộ đôi là nổ giữa
+    # cuộc gọi - đã lọt qua test một lần vì câu thử không trích được cặp nào.
+    so_khach = {so for _, so, _ in cap_trong(khach_noi, bang)} | set(
         re.findall(r"\d+(?:[.,]\d+)?", (khach_noi or "")))
     lech = []
     for ten, so, dvi in cap_trong(text, bang):
