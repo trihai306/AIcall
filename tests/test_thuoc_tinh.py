@@ -31,3 +31,17 @@ def test_tu_khoa_nam_sau_so_van_nhan_ra():
 
 def test_khong_co_tu_khoa_thi_khong_trich():
     assert cap_trong("Anh chờ em 5 phút nhé", THUOC_TINH_MAC_DINH) == []
+
+
+def test_doc_gia_tri_tu_tai_lieu():
+    """Giá trị đúng ĐỌC TỪ TÀI LIỆU, không viết cứng - sửa tài liệu là lưới đổi theo."""
+    from backend.pipeline.thuoc_tinh import gia_tri_tai_lieu
+    tl = "- Lãi suất: từ 7.9%/năm\n- Hạn mức: lên đến 500 triệu đồng\n"
+    kho = gia_tri_tai_lieu(tl, THUOC_TINH_MAC_DINH)
+    assert kho["lãi suất"] == {("7.9", "%")}
+    assert kho["hạn mức"] == {("500", "triệu")}
+
+
+def test_tai_lieu_rong_thi_kho_rong():
+    from backend.pipeline.thuoc_tinh import gia_tri_tai_lieu
+    assert gia_tri_tai_lieu("", THUOC_TINH_MAC_DINH) == {}

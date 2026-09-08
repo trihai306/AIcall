@@ -40,3 +40,16 @@ def cap_trong(cau: str, bang: dict) -> list[tuple[str, str, str]]:
                 ra.append((ten, so, dvi))
                 break
     return ra
+
+
+def gia_tri_tai_lieu(tai_lieu: str, bang: dict) -> dict[str, set[tuple[str, str]]]:
+    """{thuộc tính: {(số, đơn vị)}} đọc được từ tài liệu.
+
+    Đọc TỪNG DÒNG chứ không cả khối: từ khoá của thuộc tính này không được vơ
+    lấy con số của dòng khác.
+    """
+    kho: dict[str, set[tuple[str, str]]] = {}
+    for dong in (tai_lieu or "").splitlines():
+        for ten, so, dvi in cap_trong(dong, bang):
+            kho.setdefault(ten, set()).add((so, dvi))
+    return kho
