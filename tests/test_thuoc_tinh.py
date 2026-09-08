@@ -45,3 +45,40 @@ def test_doc_gia_tri_tu_tai_lieu():
 def test_tai_lieu_rong_thi_kho_rong():
     from backend.pipeline.thuoc_tinh import gia_tri_tai_lieu
     assert gia_tri_tai_lieu("", THUOC_TINH_MAC_DINH) == {}
+
+
+# --- Fix round 1: 3 lỗi đã xác nhận thực nghiệm ---
+
+def test_bug1_han_muc_truoc_thu_nhap_khong_bi_vao_nham():
+    """Bug 1: 'Hạn mức 500 triệu, thu nhập từ 5 triệu' — từ khoá gần nhất phải thắng.
+
+    Nếu code lấy kết quả đầu tiên trong dict (lãi suất → hạn mức → thời hạn → ...)
+    thì 5 triệu bị gán cho hạn mức thay vì thu nhập vì 'hạn mức' xuất hiện trong
+    cửa sổ ±60 ký tự xung quanh số 5.
+    """
+    cau = "Hạn mức 500 triệu, thu nhập từ 5 triệu mỗi tháng"
+    ket_qua = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("hạn mức", "500", "triệu") in ket_qua
+    assert ("thu nhập", "5", "triệu") in ket_qua
+
+
+def test_bug2_thu_nhap_truoc_han_muc_khong_bi_vao_nham():
+    """Bug 2: 'Thu nhập 10 triệu thì hạn mức 300 triệu' — thứ tự đảo vẫn đúng.
+
+    Như bug 1 nhưng từ khoá xuất hiện theo thứ tự ngược lại.
+    """
+    cau = "Thu nhập 10 triệu thì hạn mức 300 triệu ạ"
+    ket_qua = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("thu nhập", "10", "triệu") in ket_qua
+    assert ("hạn mức", "300", "triệu") in ket_qua
+
+
+def test_bug3_dai_so_bat_ca_hai_dau():
+    """Bug 3: '12 - 60 tháng' — regex chỉ bắt '60', bỏ sót '12'.
+
+    Dải số dạng 'N - M <đơn-vị>' phải cho ra cả hai số với cùng đơn vị.
+    """
+    cau = "- Thời hạn: 12 - 60 tháng"
+    ket_qua = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("thời hạn", "12", "tháng") in ket_qua
+    assert ("thời hạn", "60", "tháng") in ket_qua

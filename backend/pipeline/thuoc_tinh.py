@@ -17,6 +17,12 @@ THUOC_TINH_MAC_DINH: dict[str, dict] = {
 }
 
 _SO = re.compile(r"(\d+(?:[.,]\d+)?)\s*(%|triệu|tỷ|tháng|năm|giờ|ngày|tuổi)", re.I)
+# Bắt dải số dạng "N - M đơn_vị" hoặc "N đến M đơn_vị": số đầu không có đơn vị ngay sau.
+_DAI = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s*(?:-|–|đến)\s*(\d+(?:[.,]\d+)?)\s*(%|triệu|tỷ|tháng|năm|giờ|ngày|tuổi)",
+    re.I,
+)
+_RADIUS = 85  # ký tự tối đa giữa từ khoá và số
 
 
 def chuan_so(s: str) -> str:
@@ -31,14 +37,46 @@ def cap_trong(cau: str, bang: dict) -> list[tuple[str, str, str]]:
     """[(thuộc tính, số, đơn vị)] tìm được trong câu."""
     t = re.sub(r"(\d)\.\s+(\d)", r"\1.\2", (cau or "").lower())
     ra = []
+
+    # Bước 1: thu thập tất cả cặp (vị_trí_số, số, đơn_vị).
+    # Xử lý _DAI trước để bắt số đầu dải ("12" trong "12 - 60 tháng").
+    tat_ca: list[tuple[int, str, str]] = []
+    da_co: set[int] = set()
+
+    for m in _DAI.finditer(t):
+        dvi = m.group(3).lower()
+        p1, s1 = m.start(1), chuan_so(m.group(1))
+        p2, s2 = m.start(2), chuan_so(m.group(2))
+        if p1 not in da_co:
+            tat_ca.append((p1, s1, dvi))
+            da_co.add(p1)
+        if p2 not in da_co:
+            tat_ca.append((p2, s2, dvi))
+            da_co.add(p2)
+
     for m in _SO.finditer(t):
-        so, dvi = chuan_so(m.group(1)), m.group(2).lower()
-        # Tìm từ khoá CẢ HAI PHÍA: "trên 70 tuổi" có từ khoá nằm SAU số.
-        quanh = t[max(0, m.start() - 60):min(len(t), m.end() + 25)]
+        p = m.start(1)
+        if p not in da_co:
+            tat_ca.append((p, chuan_so(m.group(1)), m.group(2).lower()))
+            da_co.add(p)
+
+    tat_ca.sort()
+
+    # Bước 2: với mỗi số, chọn thuộc tính có từ khoá GẦN NHẤT (không lấy đầu tiên trong dict).
+    for pos_so, so, dvi in tat_ca:
+        ung_cu: list[tuple[int, str]] = []  # (khoảng_cách, tên_thuộc_tính)
         for ten, d in bang.items():
-            if dvi in d["dvi"] and any(k in quanh for k in d["khoa"]):
-                ra.append((ten, so, dvi))
-                break
+            if dvi not in d["dvi"]:
+                continue
+            for k in d["khoa"]:
+                for mk in re.finditer(re.escape(k), t):
+                    kc = abs(mk.start() - pos_so)
+                    if kc <= _RADIUS:
+                        ung_cu.append((kc, ten))
+        if ung_cu:
+            ung_cu.sort()
+            ra.append((ung_cu[0][1], so, dvi))
+
     return ra
 
 
