@@ -229,6 +229,16 @@ CREATE TABLE IF NOT EXISTS call_attempts (
 );
 
 CREATE INDEX IF NOT EXISTS ix_attempts_contact ON call_attempts(contact_id, started_at DESC);
+
+-- Thuộc tính mà lưới chặn bịa đối chiếu với tài liệu ("lãi suất", "hạn mức"...).
+-- Sửa được trên trang quản lý; bản gốc nằm ở `pipeline/thuoc_tinh.THUOC_TINH_MAC_DINH`
+-- và được gieo vào đây lần đầu, nên mất DB vẫn còn bản trong code.
+CREATE TABLE IF NOT EXISTS thuoc_tinh_kiem (
+    ten      TEXT PRIMARY KEY,
+    tu_khoa  TEXT NOT NULL,          -- JSON list
+    don_vi   TEXT NOT NULL,          -- JSON list
+    bat      INTEGER NOT NULL DEFAULT 1
+);
 """
 
 # Indexes over columns that `_ADDED_COLUMNS` may have just created. Kept apart
