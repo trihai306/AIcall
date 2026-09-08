@@ -109,9 +109,24 @@ def chuan_hoa(v: np.ndarray) -> np.ndarray:
 # tại là" cũng là đã tư vấn lãi. Nhận dư một chút thì cùng lắm là cho nhóm chê
 # vào cuộc sớm hơn cần thiết - vẫn phải thắng điểm cosine mới được chọn. Nhận
 # thiếu thì cổng không bao giờ mở, và lỗi "chê hoá thành hỏi" còn nguyên.
+#
+# PHẢI BẮT CẢ CÂU TRẢ LỜI CỤT (thêm 07-09-2026). Bảng cũ chỉ có từ chỉ CHỦ ĐỀ,
+# nên nó mù với đúng kiểu câu mà dự án đang cố ý theo đuổi - trả lời thẳng, gọn,
+# không nhắc lại đề bài:
+#     "Từ 7.9%/năm ạ."            không có chữ "lãi"
+#     "Tối đa là 500 triệu đồng ạ."  không có "hạn mức" lẫn "vay tối đa"
+# Cuộc 08c0d3e0: bot báo lãi bằng đúng câu đầu, cổng `lai_suat` không mở, nên
+# khách chê "lãi cao thế" ở giây 116 bị chấm thành HỎI lãi (`che_lai_cao` chấm
+# 1.000 mà bị loại, `hoi_lai_suat` 0.923 thắng) - khách đang chê mà nghe "Dạ lãi
+# suất bên em thì,". Người dùng báo: "câu đệm ko có trong kịch bản, bot tự bịa".
+#
+# Cái giá của "%" và "tối đa": câu về PHÍ có phần trăm cũng đánh dấu lai_suat,
+# câu về THỜI HẠN có "tối đa" cũng đánh dấu han_muc. Đó là nhận dư, đúng hướng
+# an toàn đã nói ở trên - KHÔNG đổi thành điều kiện chặt hơn ("%" VÀ "/năm") vì
+# nhận thiếu mới là lỗi đắt.
 TU_KHOA_CHU_DE: dict[str, tuple[str, ...]] = {
-    "lai_suat": ("lãi",),
-    "han_muc": ("hạn mức", "vay tối đa", "vay được tối đa"),
+    "lai_suat": ("lãi", "%", "phần trăm"),
+    "han_muc": ("hạn mức", "tối đa"),
     "phi": ("phí",),
     "thoi_han": ("thời hạn", "kỳ hạn", "vay trong"),
 }

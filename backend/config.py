@@ -224,6 +224,111 @@ class Settings(BaseSettings):
     # Đổi lại, đệm dày làm cắt lời chậm đi đúng bằng chừng đó.
     phone_dem_mo_ms: int = 250
 
+    # Đệm AudioTrack CHIỀU XUỐNG trên máy Android (`BridgeService.demXuongMs`),
+    # mili giây. None = không truyền gì, app giữ mặc định 500 của nó.
+    #
+    # Đo 07-09-2026 trên hai cuộc gọi thật giống hệt nhau, chỉ đổi mỗi số này
+    # (`scripts/do_tre_vong.py`, đo bằng chirp vọng về):
+    #
+    #     đệm 500ms -> trễ vòng 962ms (n=11, ±11)
+    #     đệm 200ms -> trễ vòng 817ms (n=12, ±16)
+    #
+    # tức hạ xuống 200 rút được 145ms ± 19ms trên đường thật. Dưới 200 thì vô
+    # ích: `bufferSizeInBytes = max(minTrk, demXuongBytes)` kẹp ở sàn hệ thống,
+    # đo trong máy với 100 và 50 không cắt thêm gì.
+    #
+    # CÁI GIÁ chưa đo xong: backend bắn `phone_dem_mo_ms` (250ms) tức thì vào
+    # buffer này, nhỏ hơn chừng đó thì `WRITE_BLOCKING` chặn luồng vbridge.
+    phone_dem_xuong_ms: int | None = None
+
+    # Khách phải nói LIÊN TỤC bấy nhiêu mili giây thì mới coi là cắt lời.
+    #
+    # Luật cũ dừng AI sau 80ms tiếng (`VAD_ON_FRAMES=4`), nên tiếng ho, tiếng
+    # "dạ" khách đế theo khi đang nghe, và tiếng AI vọng ngược vào micro đều
+    # cắt được lời AI. 700ms dài hơn một tiếng đế (200-300ms) và ngắn hơn một
+    # câu hỏi thật.
+    #
+    # Cái giá: khách nói thật vẫn bị AI nói đè trong chừng ấy thời gian. Hạ số
+    # này xuống thì AI nhạy hơn nhưng dễ bị cắt oan trở lại.
+    phone_cat_loi_min_ms: int = 700
+
+    # Ngưỡng RMS coi là khách BẮT ĐẦU nói. Đây là SÀN: ngưỡng thật là
+    # `max(sàn này, nền_kênh × VAD_HE_SO_ON)`, xem `phone_call_service.nguong_on`.
+    #
+    # 700 -> 500 (07-09-2026). Sàn 700 làm máy ĐIẾC với khách nói nhỏ: cuộc
+    # 08c0d3e0 khách hỏi "lãi suất bao nhiêu" ở giây 25,8 mà không mở được lượt,
+    # phải hỏi lại lần hai ở giây 30,3 mới được nghe. Người dùng báo "nói BOT
+    # không nghe thấy".
+    #
+    # Vì sao nhánh thích nghi không cứu được: nền cầu tiếng điện thoại rất sạch -
+    # trung vị 8, p90 20, MAX 30 trên 73 cuộc gọi thật - nên `nền × 3` chưa bao
+    # giờ vượt sàn, ngưỡng đứng nguyên ở 87 lần mức nền. Chú thích cũ nói tới nền
+    # ~1235 là đo trên MICRO MÁY TÍNH, không phải đường này.
+    #
+    # Chọn số bằng cách đo 454 lời khách thật trích từ 73 bản ghi
+    # (`scripts/do_nguong_bat_vad.py`):
+    #     700 -> mở được 417/454 (91,9%)      400 -> 438 (96,5%)
+    #     600 -> 425 (93,6%)                  300 -> 445 (98,0%)
+    #     500 -> 434 (95,6%)
+    # Lấy 500 vì đó là chỗ gãy: 700->500 cứu 17 lời, 500->400 chỉ cứu thêm 4 nữa
+    # mà số lượt mở thêm tăng gần gấp đôi (15 -> 24 trên 73 cuộc).
+    #
+    # KHÔNG được hạ xuống dải 400-500: đó là dải tiếng lạo xạo của `decf104f`,
+    # xem chú thích `phone_vad_rms_off` ngay dưới. Đã kiểm riêng cuộc đó và ba
+    # cuộc có TV (64b6f2ac, 022eb3e5, 1c1c3b16): số lượt mở y hệt nhau ở 500/600/
+    # 700, vì lạo xạo không đủ 4 khung LIÊN TIẾP trên 500 (`VAD_ON_FRAMES`).
+    #
+    # Bằng nhau với `phone_vad_rms_off` trên kênh sạch là CỐ Ý, không phải quên
+    # chừa trễ: bật cần 4 khung (80ms), tắt cần 50 khung (1000ms), nên hai chiều
+    # đã lệch nhau 12 lần về thời gian - không có chuyện lượt chớp tắt.
+    phone_vad_rms_on: float = 500.0
+
+    # Ngưỡng RMS coi là khách ĐÃ NGỪNG tiếng. Từ đây `silence_ms` mới bắt đầu
+    # đếm tới `phone_silence_end_ms`.
+    #
+    # 400 là số cũ và nó KẸT trên kênh thật: cuộc gọi `decf104f` (06-09-2026) có
+    # tiếng lạo xạo mức 400-500 rải rác, nên suốt 18,4 giây kênh khách không có
+    # lấy một khoảng im 1000ms nào (dài nhất 920ms) và lượt chỉ đóng khi chạm
+    # trần MAX_TURN_MS - khách nói xong ngồi chờ 15 giây. Quét lại trên chính
+    # bản ghi đó (`scripts/quet_nguong.py`), khoảng im dài nhất trong vùng ấy:
+    #     400 -> 920ms  (KẸT)      600 -> 1240ms
+    #     500 -> 1240ms (thoát)    800 -> 1260ms
+    # Chọn 500 vì đó là mức thấp nhất thoát được - nâng cao hơn thì tiếng nói
+    # nhỏ cuối câu dễ bị coi là im và đuôi câu khách bị cắt.
+    phone_vad_rms_off: float = 500.0
+
+    # Ngưỡng tắt TƯƠNG ĐỐI: trong một lượt, khung dưới ngần này phần đỉnh của
+    # lượt coi là im, dù vẫn trên `phone_vad_rms_off`. Sinh ra từ cuộc gọi
+    # 64b6f2ac (06-09-2026): khách nói 2,4s (đỉnh 3300-8200) rồi im, nhưng TV
+    # trong phòng phát tiếng người ở 800-2500 suốt 15 giây; ngưỡng cố định 500
+    # không đóng nổi lượt, lưới gió vô dụng vì đó là tiếng người thật. Khách ở
+    # gần micro nên to hơn hẳn tiếng nền - 0,15 (≈−16dB dưới đỉnh) đóng lượt
+    # sau 3,3s đúng lúc khách dứt lời (`scripts/do_muc_tv.py`); 0,10 vẫn mất
+    # 10,9s. Hạ về 0 là tắt hẳn luật này.
+    phone_tat_theo_dinh: float = 0.15
+
+    # Mức khách ĐÃ BIẾT (đỉnh của các lượt khách trước, suy giảm dần): tiếng nền
+    # nhỏ hơn ngần này phần mức đó thì không được mở lượt mới / không được cắt
+    # lời AI. Cuộc 022eb3e5 (06-09-2026, TV mở): khách đỉnh 6383-6713, TV
+    # 800-1800 vẫn cắt lời AI và thành lượt 13s được AI đáp. Đo 9 cuộc thật
+    # (`scripts/do_dinh_tung_luot.py`): lượt khách thật thấp nhất 0,39× mức to
+    # nhất trước đó, TV 0,14-0,27×. Biên mỏng, nên mở lượt lấy 0,20 (bỏ sót lượt
+    # khách là nặng), cắt lời lấy 0,30 (bỏ sót một lần cắt lời là nhẹ).
+    # Ngưỡng suy ra bị chặn trên bởi `phone_tran_nguong_khach` để khách nói to
+    # bất thường một lần không khoá luôn máy. Đặt 0 là tắt.
+    phone_mo_theo_muc_khach: float = 0.20
+    phone_cat_theo_muc_khach: float = 0.30
+    phone_tran_nguong_khach: float = 2000.0
+    # Mức khách đã biết giảm một nửa sau ngần này giây không có lượt mới, để khách
+    # nói nhỏ đi hay đổi tay cầm máy vẫn được nghe.
+    phone_muc_khach_ban_ra_s: float = 90.0
+
+    # Bật bộ khử tiếng AI vọng ngược vào kênh khách (`services/khu_vong.py`).
+    # MẶC ĐỊNH TẮT cho tới khi nghiệm thu offline trên bản ghi thật đạt: bản
+    # đầu (06-09-2026) phân kỳ trên dữ liệu thật, đầu ra TO HƠN đầu vào 11-32dB
+    # và đẻ thêm lượt giả trong phép chạy lại VAD - tệ hơn không làm gì.
+    phone_khu_vong: bool = False
+
     # Máy phone farm đang dùng. Cần để dựng lại `adb forward` khi ổ cắm chết
     # giữa cuộc gọi - máy chủ adb trên Windows tự khởi động lại thì forward mất
     # theo, và trước đây luồng gửi chết luôn nên nửa sau cuộc gọi câm tiếng.

@@ -41,6 +41,45 @@ def test_noi_chu_lai_khong_kem_suat_van_tinh_la_da_tu_van():
     assert "lai_suat" in chu_de_da_noi("Dạ mức lãi hiện tại là 10.5% một năm ạ.")
 
 
+# --- Câu trả lời CỤT: chỗ cổng từng kẹt vĩnh viễn --------------------------
+#
+# Cuộc gọi 08c0d3e0 (07-09-2026): khách hỏi lãi suất, bot đáp đúng một câu
+# "Từ 7.9%/năm ạ." - không có chữ "lãi" nào. Cổng không mở, nên khi khách chê
+# "lãi cao thế" ở giây 116 thì `che_lai_cao` (chấm 1.000, ví dụ trong kho đúng y
+# chữ khách nói) BỊ LOẠI và `hoi_lai_suat` (0.923) thắng. Khách đang chê mà nghe
+# "Dạ lãi suất bên em thì," - người dùng báo "câu đệm ko có trong kịch bản".
+#
+# Bẫy nằm ở chỗ: bot trả lời càng GỌN thì cổng càng không mở, mà trả lời gọn
+# đang là thứ dự án cố ý theo đuổi. Hai câu dưới đây lấy nguyên văn từ bản ghi.
+
+def test_cau_tra_loi_lai_suat_cut_van_tinh_la_da_tu_van():
+    assert "lai_suat" in chu_de_da_noi("Từ 7.9%/năm ạ.")
+
+
+def test_cau_tra_loi_han_muc_cut_van_tinh_la_da_tu_van():
+    assert "han_muc" in chu_de_da_noi("Tối đa là 500 triệu đồng ạ.")
+
+
+def test_khach_che_lai_sau_khi_bot_bao_so_thi_cong_phai_mo():
+    """Dựng lại đúng `da_tu_van` của cuộc 08c0d3e0 tại giây 116."""
+    from backend.services.filler_situation import DIEU_KIEN_NGU_CANH
+    loi_bot = [
+        "Dạ em chào anh/chị, em là Lan bên Ngân hàng Quân đội ạ.",
+        "Có anh/chị ạ, em có thể tư vấn về vay tín chấp cho anh/chị 24 giờ "
+        "giải ngân và hạn mức lên đến 500 triệu đồng.",
+        "Từ 7.9%/năm ạ.",
+        "Với thu nhập ổn định, lên đến 500 triệu đồng ạ.",
+        "Anh/chị cần chuẩn bị căn cước và sao kê lương ba tháng ạ.",
+        "Tối đa là 500 triệu đồng ạ.",
+        "Bên em vẫn có cách hỗ trợ anh/chị vay được ạ.",
+    ]
+    da_tu_van = set()
+    for l in loi_bot:
+        da_tu_van |= chu_de_da_noi(l)
+    assert "lai_suat" in da_tu_van, f"bot đã báo lãi 7.9% rồi, da_tu_van={da_tu_van}"
+    assert "che_lai_cao" not in loc_theo_ngu_canh(DIEU_KIEN_NGU_CANH, da_tu_van)
+
+
 # --- Cổng: nhóm chê chỉ được bật sau khi bot đã tư vấn chủ đề đó -----------
 
 DIEU_KIEN = {"che_lai_cao": "lai_suat", "che_phi_cao": "phi"}

@@ -18,6 +18,7 @@ from backend.services.audio_utils import (float32_to_int16, gioi_han_mem,
 from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
 from backend.services.filler_store import CauDuoi, Kho, van_tay
+from backend.services.filler_store import MA_NHOM_CHUNG
 from backend.services.filler_pick import chon as _chon_filler, ghep
 
 logger = logging.getLogger(__name__)
@@ -1462,6 +1463,22 @@ class F5TTSService:
         """
         return self._filler_ms.get((self._giong_thuc(voice), id_th, cau_id), 0.0)
 
+    @staticmethod
+    def _chu_cua_filler(kho, id_th: str, i_mau: int, id_duoi: str) -> str:
+        """Nguyên văn chữ của clip câu đệm vừa chọn.
+
+        Dựng lại bằng đúng `ghep()` mà lúc dựng clip đã dùng, nên chuỗi này khớp
+        từng ký tự với tiếng khách nghe - điều kiện để `prefill` có tác dụng.
+        """
+        from backend.services.filler_pick import ghep
+        duoi = next((d.text for d in kho.duoi if d.id == id_duoi), "")
+        if not id_th:
+            return ghep("", duoi)
+        t = next((x for x in kho.tinh_huong if x.id == id_th), None)
+        if t is None or i_mau >= len(t.mo_dau):
+            return ghep("", duoi)
+        return ghep(t.mo_dau[i_mau], duoi)
+
     def pick_filler(self, kho, voice: str | None = None,
                     min_ms: float = 0.0,
                     dem: dict[str, int] | None = None,
@@ -1486,7 +1503,12 @@ class F5TTSService:
         name = self._giong_thuc(voice)
         # Thử tình huống trước, rồi rơi về đuôi trần (""). None là placeholder
         # cho "bỏ qua lần thử này" (khi id_tinh_huong=None không có tình huống).
-        for th in (id_tinh_huong, ""):
+        # Thứ tự rơi: tình huống khớp -> NHÓM CHUNG -> rổ đuôi trần.
+        # Nhóm chung là những câu luôn dùng được, đứng một mình; nó tồn tại để
+        # lượt không nhận ra chủ đề vẫn có tiếng thay vì im lặng trọn quãng chờ.
+        # Rổ đuôi trần giữ lại cuối chuỗi cho tương thích ngược - từ 06-09-2026
+        # kho đuôi thường rỗng.
+        for th in (id_tinh_huong, MA_NHOM_CHUNG, ""):
             if th is None:
                 # id_tinh_huong=None → không có tình huống, bỏ qua lần đầu
                 continue
@@ -1506,6 +1528,13 @@ class F5TTSService:
                 i_mau, chon_id = id_ghep.split("|", 1)
                 # Trả id_th="" thành None để nơi gọi ghi log đúng: "dùng đuôi
                 # trần" thay vì "dùng tình huống rỗng".
+                #
+                # Trả kèm CHỮ đã phát: `prefill` cần đúng chuỗi khách vừa nghe
+                # để mô hình viết tiếp. Trước đây nơi gọi tự đoán chữ từ id, và
+                # khi kho đuôi rỗng nó ghi nhãn "(chỉ mẩu mở đầu)" - prefill nhét
+                # nguyên cái nhãn đó vào miệng mô hình, nên mô hình bỏ qua và
+                # viết câu mới. Chữ phải đi cùng clip, không suy ngược từ id.
+                self._filler_text_cuoi = self._chu_cua_filler(kho, th, int(i_mau), chon_id)
                 return (self._filler_cache[(name, th, int(i_mau), chon_id)],
                         chon_id, th or None)
         # Về tay không là khách nghe im lặng trọn TTFA — ghi rõ nguyên nhân.

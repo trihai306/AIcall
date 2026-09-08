@@ -132,13 +132,18 @@ def _nhung_lai_vi_du():
     `_nhung_mot`, xoá thì gọi `_bo_mot`, sửa câu đuôi thì KHÔNG gọi gì cả.
     """
     from backend.services.filler_situation import chuan_hoa
+    from backend.services.filler_store import MA_NHOM_CHUNG
     st, rag = _state_va_rag()
     if st is None:
         return
     kho = lay_kho_cho_nhung()
+    # BỎ nhóm chung khỏi bộ chấm điểm. Nó là đường rơi cuối, không phải một chủ
+    # đề để tranh: nhúng vào thì nó cạnh tranh cosine với tình huống thật và có
+    # thể THẮNG, khi đó khách hỏi lãi suất lại nghe câu trung tính thay vì
+    # "Dạ về lãi suất thì," - tức làm hỏng đúng thứ kho tình huống sinh ra để làm.
     st.kho_vector = {
         t.id: chuan_hoa(rag.embed(list(t.vi_du)))
-        for t in kho.tinh_huong if t.vi_du
+        for t in kho.tinh_huong if t.vi_du and t.id != MA_NHOM_CHUNG
     }
     logger.info("Đã nhúng lại ví dụ của %d tình huống", len(st.kho_vector))
 

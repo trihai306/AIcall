@@ -499,6 +499,36 @@ class RAGService:
         ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
         metadatas = [metadata or {} for _ in chunks]
 
+        # XOÁ mảnh cũ của CHÍNH tài liệu này trước đã. Chroma `add` gặp id trùng
+        # thì BỎ QUA IM LẶNG chứ không ghi đè, nên thiếu bước này là sửa tài liệu
+        # bao nhiêu lần cũng vô ích: kho đứng nguyên ở bản ĐẦU TIÊN từng nạp, mà
+        # log vẫn ghi "Ingested N chunks" như đã làm gì đó.
+        #
+        # Đo trên máy chạy thật 07-09-2026: `ingest_directory` báo nạp 3 mảnh
+        # `vay_tin_chap` nhưng số mảnh trong kho không đổi (9 trước, 9 sau), và
+        # kho vẫn giữ bản cũ - trong đó có dòng "Nợ xấu vẫn có cách lách để vay
+        # được". Đó chính là nguồn câu AI nói với khách; mô hình KHÔNG bịa, nó
+        # đọc đúng tài liệu. Grep các file trên đĩa không thấy, vì dòng đó chỉ
+        # còn tồn tại trong kho vector.
+        #
+        # Xoá theo TIỀN TỐ id chứ không theo metadata: cùng một tài liệu từng
+        # được nạp với `source` lúc là đường dẫn tuyệt đối lúc là tương đối, lọc
+        # theo metadata sẽ sót. Và phải xoá theo id CŨ chứ không phải theo `ids`
+        # vừa dựng - bản cũ có thể NHIỀU mảnh hơn bản mới, xoá thiếu thì mảnh
+        # thừa sống sót và vẫn được RAG lôi ra.
+        try:
+            cu = [i for i in (self._collection.get().get("ids") or [])
+                  if isinstance(i, str) and i.startswith(f"{doc_id}_chunk_")]
+            if cu:
+                self._collection.delete(ids=cu)
+                logger.info("Nạp lại %r: bỏ %d mảnh cũ", doc_id, len(cu))
+        except Exception as e:
+            # Xoá hỏng thì vẫn nạp tiếp - thà có mảnh cũ lẫn vào còn hơn mất
+            # trắng tài liệu. Nhưng phải kêu to, vì im lặng ở đây là quay về
+            # đúng cái lỗi vừa chữa.
+            logger.warning("Không xoá được mảnh cũ của %r (%s) - kho có thể "
+                           "còn lẫn bản cũ", doc_id, e)
+
         self._collection.add(
             documents=chunks,
             embeddings=embeddings,

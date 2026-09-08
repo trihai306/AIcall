@@ -530,7 +530,35 @@ async def forward_port(serial: str, port: int) -> tuple[bool, str]:
     return True, ""
 
 
-async def start_bridge(serial: str, port: int = 8123, src: int = SRC_VOICE_CALL) -> tuple[bool, str]:
+def _lenh_bridge(serial: str, port: int, src: int,
+                 usage: int | None = None,
+                 dem_xuong: int | None = None) -> list[str]:
+    """Tham số cho lệnh bật cầu tiếng.
+
+    `usage` để None thì KHÔNG truyền gì - app giữ mặc định VOICE_COMMUNICATION,
+    tức đường gọi thật không đổi. Chỉ truyền 2 (MEDIA, ra loa ngoài) khi đang đo
+    vòng âm học: loa áp tai quá nhỏ để chính micro của máy nghe lại được.
+    """
+    lenh = [
+        "-s", serial, "shell", "am", "start-foreground-service",
+        "-n", BRIDGE_SERVICE, "--ei", "src", str(src), "--ei", "port", str(port),
+        "--ei", "rate_xuong", str(settings.phone_rate_xuong),
+        "--ei", "rate_len", str(settings.phone_rate_len),
+    ]
+    if usage is not None:
+        lenh += ["--ei", "usage", str(usage)]
+    if dem_xuong is not None:
+        # Đệm AudioTrack chiều xuống. Để None thì app giữ mặc định 500ms. Hạ
+        # xuống CHỈ để đo xem nó đóng góp bao nhiêu vào độ trễ: đo trước đây với
+        # 60ms thì AudioTrack đói dữ liệu 20913 lần/giây và người nghe báo tiếng
+        # "dè", nên đây không phải nút chỉnh cho đường thật.
+        lenh += ["--ei", "dem_xuong", str(dem_xuong)]
+    return lenh
+
+
+async def start_bridge(serial: str, port: int = 8123, src: int = SRC_VOICE_CALL,
+                       usage: int | None = None,
+                       dem_xuong: int | None = None) -> tuple[bool, str]:
     """Bật app cầu nối tiếng trên máy.
 
     Bắt buộc dùng start-foreground-service: từ Android 8 trở đi, khởi động dịch
@@ -539,12 +567,7 @@ async def start_bridge(serial: str, port: int = 8123, src: int = SRC_VOICE_CALL)
     Hai rate PHẢI khớp với hằng số bên phone_call_service, lệch là tiếng sai tốc
     độ - app cắt khung theo rate của nó còn PC cắt theo rate của mình.
     """
-    code, out, err = await _run(
-        "-s", serial, "shell", "am", "start-foreground-service",
-        "-n", BRIDGE_SERVICE, "--ei", "src", str(src), "--ei", "port", str(port),
-        "--ei", "rate_xuong", str(settings.phone_rate_xuong),
-        "--ei", "rate_len", str(settings.phone_rate_len),
-    )
+    code, out, err = await _run(*_lenh_bridge(serial, port, src, usage, dem_xuong))
     combined = f"{out}\n{err}"
     if code != 0 or "Error" in combined:
         return False, combined.strip() or "Không bật được app cầu nối"
@@ -552,8 +575,11 @@ async def start_bridge(serial: str, port: int = 8123, src: int = SRC_VOICE_CALL)
     ok, msg = await forward_port(serial, port)
     if not ok:
         return False, msg
+    ra_loa = " — RA LOA NGOÀI (chế độ đo)" if usage == 2 else ""
+    ra_loa += f", đệm xuống {dem_xuong}ms" if dem_xuong is not None else ""
     return True, (f"Đã bật cầu nối (nguồn {src}, cổng {port}, "
-                  f"xuống {settings.phone_rate_xuong}Hz / lên {settings.phone_rate_len}Hz)")
+                  f"xuống {settings.phone_rate_xuong}Hz / lên {settings.phone_rate_len}Hz)"
+                  f"{ra_loa}")
 
 
 async def stop_bridge(serial: str, port: int = 8123) -> tuple[bool, str]:

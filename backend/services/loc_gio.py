@@ -42,6 +42,14 @@ NGUONG_THAP = 0.70
 # lượng thật (đo được 74-82% năng lượng nằm ở 300-1000Hz).
 CAT_HZ = 300.0
 
+# Ngưỡng dùng TRONG lượt (đường đếm im lặng và thời lượng tiếng để cắt lời),
+# chặt hơn ngưỡng lúc mở. Đo trên 3 bản ghi 06-09-2026
+# (`scripts/do_gio_trong_luot.py`): trong tiếng nói thật, khung có tỉ lệ dải
+# thấp >= 0,80 chỉ 2,4-5,8% và chuỗi liên tiếp dài nhất 40-120ms - không thể tự
+# đếm đủ SILENCE_END_MS để đóng oan một lượt. Ở 0,70 chuỗi lên tới 160ms. Còn
+# xung đơn âm ~200Hz (khớp tần khung TDMA GSM) đo được đều >= 0,85.
+NGUONG_THAP_TRONG_LUOT = 0.80
+
 
 def ty_le_dai_thap(khung: np.ndarray, sr: int) -> float:
     """Tỉ lệ năng lượng dưới `CAT_HZ` của một khung. Trả 0.0 khi khung rỗng/lặng."""

@@ -109,7 +109,10 @@ async def tom_tat_phien(session_id: str, llm) -> dict | None:
         return None
 
     try:
-        raw = await llm.generate_simple(_PROMPT.format(ban_ghi=ban_ghi))
+        # 400 token: JSON 4-5 trường tiếng Việt dài ~350 ký tự; mặc định 100 của
+        # `generate_simple` cắt cụt giữa trường thứ hai - đo được ngày 06-09-2026,
+        # 326 ký tự rồi đứt ở '"nhu_cau": "các sản phẩm v'.
+        raw = await llm.generate_simple(_PROMPT.format(ban_ghi=ban_ghi), num_predict=400)
     except Exception as e:
         logger.warning(f"[tóm tắt] LLM lỗi cho {session_id}: {e}")
         return None

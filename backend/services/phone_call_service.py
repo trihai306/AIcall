@@ -28,12 +28,15 @@ from backend.services.audio_utils import (
     resample_lien_tuc,
 )
 from backend.pipeline.session_manager import viec_cho_doan_ngan
+from backend.services.cat_loi_dieu_kien import nen_dung
 from backend.services.dem_truoc import DEM_TRUOC_MS, DemTruoc
 from backend.services.gender_detect import doan_gioi_tinh
-from backend.services.loc_gio import la_gio
+from backend.services.khu_vong import KhuVong
+from backend.services.loc_gio import NGUONG_THAP_TRONG_LUOT, la_gio
 from backend.services.nhac_im_lang import (chon_cau_nhac, co_nen_nhac,
                                             dang_xu_ly_luot, moc_dem_im)
 from backend.services.recorder import GhiAmCuocGoi
+from backend.services.so_manh_phat import SoManhPhat
 from backend.services.voicemail_detect import BoDoHopThuThoai
 
 logger = logging.getLogger(__name__)
@@ -59,8 +62,12 @@ NGUONG_HEP_BANG = 16000
 
 # Ngưỡng nhận biết có tiếng. Đo trên int16: nền im lặng của đường thoại thường
 # dưới 200, giọng nói bình thường vài nghìn.
-VAD_RMS_ON = 700.0
-VAD_RMS_OFF = 400.0        # ngưỡng thấp hơn để không cắt giữa câu (hysteresis)
+#
+# CẢ HAI đọc từ cấu hình: số đúng phụ thuộc cách nói của từng nhóm khách nên phải
+# chỉnh được ngoài hiện trường. Đọc lúc NẠP MODULE nên sửa .env xong phải khởi
+# động lại dịch vụ. Xem `config.py` cho số đo chọn ra từng giá trị.
+VAD_RMS_ON = settings.phone_vad_rms_on
+VAD_RMS_OFF = settings.phone_vad_rms_off
 # Im bao lâu thì coi là khách nói xong. Đây là phần lớn nhất của độ trễ CẢM
 # NHẬN được: STT và LLM đã được `speculate()` chạy sẵn trong lúc khách còn nói,
 # nên sau khi dứt lời gần như chỉ còn chờ đúng quãng im này rồi TTS.
@@ -103,6 +110,15 @@ MIN_TURN_MS = 130
 # thôi thì mọi tiếng gõ bàn, tiếng ho, tiếng xe ngoài đường đều mở một lượt mới -
 # đo trong phòng làm việc: nền ~1235 so với ngưỡng 700, cứ vài giây lại kích một
 # lần và cắt luôn câu AI đang nói dở.
+#
+# Con số 1235 đó đo trên MICRO MÁY TÍNH. Cầu tiếng điện thoại sạch hơn hẳn: nền
+# trung vị 8, max 30 trên 73 cuộc gọi thật. Đừng lấy nó làm căn cứ cho đường thoại.
+#
+# CHÍNH số 4 này là thứ làm máy bỏ sót lời khách nói nhỏ, chứ không riêng ngưỡng:
+# cuộc 08c0d3e0 có hai lời khách vượt ngưỡng 700 (đỉnh 1431 và 1051) nhưng chỉ
+# được 3 khung liên tiếp vì tụt xuống ở chỗ trũng giữa hai âm tiết. Đã chữa bằng
+# cách hạ SÀN ngưỡng bật (`phone_vad_rms_on` 700 -> 500) chứ không hạ số này -
+# hạ số này là mở cửa cho tiếng gõ, tiếng ho vốn chỉ dài 1-2 khung.
 VAD_ON_FRAMES = 4          # 80ms liên tục
 
 # Khách im bấy nhiêu thì bắn NGAY một lượt đoán trên TOÀN BỘ câu, không đợi hết
@@ -448,7 +464,7 @@ class PhoneAudioSink:
                 self.bridge._luot_dang_chay = True
                 # AI mở miệng -> thôi đếm im lặng.
                 self.bridge._luc_ai_noi_xong = None
-                await self.bridge.play(wav)
+                await self.bridge.play(wav, chu=msg.get("text", ""))
             return
 
         if kind == "transcript":
@@ -467,6 +483,7 @@ class PhoneAudioSink:
             # Đóng cửa sổ đếm đói khung. Tiếng còn xếp hàng vẫn phát nốt, nhưng
             # từ đây TTS không còn nợ gì nên chờ lâu không phải lỗi của nó.
             self.bridge._luot_dang_chay = False
+            self.bridge._so_luot_ket_thuc += 1
             # Mốc để đếm im lặng. Đặt ở ĐÂY chứ không ở lúc hàng đợi rỗng: hàng
             # đợi rỗng giữa hai mảnh là chuyện thường, còn `turn_complete` mới
             # là lúc AI thật sự hết chuyện để nói.
@@ -507,6 +524,18 @@ class PhoneCallBridge:
         self.sink = PhoneAudioSink(self)
 
         self._out: asyncio.Queue[bytes] = asyncio.Queue()
+        # Sổ ghi mảnh nào đã xếp vào `_out` và dài bao nhiêu khung. Lúc khách
+        # cắt lời, `drop_pending_audio()` biết nó bỏ bao nhiêu khung; sổ này
+        # dịch con số đó thành CHỮ khách chưa kịp nghe.
+        self._so_manh = SoManhPhat()
+        # Khung tiếng khách chưa kịp nghe lúc bị cắt lời, chờ lượt sau đọc nốt.
+        self._khung_con_do: list[bytes] = []
+        # Khử tiếng AI vọng ngược vào kênh khách. Tham chiếu nạp ở `_write_loop`
+        # (khung ĐÃ đi xuống máy), khung micro đi qua nó ở `_read_loop` trước khi
+        # VAD/STT thấy. Bản ghi vẫn nhận micro thô - giữ bằng chứng.
+        self.khu_vong = KhuVong(sr=RATE_LEN, khung=FRAME_BYTES_LEN // 2)
+        # Đọc cờ MỘT LẦN lúc dựng cầu, không đọc `settings` giữa vòng thu.
+        self.khu_vong_bat = bool(settings.phone_khu_vong)
         self._tasks: list[asyncio.Task] = []
         self.running = False
         # Lượt đang sinh câu trả lời. Phải giữ để HUỶ được khi khách chen ngang:
@@ -556,6 +585,24 @@ class PhoneCallBridge:
         # Đếm khung bị bỏ vì là gió - để biết cuộc gọi có ồn gió hay không mà
         # không phải mở bản ghi ra nghe.
         self._khung_gio_bo = 0
+        # Khung TRONG lượt vượt ngưỡng tắt nhưng là xung dải thấp (~200Hz), đã
+        # bị bỏ khỏi bộ đếm "khách còn nói". Nhiều nghĩa là kênh đang "tè tè".
+        self._khung_gio_trong_luot = 0
+        # Khung bị bộ khử vọng đánh dấu là VỌNG THUẦN và vì thế không được tính
+        # là khách nói (không mở lượt, không giữ lượt mở, không kích cắt lời).
+        self._khung_vong_bo = 0
+        # Khung vượt ngưỡng nhưng nhỏ hơn hẳn mức khách đã biết (tiếng nền).
+        self._khung_nen_bo = 0
+        # Số lần cắt lời THẬT (AI đang phát hoặc đang sinh lúc quyết định cắt).
+        self._so_lan_cat_loi = 0
+        # Số lượt đã kết thúc (tăng ở `turn_complete`). Vòng ghi dùng để biết
+        # lượt có kết thúc TRONG LÚC nó đang chờ khung hay không.
+        self._so_luot_ket_thuc = 0
+        # Mức khách ĐÃ BIẾT: đỉnh của các lượt khách trước trong cuộc gọi này,
+        # suy giảm dần theo `settings.phone_muc_khach_ban_ra_s`. Tiếng nền (TV,
+        # người khác) nhỏ hơn hẳn mức này thì không mở lượt, không cắt lời.
+        self.muc_khach = 0.0
+        self._muc_khach_luc = time.monotonic()
 
         # Chưa nối máy thì đường xuống chỉ có nhạc chờ / hồi âm chuông. Để
         # pipeline nghe cái đó thì STT phiên âm ra rác và AI trả lời vào hư
@@ -596,11 +643,30 @@ class PhoneCallBridge:
     # --- vòng đời ---------------------------------------------------------
 
     def nguong_on(self) -> float:
-        """Ngưỡng coi là khách bắt đầu nói. Lấy cái CAO HƠN giữa hằng số và nền
-        kênh nhân hệ số - nền thấp thì giữ như cũ, nền cao thì tự nâng theo."""
+        """Ngưỡng coi là khách bắt đầu nói. Lấy cái CAO HƠN giữa sàn cấu hình và
+        nền kênh nhân hệ số - nền thấp thì giữ sàn, nền cao thì tự nâng theo.
+
+        Lưu ý khi chỉnh sàn: trên cầu tiếng điện thoại nền đo được chỉ 8-30, nên
+        nhánh `nen_kenh * VAD_HE_SO_ON` gần như KHÔNG BAO GIỜ vượt sàn - sàn là
+        thứ quyết định, không phải nhánh thích nghi."""
         if self.nen_kenh is None:
             return VAD_RMS_ON
         return max(VAD_RMS_ON, self.nen_kenh * VAD_HE_SO_ON)
+
+    def muc_khach_hieu_luc(self) -> float:
+        """Mức khách đã biết sau khi suy giảm: giảm một nửa mỗi
+        `phone_muc_khach_ban_ra_s` giây không có lượt mới."""
+        if self.muc_khach <= 0:
+            return 0.0
+        troi = time.monotonic() - self._muc_khach_luc
+        return self.muc_khach * 0.5 ** (troi / max(settings.phone_muc_khach_ban_ra_s, 1.0))
+
+    def _nguong_theo_khach(self, he_so: float) -> float:
+        """Ngưỡng suy từ mức khách đã biết, chặn trên để một lần nói to bất
+        thường không khoá luôn máy. 0 khi chưa biết gì về khách."""
+        if he_so <= 0:
+            return 0.0
+        return min(he_so * self.muc_khach_hieu_luc(), settings.phone_tran_nguong_khach)
 
     def nguong_tat(self) -> float:
         if self.nen_kenh is None:
@@ -770,23 +836,45 @@ class PhoneCallBridge:
         else:
             logger.info("%s không đói khung lần nào - đường tiếng xuống máy sạch",
                         self.tag)
+        if self._khung_gio_trong_luot:
+            logger.info("%s bỏ %d khung xung dải thấp (~200Hz) khỏi bộ đếm im lặng"
+                        " trong lượt - kênh có tiếng 'tè tè'",
+                        self.tag, self._khung_gio_trong_luot)
+        if self._khung_nen_bo:
+            logger.info("%s bỏ %d khung tiếng nền nhỏ hơn hẳn mức khách (%.0f) - "
+                        "TV/người khác nói", self.tag, self._khung_nen_bo, self.muc_khach)
+        kv = self.khu_vong
+        if kv.khung_da_khu:
+            logger.info("%s khử vọng: %d khung, đóng băng %d (%s), trễ %s ms, "
+                        "ERLE tốt nhất %.1f, %d khung vọng thuần (VAD bỏ %d)",
+                        self.tag, kv.khung_da_khu, kv.khung_dong_bang,
+                        kv.dong_bang_vi,
+                        f"{kv.tre * 1000 / RATE_LEN:.0f}" if kv.tre else "?",
+                        kv.erle_max, kv.khung_la_vong, self._khung_vong_bo)
         logger.info(f"{self.tag} đã đóng cầu tiếng ({self.turns} lượt)")
 
     # --- chiều ra: tiếng AI xuống điện thoại -------------------------------
 
-    async def play(self, wav_bytes: bytes, xu_ly: bool = True):
+    async def play(self, wav_bytes: bytes, xu_ly: bool = True, chu: str = ""):
         """Nhận WAV từ TTS (24kHz), đưa về RATE_XUONG rồi xếp hàng gửi xuống máy.
 
         `xu_ly=False` gửi nguyên tiếng gốc, chỉ dùng khi đo để so sánh - đường
         thật luôn phải qua bước kiểm soát mức.
+
+        `chu` là lời của chính mảnh này, ghi vào `self._so_manh` để lúc khách
+        cắt lời còn biết khách đã nghe tới đâu. Bỏ trống thì mảnh vẫn phát bình
+        thường, chỉ là không đọc nốt được nếu bị cắt ngay tại nó.
         """
         audio, rate = _wav_to_pcm(wav_bytes)
         if not xu_ly:
             if rate != RATE_XUONG:
                 audio = resample_audio(audio, rate, RATE_XUONG)
             pcm = float32_to_int16(audio)
+            n_khung = 0
             for i in range(0, len(pcm) - FRAME_BYTES_XUONG + 1, FRAME_BYTES_XUONG):
                 await self._out.put(pcm[i:i + FRAME_BYTES_XUONG])
+                n_khung += 1
+            self._so_manh.them(chu, n_khung)
             return
         # Bộ bù chỉ có nghĩa khi đầu kia là LOA THOẠI HẸP BĂNG. Đường xuống băng
         # rộng thì không có gì để bù, bật lên chỉ tự cắt trầm và nâng chói - đúng
@@ -812,8 +900,11 @@ class PhoneCallBridge:
 
         # Cắt thành khung 20ms: gửi cả cục thì đệm của điện thoại phình lên,
         # khách nghe trễ và ngắt lời không kịp tác dụng.
+        n_khung = 0
         for i in range(0, len(pcm) - FRAME_BYTES_XUONG + 1, FRAME_BYTES_XUONG):
             await self._out.put(pcm[i:i + FRAME_BYTES_XUONG])
+            n_khung += 1
+        self._so_manh.them(chu, n_khung)
 
     def drop_pending_audio(self) -> int:
         """Bỏ hết tiếng AI còn xếp hàng — dùng khi khách chen ngang.
@@ -824,15 +915,32 @@ class PhoneCallBridge:
         lần khi tắt phựt, về 0 khi có vuốt.
         """
         khung_dau = None
+        giu: list[bytes] = []
         n = 0
         while not self._out.empty():
             try:
                 f = self._out.get_nowait()
                 if khung_dau is None:
                     khung_dau = f
+                giu.append(f)
                 n += 1
             except asyncio.QueueEmpty:
                 break
+
+        # GIỮ chứ không vứt: đây đúng là phần khách chưa kịp nghe, và lượt sau
+        # có thể cần đọc nốt nó. Phát lại tiếng đã sinh thay vì nhờ TTS sinh lại
+        # tiết kiệm 300-700ms TTFA lẫn một lượt GPU, và quan trọng hơn là giữ
+        # đúng tông: cao độ F5 phụ thuộc nội dung chữ nên mảnh sinh lại nghe
+        # lệch tông với đoạn khách vừa nghe.
+        self._khung_con_do = giu
+        # Đặt luôn tại đây thay vì ở vòng thu: chỉ chỗ này biết CHÍNH XÁC bao
+        # nhiêu khung khách chưa kịp nghe. Lấy độ dài từ sổ mảnh thì ra số dài
+        # hơn thực tế - sổ tính TRỌN mảnh, còn hàng đợi chỉ giữ phần chưa phát
+        # của mảnh đang dở. Cuộc gọi 47475e87 (06-09-2026) ghi "còn dở 3.0s"
+        # trong khi chỉ phát lại được 103 khung = 2,06s, tức luật chặn 3 giây
+        # đang đo bằng thước rộng hơn thực tế và chặn oan.
+        self.session.cau_ai_con_do = self._so_manh.con_do(n)
+        self.session.giay_ai_con_do = round(len(giu) * FRAME_MS / 1000, 3)
 
         if khung_dau is not None:
             x = int16_to_float32(khung_dau)
@@ -842,6 +950,19 @@ class PhoneCallBridge:
             except asyncio.QueueFull:
                 pass
         return n
+
+    def phat_lai_phan_do(self) -> int:
+        """Đưa phần khách chưa kịp nghe trở lại hàng đợi phát. Trả về số khung.
+
+        Lấy MỘT LẦN: không dọn thì vài lượt sau khách lại nghe một câu đã cũ.
+        """
+        khung, self._khung_con_do = self._khung_con_do, []
+        for f in khung:
+            try:
+                self._out.put_nowait(f)
+            except asyncio.QueueFull:
+                break
+        return len(khung)
 
     async def _cho_luot_cu_dung(self, cho_giay: float = 2.0):
         """Chờ lượt đang bị xin dừng tới điểm an toàn, rồi mới cho lượt mới chạy.
@@ -936,9 +1057,16 @@ class PhoneCallBridge:
                 # khung - xem chú thích chỗ khai báo cờ.
                 dang_giua_cau = (self._luot_dang_chay and next_at is not None
                                  and _t_cho <= next_at + RESET_GAP)
+                ket_thuc_truoc = self._so_luot_ket_thuc
                 frame = await self._out.get()
                 now = time.perf_counter()
                 _cho_ms = (now - _t_cho) * 1000.0
+                # Lượt kết thúc TRONG LÚC chờ (khách cắt lời, hàng đợi bị dọn)
+                # thì khung kế tiếp thuộc lượt mới - quãng chờ đó không phải TTS
+                # đẻ không kịp. Cuộc 64b6f2ac (06-09-2026) ghi "ĐÓI KHUNG 7792ms
+                # giữa câu" đúng vì thế, và số đó lẫn vào thống kê đói khung thật.
+                if self._so_luot_ket_thuc != ket_thuc_truoc:
+                    dang_giua_cau = False
                 if dang_giua_cau and _cho_ms > FRAME_MS:
                     self._doi_lan += 1
                     self._doi_tong_ms += _cho_ms
@@ -967,8 +1095,13 @@ class PhoneCallBridge:
                 # đã qua hàng đợi và chắc chắn được phát ra. Tiếng bị bỏ vì khách
                 # cắt lời không bao giờ đi qua điểm này, nên bản ghi khớp với thứ
                 # khách thật sự nghe thấy.
+                khung_8k = self._xuong_8k(frame)
                 if self.ghi_am is not None:
-                    self.ghi_am.them_bot(self._xuong_8k(frame))
+                    self.ghi_am.them_bot(khung_8k)
+                # Tham chiếu cho bộ khử vọng: cùng chỗ, cùng lý do với bản ghi -
+                # tới đây thì khung chắc chắn được phát ra.
+                if self.khu_vong_bat:
+                    self.khu_vong.them_tham_chieu(khung_8k)
 
                 try:
                     self.writer.write(frame)
@@ -1086,8 +1219,21 @@ class PhoneCallBridge:
         dem_truoc = DemTruoc(DEM_TRUOC_MS, FRAME_MS)
         on_streak = 0               # số khung liên tiếp vượt ngưỡng
         speaking = False
+        # Khách bắt đầu gây tiếng trong lúc AI đang nói, nhưng CHƯA đủ điều kiện
+        # để kết luận đây là cắt lời. Xem `cat_loi_dieu_kien.nen_dung`.
+        can_nhac = False
         silence_ms = 0
+        # Bản đếm im lặng CHỈ THEO RMS, không có lưới gió. Dùng riêng cho kiểm
+        # tra MIN_TURN_MS: lưới gió sinh ra để ĐÓNG lượt sớm hơn khi kênh "tè
+        # tè", không được phép làm chặt thêm điều kiện "đủ thành một lượt".
+        # Bản ghi 2fe53f0c (14-08) giây 21,5: tiếng đáp 180ms kết bằng 2 khung
+        # đuôi dải thấp ("ừ", "dạ" đều thế); tính đuôi là im thì còn 100ms < 130
+        # và tiếng đáp thật biến mất. Xem tests/test_xung_200hz_trong_luot.py.
+        silence_rms_ms = 0
         speech_ms = 0
+        # Đỉnh RMS của lượt đang mở - mốc cho ngưỡng tắt tương đối. Xem
+        # `settings.phone_tat_theo_dinh`.
+        dinh_luot = 0.0
         spec_cuoi_bytes = 0         # mốc byte của lần đoán cuối câu, 0 = chưa đoán
 
         try:
@@ -1099,6 +1245,7 @@ class PhoneCallBridge:
                     if not await self.noi_lai():
                         await asyncio.sleep(0.5)
                     speaking, on_streak, silence_ms, speech_ms = False, 0, 0, 0
+                    silence_rms_ms = 0
                     spec_cho.clear()
                     continue
 
@@ -1124,8 +1271,20 @@ class PhoneCallBridge:
                 if self.ghi_am is not None:
                     self.ghi_am.them_khach(int16_to_float32(frame))
 
+                # Trừ tiếng AI vọng ngược TRƯỚC khi VAD, đệm trước, đoán trước và
+                # STT nhìn thấy khung này. Bản ghi ở trên đã lấy bản THÔ. Bộ khử
+                # tự ngủ khi AI im quá 1s nên lúc rảnh không tốn gì.
+                # `float32_to_int16` trả BYTES sẵn (như `play()` vẫn cắt khung từ
+                # nó), không phải mảng - gọi `.tobytes()` lên đó là vòng thu chết
+                # lặng ở khung đầu tiên, và test đầu của bộ khử đã "xanh" oan vì
+                # nó chỉ đòi 0 lượt.
+                if self.khu_vong_bat and self.khu_vong.dang_thuc:
+                    frame = float32_to_int16(
+                        self.khu_vong.xu_ly(int16_to_float32(frame)))
+
                 if self.tam_dung_nghe:
                     speaking, on_streak, silence_ms, speech_ms = False, 0, 0, 0
+                    silence_rms_ms = 0
                     spec_cho.clear()
                     # Đo lại nền cho mỗi lần mở nghe: mỗi cuộc gọi một điều kiện
                     # sóng khác nhau, giữ nền của cuộc trước là đo sai.
@@ -1198,28 +1357,36 @@ class PhoneCallBridge:
                     if du_muc and la_gio(int16_to_float32(frame), RATE_LEN):
                         du_muc = False
                         self._khung_gio_bo += 1
+                    # Tiếng AI vọng ngược mà phần dư sau khử vẫn vượt ngưỡng:
+                    # bộ khử biết đó là vọng (phần lớn năng lượng do tham chiếu
+                    # giải thích) - không phải khách mở miệng.
+                    if du_muc and self.khu_vong.la_vong:
+                        du_muc = False
+                        self._khung_vong_bo += 1
+                    # Nhỏ hơn hẳn mức khách đã biết -> tiếng nền, không phải
+                    # khách. Xem `settings.phone_mo_theo_muc_khach`.
+                    if du_muc and rms < self._nguong_theo_khach(settings.phone_mo_theo_muc_khach):
+                        du_muc = False
+                        self._khung_nen_bo += 1
                     on_streak = on_streak + 1 if du_muc else 0
                     if on_streak >= VAD_ON_FRAMES:
                         on_streak = 0
-                        # Khách bắt đầu nói. Nếu AI đang nói dở thì đây là CẮT LỜI:
-                        # phải dừng cả tiếng đang xếp hàng LẪN lượt đang sinh, rồi
-                        # giữ câu nói dở để ghép vào câu sắp tới.
+                        # Khách bắt đầu gây tiếng. Nếu AI đang nói dở thì ĐÂY
+                        # CHƯA PHẢI cắt lời - mới chỉ là có tiếng.
+                        #
+                        # Bản cũ cắt ngay tại đây, tức chỉ cần 80ms tiếng vượt
+                        # ngưỡng (VAD_ON_FRAMES=4) là AI câm. Ngưỡng đó bắt cả
+                        # tiếng ho, tiếng "dạ" khách đế theo trong lúc nghe, và
+                        # tiếng AI vọng ngược vào micro của khách. Giờ chỉ treo
+                        # cờ cân nhắc; quyết định nằm ở `nen_dung` bên dưới, khi
+                        # đã biết khách nói dài bao nhiêu và nói cái gì.
                         dang_noi = not self._out.empty() or (
                             self._luot_task is not None and not self._luot_task.done()
                         )
-                        if dang_noi:
-                            # Bỏ tiếng đang xếp hàng NGAY - khách phải nghe AI im
-                            # tức thì. Còn lượt đang sinh thì xin dừng bằng cờ chứ
-                            # không cắt cứng: cắt giữa lúc STT chưa xong là mất
-                            # luôn câu khách vừa nói, không còn gì để ghép.
-                            bo = self.drop_pending_audio()
-                            self.session.yeu_cau_huy = True
-                            logger.info(f"{self.tag} khách cắt lời — bỏ %d khung tiếng AI,"
-                                        " xin dừng lượt đang sinh", bo)
-                            # Chốt chặn: LLM treo thì cờ không tới được điểm kiểm,
-                            # lúc đó mới cắt cứng. Chạy nền để vòng thu không nghẽn.
-                            asyncio.create_task(self._cat_cung_neu_khong_dung())
+                        can_nhac = dang_noi
                         speaking, silence_ms, speech_ms = True, 0, 0
+                        silence_rms_ms = 0
+                        dinh_luot = rms
                         # Khách mở miệng -> thôi đếm im lặng NGAY, đừng đợi
                         # `transcript` (nó chỉ về sau khi STT xong, tức muộn
                         # hơn cả giây - đủ để vòng nhắc chen vào).
@@ -1274,14 +1441,114 @@ class PhoneCallBridge:
                         logger.debug(f"{self.tag} đoán trước bỏ qua: {e}")
                 speech_ms += FRAME_MS
                 truoc_im = silence_ms
-                silence_ms = silence_ms + FRAME_MS if rms < self.nguong_tat() else 0
+                # Khung tính là IM nếu dưới ngưỡng tắt, HOẶC vượt ngưỡng nhưng là
+                # xung dải thấp. Trước đây chỉ xét RMS, và đó là gốc thật của
+                # cuộc gọi kẹt 15 giây `decf104f` (06-09-2026): 153 xung đơn âm
+                # ~200Hz (khớp tần khung TDMA GSM), mỗi xung 40-200ms cách nhau
+                # 300-900ms, xung nào cũng đặt lại `silence_ms` nên lượt chỉ đóng
+                # được ở trần MAX_TURN_MS. `la_gio` bắt đúng loại này nhưng chỉ
+                # chạy lúc MỞ lượt. Nâng ngưỡng tắt 400->500 chỉ thoát sát nút
+                # (im dài nhất 1240ms); bỏ khung gió thì 2100ms.
+                #
+                # Cùng lưới bảo vệ đường cắt lời: `speech_ms - silence_ms` bên
+                # trên cũng bị xung thổi phồng, "dạ" 300ms cộng vài xung là quá
+                # 700ms và AI bị cắt oan. Chỉ tính FFT khi RMS đã vượt ngưỡng.
+                # Ngưỡng tắt của LƯỢT NÀY: cố định, hoặc một phần đỉnh lượt -
+                # cái nào cao hơn. Khách ở gần micro nên to hơn hẳn tiếng nền
+                # (TV, người khác nói): cuộc 64b6f2ac (06-09-2026) khách đỉnh
+                # 3300-8200 rồi im, TV 800-2500 giữ lượt mở tới trần 15s với
+                # ngưỡng cố định 500; 15% đỉnh (≈1234) đóng lượt sau 3,3s.
+                dinh_luot = max(dinh_luot, rms)
+                nguong_tat_luot = max(self.nguong_tat(),
+                                      settings.phone_tat_theo_dinh * dinh_luot)
+                # Bộ đếm cho MIN_TURN_MS dùng ngưỡng CỐ ĐỊNH: ngưỡng theo đỉnh
+                # chỉ để đóng lượt. Chạy lại 2fe53f0c với hệ số 0,15 thì tiếng
+                # đáp 180ms (đỉnh ~6500, đuôi 1116/550) biến mất y như lần lưới
+                # gió - đuôi bị tính là im, còn 120ms < 130.
+                silence_rms_ms = silence_rms_ms + FRAME_MS if rms < self.nguong_tat() else 0
+                im = rms < nguong_tat_luot
+                if not im and la_gio(int16_to_float32(frame), RATE_LEN,
+                                     NGUONG_THAP_TRONG_LUOT):
+                    im = True
+                    self._khung_gio_trong_luot += 1
+                # Khung vọng thuần cũng là IM với bộ đếm: khách nói ngắn rồi
+                # đuôi lượt toàn tiếng AI vọng thì lượt phải đóng ngay sau lời
+                # khách, không để đuôi vọng kéo dài lượt và đi vào STT thành
+                # chữ rác (cuộc 1c1c3b16: "rồi không đình mà sợ đấy").
+                if not im and self.khu_vong.la_vong:
+                    im = True
+                    self._khung_vong_bo += 1
+                silence_ms = silence_ms + FRAME_MS if im else 0
+                # Phần tiếng "đủ thành lượt" đếm theo RMS thuần (như trước khi
+                # có lưới gió); còn `silence_ms` bên trên - có lưới - chỉ để đóng
+                # lượt và để `nen_dung` quyết định cắt lời.
+                talk_ms = speech_ms - silence_rms_ms
+
+                # Đang treo cờ cân nhắc: khách gây tiếng đè lên AI, nhưng chưa
+                # rõ có đáng dừng AI không. Xét lại mỗi khung cho tới khi đủ
+                # điều kiện, hoặc cho tới khi khách ngừng tiếng (nhánh dưới).
+                # `speech_ms - silence_ms`, KHÔNG phải `speech_ms`: biến sau
+                # tăng ở mọi khung kể từ lúc mở đoạn, kể cả khung IM. Lấy nó
+                # thì một tiếng ho 300ms cộng quãng lặng sau đó vẫn vượt ngưỡng
+                # 700ms - đúng cái mà lưới này sinh ra để chặn. Cùng đại lượng
+                # `talk_ms` mà nhánh kết thúc lượt bên dưới dùng.
+                # Tiếng đè chưa tới mức khách đã biết thì chưa xét cắt lời: TV
+                # ở 25% mức khách nói quá 700ms vẫn là TV. Khách nói to lên thì
+                # `dinh_luot` vượt mốc và xét như thường.
+                if (can_nhac and dinh_luot < self._nguong_theo_khach(
+                        settings.phone_cat_theo_muc_khach)):
+                    pass
+                elif can_nhac and nen_dung(
+                        tieng_ms=speech_ms - silence_ms,
+                        chu_tam=(self.session.spec_stt or (0, ""))[1],
+                        chu_ai=self._so_manh.chu_da_xep(),
+                        nguong_ms=settings.phone_cat_loi_min_ms):
+                    # Xét lại "AI có đang nói không" TẠI LÚC QUYẾT ĐỊNH, không
+                    # tin bản chụp lúc khách mở miệng: cuộc 64b6f2ac (06-09-2026)
+                    # câu chào còn vài khung lúc khách bắt đầu, 940ms sau hàng
+                    # đợi đã rỗng và không lượt nào đang sinh, mà vẫn ghi "cắt
+                    # lời — bỏ 0 khung, còn dở 0.0s" và đặt `yeu_cau_huy` lên
+                    # một lượt không tồn tại. AI đã nói xong thì khách chỉ đơn
+                    # giản là đang nói lượt của mình.
+                    if self._out.empty() and (self._luot_task is None
+                                              or self._luot_task.done()):
+                        can_nhac = False
+                        continue
+                    # Không có tiếng đang phát, chỉ có lượt ĐANG SINH: huỷ nó vì
+                    # một tiếng động không chữ là mất trắng câu trả lời cho khách
+                    # (cuộc 18d6836b: TV kêu 720ms lúc LLM đang sinh -> "AI: ''",
+                    # câu khách bị ghép với tiếng TV thành câu rác). Bỏ tiếng
+                    # đang phát thì rẻ, huỷ câu đang sinh thì đắt - chưa có chữ
+                    # thì chờ, có chữ có nghĩa mới huỷ.
+                    if self._out.empty() and not (self.session.spec_stt or (0, ""))[1].strip():
+                        continue
+                    can_nhac = False
+                    self._so_lan_cat_loi += 1
+                    # Bỏ tiếng đang xếp hàng NGAY - từ giây này khách phải nghe
+                    # AI im. Còn lượt đang sinh thì xin dừng bằng cờ chứ không
+                    # cắt cứng: cắt giữa lúc STT chưa xong là mất luôn câu khách
+                    # vừa nói, không còn gì để ghép.
+                    # `drop_pending_audio` ghi luôn phần khách chưa kịp nghe
+                    # vào phiên, để lượt sau đọc nốt.
+                    bo = self.drop_pending_audio()
+                    self.session.yeu_cau_huy = True
+                    logger.info(
+                        f"{self.tag} khách cắt lời sau %dms tiếng (nghe được %r)"
+                        " — bỏ %d khung tiếng AI, còn dở %.1fs: %r",
+                        speech_ms - silence_ms,
+                        (self.session.spec_stt or (0, ""))[1][:40],
+                        bo, self.session.giay_ai_con_do,
+                        self.session.cau_ai_con_do[:60])
+                    # Chốt chặn: LLM treo thì cờ không tới được điểm kiểm, lúc
+                    # đó mới cắt cứng. Chạy nền để vòng thu không nghẽn.
+                    asyncio.create_task(self._cat_cung_neu_khong_dung())
 
                 # Khách vừa ngừng tiếng -> ĐOÁN NGAY trên trọn câu, đừng để quãng
                 # im cuối trôi qua vô ích. Chỉ bắn ĐÚNG MỘT LẦN mỗi lượt (mốc cắt
                 # ngang SPEC_CUOI_MS), không thì cứ mỗi khung 20ms lại huỷ và
                 # dựng lại một bản đoán - vừa phí vừa không bản nào kịp xong.
                 if (truoc_im < SPEC_CUOI_MS <= silence_ms
-                        and speech_ms - silence_ms >= MIN_TURN_MS and tieng_8k):
+                        and talk_ms >= MIN_TURN_MS and tieng_8k):
                     # NHỚ mốc byte đã đoán. Từ đây tới lúc lượt kết thúc còn
                     # ~200ms khung im nữa được nối vào `tieng_8k`, nên nếu lượt
                     # thật lấy cả phần đuôi đó thì độ dài lệch và bộ nhớ STT
@@ -1296,6 +1563,34 @@ class PhoneCallBridge:
 
                 if silence_ms >= SILENCE_END_MS or speech_ms >= MAX_TURN_MS:
                     speaking = False
+                    # Khách dứt lời `silence_ms` TRƯỚC lúc này, không phải bây
+                    # giờ. Trừ ngược ra thay vì cộng hằng số SILENCE_END_MS: khi
+                    # lượt bị chốt do `speech_ms >= MAX_TURN_MS` thì khách vẫn
+                    # đang nói (`silence_ms` gần 0), cộng cứng 750ms là báo khách
+                    # chờ lâu hơn thực tế đúng 750ms trên chính những lượt dài
+                    # nhất - loại lượt đáng soi nhất.
+                    self.session.t_dut_loi = time.perf_counter() - silence_ms / 1000
+                    # Cờ cân nhắc còn treo tới đây nghĩa là đoạn tiếng vừa rồi
+                    # KHÔNG đủ điều kiện cắt lời: khách chỉ ho, hắng giọng, hay
+                    # "dạ" đế theo trong lúc AI nói. Vứt đoạn đó đi.
+                    #
+                    # Vứt chứ không để nó thành lượt: AI vẫn đang nói dở, mà
+                    # `_cho_luot_cu_dung()` chỉ chờ khi có `yeu_cau_huy` - không
+                    # có cờ đó thì nó trả về ngay và lượt mới chạy ĐÈ lên lượt
+                    # cũ, hai lượt cùng đẩy tiếng vào một hàng đợi.
+                    if can_nhac:
+                        can_nhac = False
+                        logger.info(
+                            f"{self.tag} bỏ %dms tiếng khách xen vào lúc AI đang "
+                            "nói - chưa đủ để coi là cắt lời", speech_ms - silence_ms)
+                        silence_rms_ms = 0
+                        self._khach_dang_noi = False
+                        self.session.take_audio()
+                        self.session.clear_speculation()
+                        spec_cho.clear()
+                        tieng_8k.clear()
+                        spec_cuoi_bytes = 0
+                        continue
                     # Khách ngừng nói -> hạ cờ NGAY, bất kể đoạn này có thành
                     # một lượt hay không. Trước đây chỉ hạ ở `turn_complete`,
                     # nên một tiếng hắng giọng ngắn hơn MIN_TURN_MS (không sinh
@@ -1320,8 +1615,11 @@ class PhoneCallBridge:
                     tieng_8k.clear()
                     spec_cuoi_bytes = 0
                     audio = self.session.take_audio()
-                    talk_ms = speech_ms - silence_ms
                     if talk_ms >= MIN_TURN_MS:
+                        # Ghi mức khách: đỉnh lượt này, hoặc mức cũ đã suy giảm -
+                        # cái nào lớn hơn.
+                        self.muc_khach = max(self.muc_khach_hieu_luc(), dinh_luot)
+                        self._muc_khach_luc = time.monotonic()
                         # Lượt cũ còn đang chạy và đang được xin dừng: CHỜ nó tới
                         # điểm an toàn rồi mới mở lượt mới. Dọn cờ ngay ở đây là
                         # hỏng đúng trường hợp thường gặp nhất - khách nói đè rồi
@@ -1437,6 +1735,7 @@ class PhoneCallBridge:
         Dùng cho câu bị cắt lời còn treo: chữ đã có sẵn từ lượt trước, còn đoạn
         tiếng khách nói tiếp thì quá ngắn để thành một lượt.
         """
+        self._so_manh.xoa()
         try:
             self.turns += 1
             await self.pipeline.process_text_turn(
@@ -1447,6 +1746,28 @@ class PhoneCallBridge:
 
     async def _handle_turn(self, pcm16k: bytes):
         """Một lượt của khách. Tiếng đã ở 16kHz sẵn từ vòng thu."""
+        # Sổ mảnh chỉ nói về lượt ĐANG phát. Không dọn thì nó tích luỹ cả cuộc
+        # gọi: lưới vọng đem chữ khách đối chiếu với lời của mười lượt trước nên
+        # chặn oan, và `con_do` duyệt ngược sang mảnh lượt cũ rồi bắt khách nghe
+        # lại câu từ đời nào. Dọn ở ĐÂY vì phần `con_do` của lượt vừa bị cắt đã
+        # được đọc xong lúc `drop_pending_audio()`, trước khi lượt này mở.
+        self._so_manh.xoa()
+        # Lượt trước bị khách cắt giữa chừng: đọc nốt phần họ chưa kịp nghe
+        # trước khi đáp câu mới. Phát lại chính tiếng đã sinh - xem
+        # `phat_lai_phan_do` cho lý do không nhờ TTS sinh lại.
+        #
+        # Dùng phiên âm TẠM chứ không phải bản phiên âm cuối: bản cuối chỉ có
+        # sau STT, tức muộn hơn cả câu đệm, lúc đó đọc nốt đã lỡ nhịp. Khách nói
+        # đủ dài để cắt được lời AI thì `spec_stt` gần như luôn đã có chữ.
+        if self.session.lay_cau_doc_not((self.session.spec_stt or (0, ""))[1]):
+            n = self.phat_lai_phan_do()
+            if n:
+                self.session.da_doc_not = True
+                logger.info(f"{self.tag} đọc nốt %d khung khách chưa kịp nghe", n)
+        else:
+            # Không đọc nốt thì phải DỌN, không thì phần dở treo lại và vài lượt
+            # sau khách nghe chen vào một câu từ đời nào.
+            self._khung_con_do = []
         try:
             self.turns += 1
             await self.pipeline.process_turn(
@@ -1475,6 +1796,7 @@ class PhoneCallManager:
             {
                 "serial": s, "port": c.port, "running": c.running,
                 "khung_gio_bo": c._khung_gio_bo,
+                "khung_gio_trong_luot": c._khung_gio_trong_luot,
                 "turns": c.turns, "last_error": c.last_error,
                 "khach_noi": c.sink.last_transcript, "ai_noi": c.sink.last_reply,
             }
@@ -1503,7 +1825,8 @@ class PhoneCallManager:
         if serial in self._calls:
             return False, "Máy này đã có phiên tiếng đang chạy"
 
-        ok, msg = await adb_service.start_bridge(serial, port=port, src=src)
+        ok, msg = await adb_service.start_bridge(
+            serial, port=port, src=src, dem_xuong=settings.phone_dem_xuong_ms)
         if not ok:
             return False, msg
 

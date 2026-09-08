@@ -328,6 +328,27 @@ class STTService:
         # Hoặc: rất ít từ khác nhau trong một câu dài.
         if len(set(tu)) <= len(tu) // 4:
             return f"kẹt vòng lặp: chỉ {len(set(tu))} từ khác nhau trong {len(tu)} từ"
+        # Hoặc: CHU KỲ DÀI. Cuộc gọi 64b6f2ac (06-09-2026) trả về một cụm 14 từ
+        # lặp 3 lần với logprob −0,16 - hai luật trên không chạm (không cụm 2 từ
+        # nào quá 50%, 16 từ khác nhau trong 45). Tìm chu kỳ p sao cho câu lặp
+        # lại chính nó lệch p từ trên ít nhất 2 chu kỳ liền và phần lặp phủ quá
+        # nửa câu. Khách nhắc lại một câu ngắn hai lần ("lãi suất bao nhiêu lãi
+        # suất bao nhiêu em") thì phần lặp chưa đủ nửa câu dài 8+ từ nên không oan.
+        # Thực tế lần lặp thứ ba thường THIẾU vài từ ("anh chẳng biết rồi ông" ->
+        # "anh chẳng nói với bà"), nên so lệch đúng một chu kỳ không đủ khớp.
+        # Xét theo n-gram lặp nguyên văn: người thật nhắc lại một câu ngắn (3-4
+        # từ) hai lần là thường, nhưng một cụm 8 từ lặp nguyên văn hai lần, hay
+        # 5 từ lặp ba lần, thì không phải lời nói tự nhiên.
+        for n, toi_thieu in ((8, 2), (5, 3)):
+            if len(tu) < n * toi_thieu:
+                continue
+            dem: dict[str, int] = {}
+            for i in range(len(tu) - n + 1):
+                k = " ".join(tu[i:i + n])
+                dem[k] = dem.get(k, 0) + 1
+            cum, so = max(dem.items(), key=lambda kv: kv[1])
+            if so >= toi_thieu:
+                return f"kẹt vòng lặp: cụm {n} từ {cum!r} lặp {so} lần"
         return ""
 
     @staticmethod

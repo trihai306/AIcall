@@ -342,7 +342,32 @@ _SO_RE = re.compile(r"\d")
 _NHAY = '"\'"“”‘’'
 
 
-def loc_cau_dem_llm(cau: str | None) -> str | None:
+# Từ chức năng - có mặt ở mọi câu đệm nhưng không nằm trong tài liệu nghiệp vụ.
+# Không cho chúng vào lưới "chữ có thật" thì câu đệm nào cũng bị vứt.
+_TU_THUONG = frozenset("""
+dạ vâng ạ à nhé nha ơi thì là của cho về với và hay hoặc anh chị mình em bên
+này kia đó ấy các những cái một số việc phần thêm nữa rồi đang sẽ được có không
+xin phép nói trình bày rõ hơn cụ thể nắm giúp ừ à ờ
+""".split())
+
+
+def tu_vung_tu_kho(van_ban) -> frozenset[str]:
+    """Vốn từ nghiệp vụ, rút từ các đoạn tài liệu. Chữ thường, bỏ dấu câu và số.
+
+    Truyền vào `loc_cau_dem_llm` để nó biết chữ nào là CÓ THẬT. Dựng ở nơi gọi
+    chứ không trong module này: `filler_pick` cố ý không import torch/RAG để test
+    chạy được trên máy không GPU.
+    """
+    import re as _re
+    ra = set()
+    for doan in (van_ban or ()):
+        for t in _re.split(r"[^\w]+", (doan or "").lower(), flags=_re.UNICODE):
+            if t and not _re.search(r"\d", t):
+                ra.add(t)
+    return frozenset(ra)
+
+
+def loc_cau_dem_llm(cau: str | None, tu_vung=None) -> str | None:
     """Lọc câu đệm mô hình vừa sinh. Trả None nghĩa là ĐỪNG DÙNG.
 
     Khác hẳn kho dựng sẵn: kho được người vận hành duyệt từng câu, còn đây là
@@ -381,6 +406,24 @@ def loc_cau_dem_llm(cau: str | None) -> str | None:
         return None
     if len(loi.split()) > TOI_DA_TU_CAU_DEM:
         return None
+    # LUẬT 5: mọi chữ phải CÓ THẬT trong tài liệu nghiệp vụ (hoặc là từ thường).
+    #
+    # Lời nhắc sinh câu đệm bảo mô hình "Nhắc lại CHỦ ĐỀ khách hỏi", nên nó chép
+    # trung thành - kể cả khi chủ đề đó là chữ máy nghe SAI. Cuộc gọi thật
+    # 1e8bd9de (07-09-2026): khách nói "khoản vay", STT nghe "khoảng tay" với
+    # logprob -0.06 (rất chắc), và câu đệm đọc thẳng "Dạ về khoảng tay bên em,".
+    #
+    # Lọc theo ĐỘ TIN của STT không cứu được ca này - máy nghe sai một cách tự
+    # tin. Thứ phân biệt được là: "khoản vay" có trong tài liệu, "khoảng tay"
+    # thì không.
+    #
+    # Không có vốn từ thì giữ nguyên hành vi cũ: thà phát câu đệm như trước còn
+    # hơn im lặng vì một tham số chưa được truyền vào.
+    if tu_vung:
+        import re as _re
+        for t in _re.split(r"[^\w]+", loi.lower(), flags=_re.UNICODE):
+            if t and t not in _TU_THUONG and t not in tu_vung:
+                return None
     return loi + ","
 
 

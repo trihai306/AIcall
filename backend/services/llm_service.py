@@ -85,7 +85,13 @@ CORE_RULES = """QUY TẮC BẮT BUỘC:
    một câu trả lời cho câu mình không hiểu.
 12. Phần VÍ DỤ bên dưới chỉ để học ĐỘ DÀI và giọng điệu. TUYỆT ĐỐI không chép lại
    nguyên văn câu nào trong đó, trừ khi tình huống của khách đúng y như tình huống
-   của ví dụ."""
+   của ví dụ.
+13. BÁM MẠCH cuộc gọi. Đọc lại những gì hai bên đã trao đổi ở trên TRƯỚC KHI trả lời:
+   - Con số hay điều kiện em đã nói với khách rồi thì GIỮ NGUYÊN. Muốn đưa số khác
+     thì phải nói rõ vì sao khác ("với thu nhập đó thì mức vay lên tới...").
+   - Khách đã cho biết gì (thu nhập, số tiền muốn vay, tình trạng hồ sơ) thì DÙNG LẠI,
+     đừng hỏi lại thứ khách vừa nói.
+   - Đây là MỘT cuộc trò chuyện, không phải các câu hỏi rời nhau."""
 
 # Vì sao phải nhắc lại: mô hình 3B quên ràng buộc độ dài khi prompt dài. Đặt sát
 # lượt của khách nên nó "nhớ" hơn là luật số 2 nằm tận đầu prompt.
@@ -96,6 +102,29 @@ CORE_RULES = """QUY TẮC BẮT BUỘC:
 # câu hỏi.
 CORE_REMINDER = """NHẮC LẠI TRƯỚC KHI TRẢ LỜI: câu đầu phải TRẢ LỜI THẲNG thứ khách vừa
 hỏi. Sau đó tối đa 3 câu, tối đa 45 từ, mở đầu bằng "Dạ", xưng "em"."""
+
+# Bản dùng khi lượt này ĐÃ phát câu đệm. Hai khác biệt, cả hai đều cần:
+#
+#   1. Đưa NGUYÊN VĂN câu đệm vào. Mô hình cần biết đã nói CHỮ GÌ để khỏi lặp ý,
+#      chứ biết "đã có câu đệm" thì không đủ - đo 06-09-2026: câu đệm nói "Dạ về
+#      phần tài liệu," rồi mô hình đáp "em sẽ gửi thông tin chi tiết về sản phẩm
+#      vay tín chấp cho anh ngay", tức nói lại đúng ý vừa nói.
+#   2. BỎ lời dặn 'mở đầu bằng "Dạ"'. Câu đệm gần như luôn mở bằng "Dạ" rồi; giữ
+#      lại là khách nghe "Dạ ... Dạ ..." hai lần liền. Bản cũ chữa bằng cách XOÁ
+#      chữ "Dạ" sau khi mô hình đã sinh (`BotLichSu(bo_da=...)`) - chữa được cái
+#      chữ nhưng không chữa được việc mô hình MỞ ĐẦU LẠI cả câu.
+#
+# Là DỮ KIỆN của lượt, không phải quy tắc chung: quy tắc "bám mạch" thêm cùng
+# ngày đã không ăn vì bị quy tắc số 3 đè (khối THÔNG TIN THAM KHẢO nằm sát câu
+# hỏi hơn). Dữ kiện cụ thể thì không có gì để đè.
+# Bản dùng khi lượt này ĐÃ phát câu đệm. Chỉ khác `CORE_REMINDER` ở chỗ BỎ lời
+# dặn 'mở đầu bằng "Dạ"': câu đệm gần như luôn mở bằng "Dạ" rồi, giữ lại là khách
+# nghe "Dạ ... Dạ ..." hai lần liền.
+#
+# KHÔNG dặn gì thêm về việc nối câu - việc đó do `prefill` lo, xem
+# `stream_response`. Ba lần thử dặn bằng chữ đều hỏng, mỗi lần một kiểu.
+NHAC_CO_CAU_DEM = """NHẮC LẠI TRƯỚC KHI TRẢ LỜI: câu đầu phải TRẢ LỜI THẲNG thứ khách vừa
+hỏi. Sau đó tối đa 3 câu, tối đa 45 từ, xưng "em"."""
 
 # Dùng khi kịch bản không khai ví dụ nào. Không có ví dụ thì mô hình hay trả lời
 # dài gấp đôi - đây là chỗ nó học ĐỘ DÀI, không phải học nội dung.
@@ -140,6 +169,7 @@ class LLMService:
         co_cong_cu: bool = False,
         gioi_tinh: str = "",
         gioi_tinh_do_tin: float | None = None,
+        cau_dem: str = "",
     ) -> str:
         """Assemble the system prompt: fixed core rules + this scenario's parts.
 
@@ -219,7 +249,10 @@ class LLMService:
                 "- Câu chào hỏi, từ chối, hỏi thăm thì KHÔNG gọi hàm."
             )
 
-        parts.append(CORE_REMINDER)
+        # Câu đệm vừa phát -> lời nhắc NỐI TIẾP thay cho lời nhắc thường.
+        # Đặt CUỐI cùng, sát lượt của khách: cùng lý do với `CORE_REMINDER` -
+        # mô hình quên ràng buộc nằm tận đầu prompt khi prompt dài.
+        parts.append(NHAC_CO_CAU_DEM if (cau_dem or "").strip() else CORE_REMINDER)
         return "\n\n".join(p for p in parts if p)
 
     @staticmethod
@@ -295,6 +328,7 @@ class LLMService:
         system_prompt: str,
         tools: list[dict] | None = None,
         on_tool_calls=None,
+        prefill: str = "",
     ) -> AsyncGenerator[str, None]:
         """Stream LLM response token by token.
 
@@ -308,6 +342,25 @@ class LLMService:
         `streaming_pipeline` - chỗ đó mới cầm được phiên gọi và RAG.
         """
         full_messages = [{"role": "system", "content": system_prompt}] + messages
+        # PREFILL: đặt chữ khách VỪA NGHE (câu đệm) vào miệng mô hình, nó viết
+        # TIẾP thay vì mở đầu lại. Ollama 0.33.2 hỗ trợ - thử trên máy thật:
+        #
+        #   không prefill -> "Hạn mức vay tín chấp tối đa là 500 triệu đồng."
+        #   CÓ prefill    -> " em tư vấn tối đa là 500 triệu đồng."
+        #
+        # tức nó tự viết thường, tự bỏ chủ ngữ, tự không lặp chữ "hạn mức" - mà
+        # không cần một dòng dặn dò nào.
+        #
+        # VÌ SAO KHÔNG dặn bằng prompt: đã thử BA cách và hỏng ba kiểu khác nhau
+        # (06-09-2026, cùng một kịch bản đo):
+        #   luật chung        -> bị luật số 3 đè (khối THÔNG TIN THAM KHẢO nằm
+        #                        sát câu hỏi hơn)
+        #   ví dụ có nhãn SAI -> mô hình CHÉP luôn ví dụ sai
+        #   mẫu dạng "A + B"  -> mô hình chép cả vế A ("Dạ về hạn mức vay thì,
+        #                        Về hạn mức thì, em xin báo...")
+        # Prefill không phải một lời dặn nên không có gì đè được nó.
+        if (prefill or "").strip():
+            full_messages = full_messages + [{"role": "assistant", "content": prefill}]
         kw = {"tools": tools} if tools else {}
 
         with Timer("LLM-TTFT", logger):
@@ -364,7 +417,7 @@ class LLMService:
             self._da_keu_tran = True
             logger.warning(loi)
 
-    async def generate_simple(self, prompt: str) -> str:
+    async def generate_simple(self, prompt: str, num_predict: int = 100) -> str:
         """Non-streaming generation for simple tasks."""
         response = await self.client.chat(
             model=self.model,
@@ -377,7 +430,10 @@ class LLMService:
             # NẠP LẠI model mỗi lần đổi qua lại: đo 05-09-2026 mỗi lượt LLM chờ
             # token đầu 3-6 giây thay vì ~100ms, TTFA 53/60 lượt vượt trần.
             # Bộ tóm tắt gọi hàm này sau mỗi lượt nên lượt nào cũng dính.
-            options={"num_predict": 100, "temperature": 0.3, "stop": CHUOI_DUNG,
+            # `num_predict` mặc định 100 là cho câu trả lời MỘT DÒNG (quyết định
+            # gọi hàm, câu đệm). Ai cần JSON dài phải tự xin thêm - tóm tắt phiên
+            # bị cắt cụt ở đúng 100 token và mất tóm tắt mọi cuộc gọi 06-09-2026.
+            options={"num_predict": num_predict, "temperature": 0.3, "stop": CHUOI_DUNG,
                      "num_ctx": settings.llm_num_ctx},
         )
         msg = response.get("message", {}) if isinstance(response, dict) else getattr(response, "message", None)

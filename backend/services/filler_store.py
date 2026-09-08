@@ -20,6 +20,22 @@ logger = logging.getLogger(__name__)
 THU_MUC_FILLER = Path("data/fillers_wav")
 
 
+# Mã tình huống của NHÓM CÂU CHUNG: những câu luôn dùng được, phát khi không
+# nhận ra chủ đề. Nó là tình huống bình thường trong DB (sửa được trên giao diện
+# như mọi tình huống khác), chỉ khác ở hai chỗ do code định đoạt:
+#
+#   1. `pick_filler` rơi về nó khi tình huống thật không khớp
+#   2. ví dụ của nó KHÔNG được nhúng vào bộ chấm điểm - nếu nhúng thì nó cạnh
+#      tranh cosine với các tình huống thật và có thể THẮNG, khi đó khách hỏi
+#      lãi suất lại nghe câu trung tính thay vì "Dạ về lãi suất thì,"
+#
+# Vì sao là nhóm câu ĐỨNG MỘT MÌNH chứ không phải câu đuôi ghép vào sau mẩu mở
+# đầu: người dùng 06-09-2026 "làm ở nhóm câu chứ không phải ở cuối câu, cái cuối
+# câu đó bỏ đi vì khi nó nối hay vào sai". Ghép cũng đắt hơn hẳn - mỗi câu thêm
+# vào là nhân với 142 mẩu mở đầu (1430 clip), còn nhóm chung chỉ 10 clip.
+MA_NHOM_CHUNG = "chung"
+
+
 class LoiKho(ValueError):
     """Dữ liệu kho câu đệm sai. Nêu rõ câu nào sai để còn sửa được."""
 

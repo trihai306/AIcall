@@ -31,6 +31,31 @@ def test_ngan_sach_cho_phu_het_stt_da_do():
         f"{STT_CHAM_NHAT_MS}ms -> những lượt chậm mất hẳn tình huống")
 
 
+# Dư bao nhiêu so với STT chậm nhất thì còn chấp nhận được.
+#
+# Cần lưới này vì chiều DƯ không có triệu chứng nào nhìn ra được: log vẫn sạch,
+# test vẫn xanh, câu đệm vẫn đúng tình huống - chỉ có khách ngồi nghe im lâu hơn.
+#
+# Đã xảy ra thật: 650 chốt ngày 06-09 khi `PHONE_SILENCE_END_MS=500`, tức đà chạy
+# trước chỉ 200ms. Cùng ngày hôm đó `PHONE_SILENCE_END_MS` nâng lên 1000, đà chạy
+# trước thành 700ms, và 650 hoá thành DƯ 521ms mà không ai thấy. Cái giá đo trên
+# cuộc gọi 08c0d3e0: `_send_filler` là await ĐẦU TIÊN của lượt nên nó chặn cả câu
+# trả lời thật - 3/10 lượt câu đệm ra muộn 555/796/867ms, cộng cửa sổ im 1000ms
+# thành 1,5-1,9 giây khách không nghe thấy gì.
+DU_TOI_DA_MS = 300
+
+
+def test_ngan_sach_cho_khong_du_thua():
+    """Chờ là khách nghe im. Dư ngân sách = trả tiền cho thứ không dùng tới."""
+    chay_truoc = SILENCE_END_MS - SPEC_CUOI_MS
+    tong = chay_truoc + StreamingPipeline._CHO_TINH_HUONG_MS
+    assert tong - STT_CHAM_NHAT_MS <= DU_TOI_DA_MS, (
+        f"cho STT tận {tong}ms (chạy trước {chay_truoc}ms + chờ "
+        f"{StreamingPipeline._CHO_TINH_HUONG_MS}ms) trong khi chậm nhất đo được "
+        f"chỉ {STT_CHAM_NHAT_MS}ms -> dư {tong - STT_CHAM_NHAT_MS}ms, mà quãng dư "
+        f"này nằm trên đường găng của CÂU TRẢ LỜI THẬT chứ không riêng câu đệm")
+
+
 def test_ngan_sach_cho_khong_dai_hon_muc_chiu_duoc_quang_im():
     """Chờ = khách nghe im. Đừng chờ lâu hơn mức hệ thống tự coi là chịu được.
 

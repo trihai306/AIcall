@@ -121,6 +121,26 @@ class CallSession:
         # Sẽ được ghép vào câu kế tiếp - xem danh_dau_bi_cat/ghep_cau_bi_cat.
         self.cau_bi_cat = ""
 
+        # Phần lời AI đã sinh ra tiếng nhưng khách CHƯA kịp nghe vì cắt lời.
+        # Lượt sau đọc nốt phần này trước khi đáp câu mới - xem
+        # `cat_loi_dieu_kien.nen_doc_not` và `SoManhPhat`.
+        self.cau_ai_con_do = ""
+        self.giay_ai_con_do = 0.0
+        # Lượt này đã đọc nốt phần dở -> bỏ câu đệm, không nói hai đoạn dạo đầu.
+        self.da_doc_not = False
+
+        # Mốc `time.perf_counter()` lúc khách DỨT LỜI (khung tiếng cuối cùng),
+        # do vòng thu của đường thoại đặt khi chốt lượt.
+        #
+        # Vì sao không suy từ lúc pipeline bắt đầu chạy: `process_turn` chỉ được
+        # gọi SAU khi VAD nghe đủ `SILENCE_END_MS` im lặng (750ms) để dám chắc
+        # khách đã nói xong, cộng thêm quãng chờ lượt cũ dừng hẳn. Khách ngồi im
+        # trọn khoảng đó mà mọi số đo bắt đầu từ sau nó, nên "AI trả lời sau
+        # 1,2s" trên báo cáo thực ra là khách chờ ~2s.
+        #
+        # None ở đường chat gõ chữ - ở đó không có ai dứt lời.
+        self.t_dut_loi: float | None = None
+
         # Cờ xin dừng lượt đang chạy. Dùng cờ thay vì cắt cứng task vì cắt cứng
         # giữa lúc STT chưa xong sẽ mất luôn cả câu khách vừa nói - không còn gì
         # để ghép. Pipeline kiểm cờ này ở các điểm an toàn: ngay sau khi đã ghi
@@ -300,6 +320,24 @@ class CallSession:
         for t in self.history:
             if t.get("role") == "assistant":
                 self.da_tu_van |= chu_de_da_noi(t.get("content") or "")
+
+    def lay_cau_doc_not(self, cau_khach: str) -> str:
+        """Phần lời AI khách chưa kịp nghe, nếu đáng đọc nốt. Lấy MỘT LẦN.
+
+        Khách cắt lời hầu như luôn vì một trong hai lẽ: hỏi chen một ý bên lề
+        (thì đọc nốt là đúng - họ vẫn cần nghe hết ý cũ), hoặc vì AI đang nói
+        sai hướng (thì đọc nốt là phản tác dụng). `nen_doc_not` phân định bằng
+        cách khách mở lời, và bằng độ dài phần còn dở.
+
+        Dù trả về gì thì cũng XOÁ trạng thái: không xoá là phần dở treo mãi và
+        vài lượt sau khách nghe lại một câu đã cũ.
+        """
+        from backend.services.cat_loi_dieu_kien import nen_doc_not
+        cau, giay = self.cau_ai_con_do, self.giay_ai_con_do
+        self.cau_ai_con_do, self.giay_ai_con_do = "", 0.0
+        if not cau or not nen_doc_not(giay, cau_khach):
+            return ""
+        return cau
 
     def ghep_cau_bi_cat(self, cau_moi: str) -> str:
         """Nối câu bị cắt với câu vừa nói. Trả về câu đã ghép, và xoá trạng thái."""

@@ -442,8 +442,10 @@ _TIEN_SO_RE = re.compile(
     re.IGNORECASE)
 # Các từ có thể ghép thành một số tiếng Việt. Sắp XUỐNG DẦN theo độ dài để
 # regex không khớp trước phần đầu của từ dài hơn ("mười" trước "mươi").
-_TU_GHEP_SO = sorted(set(_CHU_SO) | {"mười", "mươi", "trăm", "nghìn", "lăm",
-                                     "mốt", "tư", "linh", "lẻ"},
+# "chục" nằm trong đây vì khách hay nói "năm sáu chục triệu". Thiếu nó thì cụm
+# khớp được chỉ là "năm sáu", và cách nói khoảng mất luôn bội số.
+_TU_GHEP_SO = sorted(set(_CHU_SO) | {"mười", "mươi", "chục", "trăm", "nghìn",
+                                     "lăm", "mốt", "tư", "linh", "lẻ"},
                      key=len, reverse=True)
 _MOT_TU = "(?:" + "|".join(_TU_GHEP_SO) + ")"
 _TIEN_CHU_RE = re.compile(
@@ -452,14 +454,26 @@ _TIEN_CHU_RE = re.compile(
 
 
 def _chu_thanh_so(cum: str) -> int | None:
-    """"năm trăm" -> 500, "hai mươi tư" -> 24. None nếu không hiểu."""
+    """"năm trăm" -> 500, "hai mươi tư" -> 24. None nếu không hiểu.
+
+    "trăm" XẢ vào `tong` chứ không nhân vào `hien`. Bản cũ nhân, nên phần hàng
+    chục đứng sau bị nhân tiếp một lần nữa:
+
+        "một trăm hai mươi"  ->  1 -> 100 -> 102 -> 1020   (đúng phải là 120)
+
+    Bắt được 07-09-2026 khi viết lưới canh cho cách nói khoảng. Lỗi này làm mọi
+    số dạng "một trăm hai mươi", "ba trăm năm mươi" bị đọc sai gấp gần mười lần,
+    và vì lưới chỉ SO SÁNH nên nó không sai kết quả một cách ồn ào - chỉ âm thầm
+    coi con số khách nói là không có căn cứ.
+    """
     tong, hien = 0, 0
     for t in cum.lower().split():
         if t in ("linh", "lẻ"):
             continue
         if t == "trăm":
-            hien = (hien or 1) * 100
-        elif t in ("mươi", "mười"):
+            tong += (hien or 1) * 100
+            hien = 0
+        elif t in ("mươi", "mười", "chục"):
             hien = (hien or 1) * 10
         elif t == "nghìn":
             tong += (hien or 1) * 1000
@@ -513,6 +527,42 @@ def _so_tran_trong(van_ban: str) -> set[int]:
         n = _chu_thanh_so(cum)
         if n:
             ra.add(n)
+        ra |= _khoang_chu(cum)
+    return ra
+
+
+# Bội số đứng sau cặp chữ số trong cách nói khoảng: "ba bốn TRĂM", "năm sáu CHỤC".
+_BOI_SO = {"trăm": 100, "chục": 10, "mươi": 10, "nghìn": 1000, "ngàn": 1000,
+           "triệu": 1000000, "tỷ": 1000000000, "tỉ": 1000000000}
+
+
+def _khoang_chu(cum: str) -> set[int]:
+    """Cách nói KHOẢNG của người Việt: "ba bốn trăm" = 300 HOẶC 400.
+
+    Trả về CẢ HAI đầu khoảng. `_chu_thanh_so` cộng dồn nên nó đọc thành 700 -
+    một con số không ai nói ra - rồi lưới chặn số coi con số AI hiểu đúng (400)
+    là bịa. Cuộc gọi thật 1e8bd9de (07-09-2026): khách hỏi "anh muốn vay ba bốn
+    trăm được không", AI đáp đúng hai chữ "Vâng ạ." rồi im, khách phải "a lô"
+    hai lần.
+
+    CHỈ dùng cho lời KHÁCH (`_so_tran_trong`), không dùng cho chữ AI sinh ra:
+    thêm cách hiểu chỉ NỚI lưới, mà nới trên chữ mô hình thì lưới hết tác dụng.
+
+    Nới thừa ở đây rẻ: nhiều nhất là bỏ sót một con số bịa TRÙNG đúng đầu khoảng
+    khách vừa nói. Nới thiếu thì chặn nhầm câu hỏi thật của khách - đắt hơn hẳn.
+
+    Chỉ nhận hai chữ số ĐƠN đứng liền nhau (1-9). "hai mươi tư" không dính vì
+    "mươi" là bội số chứ không phải chữ số; "một trăm hai mươi" cũng không, vì
+    "trăm" xen giữa.
+    """
+    tu = cum.lower().split()
+    ra: set[int] = set()
+    for i in range(len(tu) - 1):
+        a, b = _TU_SO.get(tu[i]), _TU_SO.get(tu[i + 1])
+        if not a or not b or a > 9 or b > 9:
+            continue
+        boi = _BOI_SO.get(tu[i + 2]) if i + 2 < len(tu) else None
+        ra |= {a * (boi or 1), b * (boi or 1)}
     return ra
 
 
@@ -773,6 +823,28 @@ def chan_tien_sai(text: str, tai_lieu: str,
 
 # Câu nói khi phải chặn: KHÔNG nêu con số nào, và hứa một việc làm được.
 CAU_KIEM_TRA_LAI = "Dạ em xin phép kiểm tra lại thông tin này rồi báo lại anh chị ngay ạ."
+
+
+def noi_tiep_ve_dang_do(cau: str) -> str:
+    """Biến một câu ĐỘC LẬP thành vế nối tiếp cho mảnh trước còn dang dở.
+
+    Lưới chặn số thay CẢ MẢNH bằng một câu trọn vẹn. Chú thích ở `_chan_so` giả
+    định mảnh luôn cắt theo NGUYÊN CÂU nên ghép vào là xong - giả định đó SAI vì
+    `TACH_O_PHAY = True`, mảnh còn được cắt ở dấu phẩy. Ghép thẳng thì ra:
+
+        "Với khách hàng mới vay tín chấp, Dạ em xin phép kiểm tra lại..."
+
+    tức chữ "Dạ" viết hoa nằm giữa câu. Bỏ tiếng đệm mở đầu và viết thường chữ
+    đầu thì thành một câu đúng ngữ pháp.
+    """
+    t = (cau or "").strip()
+    if not t:
+        return ""
+    for tien_to in ("Dạ em ", "Dạ, ", "Dạ "):
+        if t.startswith(tien_to):
+            t = ("em " + t[len(tien_to):]) if tien_to == "Dạ em " else t[len(tien_to):]
+            break
+    return t[0].lower() + t[1:] if t else t
 
 # Tỷ lệ phần trăm trong câu, cả dạng chữ số lẫn dạng chữ.
 #

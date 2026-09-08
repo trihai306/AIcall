@@ -508,12 +508,126 @@ async function bulkLabel() {
   loadReport(reportPage);
 }
 
+// Cửa sổ VAD đang cấu hình (`phone_silence_end_ms`), do API gửi kèm mỗi lần mở
+// chi tiết. Máy phải nghe im bấy nhiêu mới dám chắc khách đã nói xong.
+//
+// KHÔNG ghi cứng: máy Windows đang để 900ms còn mặc định trong code là 750, và
+// con số này đã đổi 1000 -> 900 ngày 07-09. Ghi cứng thì báo cáo sai lặng lẽ.
+// Chỉ dùng để ƯỚC LƯỢNG các cuộc gọi cũ; cuộc gọi mới đo mốc thật.
+let MS_VAD_CHO = 900;
+
+/** 1437 -> "1,4s". Giây một chữ số lẻ: người đọc báo cáo cần "nhanh hay chậm",
+ *  không cần chính xác tới mili giây. */
+function giayNgan(ms) {
+  return (ms / 1000).toFixed(1).replace('.', ',') + 's';
+}
+
+/** Ghép số đo độ trễ vào ĐÚNG lượt bot đã sinh ra nó.
+ *
+ * KHÔNG lấy chỉ số mảng làm khoá. `log_latency` gán `turn = turn_count`, tức
+ * SỐ LƯỢT KHÁCH đã nói tính tới lúc bot trả lời xong - không phải vị trí trong
+ * `history`. Hai cái này lệch nhau thật: cuộc gọi RA mở đầu bằng một lượt
+ * `assistant` (câu chào, xem `chao_khi_bat_may`) hoàn toàn KHÔNG có số đo, còn
+ * phiên chat thử thì không có câu chào đó. Đếm theo chỉ số mảng là mọi lượt của
+ * cuộc gọi thật lệch một bậc, mỗi lượt hiện thời gian của lượt TRƯỚC - sai mà
+ * nhìn vẫn hợp lý, nên sẽ không ai phát hiện.
+ *
+ * Đếm lượt khách lúc duyệt thì khớp đúng định nghĩa gốc, cả hai đường.
+ * Mỗi số đo chỉ được nhận MỘT LẦN: hai lượt bot liền nhau (khách bị cắt lời rồi
+ * bot nói tiếp) không được cùng khoe một con số.
+ */
+function ghepDoTre(history, latencyLog) {
+  const con = new Map();
+  (latencyLog || []).forEach(m => { if (!con.has(m.turn)) con.set(m.turn, m); });
+  let luotKhach = 0;
+  return (history || []).map(t => {
+    if (t.role === 'user') { luotKhach++; return { t, m: null }; }
+    const m = con.get(luotKhach) || null;
+    if (m) con.delete(luotKhach);
+    return { t, m };
+  });
+}
+
+/** Huy hiệu quãng khách NGỒI IM chờ, gắn sau mỗi câu bot.
+ *
+ * Số chính là `im_lang_ms`: từ lúc khách dứt lời tới lúc AI bật ra tiếng. Đó là
+ * thứ tai khách chịu, và nó KHÔNG suy ra được từ `ttfa_ms` - xem `_ghi_im_lang`
+ * trong streaming_pipeline.
+ *
+ * Cuộc gọi ghi TRƯỚC khi có cột đó thì không dựng lại được, chỉ ước lượng:
+ * `750ms` VAD chờ + `ttfa_ms`. Ước lượng này ĐÁNH DẤU `~` và nói rõ trong chú
+ * giải - không được để nó nhìn giống số đo thật, vì nó sai đúng ở chỗ khó thấy
+ * nhất: lượt CÓ câu đệm thì khách đã nghe tiếng từ sớm hơn nhiều.
+ */
+function chipDoTre(m) {
+  if (!m) return '';
+  const doThat = m.im_lang_ms != null;
+  const chinh = doThat ? m.im_lang_ms
+              : (m.ttfa_ms != null ? MS_VAD_CHO + m.ttfa_ms : null);
+  if (chinh == null) return '';
+
+  // Neo vào MỤC TIÊU BÊN A ghi trong .env: "khách nói xong AI phải trả lời trong
+  // 1s". Không phải ngưỡng tôi tự nghĩ ra, nên xanh ở đây nghĩa là ĐẠT nghiệm thu.
+  const mau = chinh <= 1000 ? 'text-emerald-400 border-emerald-900'
+            : chinh <= 1500 ? 'text-gray-400 border-slate-750'
+            : 'text-rose-400 border-rose-900';
+
+  const chuGiai = [];
+  if (doThat) {
+    chuGiai.push(`Khách dứt lời rồi ngồi im ${giayNgan(m.im_lang_ms)} mới nghe AI nói`);
+    // Phần lớn con số này là cửa sổ VAD, KHÔNG phải máy sinh chậm. Nói ra thì
+    // người đọc biết chỗ nào chỉnh được: hạ cửa sổ là ăn ngay chừng đó ms, đổi
+    // lại thêm câu bị chặn đôi (xem ghi chú PHONE_SILENCE_END_MS trong .env).
+    // `cho_truoc_ms` chỉ có ở phiên đang sống - không lưu xuống CSDL, nên với
+    // cuộc gọi đọc lại thì lấy cửa sổ API gửi kèm và ghi "khoảng".
+    chuGiai.push(m.cho_truoc_ms != null
+      ? `trong đó ${m.cho_truoc_ms}ms là máy đợi xem khách đã nói xong chưa`
+      : `trong đó khoảng ${MS_VAD_CHO}ms là máy đợi xem khách đã nói xong chưa`);
+  } else {
+    chuGiai.push(`Ước lượng ${giayNgan(chinh)} = ${MS_VAD_CHO}ms máy đợi khách nói xong `
+               + `+ ${giayNgan(m.ttfa_ms)} sinh câu`);
+    chuGiai.push(m.filler_id
+      ? 'CHỈ LÀ ƯỚC LƯỢNG và cao hơn thực tế: lượt này có câu đệm nên khách nghe sớm hơn'
+      : 'CHỈ LÀ ƯỚC LƯỢNG: cuộc gọi này ghi trước khi hệ thống đo được mốc khách dứt lời');
+  }
+  if (m.total_ms != null) chuGiai.push(`sinh xong cả câu ${giayNgan(m.total_ms)}`);
+  if (m.rag_ms) chuGiai.push(`tra tài liệu ${m.rag_ms}ms`);
+  if (m.timestamp) chuGiai.push(`lúc ${gioPhutGiay(m.timestamp)}`);
+
+  return `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-void ${mau}"
+            title="${esc(chuGiai.join(' · '))}">${doThat ? '' : '~'}${giayNgan(chinh)}</span>`;
+}
+
+function gioPhutGiay(ts) {
+  return new Date(ts * 1000).toLocaleTimeString('vi-VN', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+}
+
+/** Một dòng tổng kết đặt trên đầu bản hội thoại. Nhìn 10 huy hiệu rồi tự nhẩm
+ *  "cuộc này nhanh hay chậm" là việc của máy, không phải của người đọc. */
+function tomTatDoTre(cap) {
+  const md = cap.map(x => x.m).filter(Boolean);
+  const uoc = md.some(m => m.im_lang_ms == null);
+  const so = md.map(m => (m.im_lang_ms != null ? m.im_lang_ms
+                        : (m.ttfa_ms != null ? MS_VAD_CHO + m.ttfa_ms : null)))
+    .filter(v => v != null);
+  if (!so.length) return '';
+  const tb = so.reduce((a, b) => a + b, 0) / so.length;
+  return `<span class="text-[10px] text-gray-500"
+      title="Quãng khách dứt lời tới lúc nghe AI nói${uoc ? ' — ước lượng, xem chú giải từng lượt' : ''}">
+    ${so.length} lượt · khách chờ TB ${uoc ? '~' : ''}${giayNgan(tb)}
+    · lâu nhất ${uoc ? '~' : ''}${giayNgan(Math.max(...so))}</span>`;
+}
+
 async function openCallDetail(id) {
   const data = await apiGet('/api/reports/calls/' + id);
   if (baoLoi(data)) return;
   const c = data.call;
   o('reportDetail').classList.remove('hidden');
   o('reportDetailTitle').textContent = `${c.customer_name || '—'} · ${c.phone || c.caller_number || ''}`;
+  if (data.vad_cho_ms) MS_VAD_CHO = data.vad_cho_ms;
+  const capLuot = ghepDoTre(c.history, c.latency_log);
   o('reportDetailBody').innerHTML = `
     <div class="grid grid-cols-2 gap-4">
       <div class="space-y-3">
@@ -541,12 +655,17 @@ async function openCallDetail(id) {
         </div>
       </div>
       <div>
-        <div class="text-[10px] text-gray-500 uppercase mb-1">Toàn văn hội thoại</div>
+        <div class="flex items-baseline justify-between mb-1 gap-3">
+          <div class="text-[10px] text-gray-500 uppercase">Toàn văn hội thoại</div>
+          ${tomTatDoTre(capLuot)}
+        </div>
         <div class="space-y-1.5 max-h-[360px] overflow-y-auto pr-2">
-          ${(c.history || []).map(t => `
+          ${capLuot.map(({ t, m }) => `
             <div class="text-xs ${t.role === 'user' ? 'text-gray-300' : 'text-cyan-300'}">
               <span class="text-[10px] text-gray-600">${t.role === 'user' ? 'Khách' : 'Bot'}:</span>
-              ${esc(t.content)}</div>`).join('') || '<div class="text-xs text-gray-600">Không có lượt nào.</div>'}
+              ${esc(t.content)}
+              ${t.role === 'user' ? '' : chipDoTre(m)}</div>`).join('')
+            || '<div class="text-xs text-gray-600">Không có lượt nào.</div>'}
         </div>
       </div>
     </div>`;

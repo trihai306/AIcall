@@ -43,3 +43,6 @@ logs/**/*.mp3
 
 # Thu muc lam viec tam cua superpowers (agent tu tao)
 .superpowers/
+
+# Thu muc nghe thu tren dien thoai (file audio test, khong dua vao git)
+nghe/

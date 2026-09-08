@@ -78,12 +78,16 @@ async def startup(state: AppState):
     # lúc khách đang nói ta chỉ được nhúng ĐÚNG MỘT chuỗi (phiên âm dở), so với
     # ma trận đã có sẵn.
     from backend.services.filler_situation import chuan_hoa
-    from backend.services.filler_store import lay_kho
+    from backend.services.filler_store import MA_NHOM_CHUNG, lay_kho
     try:
         kho = lay_kho()
+        # BỎ nhóm chung, cùng lý do với `api/fillers._nhung_lai_vi_du`: nó là
+        # đường rơi cuối chứ không phải một chủ đề để tranh điểm. Hai chỗ nhúng
+        # PHẢI cùng luật - sót một chỗ thì lần khởi động sau nó lại vào bộ chấm
+        # và mọi thứ âm thầm quay về như cũ.
         state.kho_vector = {
             t.id: chuan_hoa(state.rag.embed(list(t.vi_du)))
-            for t in kho.tinh_huong if t.vi_du
+            for t in kho.tinh_huong if t.vi_du and t.id != MA_NHOM_CHUNG
         }
         logger.info("Đã nhúng ví dụ của %d tình huống", len(state.kho_vector))
 

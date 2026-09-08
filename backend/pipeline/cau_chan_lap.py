@@ -41,7 +41,26 @@ CAU_CHAN: tuple[str, ...] = (
 CAU_NGAN_SAU_DEM = "Dạ vâng ạ."
 
 
-def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False) -> str:
+# Dấu hiệu câu đệm ĐÃ hứa sẽ kiểm tra/tra lại rồi báo. Chỉ sau những câu này thì
+# rút gọn câu chặn thành "Dạ vâng ạ." mới đúng - lúc đó lời hứa đã nói rồi.
+#
+# Kho câu đệm có 38 tình huống và phần lớn hứa thứ KHÁC: trình bày, giới thiệu,
+# nói rõ hơn. Bản cũ chỉ hỏi "CÓ câu đệm không" nên nó rút gọn sau cả những câu
+# đó, và ra câu trả lời rỗng. Cuộc gọi thật 1e8bd9de (07-09-2026): câu đệm "Dạ em
+# xin phép TRÌNH BÀY CỤ THỂ để anh chị nắm rõ hơn nhé," rồi lưới chặn số bắn, AI
+# đáp đúng hai chữ "Vâng ạ." với một câu hỏi có/không - khách "a lô" hai lần liền
+# ngay sau đó vì tưởng máy chết.
+_DAU_HIEU_HUA = ("kiểm tra", "xem lại", "tra lại", "kiểm lại")
+
+
+def hua_kiem_tra(cau_dem: str) -> bool:
+    """Câu đệm này đã hứa sẽ kiểm tra rồi báo lại chưa?"""
+    t = (cau_dem or "").lower()
+    return any(d in t for d in _DAU_HIEU_HUA)
+
+
+def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False,
+             cau_dem: str = "") -> str:
     """Câu cho lần chặn thứ `so_lan_lien_tiep` (đếm từ 1). Quá thì lấy câu cuối.
 
     `da_co_cau_dem`: lượt này ĐÃ phát câu đệm rồi. Lúc đó câu 1 thành lời hứa
@@ -60,6 +79,10 @@ def cau_chan(so_lan_lien_tiep: int, da_co_cau_dem: bool = False) -> str:
     """
     if so_lan_lien_tiep < 1:
         so_lan_lien_tiep = 1
+    # `cau_dem` (chữ thật) được ưu tiên hơn `da_co_cau_dem` (chỉ biết có/không).
+    # Giữ tham số cũ cho những chỗ gọi chưa có chữ trong tay.
+    if cau_dem:
+        da_co_cau_dem = hua_kiem_tra(cau_dem)
     if da_co_cau_dem and so_lan_lien_tiep == 1:
         # Lần chặn ĐẦU mà câu đệm vừa nói xong -> chỉ cần đáp ngắn.
         # Từ lần thứ hai thì câu dài là đáng, vì lúc đó phải HỎI LẠI con số -

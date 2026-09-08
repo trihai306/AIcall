@@ -188,7 +188,12 @@ async def call_detail(session_id: str):
         return {"error": "Cuộc gọi không tồn tại"}
     phien["quality_label"] = reports_db.NHAN_HIEN_THI.get(phien.get("quality") or "", "")
     phien["co_ghi_am"] = bool(phien.get("recording_path"))
-    return {"call": phien}
+    # Cửa sổ VAD đang cấu hình. Giao diện cần nó để ƯỚC LƯỢNG lại quãng khách chờ
+    # cho những cuộc gọi ghi trước khi có cột `im_lang_ms`. Gửi kèm chứ KHÔNG ghi
+    # cứng bên giao diện: con số này khác nhau theo máy và đã đổi vài lần
+    # (1000 -> 900 ngày 07-09), ghi cứng là báo cáo sai lặng lẽ trên đúng những
+    # cuộc gọi không tự kiểm chứng được.
+    return {"call": phien, "vad_cho_ms": settings.phone_silence_end_ms}
 
 
 @router.get("/calls/{session_id}/recording")
