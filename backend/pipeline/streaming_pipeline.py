@@ -140,6 +140,45 @@ def _ghi_im_lang(session: CallSession, t_start: float, metrics: dict):
         metrics["im_lang_ms"] = cho_truoc + tieng_dau
 
 
+def _nap_bang_thuoc_tinh() -> dict:
+    """Bảng thuộc tính cho lưới kiểm chứng. GIEO trước rồi mới đọc.
+
+    VÌ SAO PHẢI GIEO Ở ĐÂY. Bản đầu chỉ gọi `doc_bang_sync`, mà hàm gieo chỉ nằm
+    trong vỏ async `luat_kiem_db.doc_bang()` - vỏ đó chỉ chạy khi có người mở
+    trang quản lý luật kiểm. Không ai mở thì bảng `thuoc_tinh_kiem` rỗng 0 dòng,
+    `doc_bang_sync` trả `{}`, và `chan_thuoc_tinh_sai` thoát ngay ở `if not kho`.
+
+    Đo trên máy chạy thật 09-09-2026: bảng đúng 0 dòng, và lưới thuộc tính CHƯA
+    TỪNG chạy một lần nào - không một dòng "THUỘC TÍNH LỆCH" trong log, trong khi
+    gọi thẳng `chan_thuoc_tinh_sai` trên chính câu AI vừa nói thì nó chặn đúng.
+    Bảng rỗng không phải ngoại lệ nên nhánh `except` bên dưới không cứu được.
+
+    Ba đường ra, cả ba đều có chủ ý:
+      - DB chưa mở / đọc hỏng -> bảng gốc trong code. Mất lưới lặng lẽ nguy hiểm
+        hơn nhiều so với dùng bảng cũ.
+      - Bảng có dòng nhưng KHÔNG dòng nào bật -> trả rỗng, tôn trọng quyết định
+        của người vận hành. Phân biệt được với ca "chưa gieo" nhờ ĐẾM SỐ DÒNG.
+      - Bình thường -> bảng trong DB.
+    """
+    from backend.pipeline.thuoc_tinh import THUOC_TINH_MAC_DINH
+    try:
+        from backend.models import db as _db
+        from backend.models.luat_kiem_db import doc_bang_sync, gieo_mac_dinh_sync
+        _c = _db.connection()
+        if _c is None:
+            raise RuntimeError("DB chưa mở")
+        gieo_mac_dinh_sync(_c)          # chạy lại được: chỉ thêm dòng còn thiếu
+        bang = doc_bang_sync(_c)
+        if not bang:
+            n = _c.execute("SELECT COUNT(*) FROM thuoc_tinh_kiem").fetchone()[0]
+            logger.warning(
+                "Lưới thuộc tính TẮT: %d dòng trong bảng, không dòng nào bật", n)
+        return bang
+    except Exception as e:
+        logger.warning("Không đọc được bảng thuộc tính (%s) - dùng mặc định", e)
+        return THUOC_TINH_MAC_DINH
+
+
 class StreamingPipeline:
     """Orchestrates the full voice AI pipeline with graceful degradation."""
 
@@ -150,19 +189,7 @@ class StreamingPipeline:
         self.rag = rag
         self._da_bao_tts_chet = False
         # Đọc MỘT LẦN lúc dựng pipeline: đường sinh không được đụng SQLite.
-        # Hỏng thì rơi về bảng gốc trong code chứ không tắt lưới - mất lưới lặng
-        # lẽ nguy hiểm hơn nhiều so với dùng bảng cũ.
-        try:
-            from backend.models import db as _db
-            from backend.models.luat_kiem_db import doc_bang_sync
-            _c = _db.connection()
-            if _c is None:
-                raise RuntimeError("DB chưa mở")
-            self._bang_thuoc_tinh = doc_bang_sync(_c)
-        except Exception as e:
-            from backend.pipeline.thuoc_tinh import THUOC_TINH_MAC_DINH
-            logger.warning("Không đọc được bảng thuộc tính (%s) - dùng mặc định", e)
-            self._bang_thuoc_tinh = THUOC_TINH_MAC_DINH
+        self._bang_thuoc_tinh = _nap_bang_thuoc_tinh()
 
     @property
     def _tts_available(self) -> bool:
