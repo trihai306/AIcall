@@ -193,7 +193,50 @@ def tinh_huong_dung(tinh_huong: tuple[int, str, float] | None,
     do_phu = n_th / n_audio
     if do_phu < DO_PHU_COI_LA_THAP and diem < DIEM_DOI_KHI_PHU_THAP:
         return None, do_phu
+    # Chưa đủ chắc về CHỦ ĐỀ -> trả None để rơi về rổ chung. Miễn trừ khi bản
+    # đoán đã nghe gần trọn lượt: xem `DIEM_CHAC_CHU_DE`.
+    if diem < DIEM_CHAC_CHU_DE and do_phu < DO_PHU_DU_TIN:
+        return None, do_phu
     return id_th, do_phu
+
+
+# Từ điểm này trở lên mới dám nói ĐÚNG CHỦ ĐỀ khách hỏi; dưới nó thì phát câu
+# đệm TRUNG TÍNH của rổ chung.
+#
+# LỖI THẬT người dùng nghe được 09-09-2026: khách hỏi "bên bạn có cho vay tín
+# chấp không" mà câu đệm là "điều kiện vay". Chấm lại chính câu đó:
+# `hoi_dieu_kien` = 0,750, vừa đúng bằng `NGUONG_CAU_DEM` nên nó lọt.
+#
+# KHÔNG nâng `NGUONG_CAU_DEM` về lại 0,90: người dùng CHỌN hạ nó ngày 06-09 sau
+# khi thấy giá của 0,90 là 60% số lượt khách nghe im lặng. Chú thích của hằng số
+# đó có bảng đo đầy đủ. Đây là đường THỨ BA giữ cả hai:
+#     dưới 0,75      -> im như cũ (bộ phân loại không ghi gì)
+#     0,75 - 0,90    -> câu đệm TRUNG TÍNH, không nói sai chủ đề
+#     từ 0,90        -> câu đệm đúng chủ đề
+#
+# Chỉ khả thi TỪ 09-09: rổ chung trước đó toàn câu "chờ em một chút", phát nó
+# thay câu đúng chủ đề còn tệ hơn. Nay rổ đó là câu DẪN trung tính - xem
+# `api/fillers._HUA_CHO`.
+#
+# Trả None chứ không trả "chung": `pick_filler` duyệt
+# `(id_tinh_huong, MA_NHOM_CHUNG, "")` nên None tự rơi về rổ chung, và module
+# này giữ được lời hứa "thuần logic, không import filler_store".
+#
+# MIỄN TRỪ khi bản đoán đã nghe gần trọn lượt. Luật 0,90 PHẲNG là quá thô và
+# phủ định một bằng chứng đã có (`test_do_phu_cao_thi_diem_0_75_la_du`: độ phủ
+# 0,85 + điểm 0,78 đo được 31 đúng / 0 sai). Đo lại cả ba chính sách trên đúng
+# 102 lượt tiếng khách thật của `data/tieng_khach_that`, mốc 1200ms:
+#
+#     chính sách                       ĐÚNG  trung tính   SAI chủ đề
+#     hiện tại (>= 0,75 là dùng)         20           0           13
+#     0,90 phẳng                          5          28            0
+#     0,90 + miễn trừ độ phủ >= 0,85     14          18            1
+#
+# Bản phẳng cắt sạch lỗi nhưng vứt luôn 15/20 lần chọn đúng. Bản có miễn trừ giữ
+# 14/20 mà chỉ còn 1 lần sai. Số lượt IM LẶNG không đổi ở cả ba (69) - luật này
+# không đụng tới đường đó.
+DIEM_CHAC_CHU_DE = 0.90
+DO_PHU_DU_TIN = 0.85
 
 
 # Dưới mức phủ này thì bản đoán mới nghe được một phần câu, và ĐÒI ĐIỂM CAO HƠN.

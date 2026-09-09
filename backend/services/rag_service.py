@@ -271,6 +271,37 @@ class RAGService:
     ]
 
     @classmethod
+    def ten_san_pham(cls, ma: str) -> str:
+        """Mã -> TÊN hiển thị. `"vay_tin_chap"` -> `"vay tín chấp"`; "" nếu lạ.
+
+        Phải là tên người đọc được chứ không phải mã: nó đi thẳng vào dòng
+        "Sản phẩm quan tâm" của lời dặn, khách nghe AI đọc "vay_tin_chap" thì
+        hỏng cả cuộc.
+        """
+        for m, cum in cls._TU_KHOA_SP:
+            if m == ma:
+                return cum[0]
+        return ""
+
+    @classmethod
+    def neo_moi_tu_cau(cls, cau: str, ma_co_tai_lieu: set[str] | None) -> str:
+        """Tên sản phẩm khách VỪA NHẮC trong câu này; "" nếu câu không nêu gì.
+
+        Dùng để NHỚ sản phẩm qua các lượt. `san_pham_neo` chỉ trả lời "lượt này
+        neo vào đâu" rồi quên; phiên không có `product` thì lượt sau lại trắng.
+
+        Lỗi thật trên cuộc gọi `73992c8d`: khách hỏi "bên bạn có cho vay tín
+        chấp không" ở lượt 1, tới lượt 4 hỏi "mức lãi suất là bao nhiêu" thì AI
+        đáp "cần tư vấn sản phẩm nào cụ thể không?" - khách phải tự nhắc lại.
+
+        Trả "" cho cả hai ca KHÔNG neo được, và đó là chủ ý: câu không nêu sản
+        phẩm nào (phần lớn lượt), và sản phẩm nêu ra mà kho không có tài liệu -
+        neo vào thứ không có tài liệu là mời mô hình đọc số của sản phẩm khác.
+        """
+        ma = cls._san_pham_trong_cau(cau, ma_co_tai_lieu)
+        return "" if ma in ("", "khong_co_tai_lieu") else cls.ten_san_pham(ma)
+
+    @classmethod
     def _san_pham_trong_cau(cls, query: str, ma_co_tai_lieu: set[str] | None) -> str:
         """Mã sản phẩm mà CÂU HỎI nhắc tới.
 

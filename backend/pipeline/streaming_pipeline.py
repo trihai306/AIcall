@@ -1580,6 +1580,21 @@ class StreamingPipeline:
         #
         # Đặt SAU nhánh `dap_san` (lượt đó cố ý không cần ngữ cảnh) và TRƯỚC
         # nhánh đoán trước: có tài liệu rồi thì bản đoán chẳng tiết kiệm được gì.
+        # Khách vừa nhắc sản phẩm nào thì NHỚ cho cả cuộc gọi. Phải đứng TRƯỚC
+        # `_toan_van_tai_lieu` ngay dưới, không thì lượt vừa neo được vẫn dùng
+        # tài liệu của neo cũ. Xem `RAGService.neo_moi_tu_cau` cho ca thật.
+        try:
+            ten_sp = self.rag.neo_moi_tu_cau(
+                user_text, self.rag._san_pham_co_tai_lieu())
+            if ten_sp and ten_sp != session.product:
+                logger.info("Neo sản phẩm theo lời khách: %r -> %r",
+                            session.product, ten_sp)
+                session.product = ten_sp
+                metrics["neo_san_pham"] = ten_sp
+        except Exception as e:
+            # Đường phụ trợ: hỏng thì giữ nguyên neo cũ, đừng làm chết cả lượt.
+            logger.warning("Không neo được sản phẩm (%s)", e)
+
         tron_tai_lieu = (_toan_van_tai_lieu(session.product)
                          if settings.ngu_canh_tron_tai_lieu else "")
         if dap_san:
