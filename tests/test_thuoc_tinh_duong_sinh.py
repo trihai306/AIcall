@@ -22,17 +22,28 @@ def test_goi_SAU_chan_so_sai():
     assert ma.index("chan_so_sai(doan") < ma.index("chan_thuoc_tinh_sai(")
 
 
-def test_chi_ghi_nhat_ky_chua_thay_cau():
-    """Giai đoạn này lưới CHƯA được thay câu - chỉ ghi metrics và log.
+def test_bat_duoc_thi_SUA_CAU_chu_khong_im_lang():
+    """Đổi 09-09-2026. Trước đó lưới chỉ ghi nhật ký - khách vẫn nghe câu bịa.
 
-    Bật chặn thật là việc của kế hoạch sau, sau khi nhật ký trên cuộc gọi thật
-    cho thấy chặn nhầm <= 5%. Nếu ai đó nối thẳng kết quả vào `ra` thì test này
-    đỏ, và đó là chủ ý.
+    Người dùng hỏi thẳng: "chặn thì nó im lặng không trả lời à?". Không: thang
+    xử lý ở `thuoc_tinh.sua_theo_tai_lieu` thay số bằng giá trị trong tài liệu,
+    không thay được thì bỏ mệnh đề, bỏ hết mới dùng `CAU_KIEM_TRA_LAI`.
+
+    Bật mặc định dù chưa có tỉ lệ đánh dấu nhầm trên cuộc gọi thật, vì hai chiều
+    sai không cân nhau - xem `config.thuoc_tinh_sua_cau`.
     """
     ma = inspect.getsource(streaming_pipeline)
-    dong = [l for l in ma.splitlines() if "chan_thuoc_tinh_sai(" in l]
-    assert dong, "không tìm thấy chỗ gọi lưới"
-    dong_goi = dong[0]
-    assert dong_goi.lstrip().startswith("_,"), (
-        "kết quả văn bản của lưới phải bị bỏ đi (`_,`) ở giai đoạn ghi nhật ký, "
-        f"nhưng dòng gọi là: {dong_goi.strip()!r}")
+    assert "sua_theo_tai_lieu(" in ma, "bắt được mà không sửa gì"
+    assert ma.index("chan_thuoc_tinh_sai(\n") < ma.index("sua_theo_tai_lieu(\n"), (
+        "phải phán trước rồi mới sửa")
+
+
+def test_van_TAT_duoc_bang_co():
+    from backend.config import settings
+    assert hasattr(settings, "thuoc_tinh_sua_cau")
+
+
+def test_bo_HET_moi_dung_cau_mau():
+    """Câu mẫu là nhánh HIẾM. Dùng nó cho mọi lượt là quay lại "trả lời 1 kiểu"."""
+    ma = inspect.getsource(streaming_pipeline)
+    assert "moi.strip() or CAU_KIEM_TRA_LAI" in ma

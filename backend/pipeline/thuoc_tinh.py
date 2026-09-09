@@ -324,3 +324,99 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
         dung = ", ".join(f"{a}{b}" for a, b in sorted(kho[ten]))
         lech.append(f"{ten} {so}{dvi} (tài liệu: {dung})")
     return text, ("; ".join(lech) if lech else None)
+
+
+# Ranh giới MỆNH ĐỀ để bỏ đúng phần sai mà giữ phần đúng. Cắt ở dấu phẩy và
+# dấu kết câu - đủ thô để không cần phân tích cú pháp, đủ tinh để "giải ngân
+# trong 24 giờ, phí rút tiền là 2.500 đồng" chỉ mất vế sau.
+_RANH_MENH_DE = re.compile(r"(?<=[,.;!?])\s+")
+
+
+def sua_theo_tai_lieu(text: str, tai_lieu: str, bang: dict,
+                      khach_noi: str = "") -> tuple[str, str | None]:
+    """Sửa câu cho khớp tài liệu. Trả `(câu đã sửa, mô tả)`; `mô tả=None` là câu sạch.
+
+    Thang xử lý, rẻ trước đắt sau - và KHÔNG BAO GIỜ im lặng:
+
+      1. THAY SỐ khi tài liệu có ĐÚNG MỘT giá trị cho thuộc tính đó. Giữ nguyên
+         câu, nghe tự nhiên nhất.
+      2. BỎ MỆNH ĐỀ chứa số sai khi không thay được. Giữ phần còn lại của câu.
+      3. Trả "" khi bỏ xong không còn gì - chỗ gọi tự quyết (thường là
+         `CAU_KIEM_TRA_LAI`).
+
+    VÌ SAO KHÔNG thay cả câu bằng câu mẫu ngay: đó chính là cách đã đẻ ra lời
+    than "trả lời 1 kiểu" - lưới thay hai câu khác nhau bằng cùng một câu.
+
+    VÌ SAO chỉ thay số khi tài liệu có ĐÚNG MỘT giá trị: tài liệu vay tín chấp
+    có cả "7.9%/năm" lẫn "Giảm 0.5% lãi suất", nên "lãi suất" có hai giá trị.
+    Đoán bừa một trong hai rồi đọc cho khách nghe còn tệ hơn bỏ hẳn mệnh đề.
+
+    Cùng ba trường hợp im lặng với `chan_thuoc_tinh_sai` (số của khách, giá trị
+    khớp, nằm trong dải) - hàm này chỉ khác ở chỗ nó SỬA thay vì chỉ mô tả.
+    """
+    if not (text or "").strip():
+        return text, None
+    kho = gia_tri_tai_lieu(tai_lieu, bang)
+    if not kho:
+        return text, None
+    khoang = khoang_tai_lieu(tai_lieu, bang)
+    so_khach = {so for _, so, _ in cap_trong(khach_noi, bang)} | set(
+        re.findall(r"\d+(?:[.,]\d+)*", (khach_noi or "")))
+
+    sai: list[tuple[str, str, str]] = []
+    for ten, so, dvi in cap_trong(text, bang):
+        if so in so_khach:
+            continue
+        if ten in kho and any(c in kho[ten] for c in _quy_doi(so, dvi)):
+            continue
+        if _trong_khoang(so, dvi, khoang.get(ten, [])):
+            continue
+        sai.append((ten, so, dvi))
+    if not sai:
+        return text, None
+
+    ra, ghi = text, []
+    con_lai: list[tuple[str, str, str]] = []
+    for ten, so, dvi in sai:
+        dung = kho.get(ten, set())
+        if len(dung) == 1:
+            so_dung, dvi_dung = next(iter(dung))
+            # Thay ĐÚNG chữ số như nó xuất hiện trong câu, kể cả dạng có dấu
+            # phân cách nghìn ("2.500" chứ không phải "2500").
+            moi, n = re.subn(
+                r"\b" + re.escape(_dang_trong_cau(ra, so)) + r"\b(\s*" +
+                re.escape(dvi) + r")?",
+                f"{so_dung} {dvi_dung}", ra, count=1)
+            if n:
+                ra = moi
+                ghi.append(f"{ten} {so}{dvi} -> {so_dung}{dvi_dung}")
+                continue
+        con_lai.append((ten, so, dvi))
+
+    if con_lai:
+        giu = []
+        for md in _RANH_MENH_DE.split(ra):
+            co_sai = any(_dang_trong_cau(md, so) and
+                         re.search(r"\b" + re.escape(_dang_trong_cau(md, so)) + r"\b", md)
+                         for _t, so, _d in con_lai)
+            if co_sai:
+                continue
+            giu.append(md)
+        ra = " ".join(x.strip() for x in giu if x.strip()).strip()
+        ghi += [f"bỏ mệnh đề có {t} {s}{d}" for t, s, d in con_lai]
+
+    return ra, "; ".join(ghi) if ghi else None
+
+
+def _dang_trong_cau(cau: str, so: str) -> str:
+    """Dạng chữ của `so` như nó nằm trong câu ("2500" -> "2.500" nếu câu ghi thế).
+
+    `chuan_so` đã bỏ dấu phân cách nghìn, nên tìm-thay theo chuỗi đã chuẩn hoá
+    sẽ trượt hết số tiền. Dò lại dạng gốc thay vì đoán.
+    """
+    if re.search(r"\b" + re.escape(so) + r"\b", cau):
+        return so
+    for m in re.finditer(r"\d+(?:[.,]\d+)*", cau):
+        if re.sub(r"[.,]", "", m.group(0)) == so:
+            return m.group(0)
+    return so

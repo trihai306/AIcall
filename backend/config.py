@@ -191,6 +191,22 @@ class Settings(BaseSettings):
     # rơi về RAG, không cần tắt cờ.
     ngu_canh_tron_tai_lieu: bool = True
 
+    # Lưới thuộc tính bắt được thì SỬA CÂU, không chỉ ghi nhật ký.
+    #
+    # Thang xử lý ở `thuoc_tinh.sua_theo_tai_lieu`: thay số bằng giá trị trong
+    # tài liệu khi tài liệu có đúng một giá trị; không thì bỏ mệnh đề chứa số
+    # sai và giữ phần còn lại; bỏ hết mới dùng `CAU_KIEM_TRA_LAI`. KHÔNG bao giờ
+    # im lặng, và câu mẫu chỉ còn ở phần rất nhỏ - tránh đúng cái "trả lời 1
+    # kiểu" mà lưới số cũ đã gây ra.
+    #
+    # BẬT MẶC ĐỊNH dù chưa có tỉ lệ đánh dấu nhầm trên cuộc gọi thật, vì hai
+    # chiều sai KHÔNG cân nhau: đánh dấu nhầm thì mất một mệnh đề đúng, còn bỏ
+    # sót thì khách nghe một con số bịa trong cuộc bán sản phẩm tài chính. Và
+    # bản sửa không tự nghĩ ra số nào - nó chỉ chép từ tài liệu hoặc bỏ đi.
+    #
+    # Tắt: đặt False trong .env. Lúc đó lưới quay về chỉ ghi nhật ký.
+    thuoc_tinh_sua_cau: bool = True
+
     # VAD
     vad_threshold: float = 0.5
     vad_min_silence_ms: int = 220

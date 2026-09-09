@@ -12,7 +12,8 @@ from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.pipeline.chan_tuan_thu import chan_gan_thu_nhap, chan_tu_cam
-from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+from backend.pipeline.thuoc_tinh import (chan_thuoc_tinh_sai,
+                                         sua_theo_tai_lieu)
 from backend.pipeline.ngu_canh_tai_lieu import toan_van as _toan_van_tai_lieu
 from backend.pipeline.text_normalizer import noi_tiep_ve_dang_do
 from backend.pipeline import cong_cu_llm
@@ -2163,14 +2164,22 @@ class StreamingPipeline:
             # Lưới THUỘC TÍNH: con số đúng vẫn có thể gán sai chủ thể. Chạy sau
             # `chan_so_sai` để phán trên bản đã sửa số đọc nhầm.
             #
-            # CHỈ GHI NHẬT KÝ, chưa thay câu: kết quả văn bản bị bỏ đi có chủ ý.
-            # Bật chặn thật sau khi nhật ký trên cuộc gọi thật cho thấy chặn nhầm
-            # <= 5%. `tests/test_thuoc_tinh_duong_sinh.py` canh đúng điều này.
+            # Bắt được thì SỬA CÂU chứ không im lặng: thay số bằng giá trị trong
+            # tài liệu, không thay được thì bỏ mệnh đề, bỏ hết mới dùng câu mẫu.
+            # Xem `config.thuoc_tinh_sua_cau` cho lý do bật mặc định.
             _, sua_tt = chan_thuoc_tinh_sai(
                 ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text)
             if sua_tt:
                 logger.warning("THUỘC TÍNH LỆCH: %s | %r", sua_tt, ra[:60])
                 metrics["chan_thuoc_tinh"] = sua_tt
+                if settings.thuoc_tinh_sua_cau:
+                    moi, cach_sua = sua_theo_tai_lieu(
+                        ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text)
+                    # Bỏ sạch thì mới dùng câu mẫu - đây là nhánh HIẾM, giữ nó
+                    # hiếm chính là thứ tránh được "trả lời 1 kiểu".
+                    ra = moi.strip() or CAU_KIEM_TRA_LAI
+                    metrics["thuoc_tinh_da_sua"] = cach_sua or "bỏ cả câu"
+                    logger.info("THUỘC TÍNH đã sửa: %s | %r", cach_sua, ra[:60])
             # Hàng rào thứ hai: SỐ TIỀN. Truyền cả câu khách vừa nói để không
             # "sửa" con số do chính khách nêu ra - AI nhắc lại số của khách là
             # đúng, chặn nó mới là sai.
