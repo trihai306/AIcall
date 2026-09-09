@@ -5,7 +5,8 @@ Vì sao không dùng embedding: đo 08-09-2026 trên 20 câu đối chứng, cos
 được. Embedding đo CÙNG CHỦ ĐỀ chứ không đo ĐÚNG/SAI: với nó "lãi suất 5%" và
 "lãi suất 7.9%" gần như đồng nghĩa.
 """
-from backend.pipeline.thuoc_tinh import THUOC_TINH_MAC_DINH, cap_trong, chuan_so
+from backend.pipeline.thuoc_tinh import (THUOC_TINH_MAC_DINH, cap_trong,
+                                         chan_thuoc_tinh_sai, chuan_so)
 
 
 def test_chuan_so_khong_an_so_khong_cua_hang_tram():
@@ -147,3 +148,72 @@ def test_loi_khach_TRICH_DUOC_cap_thi_khong_no():
                                   "- Hạn mức: lên đến 500 triệu đồng\n",
                                   THUOC_TINH_MAC_DINH, khach_noi=khach)
     assert sua is None, "số do khách nêu thì không được chặn"
+
+
+# --- Ba lỗi đo được trên 60 câu hỏi thật, 09-09-2026 ------------------------
+# Chấm tay 20 lượt lưới đánh dấu: chỉ 8 là bịa thật, 12 là CHẶN OAN. Bật chặn
+# với tỉ lệ đó là chặn nhầm nhiều hơn chặn đúng. Ba nhóm dưới đây là toàn bộ
+# nguyên nhân của 12 lượt oan ấy.
+
+def test_so_NAM_TRONG_DAI_cua_tai_lieu_thi_khong_chan():
+    """Tài liệu ghi "12 - 60 tháng" là một KHOẢNG, không phải hai giá trị rời.
+
+    Câu thật bị chặn oan: "vay 300 triệu trong 36 tháng thì mỗi tháng trả
+    khoảng 8.2 triệu". 36 nằm GIỮA 12 và 60, tức đúng tài liệu. Dính ở cả bốn
+    cấu hình nạp ngữ cảnh đã thử, nên đây là nguồn oan lớn nhất.
+    """
+    doc = "- Thời hạn: 12 - 60 tháng"
+    _, sua = chan_thuoc_tinh_sai("Dạ vay trong thời hạn 36 tháng ạ.", doc,
+                                 THUOC_TINH_MAC_DINH)
+    assert sua is None, f"36 nằm trong dải 12-60 mà vẫn bị chặn: {sua}"
+
+
+def test_so_NGOAI_DAI_van_bi_chan():
+    """Nới cho số trong dải KHÔNG được nới luôn cho số ngoài dải."""
+    doc = "- Thời hạn: 12 - 60 tháng"
+    _, sua = chan_thuoc_tinh_sai("Dạ vay trong thời hạn 72 tháng ạ.", doc,
+                                 THUOC_TINH_MAC_DINH)
+    assert sua is not None, "72 ngoài dải 12-60 mà lọt"
+
+
+def test_dai_trong_cau_AI_thuoc_ve_MOT_thuoc_tinh():
+    """Hai đầu của một dải luôn cùng một thuộc tính - đừng xét riêng từng đầu.
+
+    Câu thật: đầu dải 30 gần "hạn mức" nên vào đúng, còn đầu kia 200 lại gần
+    "thu nhập" hơn nên bị gán sang thu nhập rồi báo lệch.
+    """
+    cau = "Hạn mức thẻ Gold là từ 30 đến 200 triệu đồng, phù hợp với thu nhập của anh."
+    ten = {t for t, _, _ in cap_trong(cau, THUOC_TINH_MAC_DINH)}
+    assert ten == {"hạn mức"}, f"hai đầu dải phải cùng thuộc tính, đang ra {ten}"
+
+
+def test_mot_tu_khoa_khong_vo_lay_hai_con_so():
+    """Một lần xuất hiện của từ khoá chỉ nhận MỘT cụm số - cụm gần nhất.
+
+    Câu thật, hoàn toàn đúng tài liệu, vẫn bị chặn: "Với thu nhập ổn định từ 5
+    triệu đồng/tháng trở lên, anh/chị có thể xin vay đến 500 triệu đồng." Chữ
+    "thu nhập" là từ khoá DUY NHẤT trong câu nên nó vơ cả 500 triệu - vốn là
+    hạn mức - rồi báo "thu nhập 500 triệu, tài liệu ghi 5 triệu".
+    """
+    cau = ("Với thu nhập ổn định từ 5 triệu đồng/tháng trở lên, "
+           "anh/chị có thể xin vay đến 500 triệu đồng.")
+    cap = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("thu nhập", "5", "triệu") in cap, "vẫn phải bắt được thu nhập 5 triệu"
+    assert not [x for x in cap if x[1] == "500"], (
+        f"500 triệu không có từ khoá của mình thì phải bỏ qua, đang ra {cap}")
+
+
+def test_ty_le_cho_vay_khong_phai_lai_suat():
+    """"80% giá trị bất động sản" là tỷ lệ cho vay, không phải lãi suất."""
+    cau = ("Dạ lãi suất vay mua nhà từ 6.5% trong 2 năm đầu ạ. Sau đó thả nổi "
+           "từ 8-10% năm. Em có thể vay tối đa 80% giá trị bất động sản.")
+    cap = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("lãi suất", "80", "%") not in cap, f"80% bị đọc thành lãi suất: {cap}"
+    assert ("lãi suất", "6.5", "%") in cap, "vẫn phải bắt được lãi suất thật"
+
+
+def test_hoan_tien_khong_phai_lai_suat():
+    """"hoàn tiền 3%" là ưu đãi hoàn tiền, không phải lãi suất."""
+    cau = "Dạ lãi suất 0% trả góp, và thẻ được hoàn tiền 3% cho mọi giao dịch ạ."
+    cap = cap_trong(cau, THUOC_TINH_MAC_DINH)
+    assert ("lãi suất", "3", "%") not in cap, f"3% hoàn tiền bị đọc thành lãi suất: {cap}"

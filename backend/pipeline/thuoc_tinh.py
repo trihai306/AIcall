@@ -24,6 +24,16 @@ _DAI = re.compile(
 )
 _RADIUS = 85  # ký tự tối đa giữa từ khoá và số
 
+# Phần trăm đứng cạnh những cụm này KHÔNG phải lãi suất. Cả hai đều bắt được
+# trên câu thật (09-09-2026): "vay tối đa 80% giá trị bất động sản" là tỷ lệ cho
+# vay, "hoàn tiền 3% cho mọi giao dịch" là ưu đãi - báo cả hai thành lãi suất
+# lệch là chặn oan hai lượt đúng.
+#
+# CỐ Ý không bắt chữ "giảm" trơn: tài liệu vay tín chấp có dòng "Giảm 0.5% lãi
+# suất cho khách hàng có lương qua ngân hàng", ở đó 0.5% ĐÚNG là nói về lãi suất.
+_PT_SAU = re.compile(r"^\s*(?:giá\s*trị|trên\s*tổng|tổng\s*giá)")
+_PT_TRUOC = re.compile(r"(?:hoàn\s*tiền|cashback|chiết\s*khấu|giảm\s*giá)\s*$")
+
 
 def chuan_so(s: str) -> str:
     """Chỉ bỏ số 0 thừa SAU dấu thập phân. `"500".rstrip("0")` cho "5" - đã mắc."""
@@ -33,51 +43,123 @@ def chuan_so(s: str) -> str:
     return s or "0"
 
 
-def cap_trong(cau: str, bang: dict) -> list[tuple[str, str, str]]:
-    """[(thuộc tính, số, đơn vị)] tìm được trong câu."""
-    t = re.sub(r"(\d)\.\s+(\d)", r"\1.\2", (cau or "").lower())
-    ra = []
+def _cum_so(t: str) -> list[tuple[int, list[str], str]]:
+    """[(vị_trí, [số...], đơn_vị)] - một DẢI là MỘT cụm mang hai giá trị.
 
-    # Bước 1: thu thập tất cả cặp (vị_trí_số, số, đơn_vị).
-    # Xử lý _DAI trước để bắt số đầu dải ("12" trong "12 - 60 tháng").
-    tat_ca: list[tuple[int, str, str]] = []
+    Giữ dải nguyên cụm chứ không tách đôi vì hai đầu dải luôn nói về CÙNG một
+    thuộc tính. Tách ra rồi xét riêng từng đầu thì đầu này vào đúng chỗ còn đầu
+    kia trôi sang thuộc tính khác - đo được trên câu thật "Hạn mức thẻ Gold là
+    từ 30 đến 200 triệu đồng, phù hợp với thu nhập của anh": 30 vào hạn mức còn
+    200 sang thu nhập, rồi báo lệch một câu vốn đúng.
+    """
+    cum: list[tuple[int, list[str], str]] = []
     da_co: set[int] = set()
 
+    # _DAI chạy trước _SO để cụm dải chiếm chỗ, không bị đọc thành hai số lẻ.
     for m in _DAI.finditer(t):
-        dvi = m.group(3).lower()
-        p1, s1 = m.start(1), chuan_so(m.group(1))
-        p2, s2 = m.start(2), chuan_so(m.group(2))
-        if p1 not in da_co:
-            tat_ca.append((p1, s1, dvi))
-            da_co.add(p1)
-        if p2 not in da_co:
-            tat_ca.append((p2, s2, dvi))
-            da_co.add(p2)
+        p1, p2 = m.start(1), m.start(2)
+        if p1 in da_co or p2 in da_co:
+            continue
+        da_co |= {p1, p2}
+        cum.append((p1, [chuan_so(m.group(1)), chuan_so(m.group(2))],
+                    m.group(3).lower()))
 
     for m in _SO.finditer(t):
         p = m.start(1)
-        if p not in da_co:
-            tat_ca.append((p, chuan_so(m.group(1)), m.group(2).lower()))
-            da_co.add(p)
+        if p in da_co:
+            continue
+        da_co.add(p)
+        cum.append((p, [chuan_so(m.group(1))], m.group(2).lower()))
 
-    tat_ca.sort()
-
-    # Bước 2: với mỗi số, chọn thuộc tính có từ khoá GẦN NHẤT (không lấy đầu tiên trong dict).
-    for pos_so, so, dvi in tat_ca:
-        ung_cu: list[tuple[int, str]] = []  # (khoảng_cách, tên_thuộc_tính)
-        for ten, d in bang.items():
-            if dvi not in d["dvi"]:
+    # Phần trăm nằm trong ngữ cảnh "không phải lãi suất" thì bỏ hẳn, đừng để nó
+    # đi tìm thuộc tính - "%" chỉ có lãi suất nhận nên nó chắc chắn vào nhầm.
+    giu = []
+    for pos, sos, dvi in cum:
+        if dvi == "%":
+            het = t.find("%", pos)
+            het = het + 1 if het >= 0 else pos
+            if _PT_SAU.search(t[het:het + 24]) or _PT_TRUOC.search(t[max(0, pos - 24):pos]):
                 continue
-            for k in d["khoa"]:
-                for mk in re.finditer(re.escape(k), t):
-                    kc = abs(mk.start() - pos_so)
-                    if kc <= _RADIUS:
-                        ung_cu.append((kc, ten))
-        if ung_cu:
-            ung_cu.sort()
-            ra.append((ung_cu[0][1], so, dvi))
+        giu.append((pos, sos, dvi))
+    giu.sort()
+    return giu
 
+
+def _lan_tu_khoa(t: str, bang: dict) -> dict[str, list[tuple[int, int]]]:
+    """{thuộc tính: [(đầu, cuối)]} - các LẦN XUẤT HIỆN của từ khoá, đã gộp chồng.
+
+    Gộp các lần chồng nhau của CÙNG thuộc tính làm một: "vay tối đa" và "tối đa"
+    đều là từ khoá của hạn mức và chồng lên nhau trong cùng một cụm chữ. Không
+    gộp thì luật "mỗi lần xuất hiện nhận một cụm số" đếm thành hai lần và vẫn vơ
+    được hai con số.
+    """
+    ra: dict[str, list[tuple[int, int]]] = {}
+    for ten, d in bang.items():
+        cac: list[tuple[int, int]] = []
+        for k in d["khoa"]:
+            cac += [(m.start(), m.end()) for m in re.finditer(re.escape(k), t)]
+        cac.sort()
+        gop: list[tuple[int, int]] = []
+        for dau, cuoi in cac:
+            if gop and dau <= gop[-1][1]:
+                gop[-1] = (gop[-1][0], max(gop[-1][1], cuoi))
+            else:
+                gop.append((dau, cuoi))
+        if gop:
+            ra[ten] = gop
     return ra
+
+
+def _cum_gan_thuoc_tinh(cau: str, bang: dict) -> list[tuple[str, list[str], str]]:
+    """[(thuộc tính, [số...], đơn vị)] - ghép cụm số với thuộc tính của nó.
+
+    Mỗi LẦN XUẤT HIỆN của từ khoá chỉ nhận MỘT cụm số, cụm gần nó nhất. Ghép
+    tham lam từ cặp gần nhau nhất trở đi.
+
+    Vì sao cần luật đó: chọn "từ khoá gần nhất" cho từng số một cách độc lập thì
+    một từ khoá đơn độc trong câu sẽ vơ hết mọi con số quanh nó. Câu thật, hoàn
+    toàn đúng tài liệu, vẫn bị chặn: "Với thu nhập ổn định từ 5 triệu đồng/tháng
+    trở lên, anh/chị có thể xin vay đến 500 triệu đồng." Ở đây "thu nhập" là từ
+    khoá duy nhất, nên nó nhận cả 500 triệu - vốn là hạn mức - và lưới báo "thu
+    nhập 500 triệu, tài liệu ghi 5 triệu".
+
+    Cụm không tìm được thuộc tính thì BỎ QUA chứ không đoán. Chỗ này cố ý đánh
+    đổi: mất khả năng bắt lỗi ở câu kiểu "hạn mức 500 triệu, lên 700 triệu nữa"
+    (chỉ một từ khoá cho hai số), đổi lấy việc không chặn oan câu đúng. Với lưới
+    sắp được bật chặn thật thì chặn oan đắt hơn nhiều.
+    """
+    t = re.sub(r"(\d)\.\s+(\d)", r"\1.\2", (cau or "").lower())
+    cum = _cum_so(t)
+    lan = _lan_tu_khoa(t, bang)
+
+    ung: list[tuple[int, int, str, int]] = []   # (khoảng cách, chỉ số cụm, tên, chỉ số lần)
+    for i, (pos, _sos, dvi) in enumerate(cum):
+        for ten, cac in lan.items():
+            if dvi not in bang[ten]["dvi"]:
+                continue
+            for j, (dau, cuoi) in enumerate(cac):
+                kc = 0 if dau <= pos <= cuoi else min(abs(dau - pos), abs(cuoi - pos))
+                if kc <= _RADIUS:
+                    ung.append((kc, i, ten, j))
+    # sắp xếp toàn phần để kết quả KHÔNG phụ thuộc thứ tự khoá của dict
+    ung.sort()
+
+    gan: dict[int, str] = {}
+    da_dung: set[tuple[str, int]] = set()
+    for kc, i, ten, j in ung:
+        if i in gan or (ten, j) in da_dung:
+            continue
+        gan[i] = ten
+        da_dung.add((ten, j))
+
+    return [(gan[i], sos, dvi) for i, (_p, sos, dvi) in enumerate(cum) if i in gan]
+
+
+def cap_trong(cau: str, bang: dict) -> list[tuple[str, str, str]]:
+    """[(thuộc tính, số, đơn vị)] tìm được trong câu."""
+    return [(ten, so, dvi)
+            for ten, sos, dvi in _cum_gan_thuoc_tinh(cau, bang)
+            for so in sos]
 
 
 def gia_tri_tai_lieu(tai_lieu: str, bang: dict) -> dict[str, set[tuple[str, str]]]:
@@ -91,6 +173,44 @@ def gia_tri_tai_lieu(tai_lieu: str, bang: dict) -> dict[str, set[tuple[str, str]
         for ten, so, dvi in cap_trong(dong, bang):
             kho.setdefault(ten, set()).add((so, dvi))
     return kho
+
+
+def khoang_tai_lieu(tai_lieu: str, bang: dict) -> dict[str, list[tuple[float, float, str]]]:
+    """{thuộc tính: [(thấp, cao, đơn vị)]} - các DẢI tài liệu ghi.
+
+    Tách khỏi `gia_tri_tai_lieu` thay vì đổi kiểu trả về của nó: hàm kia có sẵn
+    người dùng và có sẵn test, đổi hợp đồng của nó là việc riêng không thuộc
+    phạm vi bản sửa này.
+
+    Vì sao cần: tài liệu ghi "Thời hạn: 12 - 60 tháng" nghĩa là MỌI giá trị từ
+    12 đến 60 đều đúng, nhưng `gia_tri_tai_lieu` chỉ giữ được hai đầu {12, 60}.
+    Nên câu "vay 300 triệu trong 36 tháng" - đúng tài liệu - bị báo lệch. Đây là
+    nguồn chặn oan nhiều nhất trong 60 câu đo 09-09-2026, dính ở cả bốn cấu hình
+    nạp ngữ cảnh đã thử.
+    """
+    ra: dict[str, list[tuple[float, float, str]]] = {}
+    for dong in (tai_lieu or "").splitlines():
+        for ten, sos, dvi in _cum_gan_thuoc_tinh(dong, bang):
+            if len(sos) != 2:
+                continue
+            try:
+                a, b = float(sos[0]), float(sos[1])
+            except ValueError:      # số quá dài hoặc dạng lạ -> bỏ, đừng nổ
+                continue
+            ra.setdefault(ten, []).append((min(a, b), max(a, b), dvi))
+    return ra
+
+
+def _trong_khoang(so: str, dvi: str, cac_khoang: list[tuple[float, float, str]]) -> bool:
+    """Giá trị có nằm trong một dải nào của tài liệu không (kể cả sau quy đổi)."""
+    for c_so, c_dvi in _quy_doi(so, dvi):
+        try:
+            v = float(c_so)
+        except ValueError:
+            continue
+        if any(lo <= v <= hi for lo, hi, d in cac_khoang if d == c_dvi):
+            return True
+    return False
 
 
 def _quy_doi(so: str, dvi: str) -> list[tuple[str, str]]:
@@ -122,6 +242,7 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
     kho = gia_tri_tai_lieu(tai_lieu, bang)
     if not kho:
         return text, None
+    khoang = khoang_tai_lieu(tai_lieu, bang)
     # `cap_trong` trả BỘ BA (tên, số, đơn vị). Đọc thành bộ đôi là nổ giữa
     # cuộc gọi - đã lọt qua test một lần vì câu thử không trích được cặp nào.
     so_khach = {so for _, so, _ in cap_trong(khach_noi, bang)} | set(
@@ -131,6 +252,10 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
         if ten not in kho or so in so_khach:
             continue
         if any(c in kho[ten] for c in _quy_doi(so, dvi)):
+            continue
+        # Tài liệu ghi một DẢI thì mọi giá trị trong dải đều đúng, không riêng
+        # hai đầu - xem `khoang_tai_lieu`.
+        if _trong_khoang(so, dvi, khoang.get(ten, [])):
             continue
         dung = ", ".join(f"{a}{b}" for a, b in sorted(kho[ten]))
         lech.append(f"{ten} {so}{dvi} (tài liệu: {dung})")
