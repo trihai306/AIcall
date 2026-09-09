@@ -112,9 +112,14 @@ def test_so_chi_co_dung_hai_duong_ghi():
     bản đầu của test này dò chuỗi "ai" và nó khớp ngay "ghi_tAI_lieu", tức là
     luôn đỏ dù code đúng. Thêm một đường ghi mới thì test này đỏ, và người thêm
     phải tự trả lời: nguồn đó có phải chữ mô hình sinh ra không.
+
+    `TRAN_KHACH` thêm 09-09-2026 là HẰNG SỐ, không phải đường ghi: lời khách giữ
+    riêng khỏi hàng đợi tài liệu để tài liệu khỏi đẩy nó ra - xem
+    `tests/test_so_can_cu_giu_loi_khach.py`.
     """
     assert {t for t in dir(SoCanCu) if not t.startswith("_")} == {
-        "TRAN_KY_TU", "can_cu", "ghi_tai_lieu", "ghi_khach", "doi_neo"}
+        "TRAN_KY_TU", "TRAN_KHACH", "can_cu", "ghi_tai_lieu", "ghi_khach",
+        "doi_neo"}
 
 
 def test_doi_neo_san_pham_thi_xoa_so():

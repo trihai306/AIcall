@@ -44,9 +44,21 @@ class SoCanCu:
     # Giữ trong bộ nhớ nhiều hơn trần một ít rồi mới dọn, khỏi cắt list mỗi lượt.
     _TRAN_MEM = TRAN_KY_TU * 4
 
+    # Lời khách giữ RIÊNG, không chung hàng đợi với tài liệu. Hai loại căn cứ
+    # có giá trị khác hẳn: lời khách NHỎ, quý, mất là không lấy lại được; tài
+    # liệu TO, và lưới vẫn nhận `ngu_canh` của lượt hiện tại qua đường riêng.
+    #
+    # Gộp chung thì tài liệu đẩy lời khách ra trước. Đo 09-09-2026 trên cuộc gọi
+    # 14 lượt: khách nói "lương anh 18 triệu" ở lượt 1, tới lượt 9 hỏi lại thì
+    # lưới coi 18 triệu là bịa và bản sửa đổi thành 5 triệu - thu nhập TỐI THIỂU
+    # trong tài liệu. Từ 09-09 ngữ cảnh nạp trọn tài liệu (~2918 ký tự/lượt thay
+    # vì ~1005) nên sổ đầy sau 7 lượt thay vì 20.
+    TRAN_KHACH = 4000
+
     def __init__(self) -> None:
         self._manh: list[str] = []
         self._da_co: set[str] = set()
+        self._khach: list[str] = []
         self._neo: str = ""
 
     # --- ghi vào ---------------------------------------------------------
@@ -56,8 +68,13 @@ class SoCanCu:
         self._them(ngu_canh)
 
     def ghi_khach(self, cau: str) -> None:
-        """Ghi câu khách vừa nói."""
-        self._them(cau)
+        """Ghi câu khách vừa nói. KHÔNG chung hàng đợi với tài liệu."""
+        cau = (cau or "").strip()
+        if not cau or cau in self._khach:
+            return
+        self._khach.append(cau)
+        while len(self._khach) > 1 and sum(map(len, self._khach)) > self.TRAN_KHACH:
+            self._khach.pop(0)
 
     def doi_neo(self, san_pham: str) -> None:
         """Báo sản phẩm đang neo. Đổi sang sản phẩm KHÁC thì xoá sạch sổ.
@@ -68,6 +85,8 @@ class SoCanCu:
         if not san_pham or san_pham == self._neo:
             return
         if self._neo:
+            # CHỈ xoá căn cứ TÀI LIỆU. Thu nhập hay số tiền khách nêu không đổi
+            # theo sản phẩm - xoá chúng là lượt sau coi chính lời khách là bịa.
             self._manh.clear()
             self._da_co.clear()
         self._neo = san_pham
@@ -87,10 +106,14 @@ class SoCanCu:
 
     @property
     def can_cu(self) -> str:
-        """Chuỗi để lưới đối chiếu. Cắt phần CŨ khi vượt trần."""
+        """Chuỗi để lưới đối chiếu. Cắt phần tài liệu CŨ khi vượt trần.
+
+        Lời khách luôn đứng ĐẦU và không bị cắt - xem `TRAN_KHACH`.
+        """
         s = "\n".join(self._manh)
-        if len(s) <= self.TRAN_KY_TU:
-            return s
-        s = s[-self.TRAN_KY_TU:]
-        i = s.find("\n")
-        return s[i + 1:] if i >= 0 else s
+        if len(s) > self.TRAN_KY_TU:
+            s = s[-self.TRAN_KY_TU:]
+            i = s.find("\n")
+            s = s[i + 1:] if i >= 0 else s
+        khach = "\n".join(self._khach)
+        return f"{khach}\n{s}" if khach and s else (khach or s)
