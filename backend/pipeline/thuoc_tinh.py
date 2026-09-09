@@ -14,12 +14,31 @@ THUOC_TINH_MAC_DINH: dict[str, dict] = {
     "thu nhập":  {"khoa": ("thu nhập", "lương từ"), "dvi": ("triệu",)},
     "sao kê":    {"khoa": ("sao kê",), "dvi": ("tháng",)},
     "miễn lãi":  {"khoa": ("miễn lãi",), "dvi": ("ngày",)},
+    # --- PHÍ. Thêm 09-09-2026 sau khi nghe AI bịa ba lần trên máy thật:
+    # "phí rút tiền mặt tại ATM là 2.000 đồng", "phí thường niên là 2% của hạn
+    # mức thẻ", "phí phạt trả trước hạn là 1%". Không thuộc tính nào nhận được
+    # những con số đó nên lưới im hoàn toàn.
+    #
+    # Tách BA loại phí thay vì một "phí" chung: tài liệu ghi ba mức khác nhau
+    # (thường niên 200/400/800 nghìn, trả trước hạn miễn phí, rút tiền không
+    # có), gộp một chỗ là mọi mức đều "có trong tài liệu" và lưới lại mù.
+    "phí thường niên": {"khoa": ("phí thường niên", "phí duy trì"),
+                        "dvi": ("%", "đồng", "đ", "nghìn", "triệu")},
+    "phí trả trước":   {"khoa": ("phí phạt", "trả trước hạn", "trả nợ trước hạn"),
+                        "dvi": ("%", "đồng", "đ", "nghìn", "triệu")},
+    "phí rút tiền":    {"khoa": ("phí rút", "rút tiền mặt"),
+                        "dvi": ("%", "đồng", "đ", "nghìn", "triệu")},
+    "hoàn tiền":       {"khoa": ("hoàn tiền", "cashback"), "dvi": ("%",)},
 }
 
-_SO = re.compile(r"(\d+(?:[.,]\d+)?)\s*(%|triệu|tỷ|tháng|năm|giờ|ngày|tuổi)", re.I)
+_SO = re.compile(
+    r"(\d+(?:[.,]\d+)*)\s*(%|(?:triệu|tỷ|tháng|năm|giờ|ngày|tuổi|đồng|nghìn|đ)\b)",
+    re.I,
+)
 # Bắt dải số dạng "N - M đơn_vị" hoặc "N đến M đơn_vị": số đầu không có đơn vị ngay sau.
 _DAI = re.compile(
-    r"(\d+(?:[.,]\d+)?)\s*(?:-|–|đến)\s*(\d+(?:[.,]\d+)?)\s*(%|triệu|tỷ|tháng|năm|giờ|ngày|tuổi)",
+    r"(\d+(?:[.,]\d+)*)\s*(?:-|–|đến)\s*(\d+(?:[.,]\d+)*)\s*"
+    r"(%|(?:triệu|tỷ|tháng|năm|giờ|ngày|tuổi|đồng|nghìn|đ)\b)",
     re.I,
 )
 _RADIUS = 85  # ký tự tối đa giữa từ khoá và số
@@ -31,12 +50,31 @@ _RADIUS = 85  # ký tự tối đa giữa từ khoá và số
 #
 # CỐ Ý không bắt chữ "giảm" trơn: tài liệu vay tín chấp có dòng "Giảm 0.5% lãi
 # suất cho khách hàng có lương qua ngân hàng", ở đó 0.5% ĐÚNG là nói về lãi suất.
+#
+# "hoàn tiền"/"cashback" ĐÃ RỜI danh sách này 09-09-2026: nay chúng có thuộc
+# tính riêng nên đối chiếu được với tài liệu thật, không phải né bằng cách vứt
+# con số đi. Vứt là mất luôn khả năng bắt "hoàn tiền 10%" khi tài liệu ghi 1-3%.
 _PT_SAU = re.compile(r"^\s*(?:giá\s*trị|trên\s*tổng|tổng\s*giá)")
-_PT_TRUOC = re.compile(r"(?:hoàn\s*tiền|cashback|chiết\s*khấu|giảm\s*giá)\s*$")
+_PT_TRUOC = re.compile(r"(?:chiết\s*khấu|giảm\s*giá)\s*$")
 
 
-def chuan_so(s: str) -> str:
-    """Chỉ bỏ số 0 thừa SAU dấu thập phân. `"500".rstrip("0")` cho "5" - đã mắc."""
+# Đơn vị TIỀN. Trong số tiền tiếng Việt, dấu chấm là PHÂN CÁCH NGHÌN chứ không
+# phải dấu thập phân - "200.000 đồng" là hai trăm nghìn.
+_DVI_TIEN = ("đồng", "đ", "nghìn", "nghin")
+
+
+def chuan_so(s: str, dvi: str = "") -> str:
+    """Chỉ bỏ số 0 thừa SAU dấu thập phân. `"500".rstrip("0")` cho "5" - đã mắc.
+
+    `dvi` là ĐƠN VỊ đi kèm, vì dấu chấm đọc khác nhau tuỳ đơn vị:
+        "7.9"   + "%"    -> 7.9      (thập phân)
+        "200.000" + "đồng" -> 200000 (phân cách nghìn)
+
+    Không có tham số này thì thêm đơn vị "đồng" vào lưới là hỏng ngay:
+    `chuan_so("1.500.000")` cho `"1.500"` - sai hơn một nghìn lần.
+    """
+    if dvi.lower() in _DVI_TIEN:
+        return re.sub(r"[.,]", "", s) or "0"
     s = s.replace(",", ".")
     if "." in s:
         s = s.rstrip("0").rstrip(".")
@@ -61,15 +99,16 @@ def _cum_so(t: str) -> list[tuple[int, list[str], str]]:
         if p1 in da_co or p2 in da_co:
             continue
         da_co |= {p1, p2}
-        cum.append((p1, [chuan_so(m.group(1)), chuan_so(m.group(2))],
-                    m.group(3).lower()))
+        dvi = m.group(3).lower()
+        cum.append((p1, [chuan_so(m.group(1), dvi), chuan_so(m.group(2), dvi)], dvi))
 
     for m in _SO.finditer(t):
         p = m.start(1)
         if p in da_co:
             continue
         da_co.add(p)
-        cum.append((p, [chuan_so(m.group(1))], m.group(2).lower()))
+        dvi = m.group(2).lower()
+        cum.append((p, [chuan_so(m.group(1), dvi)], dvi))
 
     # Phần trăm nằm trong ngữ cảnh "không phải lãi suất" thì bỏ hẳn, đừng để nó
     # đi tìm thuộc tính - "%" chỉ có lãi suất nhận nên nó chắc chắn vào nhầm.
@@ -224,6 +263,16 @@ def _quy_doi(so: str, dvi: str) -> list[tuple[str, str]]:
         ra.append((chuan_so(str(v * 1000)), "triệu"))
     elif dvi == "triệu":
         ra.append((chuan_so(str(v / 1000)), "tỷ"))
+        ra.append((chuan_so(str(int(v * 1_000_000)), "đồng"), "đồng"))
+    elif dvi in ("nghìn", "nghin"):
+        # "200 nghìn" và "200.000 đồng" là cùng một số tiền - tài liệu viết cách
+        # này, AI nói cách kia thì không được coi là lệch.
+        ra.append((chuan_so(str(int(v * 1000)), "đồng"), "đồng"))
+    elif dvi in ("đồng", "đ"):
+        ra.append((so, "đ"))
+        ra.append((so, "đồng"))
+        if v >= 1000 and v % 1000 == 0:
+            ra.append((chuan_so(str(int(v / 1000)), "nghìn"), "nghìn"))
     return ra
 
 
@@ -249,7 +298,22 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
         re.findall(r"\d+(?:[.,]\d+)?", (khach_noi or "")))
     lech = []
     for ten, so, dvi in cap_trong(text, bang):
-        if ten not in kho or so in so_khach:
+        if so in so_khach:
+            continue
+        if ten not in kho:
+            # Tài liệu KHÔNG nói gì về thuộc tính này -> mọi giá trị AI gán cho
+            # nó đều là bịa. Trước 09-09 chỗ này `continue`, hoãn sang lưới NLI.
+            #
+            # Vì sao đổi: đo trên 250 lượt lịch sử, đối chiếu với TRỌN tài liệu
+            # sản phẩm + FAQ, bịt lỗ này thêm ĐÚNG MỘT lượt (14 -> 15) và lượt
+            # đó là bịa thật - "phí rút tiền mặt tại ATM là 2.000 đồng/giao
+            # dịch", trong khi không tài liệu nào có phí rút tiền. Không thêm
+            # chặn oan nào.
+            #
+            # Sáng cùng ngày đo lần đầu cho +0 và tôi để nguyên; khác biệt là
+            # lúc đó bảng chưa có thuộc tính phí nên con số ấy không được trích
+            # ra để mà xét.
+            lech.append(f"{ten} {so}{dvi} (tài liệu không nói gì về {ten})")
             continue
         if any(c in kho[ten] for c in _quy_doi(so, dvi)):
             continue

@@ -118,12 +118,18 @@ def test_ty_va_trieu_quy_doi_duoc():
     assert sua is None
 
 
-def test_thuoc_tinh_KHONG_CO_trong_tai_lieu_thi_khong_phan():
-    """Tài liệu không nói gì về thuộc tính đó thì lưới này im - việc của lưới NLI."""
-    from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+def test_thuoc_tinh_KHONG_CO_trong_tai_lieu_thi_CHAN():
+    """Tài liệu không nói gì về thuộc tính đó -> giá trị AI gán cho nó là bịa.
+
+    ĐỔI 09-09-2026. Trước đó lưới im ở đây và hoãn sang lưới NLI. Đo trên 250
+    lượt lịch sử, đối chiếu với TRỌN tài liệu sản phẩm + FAQ: bịt lỗ này thêm
+    ĐÚNG MỘT lượt (14 -> 15) và lượt đó là bịa thật ("phí rút tiền mặt tại ATM
+    là 2.000 đồng/giao dịch", không tài liệu nào có phí rút tiền). Không thêm
+    chặn oan nào.
+    """
     _, sua = chan_thuoc_tinh_sai("Miễn lãi 45 ngày ạ", "- Lãi suất: từ 7.9%/năm\n",
                                  THUOC_TINH_MAC_DINH)
-    assert sua is None
+    assert sua is not None and "miễn lãi" in sua
 
 
 def test_van_ban_KHONG_bi_thay_ca_cau():
