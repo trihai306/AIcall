@@ -30,6 +30,26 @@ router = APIRouter(prefix="/api/fillers", tags=["fillers"])
 
 _ID_HOP_LE = re.compile(r"^[a-z0-9_]{2,40}$")
 
+# Mẩu mở đầu HỨA KHÁCH CHỜ. Luôn sai, và sai theo cách đo được.
+#
+# `stream_response(prefill=...)` đặt câu đệm vào miệng mô hình để nó VIẾT TIẾP
+# thành cùng một câu. Câu đệm hứa chờ thì nó viết tiếp thành "chờ em một chút
+# nhé, em kiểm tra lại thông tin ạ" - khách nghe HAI lần câu giờ trước khi có
+# dữ kiện. Đo 09-09-2026, mỗi mẫu 12 câu hỏi thật, đếm lượt có câu giờ thứ hai:
+#     "Dạ anh chị chờ em một chút nhé,"      3/12
+#     "Dạ vâng, anh chị đợi em một lát ạ,"   3/12
+#     "Dạ vâng ạ,"                           0/12
+#     "Dạ em thông tin ngay cho anh chị,"    0/12
+#
+# Và lời hứa đó không bao giờ đúng: câu đệm theo định nghĩa phát NGAY TRƯỚC câu
+# trả lời, nên không có quãng chờ thật nào để hứa.
+#
+# CHỈ nhắm lời hứa chờ, KHÔNG nhắm mọi câu có chữ "nghe": tình huống
+# `khach_noi_khong_ro` dùng "Dạ em nghe chưa rõ ạ," và ở đó nó đúng, vì câu tiếp
+# theo là hỏi lại chứ không phải dữ kiện.
+_HUA_CHO = re.compile(
+    r"(chờ|đợi)\s+em|cho\s+em\s+(một\s+)?(chút|lát|tí|ít\s+phút)", re.I)
+
 
 def kiem_tinh_huong(d: dict) -> list[str]:
     """Mọi lỗi của một tình huống, gộp một lần.
@@ -59,6 +79,12 @@ def kiem_tinh_huong(d: dict) -> list[str]:
             loi.append(f"Mẩu mở đầu phải kết bằng dấu phẩy: {m!r} — thiếu phẩy "
                        "thì F5 hạ giọng kết câu ngay giữa lượt, khách nghe như "
                        "AI đã nói xong trong khi câu trả lời thật chưa tới")
+        if _HUA_CHO.search(m):
+            loi.append(f"Mẩu mở đầu không được hứa khách chờ: {m!r} — câu đệm "
+                       "phát NGAY TRƯỚC câu trả lời nên không có quãng chờ thật "
+                       "để hứa, và mô hình viết tiếp lời hứa đó thành một câu "
+                       "câu giờ NỮA. Hãy viết thành lời DẪN vào nội dung, ví dụ "
+                       "'Dạ em thông tin ngay cho anh chị,'")
 
     speed = d.get("speed")
     if speed not in (None, "") and not (0.5 <= float(speed) <= 1.5):

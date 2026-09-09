@@ -290,3 +290,50 @@ def test_khong_chay_hai_viec_dung_cung_luc(db, monkeypatch):
         assert "error" in asyncio.run(fl.dung_tieng())
     finally:
         fl._viec["dang_chay"] = False
+
+
+# --- mẩu mở đầu KHÔNG được hứa khách chờ ------------------------------------
+# Đo 09-09-2026, mỗi mẫu chạy 12 câu hỏi thật của khách qua đúng đường sinh
+# (`build_system_prompt(cau_dem=...)` + `stream_response(prefill=...)`), đếm số
+# lượt mô hình thêm MỘT CÂU CÂU GIỜ NỮA ngay sau câu đệm:
+#
+#     "Dạ anh chị chờ em một chút nhé,"      3/12
+#     "Dạ vâng, anh chị đợi em một lát ạ,"   3/12
+#     "Dạ vâng ạ,"                           0/12
+#     "Dạ em thông tin ngay cho anh chị,"    0/12
+#
+# Cơ chế: `prefill` bắt mô hình VIẾT TIẾP câu đệm thành cùng một câu. Câu đệm
+# hứa khách chờ thì nó viết tiếp thành "chờ em một chút nhé, em kiểm tra lại
+# thông tin ạ" - khách nghe HAI lần câu giờ trước khi có dữ kiện đầu tiên.
+#
+# Mà lời hứa đó luôn sai: câu đệm theo định nghĩa là thứ phát NGAY TRƯỚC câu trả
+# lời, nên không bao giờ có quãng chờ thật để mà hứa.
+
+def test_mo_dau_hua_khach_cho_thi_bao_loi():
+    loi = fl.kiem_tinh_huong(_th(mo_dau=["Dạ anh chị chờ em một chút nhé,"]))
+    assert any("chờ" in x for x in loi), f"không bắt được lời hứa chờ: {loi}"
+
+
+def test_bat_ca_cach_noi_khac_cua_loi_hua_cho():
+    for m in ("Dạ vâng, anh chị đợi em một lát ạ,",
+              "Dạ vâng ạ, anh chị cho em một chút nhé,",
+              "Dạ em nghe rõ rồi ạ, anh chị chờ em nhé,"):
+        assert fl.kiem_tinh_huong(_th(mo_dau=[m])) != [], f"lọt: {m!r}"
+
+
+def test_mo_dau_DAN_thi_khong_bao_loi():
+    """Bốn mẫu đo được 0/12 câu giờ - không được chặn nhầm chúng."""
+    for m in ("Dạ vâng ạ,", "Dạ về việc này,",
+              "Dạ em thông tin ngay cho anh chị,",
+              "Dạ vâng, em xem giúp anh chị,"):
+        assert fl.kiem_tinh_huong(_th(mo_dau=[m])) == [], f"chặn oan: {m!r}"
+
+
+def test_khong_chan_cau_TU_XIN_LOI_hay_HOI_LAI():
+    """"em nghe chưa rõ" là ĐÚNG cho tình huống nghe không rõ - đừng vơ vào.
+
+    Luật chỉ nhắm LỜI HỨA CHỜ, không nhắm mọi câu có chữ "nghe": tình huống
+    `khach_noi_khong_ro` dùng "Dạ em nghe chưa rõ ạ," và ở đó nó đúng, vì câu
+    tiếp theo là hỏi lại chứ không phải dữ kiện.
+    """
+    assert fl.kiem_tinh_huong(_th(mo_dau=["Dạ em nghe chưa rõ ạ,"])) == []
