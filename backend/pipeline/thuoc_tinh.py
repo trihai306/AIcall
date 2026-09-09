@@ -36,9 +36,14 @@ _SO = re.compile(
     re.I,
 )
 # Bắt dải số dạng "N - M đơn_vị" hoặc "N đến M đơn_vị": số đầu không có đơn vị ngay sau.
+# Bắt dải "N - M đơn_vị" và cả "N đơn_vị đến M đơn_vị". Dạng thứ hai rất hay
+# gặp và bản đầu KHÔNG nhận: "hạn mức từ 10 triệu đến 500 triệu" bị đọc thành
+# hai số RỜI, đầu sau trôi sang thuộc tính khác rồi bị sửa thành câu vô nghĩa
+# ("từ 10 triệu đến 5 triệu"). Tài liệu thẻ cũng viết kiểu đó nên chính tài
+# liệu cũng đang bị đọc sai.
 _DAI = re.compile(
-    r"(\d+(?:[.,]\d+)*)\s*(?:-|–|đến)\s*(\d+(?:[.,]\d+)*)\s*"
-    r"(%|(?:triệu|tỷ|tháng|năm|giờ|ngày|tuổi|đồng|nghìn|đ)\b)",
+    r"(\d+(?:[.,]\d+)*)\s*(?:%|(?:triệu|tỷ|tháng|năm|giờ|ngày|tuổi|đồng|nghìn|đ)\b)?\s*(?:-|–|đến|tới)\s*"
+    r"(\d+(?:[.,]\d+)*)\s*(%|(?:triệu|tỷ|tháng|năm|giờ|ngày|tuổi|đồng|nghìn|đ)\b)",
     re.I,
 )
 _RADIUS = 85  # ký tự tối đa giữa từ khoá và số
@@ -385,60 +390,81 @@ def sua_theo_tai_lieu(text: str, tai_lieu: str, bang: dict,
     khoang = khoang_tai_lieu(tai_lieu, bang)
     so_khach = _so_duoc_mien(khach_noi, can_cu_them, bang)
 
-    sai: list[tuple[str, str, str]] = []
-    for ten, so, dvi in cap_trong(text, bang):
-        if so in so_khach:
-            continue
-        if ten in kho and any(c in kho[ten] for c in _quy_doi(so, dvi)):
-            continue
-        if _trong_khoang(so, dvi, khoang.get(ten, [])):
-            continue
-        sai.append((ten, so, dvi))
+    # Chạy trên CỤM chứ không trên từng số: một dải ("22 - 60 tuổi") là một cụm
+    # hai giá trị, thay từng đầu bằng cùng một giá trị tài liệu ra câu vô nghĩa
+    # ("18 tuổi - 18 tuổi"). Đã xảy ra thật trên 250 lượt lịch sử.
+    sai: list[tuple[str, list[str], str]] = []
+    for ten, sos, dvi in _cum_gan_thuoc_tinh(text, bang):
+        con = [x for x in sos if x not in so_khach
+               and not (ten in kho and any(c in kho[ten] for c in _quy_doi(x, dvi)))
+               and not _trong_khoang(x, dvi, khoang.get(ten, []))]
+        if con:
+            sai.append((ten, sos, dvi))
     if not sai:
         return text, None
 
     ra, ghi = text, []
-    con_lai: list[tuple[str, str, str]] = []
-    for ten, so, dvi in sai:
+    con_lai: list[tuple[str, list[str], str]] = []
+    for ten, sos, dvi in sai:
         dung = kho.get(ten, set())
-        if len(dung) == 1:
+        # CHỈ thay khi cụm có MỘT số và tài liệu có MỘT giá trị. Dải thì bỏ hẳn
+        # mệnh đề - thay từng đầu bằng cùng một giá trị ra "18 tuổi - 18 tuổi".
+        if len(sos) == 1 and len(dung) == 1:
             so_dung, dvi_dung = next(iter(dung))
-            # Thay ĐÚNG chữ số như nó xuất hiện trong câu, kể cả dạng có dấu
-            # phân cách nghìn ("2.500" chứ không phải "2500").
-            moi, n = re.subn(
-                r"\b" + re.escape(_dang_trong_cau(ra, so)) + r"\b(\s*" +
-                re.escape(dvi) + r")?",
-                f"{so_dung} {dvi_dung}", ra, count=1)
-            if n:
-                ra = moi
-                ghi.append(f"{ten} {so}{dvi} -> {so_dung}{dvi_dung}")
-                continue
-        con_lai.append((ten, so, dvi))
+            goc = _dang_trong_cau(ra, sos[0], dvi)
+            if goc:
+                moi, n = re.subn(
+                    re.escape(goc) + r"(\s*" + re.escape(dvi) + r")?",
+                    f"{so_dung} {dvi_dung}", ra, count=1)
+                if n:
+                    ra = moi
+                    ghi.append(f"{ten} {sos[0]}{dvi} -> {so_dung}{dvi_dung}")
+                    continue
+        con_lai.append((ten, sos, dvi))
 
     if con_lai:
-        giu = []
+        giu, da_bo = [], False
         for md in _RANH_MENH_DE.split(ra):
-            co_sai = any(_dang_trong_cau(md, so) and
-                         re.search(r"\b" + re.escape(_dang_trong_cau(md, so)) + r"\b", md)
-                         for _t, so, _d in con_lai)
-            if co_sai:
+            if any(_dang_trong_cau(md, x, d) for _t, sos, d in con_lai for x in sos):
+                da_bo = True
                 continue
             giu.append(md)
-        ra = " ".join(x.strip() for x in giu if x.strip()).strip()
-        ghi += [f"bỏ mệnh đề có {t} {s}{d}" for t, s, d in con_lai]
+        if da_bo:
+            ra = _don_duoi(" ".join(x.strip() for x in giu if x.strip()))
+            ghi += [f"bỏ mệnh đề có {t} {s[0]}{d}" for t, s, d in con_lai]
 
+    # Báo đã sửa thì văn bản BẮT BUỘC phải khác - không thì metrics đẹp mà khách
+    # vẫn nghe số bịa. `tests/test_bao_da_sua_thi_van_ban_PHAI_doi` canh chỗ này.
+    if ghi and ra == text:
+        return "", "; ".join(ghi) + " (không cắt được, bỏ cả câu)"
     return ra, "; ".join(ghi) if ghi else None
 
 
-def _dang_trong_cau(cau: str, so: str) -> str:
-    """Dạng chữ của `so` như nó nằm trong câu ("2500" -> "2.500" nếu câu ghi thế).
+def _dang_trong_cau(cau: str, so: str, dvi: str = "") -> str | None:
+    """Dạng chữ của `so` như nó nằm trong câu; None nếu không tìm thấy.
 
-    `chuan_so` đã bỏ dấu phân cách nghìn, nên tìm-thay theo chuỗi đã chuẩn hoá
-    sẽ trượt hết số tiền. Dò lại dạng gốc thay vì đoán.
+    `chuan_so` đã chuẩn hoá (bỏ phân cách nghìn cho tiền, đổi phẩy thành chấm
+    cho thập phân), nên tìm theo chuỗi đã chuẩn hoá sẽ TRƯỢT: câu ghi "4,2" mà
+    `so` là "4.2", và `re.escape("4.2")` cho `4\.2` không khớp dấu phẩy.
+
+    Trả None chứ không trả `so`: chỗ gọi phải phân biệt được "tìm thấy" với
+    "không thấy", nếu không nó báo đã sửa trong khi văn bản y nguyên - lỗi đó đã
+    xảy ra thật và metrics vẫn đẹp.
     """
-    if re.search(r"\b" + re.escape(so) + r"\b", cau):
-        return so
     for m in re.finditer(r"\d+(?:[.,]\d+)*", cau):
-        if re.sub(r"[.,]", "", m.group(0)) == so:
+        if chuan_so(m.group(0), dvi) == so:
             return m.group(0)
-    return so
+    return None
+
+
+def _don_duoi(cau: str) -> str:
+    """Dọn đuôi sau khi cắt mệnh đề: bỏ dấu treo, bảo đảm có dấu kết câu.
+
+    Cắt xong mà còn "cần CMND/CCCD, hộ khẩu," thì khách nghe câu cụt lủng và F5
+    đọc lên rất kỳ - dấu phẩy cuối là ranh giới mảnh, nó hạ giọng như còn nói
+    tiếp rồi im hẳn.
+    """
+    cau = (cau or "").strip().rstrip(",;:-– ").strip()
+    if cau and cau[-1] not in ".?!…":
+        cau += "."
+    return cau
