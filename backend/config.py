@@ -172,6 +172,25 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cpu"  # keep VRAM free for STT/LLM/TTS
 
+    # Nạp TRỌN tài liệu sản phẩm + FAQ thay cho hai mảnh RAG.
+    #
+    # Đo 09-09-2026 trên 60 câu hỏi thật của khách, qwen2.5:7b:
+    #     mảnh RAG top_k=2 (cũ) .... 1005 ký tự, TTFT trung vị 100ms
+    #     trọn tài liệu + FAQ ...... 2920 ký tự, TTFT trung vị  28ms
+    # Gần gấp ba ký tự mà NHANH HƠN: mảnh RAG đổi mỗi lượt nên phá cache tiền tố
+    # của llama.cpp, còn tài liệu thì đứng yên suốt cuộc gọi. Đo riêng bằng
+    # `prompt_eval_duration`, xen kẽ ba vòng: 1562 token đổi mỗi lượt tốn 92ms,
+    # 2896 token đứng yên tốn 17ms.
+    #
+    # Bỏ luôn được lượt mã hoá bge-m3 trên đường găng.
+    #
+    # KHÔNG bớt bịa - đó là việc của lưới thuộc tính và của việc có đủ tài liệu.
+    # Đây thuần tuý là thay đổi về ĐỘ TRỄ.
+    #
+    # Tắt (False) thì rơi về mảnh RAG như cũ. Lượt chưa biết sản phẩm cũng tự
+    # rơi về RAG, không cần tắt cờ.
+    ngu_canh_tron_tai_lieu: bool = True
+
     # VAD
     vad_threshold: float = 0.5
     vad_min_silence_ms: int = 220

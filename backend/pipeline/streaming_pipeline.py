@@ -13,6 +13,7 @@ from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
 from backend.pipeline.chan_tuan_thu import chan_gan_thu_nhap, chan_tu_cam
 from backend.pipeline.thuoc_tinh import chan_thuoc_tinh_sai
+from backend.pipeline.ngu_canh_tai_lieu import toan_van as _toan_van_tai_lieu
 from backend.pipeline.text_normalizer import noi_tiep_ve_dang_do
 from backend.pipeline import cong_cu_llm
 from backend.pipeline.cau_chan_lap import cau_chan, dem_chan_lien_tiep
@@ -1545,11 +1546,25 @@ class StreamingPipeline:
 
         # RAG - dùng lại kết quả đã đoán trước nếu phiên âm cuối nối tiếp đúng
         # phiên âm tạm. Bỏ được ~120ms mã hoá bge-m3 mà không đổi nội dung.
+        # TRỌN tài liệu sản phẩm + FAQ, thay cho hai mảnh RAG. Nhiều chữ hơn mà
+        # TTFT thấp hơn (100ms -> 28ms) vì tài liệu đứng yên suốt cuộc gọi nên
+        # cache tiền tố giữ được, còn mảnh RAG đổi mỗi lượt thì phá cache. Số đo
+        # ở `config.ngu_canh_tron_tai_lieu` và `tests/test_ngu_canh_tai_lieu.py`.
+        #
+        # Đặt SAU nhánh `dap_san` (lượt đó cố ý không cần ngữ cảnh) và TRƯỚC
+        # nhánh đoán trước: có tài liệu rồi thì bản đoán chẳng tiết kiệm được gì.
+        tron_tai_lieu = (_toan_van_tai_lieu(session.product)
+                         if settings.ngu_canh_tron_tai_lieu else "")
         if dap_san:
             # Câu trả lời sẵn không có con số nào phải tra, khỏi tốn bge-m3.
             rag_context = ""
             metrics["rag_ms"] = 0
             metrics["rag_doan_truoc"] = False
+        elif tron_tai_lieu:
+            rag_context = tron_tai_lieu
+            metrics["rag_ms"] = 0
+            metrics["rag_doan_truoc"] = False
+            metrics["ngu_canh_tron"] = len(tron_tai_lieu)
         elif self._spec_hit(spec_transcript, user_text) and spec_rag:
             rag_context = spec_rag
             metrics["rag_ms"] = 0
