@@ -2168,13 +2168,15 @@ class StreamingPipeline:
             # tài liệu, không thay được thì bỏ mệnh đề, bỏ hết mới dùng câu mẫu.
             # Xem `config.thuoc_tinh_sua_cau` cho lý do bật mặc định.
             _, sua_tt = chan_thuoc_tinh_sai(
-                ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text)
+                ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text,
+                can_cu_them=can_cu_phien)
             if sua_tt:
                 logger.warning("THUỘC TÍNH LỆCH: %s | %r", sua_tt, ra[:60])
                 metrics["chan_thuoc_tinh"] = sua_tt
                 if settings.thuoc_tinh_sua_cau:
                     moi, cach_sua = sua_theo_tai_lieu(
-                        ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text)
+                        ra, ngu_canh, self._bang_thuoc_tinh, khach_noi=user_text,
+                        can_cu_them=can_cu_phien)
                     # Bỏ sạch thì mới dùng câu mẫu - đây là nhánh HIẾM, giữ nó
                     # hiếm chính là thứ tránh được "trả lời 1 kiểu".
                     ra = moi.strip() or CAU_KIEM_TRA_LAI

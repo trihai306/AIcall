@@ -276,8 +276,31 @@ def _quy_doi(so: str, dvi: str) -> list[tuple[str, str]]:
     return ra
 
 
+def _so_duoc_mien(khach_noi: str, can_cu_them: str, bang: dict) -> set[str]:
+    """Số KHÔNG được đụng tới: khách nêu ra, hoặc đã có trong sổ căn cứ của phiên.
+
+    `khach_noi` chỉ có lượt HIỆN TẠI, nên thiếu nó thì con số khách nêu ở lượt
+    TRƯỚC bị coi là bịa. Lỗi thật đo được: khách nói "lương anh 15 triệu" ở lượt
+    2, sang lượt 3 AI nhắc lại đúng thì lưới đổi thành 5 triệu - là thu nhập TỐI
+    THIỂU trong tài liệu, không phải thu nhập của khách.
+
+    `can_cu_them` là `so_can_cu.SoCanCu.can_cu` - sổ chỉ chứa LỜI KHÁCH và TÀI
+    LIỆU, không chứa lời AI, nên nới ở đây không mở đường cho bịa tự nuôi bịa.
+    """
+    ra: set[str] = set()
+    for nguon in (khach_noi, can_cu_them):
+        if not nguon:
+            continue
+        ra |= {so for _t, so, _d in cap_trong(nguon, bang)}
+        for m in re.finditer(r"\d+(?:[.,]\d+)*", nguon):
+            ra.add(m.group(0))
+            ra.add(re.sub(r"[.,]", "", m.group(0)))
+    return ra
+
+
 def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
-                        khach_noi: str = "") -> tuple[str, str | None]:
+                        khach_noi: str = "",
+                        can_cu_them: str = "") -> tuple[str, str | None]:
     """Con số gán cho một thuộc tính có đúng như tài liệu không?
 
     Trả `(văn bản nguyên vẹn, mô tả chỗ lệch hoặc None)` - CÙNG DẠNG với
@@ -294,8 +317,7 @@ def chan_thuoc_tinh_sai(text: str, tai_lieu: str, bang: dict,
     khoang = khoang_tai_lieu(tai_lieu, bang)
     # `cap_trong` trả BỘ BA (tên, số, đơn vị). Đọc thành bộ đôi là nổ giữa
     # cuộc gọi - đã lọt qua test một lần vì câu thử không trích được cặp nào.
-    so_khach = {so for _, so, _ in cap_trong(khach_noi, bang)} | set(
-        re.findall(r"\d+(?:[.,]\d+)?", (khach_noi or "")))
+    so_khach = _so_duoc_mien(khach_noi, can_cu_them, bang)
     lech = []
     for ten, so, dvi in cap_trong(text, bang):
         if so in so_khach:
@@ -333,7 +355,8 @@ _RANH_MENH_DE = re.compile(r"(?<=[,.;!?])\s+")
 
 
 def sua_theo_tai_lieu(text: str, tai_lieu: str, bang: dict,
-                      khach_noi: str = "") -> tuple[str, str | None]:
+                      khach_noi: str = "",
+                      can_cu_them: str = "") -> tuple[str, str | None]:
     """Sửa câu cho khớp tài liệu. Trả `(câu đã sửa, mô tả)`; `mô tả=None` là câu sạch.
 
     Thang xử lý, rẻ trước đắt sau - và KHÔNG BAO GIỜ im lặng:
@@ -360,8 +383,7 @@ def sua_theo_tai_lieu(text: str, tai_lieu: str, bang: dict,
     if not kho:
         return text, None
     khoang = khoang_tai_lieu(tai_lieu, bang)
-    so_khach = {so for _, so, _ in cap_trong(khach_noi, bang)} | set(
-        re.findall(r"\d+(?:[.,]\d+)*", (khach_noi or "")))
+    so_khach = _so_duoc_mien(khach_noi, can_cu_them, bang)
 
     sai: list[tuple[str, str, str]] = []
     for ten, so, dvi in cap_trong(text, bang):

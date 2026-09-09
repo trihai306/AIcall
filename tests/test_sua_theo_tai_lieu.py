@@ -90,3 +90,36 @@ def test_so_do_KHACH_neu_thi_khong_dung_toi():
 
 def test_van_ban_rong_thi_khong_no():
     assert sua_theo_tai_lieu("", DOC_VAY, THUOC_TINH_MAC_DINH) == ("", None)
+
+
+# --- số khách nêu ở LƯỢT TRƯỚC ----------------------------------------------
+# Lỗi thật của chính bản sửa này, bắt được ngay lượt chạy thử đầu tiên:
+#
+#   [lượt 2] khách: lương anh 15 triệu thì vay được bao nhiêu
+#   [lượt 3] khách: anh cần 800 triệu có vay được không
+#            AI   : "Với thu nhập 15 triệu/tháng, ..."      <- ĐÚNG, nhớ lượt trước
+#            lưới : thu nhập 15triệu -> 5triệu              <- SỬA HỎNG
+#
+# "5 triệu" trong tài liệu là thu nhập TỐI THIỂU để vay, không phải thu nhập của
+# khách. Lưới lấy nó đè lên con số thật của khách.
+#
+# Gốc: `khach_noi` chỉ có lượt HIỆN TẠI. Dự án đã có sổ căn cứ theo phiên
+# (`so_can_cu.SoCanCu`) mà `chan_so_sai`/`chan_tien_sai` vẫn dùng - sổ này chỉ
+# chứa LỜI KHÁCH và TÀI LIỆU, không chứa lời AI, nên dùng làm miễn trừ là an toàn.
+
+def test_so_khach_neu_o_LUOT_TRUOC_thi_khong_dung_toi():
+    ra, mo_ta = sua_theo_tai_lieu(
+        "Dạ với thu nhập 15 triệu một tháng thì anh vay được 500 triệu ạ.",
+        DOC_VAY, THUOC_TINH_MAC_DINH,
+        khach_noi="anh cần 800 triệu có vay được không",
+        can_cu_them="lương anh 15 triệu một tháng")
+    assert mo_ta is None, f"sửa hỏng câu vốn đúng: {mo_ta}"
+    assert "15 triệu" in ra
+
+
+def test_so_KHONG_o_trong_so_thi_van_sua():
+    """Nới cho sổ KHÔNG được nới thành lỗ hổng."""
+    ra, mo_ta = sua_theo_tai_lieu(
+        "Dạ anh vay được tối đa 300 triệu đồng ạ.", DOC_VAY, THUOC_TINH_MAC_DINH,
+        can_cu_them="lương anh 15 triệu một tháng")
+    assert mo_ta is not None and "500 triệu" in ra
