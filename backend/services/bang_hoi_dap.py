@@ -99,3 +99,40 @@ NGUONG_DOC_THANG = 0.90
 def doc_thang(diem: float) -> bool:
     """Có đọc nguyên văn nội dung trong bảng không, hay để mô hình diễn giải."""
     return diem >= NGUONG_DOC_THANG
+
+
+def dong_theo_tinh_huong(tinh_huong_id: str | None, bang,
+                         chi_theo_tinh_huong) -> str | None:
+    """Dòng bảng mà TÌNH HUỐNG vừa chọn trỏ tới, hoặc None.
+
+    Chỉ áp cho nhóm tình huống phải qua cổng ngữ cảnh - nhóm CHÊ, xem
+    `filler_situation.DIEU_KIEN_NGU_CANH`. Bộ phân loại tình huống có cổng đó
+    nên nó mới là thứ phân biệt được "hỏi lãi" với "chê lãi"; bảng này chỉ cấp
+    câu đã duyệt để đọc nguyên văn.
+
+    Vì sao phải đọc nguyên văn: cuộc 08c0d3e0 diễn lại 11-09-2026, bộ phân loại
+    chọn ĐÚNG `che_lai_cao` mà câu trả lời do mô hình sinh vẫn đọc lại "7.9%"
+    thay vì câu kịch bản. Đo với đúng lịch sử cuộc đó: 0/5 câu theo kịch bản với
+    cả 4 mẩu mở đầu hiện có - lịch sử dài làm mô hình bỏ qua mục kịch bản.
+    """
+    if tinh_huong_id and tinh_huong_id in chi_theo_tinh_huong and tinh_huong_id in bang:
+        return tinh_huong_id
+    return None
+
+
+def bo_qua_chi_theo_tinh_huong(bang, chi_theo_tinh_huong) -> frozenset[str]:
+    """Dòng KHÔNG được chọn bằng cosine - chỉ đi theo tình huống.
+
+    "hỏi lãi" và "chê lãi" chỉ cách nhau 0.026 điểm cosine. Để cosine chọn dòng
+    chê là đọc câu chống chê cho người đang HỎI.
+    """
+    return frozenset(set(bang) & set(chi_theo_tinh_huong))
+
+
+def doc_nguyen_van(dong: dict) -> bool:
+    """Dòng này có được đọc NGUYÊN VĂN, bỏ qua mô hình, không?
+
+    Dòng đi theo tình huống thì luôn đọc: thứ xác nhận nó là bộ phân loại có
+    cổng ngữ cảnh chứ không phải điểm cosine của câu hỏi. Còn lại theo ngưỡng cũ.
+    """
+    return bool(dong.get("theo_tinh_huong")) or doc_thang(dong.get("diem", 0.0))

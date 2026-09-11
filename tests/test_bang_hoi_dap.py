@@ -125,3 +125,81 @@ def test_nguong_doc_thang_cao_hon_nguong_trung():
     # mọi lần trúng đều đọc cứng, kể cả lần khớp lỏng.
     from backend.services.filler_situation import NGUONG_DIEM
     assert NGUONG_DOC_THANG > NGUONG_DIEM
+
+
+# --- Tình huống CHÊ: dòng đi theo tình huống, không theo cosine ------------
+#
+# Cuộc 08c0d3e0 diễn lại 11-09-2026: khách "lãi cao thế", bộ phân loại (có cổng
+# ngữ cảnh) chọn ĐÚNG `che_lai_cao`, nhưng câu trả lời vẫn do mô hình sinh và
+# đọc lại "7.9%" chứ không nói câu kịch bản. Đo với đúng lịch sử cuộc đó: 4 mẩu
+# mở đầu hiện có cho 0/5 câu theo kịch bản (tách riêng thì 5/5 - lịch sử dài
+# làm mô hình bỏ qua mục kịch bản). Nên câu trả lời phải là câu ĐÃ DUYỆT.
+#
+# Và dòng chê KHÔNG được chọn bằng cosine: "hỏi lãi" và "chê lãi" chỉ cách nhau
+# 0.026 - đúng lý do bộ phân loại tình huống phải có cổng ngữ cảnh. Khách HỎI
+# lãi mà nghe câu chống chê là còn tệ hơn lỗi đang sửa.
+import json
+import re
+import unicodedata
+from pathlib import Path
+
+from backend.services.bang_hoi_dap import (NGUONG_DOC_THANG,
+                                           bo_qua_chi_theo_tinh_huong,
+                                           doc_nguyen_van, dong_theo_tinh_huong)
+
+CHE = frozenset({"che_lai_cao", "che_han_muc_thap", "che_phi_cao"})
+BANG = {"che_lai_cao": {}, "che_han_muc_thap": {}, "can_nhung_gi": {}}
+GOC = Path(__file__).resolve().parents[1]
+
+
+def test_tinh_huong_che_co_dong_thi_lay_dung_dong_do():
+    assert dong_theo_tinh_huong("che_lai_cao", BANG, CHE) == "che_lai_cao"
+
+
+def test_tinh_huong_hoi_thi_khong_keo_dong_nao_theo_tinh_huong():
+    assert dong_theo_tinh_huong("hoi_lai_suat", BANG, CHE) is None
+    assert dong_theo_tinh_huong(None, BANG, CHE) is None
+
+
+def test_tinh_huong_che_ma_bang_khong_co_dong_thi_de_mo_hinh_tra_loi():
+    assert dong_theo_tinh_huong("che_phi_cao", BANG, CHE) is None
+
+
+def test_dong_ngoai_nhom_che_thi_khong_di_theo_tinh_huong():
+    # `can_nhung_gi` có dòng trong bảng nhưng không phải tình huống chê - đường
+    # cosine vẫn lo nó như cũ.
+    assert dong_theo_tinh_huong("can_nhung_gi", BANG, CHE) is None
+
+
+def test_dong_che_khong_bao_gio_duoc_chon_bang_cosine():
+    assert bo_qua_chi_theo_tinh_huong(BANG, CHE) == {"che_lai_cao", "che_han_muc_thap"}
+
+
+def test_dong_theo_tinh_huong_thi_doc_nguyen_van_du_diem_thap():
+    assert doc_nguyen_van({"theo_tinh_huong": True, "diem": 0.5})
+
+
+def test_dong_theo_cosine_van_theo_nguong_cu():
+    assert not doc_nguyen_van({"diem": 0.5})
+    assert doc_nguyen_van({"diem": NGUONG_DOC_THANG})
+
+
+def _gon(t):
+    t = unicodedata.normalize("NFC", t)
+    return re.sub(r"\s+", " ", t).strip(" .").lower()
+
+
+def test_dong_che_trong_bang_mau_la_nguyen_van_kich_ban():
+    """Câu đọc cho khách phải là câu TÀI LIỆU dặn, không phải câu viết lại.
+
+    Sửa kịch bản trong tài liệu mà quên bảng thì test này đỏ để nhắc.
+    """
+    tl = _gon((GOC / "knowledge/products/vay_tin_chap.md").read_text("utf-8"))
+    dong = {d["id"]: d for d in json.loads(
+        (GOC / "data/hoi_dap_seed.json").read_text("utf-8"))["hoi_dap"]}
+    for ma in ("che_lai_cao", "che_han_muc_thap"):
+        assert ma in dong, f"bảng mẫu thiếu dòng {ma}"
+        kiem_dong(dong[ma])
+        assert dong[ma]["san_pham"] == "vay tín chấp"
+        assert _gon(dong[ma]["tra_loi"]) in tl, \
+            f"{ma}: câu trả lời không có nguyên văn trong tài liệu"

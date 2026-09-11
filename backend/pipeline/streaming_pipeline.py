@@ -42,7 +42,9 @@ from backend.services.filler_pick import (NGUONG_BO_DEM_MS, can_che_ms,
                                           tu_vung_tu_kho,
                                           nen_bo_cau_dem, tinh_huong_dung)
 from backend.services.tieng_san import kho_tieng_san
-from backend.services.bang_hoi_dap import bo_qua_khac_san_pham, doc_thang
+from backend.services.bang_hoi_dap import (bo_qua_chi_theo_tinh_huong,
+                                           bo_qua_khac_san_pham, doc_nguyen_van,
+                                           dong_theo_tinh_huong)
 from backend.services.filler_situation import (
     DIEU_KIEN_NGU_CANH, NGUONG_CAU_DEM, chon_tinh_huong, chuan_hoa,
     loc_theo_ngu_canh,
@@ -480,7 +482,8 @@ class StreamingPipeline:
         """Số byte PCM 16-bit mono ứng với `ms` mili giây tiếng trong đệm phiên."""
         return session.audio_rate * 2 * ms // 1000
 
-    def _tra_bang_hoi_dap(self, text: str, session: CallSession) -> dict | None:
+    def _tra_bang_hoi_dap(self, text: str, session: CallSession,
+                          tinh_huong_id: str | None = None) -> dict | None:
         """Dòng bảng hỏi-đáp khớp với lời khách, hoặc None.
 
         Tra TRƯỚC khi hỏi tri thức. Trúng thì nội dung là câu đã soạn sẵn - đúng
@@ -490,17 +493,27 @@ class StreamingPipeline:
         Dùng lại `chon_tinh_huong`: việc "chọn id khớp nhất từ kho ví dụ đã
         nhúng" y hệt bài toán chọn tình huống, viết lại là có hai bộ luật ngưỡng
         rồi lệch nhau lúc nào không biết.
+
+        Nhóm tình huống CHÊ thì ngược lại: dòng của nó chỉ đi theo `tinh_huong_id`
+        mà bộ phân loại (có cổng ngữ cảnh) đã chọn cho câu đệm, không bao giờ theo
+        cosine - xem `bang_hoi_dap.dong_theo_tinh_huong`.
         """
         try:
             from backend.main import app_state
+            bang = getattr(app_state, "hoi_dap", None) or {}
+            dieu_kien = {ma: d.get("san_pham", "") for ma, d in bang.items()}
+            bo = bo_qua_khac_san_pham(dieu_kien, session.product)
+            ma = dong_theo_tinh_huong(tinh_huong_id, bang, DIEU_KIEN_NGU_CANH)
+            if ma and ma not in bo:
+                dong = dict(bang[ma])
+                dong["theo_tinh_huong"], dong["diem"] = True, 0.0
+                return dong
             kho = getattr(app_state, "hoi_dap_vector", None)
             if not kho or len(text) < 4:
                 return None
             q = chuan_hoa(self.rag.embed([text]))[0]
-            dieu_kien = {ma: d.get("san_pham", "")
-                         for ma, d in app_state.hoi_dap.items()}
             ma, diem = chon_tinh_huong(
-                q, kho, bo_qua=bo_qua_khac_san_pham(dieu_kien, session.product))
+                q, kho, bo_qua=bo | bo_qua_chi_theo_tinh_huong(bang, DIEU_KIEN_NGU_CANH))
             if not ma:
                 return None
             dong = dict(app_state.hoi_dap[ma])
@@ -1644,12 +1657,15 @@ class StreamingPipeline:
         # lên đầu ngữ cảnh, còn tri thức tra được vẫn giữ nguyên bên dưới. Đặt
         # lên đầu chứ không thay thế: câu khách hỏi có thể chạm hai chuyện, bỏ
         # hẳn phần tri thức là làm hẹp câu trả lời lại.
-        dong_bang = self._tra_bang_hoi_dap(user_text, session)
+        dong_bang = self._tra_bang_hoi_dap(
+            user_text, session, tinh_huong_id=metrics.get("tinh_huong_id"))
         if dong_bang:
             metrics["bang_hoi_dap"] = dong_bang["id"]
             metrics["bang_diem"] = round(dong_bang.get("diem", 0.0), 3)
-            logger.info("Bảng hỏi-đáp: trúng dòng %r (%.3f)",
-                        dong_bang["id"], dong_bang.get("diem", 0.0))
+            metrics["bang_theo_tinh_huong"] = bool(dong_bang.get("theo_tinh_huong"))
+            logger.info("Bảng hỏi-đáp: trúng dòng %r (%s)", dong_bang["id"],
+                        "theo tình huống" if dong_bang.get("theo_tinh_huong")
+                        else f"{dong_bang.get('diem', 0.0):.3f}")
             rag_context = (f"[Câu trả lời đã duyệt - dùng ĐÚNG nội dung này]\n"
                            f"{dong_bang['tra_loi']}\n\n{rag_context}").strip()
             metrics["rag_doan_truoc"] = False
@@ -2022,7 +2038,7 @@ class StreamingPipeline:
             # Lượt thường gặp (chào, "ai đấy", "đang bận"...) - xem
             # `luot_thuong_gap` để biết vì sao KHÔNG giao cho mô hình.
             nguon_token = _phat_lai(dap_san[1])
-        elif dong_bang and doc_thang(dong_bang.get("diem", 0.0)):
+        elif dong_bang and doc_nguyen_van(dong_bang):
             # Khách hỏi gần đúng cách đã soạn -> đọc NGUYÊN VĂN nội dung đã
             # duyệt, bỏ qua mô hình. Đo được: đưa nội dung vào ngữ cảnh kèm nhãn
             # "dùng ĐÚNG nội dung này" thì mô hình VẪN viết lại và bỏ sạch con
@@ -2052,7 +2068,7 @@ class StreamingPipeline:
         # như cũ và dựng NỀN sau khi xong lượt (xem cuối hàm), lần sau phát sẵn.
         if dap_san:
             ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
-        elif dong_bang and doc_thang(dong_bang.get("diem", 0.0)):
+        elif dong_bang and doc_nguyen_van(dong_bang):
             ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
         if ma_tieng_san and settings.tieng_san_bat and self._tts_available:
             tieng_san = kho_tieng_san.lay(

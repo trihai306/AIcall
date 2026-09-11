@@ -54,6 +54,35 @@
       "tra_loi": "Mình không cần tới quầy ạ, chuyên viên bên em sẽ tới tận nơi làm hồ sơ theo lịch mình hẹn.",
       "san_pham": "",
       "bat": 1
+    },
+    {
+      "id": "che_lai_cao",
+      "cau_dem": "",
+      "cau_hoi": [
+        "lãi cao thế",
+        "lãi cao quá",
+        "lãi thế thì cao rồi",
+        "sao lãi cao vậy",
+        "lãi vậy là cao đấy",
+        "lãi này cao quá em ơi"
+      ],
+      "tra_loi": "Lãi này bên em đã là ưu đãi thuộc tốp tốt nhất thị trường rồi ạ, do vay không tài sản thế chấp nên lãi sẽ hơi cao chút.",
+      "san_pham": "vay tín chấp",
+      "bat": true
+    },
+    {
+      "id": "che_han_muc_thap",
+      "cau_dem": "",
+      "cau_hoi": [
+        "vay được có thế thôi à",
+        "hạn mức thấp quá",
+        "ít thế",
+        "có nhiêu đó thôi hả",
+        "vay được ít vậy"
+      ],
+      "tra_loi": "Hạn mức này bên em thuộc tốp cao trên thị trường rồi đó ạ, vay tín chấp nên không ngân hàng nào dám cho vay quá nhiều ạ.",
+      "san_pham": "vay tín chấp",
+      "bat": true
     }
   ]
 }
