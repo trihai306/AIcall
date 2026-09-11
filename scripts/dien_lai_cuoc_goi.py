@@ -102,6 +102,17 @@ async def chay(duong_dan, t_bat_may, voice, product, scenario_id):
         for t in kho.tinh_huong if t.vi_du and t.id != MA_NHOM_CHUNG
     }
     print(f"Đã nhúng {len(app_state.kho_vector)} tình huống", flush=True)
+    # Bảng hỏi-đáp: `core/startup` nạp nó cho backend thật. Thiếu ở đây thì bản
+    # diễn lại KHÔNG BAO GIỜ trúng dòng nào - lần diễn lại 11-09 bảng có 4 dòng
+    # mà "thủ tục cần những gì" vẫn do mô hình tự nói, và mọi kết luận về bảng
+    # (kể cả dòng chê đi theo tình huống) sẽ sai.
+    from backend.models import db as _db
+    from backend.services.bang_hoi_dap import doc_dong
+    dong = doc_dong(_db.connection())
+    app_state.hoi_dap = {d["id"]: d for d in dong}
+    app_state.hoi_dap_vector = {d["id"]: chuan_hoa(rag.embed(list(d["cau_hoi"])))
+                                for d in dong if d["cau_hoi"]}
+    print(f"Đã nhúng {len(app_state.hoi_dap_vector)} dòng hỏi-đáp", flush=True)
 
     pipeline = StreamingPipeline(stt=stt, llm=llm, tts=tts, rag=rag)
 
