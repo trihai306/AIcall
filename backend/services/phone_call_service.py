@@ -24,7 +24,8 @@ import numpy as np
 
 from backend.config import settings
 from backend.services.audio_utils import (
-    compute_rms, float32_to_int16, int16_to_float32, resample_audio,
+    compute_rms, do_to_tieng_noi, float32_to_int16, gioi_han_mem, int16_to_float32,
+    resample_audio,
     resample_lien_tuc,
 )
 from backend.pipeline.session_manager import viec_cho_doan_ngan
@@ -515,6 +516,68 @@ class PhoneAudioSink:
             logger.debug(f"{self.bridge.tag} bỏ qua bản tin '{kind}'")
 
 
+def can_do_to_cuoi(y: np.ndarray, sr: int) -> np.ndarray:
+    """Chuẩn ĐỘ TO của mảnh - khâu CUỐI của đường xuống.
+
+    Đo bằng `audio_utils.do_to_tieng_noi`: lọc K của BS.1770 (độ to tai nghe)
+    + cổng theo khung tiếng nói. Cổng khối 400ms của BS.1770 thuần vẫn để lặng
+    ở chỗ nối làm chữ đầu to thêm tới +0,44 LU trên mảnh ngắn.
+
+    VÌ SAO Ở CUỐI VÀ VÌ SAO LUFS. Đo 11-09-2026 trên 52 clip thật qua đúng chuỗi
+    máy thật: độ to các mảnh lệch nhau 2,4 LU. `chuan_muc_thoai` cân RMS (năng
+    lượng) chứ không cân độ to tai nghe, và nó chạy TRƯỚC hạ tần số và
+    `tang_tuan_hoan` - hai khâu còn đổi mức. Câu đệm và câu trả lời là hai mảnh
+    khác nhau nên lệch theo đúng mức đó: "tiếng to hơn nghe rất giả".
+
+    Thứ tự của EBU R128: chuẩn độ to trước, giới hạn đỉnh sau. Bộ giới hạn bẻ
+    mềm ăn mất một chút độ to ở mảnh nhiều gai, nên đo lại và bù thêm một lần.
+    Nguyên mẫu trên 52 clip: lệch 2,4 LU -> 0,00 LU, bộ giới hạn chạm 1/52.
+
+    Mảnh lặng (từ -70 LUFS trở xuống) để nguyên. Hệ số kẹp ±10 dB để mảnh chỉ
+    có tạp âm không bị kéo lên ngang tiếng nói.
+    """
+    y = np.asarray(y, dtype=np.float32)
+    tran = settings.phone_dinh_toi_da
+    for _ in range(2):
+        L = do_to_tieng_noi(y, sr)
+        if L <= -70.0:
+            return y
+        keo = float(np.clip(settings.phone_do_to_lufs - L, -10.0, 10.0))
+        if abs(keo) < 0.05:
+            break
+        y = gioi_han_mem(y * np.float32(10 ** (keo / 20)), nguong=0.67 * tran, tran=tran)
+    return y.astype(np.float32)
+
+
+def xu_ly_tieng_xuong(audio: np.ndarray, rate: int) -> np.ndarray:
+    """Toàn bộ xử lý tiếng AI trước khi xuống điện thoại; trả float32 ở RATE_XUONG.
+
+    Tách khỏi `PhoneCallBridge.play` để test được cả chuỗi mà không phải dựng
+    cầu tiếng. Khâu CUỐI luôn là `can_do_to_cuoi` - mọi khâu đổi mức phải đứng
+    trước nó, không thì các mảnh lại lệch nhau.
+    """
+    # Bộ bù chỉ có nghĩa khi đầu kia là LOA THOẠI HẸP BĂNG. Đường xuống băng
+    # rộng thì không có gì để bù, bật lên chỉ tự cắt trầm và nâng chói - đúng
+    # cái tiếng "dè" mà nó sinh ra để chữa.
+    # Chỉnh âm TRƯỚC khi hạ tần: lọc và nâng dải ở 24kHz thì bộ lọc có đủ độ
+    # phân giải, làm sau khi đã xuống 8kHz thì dải cần nâng đã sát trần.
+    if settings.phone_toi_uu_am and RATE_XUONG <= NGUONG_HEP_BANG:
+        audio = toi_uu_cho_thoai(audio, rate)
+    else:
+        # Băng rộng thì không bù phổ, NHƯNG vẫn phải kiểm soát mức: bộ mã
+        # AMR ở đầu mạng vỡ đỉnh y hệt, và tiếng TTS ra ở mức đầy thang.
+        audio = chuan_muc_thoai(audio)
+    if rate != RATE_XUONG:
+        audio = resample_audio(audio, rate, RATE_XUONG)
+
+    # Tăng tính tuần hoàn SAU khi đã hạ tần: chạy ở đúng tần số bộ mã nhìn
+    # thấy (8kHz), và bậc LPC 10 vừa đúng cho băng 0-4kHz. Làm ở 24kHz thì
+    # bậc đó quá thấp, bao phổ dựng ra sai.
+    if settings.phone_tang_tuan_hoan and RATE_XUONG <= NGUONG_HEP_BANG:
+        audio = tang_tuan_hoan(audio, RATE_XUONG)
+    return can_do_to_cuoi(audio, RATE_XUONG)
+
+
 class PhoneCallBridge:
     """Một phiên tiếng với một điện thoại. Mỗi máy trong phone farm một thể."""
 
@@ -894,25 +957,7 @@ class PhoneCallBridge:
                 n_khung += 1
             self._so_manh.them(chu, n_khung)
             return
-        # Bộ bù chỉ có nghĩa khi đầu kia là LOA THOẠI HẸP BĂNG. Đường xuống băng
-        # rộng thì không có gì để bù, bật lên chỉ tự cắt trầm và nâng chói - đúng
-        # cái tiếng "dè" mà nó sinh ra để chữa.
-        # Chỉnh âm TRƯỚC khi hạ tần: lọc và nâng dải ở 24kHz thì bộ lọc có đủ độ
-        # phân giải, làm sau khi đã xuống 8kHz thì dải cần nâng đã sát trần.
-        if settings.phone_toi_uu_am and RATE_XUONG <= NGUONG_HEP_BANG:
-            audio = toi_uu_cho_thoai(audio, rate)
-        else:
-            # Băng rộng thì không bù phổ, NHƯNG vẫn phải kiểm soát mức: bộ mã
-            # AMR ở đầu mạng vỡ đỉnh y hệt, và tiếng TTS ra ở mức đầy thang.
-            audio = chuan_muc_thoai(audio)
-        if rate != RATE_XUONG:
-            audio = resample_audio(audio, rate, RATE_XUONG)
-
-        # Tăng tính tuần hoàn SAU khi đã hạ tần: chạy ở đúng tần số bộ mã nhìn
-        # thấy (8kHz), và bậc LPC 10 vừa đúng cho băng 0-4kHz. Làm ở 24kHz thì
-        # bậc đó quá thấp, bao phổ dựng ra sai.
-        if settings.phone_tang_tuan_hoan and RATE_XUONG <= NGUONG_HEP_BANG:
-            audio = tang_tuan_hoan(audio, RATE_XUONG)
+        audio = xu_ly_tieng_xuong(audio, rate)
 
         pcm = float32_to_int16(audio)
 

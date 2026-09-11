@@ -186,7 +186,8 @@ NGUONG_MEM = 0.5
 TRAN_MEM = 0.97
 
 
-def gioi_han_mem(audio: np.ndarray) -> np.ndarray:
+def gioi_han_mem(audio: np.ndarray, nguong: float | None = None,
+                 tran: float | None = None) -> np.ndarray:
     """Bẻ mềm các gai biên độ về dưới `TRAN_MEM`, giữ nguyên phần còn lại.
 
     VÌ SAO CẦN. `ha_muc_neu_qua` chia cả mảnh cho đỉnh, nên mọi mảnh ra đúng
@@ -202,13 +203,103 @@ def gioi_han_mem(audio: np.ndarray) -> np.ndarray:
     """
     if audio is None or len(audio) == 0:
         return audio
+    # Đường thoại có trần riêng (`phone_dinh_toi_da`), thấp hơn trần của TTS.
+    nguong = NGUONG_MEM if nguong is None else nguong
+    tran = TRAN_MEM if tran is None else tran
     x = np.asarray(audio, dtype=np.float64)
     bien = np.abs(x)
-    tren = bien > NGUONG_MEM
+    tren = bien > nguong
     if not tren.any():
         return audio
     ra = x.astype(np.float64).copy()
-    du = (bien[tren] - NGUONG_MEM) / (TRAN_MEM - NGUONG_MEM)
-    moi = NGUONG_MEM + (TRAN_MEM - NGUONG_MEM) * np.tanh(du)
+    du = (bien[tren] - nguong) / (tran - nguong)
+    moi = nguong + (tran - nguong) * np.tanh(du)
     ra[tren] = np.sign(x[tren]) * moi
     return ra.astype(np.asarray(audio).dtype)
+
+
+# ITU-R BS.1770-4, hệ số lọc K cho 48 kHz. Tầng 1: kệ nâng dải cao (~+4 dB từ
+# ~1,5 kHz). Tầng 2: lọc thông cao RLB (~38 Hz). Tần số khác thì đổi về 48 kHz
+# trước khi lọc - dùng đúng hệ số chuẩn, khỏi tự thiết kế lại cho từng tần số.
+_K_B1 = (1.53512485958697, -2.69169618940638, 1.19839281085285)
+_K_A1 = (1.0, -1.69065929318241, 0.73248077421585)
+_K_B2 = (1.0, -2.0, 1.0)
+_K_A2 = (1.0, -1.99004745483398, 0.99007225036621)
+
+
+def do_to_lufs(audio: np.ndarray, sr: int) -> float:
+    """Độ to tích hợp theo ITU-R BS.1770-4, đơn vị LUFS.
+
+    Khác RMS ở hai chỗ, và cả hai đều là thứ tai nghe thấy:
+      - Lọc K: dải cao góp vào độ to nhiều hơn dải trầm. Hai mảnh cùng RMS mà
+        khác phổ thì tai nghe to nhỏ khác nhau - RMS không thấy chỗ đó.
+      - Cổng: khối 400ms dưới -70 LUFS (lặng) hoặc thấp hơn trung bình 10 LU bị
+        bỏ, nên khoảng lặng đầu/cuối mảnh không kéo phép đo xuống.
+
+    Mảnh ngắn hơn 400ms đo cả mảnh như một khối. Lặng hẳn trả -70.
+    Kiểm chuẩn: sin 1 kHz đỉnh -20 dBFS cho -23,0 LUFS ở 48/24/8 kHz
+    (`tests/test_do_to_cuoi.py`).
+    """
+    from math import gcd
+
+    from scipy.signal import lfilter, resample_poly
+    x = np.asarray(audio, dtype=np.float64)
+    if len(x) == 0 or not np.any(x):
+        return -70.0
+    if sr != 48000:
+        g = gcd(int(sr), 48000)
+        x = resample_poly(x, 48000 // g, int(sr) // g)
+    z = lfilter(_K_B2, _K_A2, lfilter(_K_B1, _K_A1, x))
+    n, buoc = 19200, 4800                    # khối 400ms, chồng 75%
+    if len(z) < n:
+        ms = np.array([np.mean(z ** 2)])
+    else:
+        ms = np.array([np.mean(z[i:i + n] ** 2) for i in range(0, len(z) - n + 1, buoc)])
+    L = -0.691 + 10 * np.log10(ms + 1e-20)
+    g1 = L > -70.0
+    if not g1.any():
+        return -70.0
+    nguong = -0.691 + 10 * np.log10(ms[g1].mean()) - 10.0
+    return float(-0.691 + 10 * np.log10(ms[g1 & (L > nguong)].mean()))
+
+
+def do_to_tieng_noi(audio: np.ndarray, sr: int) -> float:
+    """Độ to của PHẦN TIẾNG NÓI, đơn vị LUFS: lọc K của BS.1770 + cổng theo khung
+    tiếng nói (tinh thần ITU-T P.56 - chỉ đo lúc đang nói).
+
+    VÌ SAO KHÔNG DÙNG THẲNG `do_to_lufs`. Cổng của BS.1770 làm theo KHỐI 400ms,
+    viết cho chương trình dài hàng phút. Mảnh TTS chỉ 1-3 giây, và khối vắt ngang
+    ranh giới lặng/tiếng chỉ có một phần là tiếng mà vẫn qua cổng - nó kéo độ to
+    đo được xuống, hệ số khuếch đại lên. Đo 11-09-2026: lặng 200ms trước mảnh 1s
+    làm phần tiếng to thêm +0,35 LU, 300ms trở lên trước mảnh 1,5s thêm +0,44 LU.
+    Đó chính là cơ chế của lỗi "chữ ngay sau câu đệm to hơn".
+
+    Khung 20ms. Cổng theo ngưỡng của ITU-T P.56: khung "đang nói" là khung không
+    thấp hơn MỨC TIẾNG NÓI quá 15,9 dB, mà mức đó lại tính từ chính các khung
+    được giữ - nên lặp vài vòng cho hội tụ. Bản đầu dùng ngưỡng tự đặt "trong
+    vòng 40 dB" thì đuôi năng lượng mà bộ lọc K và phép đổi tần số rò sang
+    khung lặng sát ranh giới vẫn lọt cổng và kéo phép đo xuống.
+    Toàn tiếng thì cho đúng như BS.1770: sin 1 kHz đỉnh -20 dBFS -> -23,0 LUFS.
+    """
+    from math import gcd
+
+    from scipy.signal import lfilter, resample_poly
+    x = np.asarray(audio, dtype=np.float64)
+    if len(x) == 0 or not np.any(x):
+        return -70.0
+    if sr != 48000:
+        g = gcd(int(sr), 48000)
+        x = resample_poly(x, 48000 // g, int(sr) // g)
+    z = lfilter(_K_B2, _K_A2, lfilter(_K_B1, _K_A1, x))
+    n = len(z) // 960 * 960                  # khung 20ms ở 48 kHz
+    ms = (z[:n].reshape(-1, 960) ** 2).mean(axis=1) if n else np.array([np.mean(z ** 2)])
+    ref = float(np.percentile(ms, 95))
+    if ref <= 0:
+        return -70.0
+    giu = ms >= ref * 1e-4                   # mở đầu từ phân vị 95, không từ gai
+    for _ in range(4):
+        moi = ms >= ms[giu].mean() * 10 ** (-15.9 / 10)
+        if (moi == giu).all():
+            break
+        giu = moi
+    return float(max(-0.691 + 10 * np.log10(ms[giu].mean() + 1e-20), -70.0))
