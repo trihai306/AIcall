@@ -64,8 +64,8 @@
         "giấy tờ gì"
       ],
       "mo_dau": [
-        "Dạ về hồ sơ cần chuẩn bị thì,",
-        "Dạ giấy tờ cần chuẩn bị thì,",
+        "Dạ về hồ sơ thì,",
+        "Dạ về giấy tờ thì,",
         "Dạ hồ sơ bên em yêu cầu,",
         "Dạ em nói về hồ sơ,"
       ],
@@ -504,9 +504,9 @@
       ],
       "mo_dau": [
         "Dạ về chi nhánh,",
-        "Dạ điểm giao dịch gần anh chị,",
-        "Dạ em xem địa chỉ giúp anh chị,",
-        "Dạ chỗ làm hồ sơ thì,"
+        "Dạ về địa điểm thì,",
+        "Dạ chỗ làm hồ sơ thì,",
+        "Dạ về nơi làm hồ sơ,"
       ]
     },
     {
@@ -702,9 +702,9 @@
       ],
       "mo_dau": [
         "Dạ em hiểu băn khoăn của mình,",
-        "Dạ về mức lãi này em xin nói rõ thêm,",
-        "Dạ em xin phép giải thích thêm về mức lãi,",
-        "Dạ mức lãi này em xin phép trao đổi thêm,"
+        "Dạ em hiểu ạ,",
+        "Dạ em rất hiểu ạ,",
+        "Dạ em xin chia sẻ thật với mình,"
       ],
       "speed": null
     },
@@ -747,10 +747,10 @@
         "có thế thôi"
       ],
       "mo_dau": [
-        "Dạ hạn mức này còn tuỳ hồ sơ của mình,",
-        "Dạ em xem thêm giúp mình,",
-        "Dạ về hạn mức em xin nói rõ hơn,",
-        "Dạ mức này em xem lại giúp mình,"
+        "Dạ em hiểu băn khoăn của mình,",
+        "Dạ em hiểu ạ,",
+        "Dạ em rất hiểu ạ,",
+        "Dạ em xin chia sẻ thật với mình,"
       ],
       "speed": null
     },
@@ -774,6 +774,55 @@
         "Dạ mình so sánh là đúng ạ,",
         "Dạ em xin phép nói về điểm khác biệt,",
         "Dạ em xin phép nói thêm về bên em,"
+      ],
+      "speed": null
+    },
+    {
+      "id": "hoi_co_san_pham",
+      "ten": "Khách hỏi bên em có sản phẩm X không",
+      "vi_du": [
+        "bên bạn có cho vay tín chấp không",
+        "bên em có cho vay không",
+        "ngân hàng mình có làm thẻ tín dụng không",
+        "có gói vay mua nhà không em",
+        "bên mình có cho vay tiêu dùng không",
+        "em ơi bên em có mở thẻ không"
+      ],
+      "tu_khoa": [
+        "có cho vay",
+        "có làm thẻ",
+        "có gói"
+      ],
+      "mo_dau": [
+        "Dạ em thông tin luôn ạ,",
+        "Dạ em thông tin ngay cho anh chị,",
+        "Dạ em nói rõ cho anh chị,",
+        "Dạ em thông tin cho mình ạ,"
+      ],
+      "speed": null
+    },
+    {
+      "id": "hoi_cach_vay",
+      "ten": "Khách hỏi cách vay, quy trình vay",
+      "vi_du": [
+        "cơ chế thế nào",
+        "vay như nào",
+        "vay ra sao",
+        "thế vay kiểu gì",
+        "cách vay thế nào",
+        "quy trình vay ra sao"
+      ],
+      "tu_khoa": [
+        "cách vay",
+        "quy trình",
+        "cơ chế",
+        "vay như nào"
+      ],
+      "mo_dau": [
+        "Dạ về quy trình thì,",
+        "Dạ em nói qua cách thức ạ,",
+        "Dạ về thủ tục thì,",
+        "Dạ em nói qua các bước ạ,"
       ],
       "speed": null
     }

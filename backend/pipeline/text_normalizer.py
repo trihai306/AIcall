@@ -1177,6 +1177,50 @@ _DA_DAU_RE = re.compile(r"^\s*Dạ[\s,]+", re.IGNORECASE)
 _A_MO_DAU_RE = re.compile(r"^\s*ạ\s*([.,!?;:]*)\s*")
 _CO_CHU_RE = re.compile(r"\w")
 
+# Chữ KHÔNG mang chủ đề. Câu đệm "Dạ em thông tin ngay cho anh chị," rồi câu trả
+# lời "Anh chị cần chuẩn bị..." - "anh chị" trùng nhưng là CHỦ NGỮ, cắt đi là
+# câu mất chủ ngữ. Cụm trùng chỉ tính là lặp chủ đề khi có chữ ngoài tập này.
+_TU_KHONG_CHU_DE = frozenset({
+    "dạ", "vâng", "ạ", "em", "anh", "chị", "mình", "bên", "của", "về", "thì",
+    "là", "này", "đó", "cho", "và", "ngay", "luôn", "nhé", "phần", "việc",
+    "xin", "phép",
+})
+_DAU_TREO_RE = re.compile(r"^[\s,.;:!?…-]+")
+# Cắt "lãi suất" khỏi "lãi suất là từ 7.9%" để lại "là từ 7.9%": sau câu đệm
+# "Dạ về lãi suất thì," thành "... thì, là từ ..." - chữ nối treo, bỏ nốt.
+_NOI_TREO_RE = re.compile(r"^(?:là|thì)\s+", re.IGNORECASE)
+
+
+def bo_chu_de_da_neu(cau_dem: str, doan: str) -> str:
+    """Bỏ cụm chủ đề ở đầu `doan` nếu câu đệm vừa đọc đúng cụm đó.
+
+    Gốc ở ĐƯỜNG câu trả lời, không ở mô hình: bản NGHĨ SẴN sinh lúc khách còn
+    nói, chưa có câu đệm nên không có `prefill`, và mở bằng cả câu. Diễn lại
+    `08c0d3e0` (11-09-2026): "Dạ lãi suất bên em thì," + "Lãi suất vay tín chấp
+    là từ 7.9%/năm ạ." Đường sinh mới có prefill thì gần như không lặp.
+
+    Chỉ cắt khi CHỮ ĐẦU TIÊN của `doan` mở ra một cụm >= 2 chữ có nguyên văn
+    trong câu đệm và cụm đó có chữ mang chủ đề. Nên "nếu nợ xấu nhóm 3" (mệnh
+    đề điều kiện) và "vay tín chấp" (một chữ "vay" trùng) được giữ nguyên.
+    """
+    dem = " " + " ".join(re.findall(r"\w+", (cau_dem or "").lower())) + " "
+    tu = list(re.finditer(r"\w+", doan))
+    if dem.isspace() or not tu or doan[:tu[0].start()].strip():
+        return doan
+
+    k_cat = 0
+    for k in range(2, len(tu) + 1):
+        cum = [m.group().lower() for m in tu[:k]]
+        if f" {' '.join(cum)} " not in dem:
+            break
+        if any(w not in _TU_KHONG_CHU_DE for w in cum):
+            k_cat = k
+    if not k_cat:
+        return doan
+
+    con = _DAU_TREO_RE.sub("", doan[tu[k_cat - 1].end():])
+    return _NOI_TREO_RE.sub("", con, count=1)
+
 
 class BotLichSu:
     """Bớt "ạ"/"Dạ" cho MỘT lượt trả lời, gọi được trên từng mảnh khi đang stream.
@@ -1207,9 +1251,13 @@ class BotLichSu:
     `nghi_truoc_ms` vào quãng nghỉ, không thì mất luôn chỗ ngắt câu.
     """
 
-    def __init__(self, bo_da: bool = False):
+    def __init__(self, bo_da: bool = False, cau_dem: str = ""):
         self._con_a = True
         self._bo_da = bo_da
+        # Câu đệm khách VỪA NGHE ngay trước lượt này - xem `bo_chu_de_da_neu`.
+        # Rỗng thì không cắt gì: lượt không có câu đệm, hoặc câu trả lời là câu
+        # nguyên văn (tiếng dựng sẵn, chữ phải khớp tiếng từng chữ).
+        self._cau_dem = cau_dem or ""
         self._dau_luot = True
         # Quãng nghỉ phải chèn TRƯỚC mảnh vừa xử lý, vì chỗ ngắt câu nằm ở chữ
         # "ạ" đầu mảnh mà ta vừa bỏ. Đặt lại mỗi lần gọi.
@@ -1220,6 +1268,9 @@ class BotLichSu:
             self._dau_luot = False
             if self._bo_da:
                 doan = _DA_DAU_RE.sub("", doan, count=1)
+            if self._cau_dem:
+                doan = bo_chu_de_da_neu(self._cau_dem, doan)
+            if self._bo_da:
                 doan = doan[:1].upper() + doan[1:] if doan else doan
 
         self.nghi_truoc_ms = 0.0

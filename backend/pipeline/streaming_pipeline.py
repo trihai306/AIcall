@@ -27,6 +27,7 @@ from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             uoc_sinh_ms)
 from backend.pipeline.text_normalizer import (CAU_KIEM_TRA_LAI, BoHuaSuong,
                                               BotLichSu, bo_cau_lui_thua,
+                                              bo_chu_de_da_neu,
                                               chan_chu_ngoai, chan_lai_suat_bia,
                                               chan_so_sai, sua_chu_mo_hinh,
                                               chan_tien_sai, sua_xung_ho)
@@ -322,7 +323,8 @@ class StreamingPipeline:
     _TIEU_TU_MO_DAU = re.compile(r"^(dạ|vâng)\b", re.IGNORECASE)
 
     @staticmethod
-    def _manh_dau_ham_cache(spec_answer: str) -> str | None:
+    def _manh_dau_ham_cache(spec_answer: str,
+                            mo_dau: tuple[str, ...] = ()) -> str | None:
         """Mảnh đầu đáng hâm cache, hoặc None nếu không chắc khớp lượt thật.
 
         Dùng `chia_ca_luot` - NGUỒN DUY NHẤT của luật cắt cả lượt. Tuyệt đối
@@ -339,7 +341,32 @@ class StreamingPipeline:
         dau = manh[0].strip()
         if not dau or StreamingPipeline._TIEU_TU_MO_DAU.match(dau):
             return None
-        return dau
+        # Câu đệm nêu chủ đề thì `BotLichSu` cắt cụm đó khỏi mảnh đầu (xem
+        # `bo_chu_de_da_neu`), mà cache khoá theo NGUYÊN VĂN chữ - hâm chữ cũ là
+        # hâm thứ sẽ không bao giờ phát, lượt đó chờ thêm trọn một mảnh F5.
+        # Lúc này chưa biết mẩu mở đầu nào được chọn, nên hâm bản mà NHIỀU mẩu
+        # của tình huống đoán được cho ra nhất; hoà thì giữ bản chưa cắt như cũ.
+        bien = [bo_chu_de_da_neu(m, dau) for m in mo_dau]
+        bien = [b[:1].upper() + b[1:] for b in bien if b.strip()]
+        if not bien:
+            return dau
+        return max(dict.fromkeys(bien), key=lambda b: (bien.count(b), b == dau))
+
+    @staticmethod
+    def _mo_dau_du_doan(session: CallSession, n: int) -> tuple[str, ...]:
+        """Các mẩu mở đầu của tình huống vừa đoán cho ĐÚNG đoạn tiếng `n`.
+
+        Tình huống của đoạn cũ hơn thì bỏ: nó thuộc phiên âm cụt đã bị thay.
+        """
+        th = getattr(session, "tinh_huong", None)
+        if not th or th[0] != n:
+            return ()
+        try:
+            from backend.services.filler_store import lay_kho
+            t = next((x for x in lay_kho().tinh_huong if x.id == th[1]), None)
+        except Exception:
+            return ()
+        return tuple(t.mo_dau) if t else ()
 
     # Lời nhắc sinh câu đệm. NGẮN và tách hẳn khỏi prompt tư vấn - dự án đã có
     # bài học: nhét prompt tư vấn vào một lượt có mục đích khác thì mô hình bỏ
@@ -647,7 +674,8 @@ class StreamingPipeline:
                 # đường kia thôi là không lần nào chạy.
                 if ngay and session.spec_answer and self._answer_hit(
                         session.spec_transcript, text):
-                    manh_cu = self._manh_dau_ham_cache(session.spec_answer)
+                    manh_cu = self._manh_dau_ham_cache(
+                        session.spec_answer, mo_dau=self._mo_dau_du_doan(session, n))
                     if manh_cu:
                         await self._ham_cache_tts(manh_cu, session)
 
@@ -706,7 +734,8 @@ class StreamingPipeline:
                     # sau dùng lại, còn tiếng thì chỉ cần mảnh đầu - và mảnh đầu
                     # chỉ phụ thuộc mấy từ đầu tiên nên tính được sớm.
                     if ngay and not da_ham and len(answer.split()) >= 12:
-                        manh_som = self._manh_dau_ham_cache(answer)
+                        manh_som = self._manh_dau_ham_cache(
+                            answer, mo_dau=self._mo_dau_du_doan(session, n))
                         if manh_som:
                             da_ham = True
                             await self._ham_cache_tts(manh_som, session)
@@ -2216,8 +2245,14 @@ class StreamingPipeline:
         # "Dạ" thì nghe như máy, mà bỏ sạch lại cộc, xen kẽ là vừa.
         # Một đối tượng cho MỖI LƯỢT - xem chú thích ở lớp.
         bo_hua_suong = BoHuaSuong()
+        # Câu đệm vừa nêu chủ đề thì câu MÔ HÌNH viết không được nêu lại ngay chữ
+        # đầu - xem `bo_chu_de_da_neu`. Câu nguyên văn (bảng hỏi-đáp, lượt thường
+        # gặp) thì KHÔNG: nó phát bằng tiếng dựng sẵn, cắt chữ là chữ một đằng
+        # tiếng một nẻo, lại còn sửa câu kịch bản đã duyệt.
+        cau_dem_mo_hinh = "" if (dap_san or (dong_bang and doc_nguyen_van(dong_bang))) else metrics.get("filler_text", "")
         bot_lich_su = BotLichSu(
-            bo_da=bool(metrics.get("filler_text")) or session.turn_count % 2 == 0)
+            bo_da=bool(metrics.get("filler_text")) or session.turn_count % 2 == 0,
+            cau_dem=cau_dem_mo_hinh)
 
         def _noi_manh(da_co: str, them: str) -> str:
             """Ghép mảnh lại thành câu đọc được.
