@@ -194,6 +194,22 @@ async def startup(state: AppState):
 
     asyncio.create_task(_ham_llm())
 
+    # Hâm chuỗi xử lý tiếng xuống điện thoại. Lần gọi ĐẦU của tiến trình mất
+    # 442ms (đo trên Win 11-09-2026; sau đó 8-32ms/mảnh) - không hâm thì cái giá
+    # đó rơi đúng vào câu chào của cuộc gọi đầu tiên.
+    async def _ham_duong_xuong():
+        try:
+            import numpy as np
+            from backend.services.phone_call_service import xu_ly_tieng_xuong
+            t0 = time.perf_counter()
+            x = np.random.default_rng(0).normal(0, 0.05, 24000).astype(np.float32)
+            await asyncio.to_thread(xu_ly_tieng_xuong, x, 24000)
+            logger.info("  Đường xuống: đã hâm (%.0fms)", (time.perf_counter() - t0) * 1000)
+        except Exception as e:
+            logger.warning("  Đường xuống: hâm không được (%s)", e)
+
+    asyncio.create_task(_ham_duong_xuong())
+
     # Build pipeline
     state.pipeline = StreamingPipeline(
         stt=state.stt,

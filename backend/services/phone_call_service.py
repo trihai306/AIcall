@@ -535,6 +535,12 @@ def can_do_to_cuoi(y: np.ndarray, sr: int) -> np.ndarray:
 
     Mảnh lặng (từ -70 LUFS trở xuống) để nguyên. Hệ số kẹp ±10 dB để mảnh chỉ
     có tạp âm không bị kéo lên ngang tiếng nói.
+
+    Đích là `phone_muc_dbfs` - MỨC NGƯỜI VẬN HÀNH ĐÃ CHỌN, không phải một mức
+    riêng. Bản đầu nhắm -19,6 LUFS riêng và đè mất `PHONE_MUC_DBFS=-38` của máy
+    Win: cuộc gọi thật a819e352 (11-09 18:19) xuống to hơn mọi cuộc trước 17 dB.
+    Trên tiếng nói đã hạ 8kHz, thước này và RMS có cổng lệch nhau dưới 0,4 dB
+    (4 clip thật), nên cùng một con số dùng được cho cả hai khâu.
     """
     y = np.asarray(y, dtype=np.float32)
     tran = settings.phone_dinh_toi_da
@@ -542,7 +548,7 @@ def can_do_to_cuoi(y: np.ndarray, sr: int) -> np.ndarray:
         L = do_to_tieng_noi(y, sr)
         if L <= -70.0:
             return y
-        keo = float(np.clip(settings.phone_do_to_lufs - L, -10.0, 10.0))
+        keo = float(np.clip(settings.phone_muc_dbfs - L, -10.0, 10.0))
         if abs(keo) < 0.05:
             break
         y = gioi_han_mem(y * np.float32(10 ** (keo / 20)), nguong=0.67 * tran, tran=tran)
@@ -957,7 +963,10 @@ class PhoneCallBridge:
                 n_khung += 1
             self._so_manh.them(chu, n_khung)
             return
-        audio = xu_ly_tieng_xuong(audio, rate)
+        # Ra khỏi vòng sự kiện: khâu độ to tốn 8-32ms mỗi mảnh, mà vòng này còn
+        # chạy bộ đẩy khung 20ms và luồng nghe khách. `play` được await tuần tự
+        # nên thứ tự mảnh vẫn giữ nguyên.
+        audio = await asyncio.to_thread(xu_ly_tieng_xuong, audio, rate)
 
         pcm = float32_to_int16(audio)
 

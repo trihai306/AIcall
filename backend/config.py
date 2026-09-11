@@ -441,15 +441,10 @@ class Settings(BaseSettings):
     # Mốc để so: bản thu NGƯỜI THẬT qua cùng đường đạt 7.2 dB. Khoảng cách 2.1 dB
     # đó nằm ở chính mô hình sinh tiếng, hậu xử lý không bù được.
     phone_lam_sach: bool = False
+    # Mức xuống điện thoại - MỘT nguồn duy nhất: `chuan_muc_thoai` (RMS) và
+    # khâu độ to cuối `can_do_to_cuoi` (BS.1770) cùng nhắm con số này.
     phone_muc_dbfs: float = -19.0     # chuẩn thoại; to hơn thì codec méo ở đỉnh
     phone_dinh_toi_da: float = 0.89   # chừa ~1dB dự trữ
-    # Độ to đích của MỌI mảnh xuống điện thoại, ở khâu cuối - xem
-    # `phone_call_service.can_do_to_cuoi`. Thước: lọc K của ITU-R BS.1770 (độ to
-    # tai nghe) + cổng tiếng nói theo ngưỡng ITU-T P.56 (`audio_utils.do_to_tieng_noi`).
-    # -19.6 là mức TRUNG BÌNH đường xuống đang ra, đo bằng chính thước đó trên 52
-    # clip thật (11-09-2026) - đổi sang chuẩn này không làm cuộc gọi to lên hay
-    # nhỏ đi, chỉ hết lệch giữa các mảnh. Mức danh định của P.56 là -26 dBov.
-    phone_do_to_lufs: float = -19.6
     phone_loc_tram_hz: float = 200.0  # dưới mức này loa điện thoại không phát được
     phone_nang_do_ro_db: float = 6.0  # nâng quanh 2.2kHz
 

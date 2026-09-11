@@ -57,7 +57,35 @@ def test_moi_manh_ra_cung_mot_do_to_du_khac_pho_va_khac_muc():
     vao = (tieng(sr, 1500) * 6.0, tieng(sr, 1500, sang=True) * 0.8, tieng(sr, 600, seed=3) * 2.0)
     ra = [do_to_lufs(pcs.can_do_to_cuoi(x, sr), sr) for x in vao]
     assert max(ra) - min(ra) <= 0.2, ra
-    assert abs(np.mean(ra) - settings.phone_do_to_lufs) <= 0.2, ra
+    assert abs(np.mean(ra) - settings.phone_muc_dbfs) <= 0.2, ra
+
+
+def test_muc_dich_la_PHONE_MUC_DBFS_cua_may_that(monkeypatch):
+    """Cuộc gọi thật 11-09-2026 18:19 (a819e352): kênh AI -21 dB trong khi MỌI cuộc
+    trước đó -38 dB - to hơn 17 dB, người dùng nghe ra "chất lượng âm thanh có
+    vấn đề". Máy Win đặt `PHONE_MUC_DBFS=-38`, còn khâu độ to nhắm một mức RIÊNG
+    (`phone_do_to_lufs=-19,6`) nên đè mất lựa chọn đó. Mức xuống điện thoại chỉ
+    được có MỘT nguồn."""
+    sr = 8000
+    for muc in (-38.0, -19.0):
+        monkeypatch.setattr(settings, "phone_muc_dbfs", muc)
+        # Đầu vào lệch đích 5 dB như đầu vào thật: `chuan_muc_thoai` đã đưa mảnh
+        # về gần mức này, khâu cuối chỉ tinh chỉnh. Lệch hơn 20 dB thì hệ số kẹp
+        # ±10 dB (chặn kéo tạp âm lên) cố ý không kéo hết.
+        x = tieng(sr, 1500)
+        x = x * np.float32(10 ** ((muc + 5 - do_to_tieng_noi(x, sr)) / 20))
+        ra = do_to_tieng_noi(pcs.can_do_to_cuoi(x, sr), sr)
+        assert abs(ra - muc) <= 0.2, (muc, ra)
+    assert not hasattr(settings, "phone_do_to_lufs"), "còn hai nguồn mức xuống"
+
+
+def test_xu_ly_tieng_chay_ngoai_vong_su_kien():
+    """Khâu độ to tốn 8-32ms mỗi mảnh (lần đầu của tiến trình 442ms, đo trên
+    Win). `play` chạy trong vòng sự kiện chung với bộ đẩy khung 20ms và luồng
+    nghe khách - gọi thẳng là chặn cả hai."""
+    import inspect
+    src = inspect.getsource(pcs.PhoneCallBridge.play)
+    assert "asyncio.to_thread(xu_ly_tieng_xuong" in src
 
 
 def test_khong_bao_gio_vuot_tran_dinh():
