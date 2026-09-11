@@ -1317,7 +1317,6 @@ class StreamingPipeline:
             metrics["filler_id"] = "llm"
             metrics["tinh_huong_id"] = None
             return
-        dem[id_duoi] = dem.get(id_duoi, 0) + 1
         await self._send_audio(ws, filler_audio, is_filler=True,
                                turn_id=session.turn_id)
         metrics["filler_ms"] = round((time.perf_counter() - t_start) * 1000)

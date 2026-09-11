@@ -1525,6 +1525,13 @@ class F5TTSService:
                 continue
             id_ghep = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
             if id_ghep:
+                # Đếm lượt dùng NGAY ĐÂY, theo đúng khoá `_chon_filler` xếp hạng.
+                # Bản cũ để nơi gọi đếm theo `id_duoi` - từ khi bỏ kho đuôi id đó
+                # luôn "", nên sổ đếm của từng clip đứng yên ở 0 và mọi lượt cùng
+                # chủ đề ra ĐÚNG MỘT câu (cuộc 06b8aae1: ba lần "Dạ hạn mức bên em
+                # thì,"). Xem tests/test_cau_dem_xoay_vong.py.
+                if dem is not None:
+                    dem[id_ghep] = dem.get(id_ghep, 0) + 1
                 i_mau, chon_id = id_ghep.split("|", 1)
                 # Trả id_th="" thành None để nơi gọi ghi log đúng: "dùng đuôi
                 # trần" thay vì "dùng tình huống rỗng".
