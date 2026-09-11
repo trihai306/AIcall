@@ -259,8 +259,26 @@ def chuan_muc_thoai(y: np.ndarray) -> np.ndarray:
 
     # Chuẩn mức, nhưng không để việc chuẩn đẩy đỉnh vượt trần - thà nhỏ hơn đích
     # một chút còn hơn vỡ tiếng.
-    rms = float(np.sqrt((y ** 2).mean())) or 1e-9
+    #
+    # Đo RMS trên PHẦN CÓ TIẾNG. Tính cả khung lặng thì mảnh nào nhiều lặng
+    # cũng bị hiểu là nói nhỏ và bị nâng oan - mà nhịp lặng `_nghi_noi_cau_dem`
+    # chèn vào đầu mảnh trả lời đầu tiên chính là loại lặng đó: +1,1 dB với
+    # 180ms, +3,0 dB với 600ms, rơi đúng chữ ngay sau câu đệm. Cuộc 08c0d3e0,
+    # người dùng nghe ra: "tiếng to hơn nghe rất giả".
+    #
+    # Bỏ theo KHUNG 20ms chứ không theo từng mẫu như `tts_service.can_do_to`:
+    # bỏ mẫu gần 0 là bỏ cả các điểm cắt qua 0 GIỮA lời nói - năng lượng giữ
+    # nguyên mà số mẫu đếm ít đi, nên RMS đo được cao hơn thật và MỌI mảnh bị
+    # hạ nhỏ, kể cả mảnh toàn tiếng. Khung thì chỉ rơi khi cả 20ms lặng hẳn
+    # (thấp hơn khung to nhất 30 dB). Xem `tests/test_chuan_muc_thoai.py`.
     dinh = float(np.abs(y).max()) or 1e-9
+    n = len(y) // 480 * 480
+    if n:
+        e = (y[:n].reshape(-1, 480) ** 2).mean(axis=1)
+        rms = float(np.sqrt(e[e >= e.max() * 1e-3].mean()))
+    else:
+        rms = float(np.sqrt((y ** 2).mean()))
+    rms = rms or 1e-9
     he_so = min(10 ** (settings.phone_muc_dbfs / 20) / rms,
                 settings.phone_dinh_toi_da / dinh)
     return (y * he_so).astype(np.float32)
