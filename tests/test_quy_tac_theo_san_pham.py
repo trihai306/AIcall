@@ -251,3 +251,20 @@ def test_khi_nao_co_tien_la_hoi_giai_ngan(cau):
 def test_khi_nao_co_tien_de_tra_khong_phai_giai_ngan():
     got = tra_loi("khi nào có tiền thì anh trả nợ trước hạn được không", TC)
     assert not got or got[0] != "thoi_gian_giai_ngan"
+
+
+@pytest.mark.parametrize("tl, cau, can", [
+    (TC, "khi nào có tiền thì anh trả nợ trước hạn được không", "miễn phí"),
+    (TC, "vay tín chấp trả nợ trước hạn được không em", "miễn phí"),
+    (TC, "tất toán trước hạn thì sao em", "miễn phí"),
+    (TC, "anh trả hết nợ sớm có sao không", "miễn phí"),
+    (NHA, "vay mua nhà trả trước hạn được không", "3 năm"),
+])
+def test_tra_truoc_han_khong_can_chu_phi(tl, cau, can):
+    got = tra_loi(cau, tl)
+    assert got and got[0] == "phi_tra_truoc_han" and can in got[1], got
+
+
+def test_tra_truoc_han_kem_tinh_tien_khong_bi_bat():
+    got = tra_loi("anh muốn trả trước hạn 100 triệu thì mỗi tháng còn đóng bao nhiêu", TC)
+    assert not got or got[0] != "phi_tra_truoc_han"

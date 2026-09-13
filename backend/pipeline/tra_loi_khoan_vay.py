@@ -679,8 +679,12 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         if gia_tri:
             return "thoi_gian_giai_ngan", f"Dạ bên em giải ngân {gia_tri} ạ."
 
-    if (re.search(r"\b(?:tra(?: no)?|tat toan)(?:.{0,16}truoc han\b|\s+som\b)", t)
-            and re.search(r"\b(phi|phat)\b", t)):
+    # Không có chữ "phí/phạt" vẫn là hỏi trả trước hạn: "khi nào có tiền thì anh
+    # trả nợ trước hạn được không" rơi xuống mô hình, mô hình lúc nói "miễn phí"
+    # lúc nói "chưa có thông tin về chính sách trả nợ trước hạn".
+    if (re.search(r"\b(?:tra(?: het)?(?: no)?|tat toan)(?:.{0,16}truoc han\b|\s+(?:het\s+)?(?:no\s+)?som\b)", t)
+            and re.search(r"\b(phi|phat|duoc khong|co duoc|duoc ko|the nao|nhu nao|ra sao|"
+                          r"thi sao|co mat|mat gi|co sao)\b", t)):
         gia_tri = _gia_tri_theo_san_pham(tai_lieu, "trả trước hạn")
         if gia_tri:
             ten, noi_dung = gia_tri
