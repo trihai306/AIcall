@@ -467,7 +467,9 @@ def loc_cau_dem_llm(cau: str | None, tu_vung=None) -> str | None:
         for t in _re.split(r"[^\w]+", loi.lower(), flags=_re.UNICODE):
             if t and t not in _TU_THUONG and t not in tu_vung:
                 return None
-    return loi + ","
+    # Cùng luật với kho dựng sẵn: không để "thì" treo cuối câu đệm.
+    from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi
+    return bo_thi_cuoi(loi + ",")
 
 
 # Dải độ dài câu đệm phải phủ. Dưới 700ms thì `_FILLER_BO_QUA_MS` đã bỏ đệm;

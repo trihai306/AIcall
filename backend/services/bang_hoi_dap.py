@@ -74,7 +74,9 @@ def doc_dong(conn) -> list[dict]:
             ch = json.loads(cau_hoi) if cau_hoi else []
         except json.JSONDecodeError as e:
             raise LoiBang(f"dòng {ma!r}: cột cách hỏi không đọc được: {e}") from e
-        d = {"id": ma, "cau_dem": cau_dem or "", "cau_hoi": list(ch),
+        # Bỏ "thì" cuối câu đệm - cùng luật với kho tình huống (`bo_thi_cuoi`).
+        from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi
+        d = {"id": ma, "cau_dem": bo_thi_cuoi(cau_dem or ""), "cau_hoi": list(ch),
              "tra_loi": tra_loi or "", "san_pham": san_pham or "", "bat": bool(bat)}
         kiem_dong(d)
         ra.append(d)

@@ -38,7 +38,8 @@ def test_bo_cau_dem_chua_chu_KHONG_co_trong_nghiep_vu():
 
 def test_giu_cau_dem_toan_chu_co_that():
     ra = loc_cau_dem_llm("Dạ về thời gian giải ngân thì", tu_vung=VON_TU)
-    assert ra == "Dạ về thời gian giải ngân thì,"
+    # Luật từ vựng giữ câu; `bo_thi_cuoi` (13-09-2026) bỏ "thì" treo ở cuối.
+    assert ra == "Dạ về thời gian giải ngân,"
 
 
 def test_tu_chuc_nang_khong_bi_tinh_la_la():

@@ -25,6 +25,8 @@ import time
 
 from fastapi import APIRouter, Body
 
+from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi_ca_danh_sach
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/fillers", tags=["fillers"])
 
@@ -316,7 +318,10 @@ async def luu_tinh_huong(than: dict = Body(...)):
          json.dumps([v.strip() for v in than["vi_du"] if v.strip()], ensure_ascii=False),
          json.dumps([v.strip() for v in (than.get("tu_khoa") or []) if v.strip()],
                     ensure_ascii=False),
-         json.dumps([m.strip() for m in than["mo_dau"] if m.strip()], ensure_ascii=False),
+         # Lưu ĐÚNG chữ sẽ phát: bỏ "thì" cuối câu đệm (`bo_thi_cuoi`), để
+         # trang quản lý không hiện một đằng mà khách nghe một nẻo.
+         json.dumps(bo_thi_cuoi_ca_danh_sach([m.strip() for m in than["mo_dau"] if m.strip()]),
+                    ensure_ascii=False),
          float(than["speed"]) if than.get("speed") not in (None, "") else None,
          1 if than.get("bat", True) else 0, gio, gio))
     conn.commit()

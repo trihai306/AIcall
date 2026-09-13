@@ -20,6 +20,7 @@ from backend.pipeline import cong_cu_llm
 from backend.pipeline.cau_chan_lap import cau_chan, dem_chan_lien_tiep
 from backend.pipeline.hoi_lai import chon_cau_hoi_lai, nen_hoi_lai
 from backend.pipeline.luot_thuong_gap import tra_loi_san
+from backend.pipeline.danh_muc_san_pham import tra_loi as tra_loi_danh_muc
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             cho_gom_ms, nhip_nghi_sau, noi_lo,
@@ -383,7 +384,8 @@ class StreamingPipeline:
         "- Nhắc lại CHỦ ĐỀ khách hỏi, KHÔNG trả lời\n"
         "- TUYỆT ĐỐI không có chữ số, không hứa hẹn con số nào\n"
         "- Xưng em, gọi anh chị\n"
-        "Ví dụ: 'Dạ về thời gian giải ngân thì,'\n\n"
+        "- KHÔNG kết thúc bằng chữ 'thì'\n"
+        "Ví dụ: 'Dạ về thời gian giải ngân,'\n\n"
         "Chỉ trả về đúng câu đó, không giải thích."
     )
 
@@ -1636,6 +1638,24 @@ class StreamingPipeline:
         except Exception as e:
             # Đường phụ trợ: hỏng thì giữ nguyên neo cũ, đừng làm chết cả lượt.
             logger.warning("Không neo được sản phẩm (%s)", e)
+
+        # "bên em có những sản phẩm gì / có bảo hiểm không": danh mục là dữ kiện
+        # xác định (kho có tài liệu nào thì bán sản phẩm đó), không để mô hình
+        # đoán - nhất là sản phẩm KHÔNG có, mô hình dễ nói "có" rồi bịa.
+        # Xem `danh_muc_san_pham`.
+        if not dap_san:
+            try:
+                got = tra_loi_danh_muc(
+                    user_text, self.rag._san_pham_co_tai_lieu(),
+                    hoi_them=not (session.product or "").strip())
+            except Exception as e:
+                logger.warning("Không tra được danh mục sản phẩm (%s)", e)
+                got = None
+            if got:
+                dap_san = got
+                metrics["tra_tu_danh_muc"] = got[0]
+                logger.info("Danh mục sản phẩm '%s' -> trả lời xác định, bỏ qua RAG+LLM",
+                            got[0])
 
         tron_tai_lieu = (_toan_van_tai_lieu(session.product)
                          if settings.ngu_canh_tron_tai_lieu else "")

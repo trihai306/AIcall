@@ -159,6 +159,45 @@ class LLMService:
             host=settings.ollama_base_url,
             limits=httpx.Limits(max_keepalive_connections=4, keepalive_expiry=600.0),
         )
+        # Model có khai năng lực "thinking" không (qwen3.x có, qwen2.5 không).
+        # None = chưa hỏi Ollama; lúc đó đoán theo tên. Xem `_nen_think`.
+        self._ho_tro_think: bool | None = None
+
+    async def kiem_nang_luc(self) -> None:
+        """Hỏi Ollama model có biết suy nghĩ không. Gọi một lần lúc khởi động."""
+        try:
+            info = await self.client.show(self.model)
+            caps = (info.get("capabilities") if isinstance(info, dict)
+                    else getattr(info, "capabilities", None)) or []
+            self._ho_tro_think = "thinking" in [str(c).lower() for c in caps]
+            logger.info("LLM %s: %s", self.model,
+                        "biết suy nghĩ" if self._ho_tro_think else "không có thinking")
+        except Exception as e:
+            logger.warning("Không đọc được năng lực model %s (%s) - đoán theo tên",
+                           self.model, e)
+
+    def _nen_think(self, prefill: str) -> bool:
+        """`think=True` CHỈ khi có prefill và model biết suy nghĩ.
+
+        Đo trên máy Win 13-09-2026, Ollama 0.34.0, qwen3.5:9b, cùng một prompt:
+            có prefill, think=False -> "" (0 token, 4/4 lần, cả hai bộ stop)
+            có prefill, think=True  -> " theo thông tin bên em là từ 7.9%/năm ạ."
+        Ollama không chèn khối <think></think> trước tin nhắn assistant cuối khi
+        think=False; qwen3.5 thấy thiếu khối đó nên dừng ngay ở token đầu. Trên
+        cuộc gọi f441bc66 mọi lượt có câu đệm đều rơi về "Phần này chưa có quy
+        định rõ trong tài liệu" dù tài liệu có đủ - khách nghe như AI đọc thiếu.
+
+        Không prefill thì giữ think=False: bật lên là model suy nghĩ thật, TTFT
+        đội lên hàng giây. Model không có thinking (qwen2.5) mà gửi think=True
+        thì Ollama từ chối cả lượt, nên phải hỏi năng lực trước.
+        """
+        if not (prefill or "").strip():
+            return False
+        # getattr: vài test dựng LLMService bằng __new__, không qua __init__.
+        ho_tro = getattr(self, "_ho_tro_think", None)
+        if ho_tro is None:
+            return "qwen3" in (self.model or "").lower()
+        return ho_tro
 
     def build_system_prompt(
         self,
@@ -369,7 +408,7 @@ class LLMService:
                 model=self.model,
                 messages=full_messages,
                 stream=True,
-                think=False,
+                think=self._nen_think(prefill),
                 options={
                     "num_predict": settings.llm_max_tokens,
                     "temperature": settings.llm_temperature,
@@ -447,6 +486,8 @@ class LLMService:
             for m in models:
                 name = m.get("model", "") if isinstance(m, dict) else getattr(m, "model", "")
                 if name.startswith(prefix):
+                    if getattr(self, "_ho_tro_think", None) is None:
+                        await self.kiem_nang_luc()
                     return True
             return False
         except Exception:

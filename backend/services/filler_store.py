@@ -128,7 +128,12 @@ def nap_tu_db(conn) -> Kho:
             raise LoiKho(
                 f"tình huống {id_th!r} chỉ có {len(vd)} ví dụ, cần ít nhất 2 - "
                 "một ví dụ thì điểm cosine dựa vào đúng một cách nói")
-        md = _mang(mo_dau)
+        # Bỏ "thì" cuối câu đệm NGAY LÚC NẠP, cho cả mẩu người vận hành gõ sau
+        # này - xem `pipeline/bo_thi_cuoi.py` (người dùng 13-09-2026: "cứ 'thì'
+        # ở cuối câu nối"). Clip dựng theo chuỗi đã chuẩn hoá nên chữ phát ra
+        # và chữ đưa vào prefill luôn là một.
+        from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi_ca_danh_sach
+        md = tuple(bo_thi_cuoi_ca_danh_sach(_mang(mo_dau)))
         for m in md:
             if not m.rstrip().endswith(","):
                 raise LoiKho(

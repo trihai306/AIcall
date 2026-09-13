@@ -62,17 +62,24 @@ def test_thieu_phay_thi_THEM_VAO():
     """Cùng luật với mẩu mở đầu trong kho: thiếu phẩy thì F5 hạ giọng kết câu
     ngay giữa lượt, khách nghe như AI đã nói xong trong khi câu trả lời thật
     chưa tới. Đây là lỗi sửa được nên sửa, không vứt."""
-    assert loc_cau_dem_llm("Dạ về thời gian giải ngân thì") == "Dạ về thời gian giải ngân thì,"
+    assert loc_cau_dem_llm("Dạ về thời gian giải ngân") == "Dạ về thời gian giải ngân,"
 
 
 @pytest.mark.parametrize("cuoi", [".", "!", "?", "…"])
 def test_dau_ket_cau_bi_doi_thanh_phay(cuoi):
     """Dấu chấm còn tệ hơn thiếu dấu: nó bảo F5 hạ giọng dứt khoát."""
-    assert loc_cau_dem_llm(f"Dạ về hồ sơ thì{cuoi}") == "Dạ về hồ sơ thì,"
+    assert loc_cau_dem_llm(f"Dạ về hồ sơ{cuoi}") == "Dạ về hồ sơ,"
 
 
 def test_da_co_phay_thi_giu_nguyen():
-    assert loc_cau_dem_llm("Dạ về hồ sơ thì,") == "Dạ về hồ sơ thì,"
+    assert loc_cau_dem_llm("Dạ về hồ sơ,") == "Dạ về hồ sơ,"
+
+
+@pytest.mark.parametrize("cau", ["Dạ về hồ sơ thì,", "Dạ về hồ sơ thì", "Dạ về hồ sơ thì."])
+def test_bo_chu_thi_o_cuoi(cau):
+    """13-09-2026: câu đệm LLM cũng đi qua `bo_thi_cuoi` như kho dựng sẵn -
+    "thì" treo lơ lửng trước quãng chờ câu trả lời."""
+    assert loc_cau_dem_llm(cau) == "Dạ về hồ sơ,"
 
 
 # --- Rỗng / rác ----------------------------------------------------------
@@ -85,13 +92,13 @@ def test_rong_thi_VUT(cau):
 def test_bo_dau_nhay_mo_hinh_hay_them():
     """Mô hình hay bọc câu trả lời trong dấu nháy. Đọc nguyên thì F5 phát ra
     tiếng lạ ở đầu và cuối."""
-    assert loc_cau_dem_llm('"Dạ về lãi suất thì,"') == "Dạ về lãi suất thì,"
+    assert loc_cau_dem_llm('"Dạ về lãi suất,"') == "Dạ về lãi suất,"
 
 
 def test_nhieu_dong_thi_lay_dong_dau():
     """Mô hình hay giải thích thêm sau câu trả lời."""
-    ra = loc_cau_dem_llm("Dạ về hồ sơ thì,\nĐây là câu dẫn cho khách hàng.")
-    assert ra == "Dạ về hồ sơ thì,"
+    ra = loc_cau_dem_llm("Dạ về hồ sơ,\nĐây là câu dẫn cho khách hàng.")
+    assert ra == "Dạ về hồ sơ,"
 
 
 # --- Đường sinh: _nghi_cau_dem -------------------------------------------
@@ -132,8 +139,8 @@ def _chay_nghi(tra_ve, ham_cache=None):
 def test_sinh_duoc_thi_cat_va_dung_tieng_luon():
     """Dựng tiếng ngay lúc sinh - để lúc lượt mở chỉ còn tra cache."""
     s, dung = _chay_nghi("Dạ về thời gian giải ngân thì,")
-    assert s.spec_cau_dem == "Dạ về thời gian giải ngân thì,"
-    assert dung == ["Dạ về thời gian giải ngân thì,"], "phải hâm cache TTS ngay"
+    assert s.spec_cau_dem == "Dạ về thời gian giải ngân,"
+    assert dung == ["Dạ về thời gian giải ngân,"], "phải hâm cache TTS ngay"
 
 
 def test_luoi_chan_thi_KHONG_ghi_va_KHONG_dung_tieng():
@@ -153,7 +160,7 @@ def test_LLM_hong_thi_nuot_lang():
 
 def test_mo_hinh_tra_ve_rac_van_an_toan():
     s, _ = _chay_nghi('  "Dạ về hồ sơ vay thì"\nGiải thích: đây là câu dẫn.  ')
-    assert s.spec_cau_dem == "Dạ về hồ sơ vay thì,"
+    assert s.spec_cau_dem == "Dạ về hồ sơ vay,"
 
 
 # --- _xep_nghi_cau_dem: ba chốt chặn -------------------------------------

@@ -16,8 +16,8 @@
         "tiền lãi"
       ],
       "mo_dau": [
-        "Dạ về lãi suất thì,",
-        "Dạ lãi suất bên em thì,",
+        "Dạ về lãi suất,",
+        "Dạ về lãi suất bên em,",
         "Dạ em thông tin về lãi suất,",
         "Dạ mức lãi hiện tại,"
       ],
@@ -40,8 +40,8 @@
         "vay bao nhiêu"
       ],
       "mo_dau": [
-        "Dạ về hạn mức vay thì,",
-        "Dạ hạn mức bên em thì,",
+        "Dạ về hạn mức vay,",
+        "Dạ về hạn mức bên em,",
         "Dạ về mức vay được,",
         "Dạ em xem hạn mức giúp anh chị,"
       ],
@@ -64,8 +64,8 @@
         "giấy tờ gì"
       ],
       "mo_dau": [
-        "Dạ về hồ sơ thì,",
-        "Dạ về giấy tờ thì,",
+        "Dạ về hồ sơ,",
+        "Dạ về giấy tờ,",
         "Dạ hồ sơ bên em yêu cầu,",
         "Dạ em nói về hồ sơ,"
       ],
@@ -87,8 +87,8 @@
         "tiêu chuẩn"
       ],
       "mo_dau": [
-        "Dạ về điều kiện vay thì,",
-        "Dạ điều kiện bên em thì,",
+        "Dạ về điều kiện vay,",
+        "Dạ về điều kiện bên em,",
         "Dạ về yêu cầu để vay,",
         "Dạ em nói về điều kiện,"
       ],
@@ -110,9 +110,9 @@
         "mấy năm"
       ],
       "mo_dau": [
-        "Dạ về thời hạn vay thì,",
+        "Dạ về thời hạn vay,",
         "Dạ thời hạn vay bên em,",
-        "Dạ về kỳ hạn thì,",
+        "Dạ về kỳ hạn,",
         "Dạ em thông tin về thời hạn,"
       ],
       "speed": null
@@ -134,9 +134,9 @@
         "mấy ngày duyệt"
       ],
       "mo_dau": [
-        "Dạ về thời gian duyệt hồ sơ thì,",
+        "Dạ về thời gian duyệt hồ sơ,",
         "Dạ thời gian xử lý hồ sơ,",
-        "Dạ về tiến độ duyệt thì,",
+        "Dạ về tiến độ duyệt,",
         "Dạ em xem thời gian giúp anh chị,"
       ],
       "speed": null
@@ -158,9 +158,9 @@
         "phí trả trước"
       ],
       "mo_dau": [
-        "Dạ về trả nợ trước hạn thì,",
+        "Dạ về trả nợ trước hạn,",
         "Dạ về việc trả trước hạn,",
-        "Dạ nếu anh chị trả sớm thì,",
+        "Dạ về việc anh chị trả sớm,",
         "Dạ em nói về trả nợ trước hạn,"
       ],
       "speed": null
@@ -181,7 +181,7 @@
         "chương trình ưu đãi"
       ],
       "mo_dau": [
-        "Dạ về ưu đãi hiện tại thì,",
+        "Dạ về ưu đãi hiện tại,",
         "Dạ ưu đãi hiện tại bên em,",
         "Dạ về chương trình đang có,",
         "Dạ em thông tin về ưu đãi,"
@@ -205,7 +205,7 @@
         "ví dụ tính"
       ],
       "mo_dau": [
-        "Dạ về phần tính toán thì,",
+        "Dạ về phần tính toán,",
         "Dạ em tính giúp anh chị,",
         "Dạ về khoản trả hàng tháng,",
         "Dạ để em nhẩm nhanh,"
@@ -228,10 +228,10 @@
         "thẻ thường"
       ],
       "mo_dau": [
-        "Dạ về thẻ tín dụng bên em thì,",
+        "Dạ về thẻ tín dụng bên em,",
         "Dạ về khác biệt hai loại thẻ,",
         "Dạ em so sánh giúp anh chị,",
-        "Dạ hai loại thẻ này thì,"
+        "Dạ về hai loại thẻ này,"
       ],
       "speed": null
     },
@@ -251,7 +251,7 @@
         "quá hạn thẻ"
       ],
       "mo_dau": [
-        "Dạ nếu chậm thanh toán thẻ thì,",
+        "Dạ về việc chậm thanh toán thẻ,",
         "Dạ nếu quên hạn thanh toán,",
         "Dạ về việc trả chậm thẻ,",
         "Dạ em nói rõ phần này,"
@@ -274,9 +274,9 @@
         "đề nghị tăng"
       ],
       "mo_dau": [
-        "Dạ để tăng hạn mức thẻ thì,",
+        "Dạ về việc tăng hạn mức thẻ,",
         "Dạ về tăng hạn mức thẻ,",
-        "Dạ để nâng hạn mức thì,",
+        "Dạ về việc nâng hạn mức,",
         "Dạ em hướng dẫn anh chị,"
       ],
       "speed": null
@@ -410,10 +410,10 @@
         "nợ cũ"
       ],
       "mo_dau": [
-        "Dạ về trường hợp có nợ xấu thì,",
+        "Dạ về trường hợp có nợ xấu,",
         "Dạ về phần nợ xấu,",
         "Dạ em xem giúp anh chị,",
-        "Dạ trường hợp này thì,"
+        "Dạ về trường hợp này,"
       ],
       "speed": null
     },
@@ -482,9 +482,9 @@
       ],
       "mo_dau": [
         "Dạ về các khoản phí,",
-        "Dạ phí bên em thì,",
+        "Dạ về phí bên em,",
         "Dạ em nói rõ về phí,",
-        "Dạ khoản này thì,"
+        "Dạ về khoản này,"
       ]
     },
     {
@@ -504,8 +504,8 @@
       ],
       "mo_dau": [
         "Dạ về chi nhánh,",
-        "Dạ về địa điểm thì,",
-        "Dạ chỗ làm hồ sơ thì,",
+        "Dạ về địa điểm,",
+        "Dạ về chỗ làm hồ sơ,",
         "Dạ về nơi làm hồ sơ,"
       ]
     },
@@ -528,7 +528,7 @@
         "Dạ về tất toán khoản vay,",
         "Dạ nếu anh chị trả hết,",
         "Dạ em nói về phần tất toán,",
-        "Dạ trường hợp này thì,"
+        "Dạ về trường hợp này,"
       ]
     },
     {
@@ -591,7 +591,7 @@
       ],
       "mo_dau": [
         "Dạ về bảo hiểm khoản vay,",
-        "Dạ phần bảo hiểm thì,",
+        "Dạ về phần bảo hiểm,",
         "Dạ em nói rõ chỗ này,",
         "Dạ trường hợp này ạ,"
       ]
@@ -613,9 +613,9 @@
       ],
       "mo_dau": [
         "Dạ về cách trả hàng tháng,",
-        "Dạ lịch trả nợ thì,",
+        "Dạ về lịch trả nợ,",
         "Dạ em nói về phần trả góp,",
-        "Dạ mỗi kỳ thì,"
+        "Dạ về mỗi kỳ,"
       ]
     },
     {
@@ -819,9 +819,9 @@
         "vay như nào"
       ],
       "mo_dau": [
-        "Dạ về quy trình thì,",
+        "Dạ về quy trình,",
         "Dạ em nói qua cách thức ạ,",
-        "Dạ về thủ tục thì,",
+        "Dạ về thủ tục,",
         "Dạ em nói qua các bước ạ,"
       ],
       "speed": null

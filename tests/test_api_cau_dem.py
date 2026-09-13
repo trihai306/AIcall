@@ -120,7 +120,8 @@ def test_luu_roi_thi_thay_trong_danh_sach(db):
     asyncio.run(fl.luu_tinh_huong(_th()))
     d = asyncio.run(fl.danh_sach())
     assert [t["id"] for t in d["tinh_huong"]] == ["hoi_phi"]
-    assert d["tinh_huong"][0]["mo_dau"] == ["Dạ về phí thì,"]
+    # Lưu bản đã bỏ "thì" cuối câu đệm (`bo_thi_cuoi`, 13-09-2026).
+    assert d["tinh_huong"][0]["mo_dau"] == ["Dạ về phí,"]
 
 
 def test_du_lieu_sai_thi_KHONG_ghi_vao_db(db):
@@ -210,7 +211,7 @@ def test_thu_cau_khop_thi_bao_tinh_huong_va_diem(db, monkeypatch):
 
     assert d["id"] == "hoi_phi"
     assert d["dat_nguong"] is True
-    assert d["mo_dau"] == ["Dạ về phí thì,"]
+    assert d["mo_dau"] == ["Dạ về phí,"]
 
 
 def test_thu_cau_khong_khop_thi_noi_ro_se_roi_ve_ro_duoi(db, monkeypatch):

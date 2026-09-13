@@ -100,3 +100,18 @@ def test_nhom_thai_do_khong_mang_ten_san_pham_trong_vi_du():
     dinh = [(t["id"], v) for t in TH if t["id"] in THAI_DO
             for v in t["vi_du"] if any(x in v.lower() for x in TEN_SP)]
     assert dinh == [], f"ví dụ mang tên sản phẩm: {dinh}"
+
+
+def test_khong_mau_nao_ket_bang_chu_thi():
+    """13-09-2026: "thì" cuối câu đệm treo lơ lửng trước quãng chờ câu trả lời."""
+    from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi
+    sai = [(t["id"], m) for t in TH for m in t.get("mo_dau", []) if bo_thi_cuoi(m) != m]
+    assert sai == []
+
+
+def test_cau_dem_bang_hoi_dap_khong_ket_bang_thi():
+    from backend.pipeline.bo_thi_cuoi import bo_thi_cuoi
+    bang = json.loads((GOC / "data" / "hoi_dap_seed.json").read_text(encoding="utf-8"))
+    dong = bang if isinstance(bang, list) else next(iter(bang.values()))
+    sai = [d["id"] for d in dong if bo_thi_cuoi(d.get("cau_dem") or "") != (d.get("cau_dem") or "")]
+    assert sai == []
