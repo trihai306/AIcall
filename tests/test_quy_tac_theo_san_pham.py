@@ -211,3 +211,27 @@ def test_uu_dai_hoan_tien_tu_do(tl, cau, can):
 def test_lai_uu_dai_van_la_hoi_lai_suat():
     got = tra_loi("lãi ưu đãi vay mua nhà là bao nhiêu", NHA)
     assert got and got[0] == "lai_suat_san_pham" and "6.5%" in got[1]
+
+
+@pytest.mark.parametrize("cau", [
+    "à em quẹt thẻ tín dụng trả góp được không vậy",
+    "thẻ tín dụng trả góp được không vậy em",
+])
+def test_the_tra_gop_co_chu_vay_cuoi_cau(cau):
+    """Bộ thử 10k #5342: bỏ dấu thì "vậy" thành "vay", luật trả góp thẻ bỏ qua câu."""
+    got = tra_loi(cau, THE)
+    assert got and got[0] == "tra_gop_the" and "0%" in got[1]
+
+
+def test_the_vay_tra_gop_van_khong_dung_luat_the():
+    assert tra_loi("khoản vay trả góp được không", THE) is None
+
+
+@pytest.mark.parametrize("tl, cau, can", [
+    (TC, "à em vay tính chấp lãi mấy phần trăm vậy", "7.9%"),
+    (TC, "vay tín chấp lãi bao nhiêu phần trăm một năm", "7.9%"),
+    (NHA, "vay mua nhà lãi mấy phần trăm", "6.5%"),
+])
+def test_lai_may_phan_tram_la_hoi_lai_suat(tl, cau, can):
+    got = tra_loi(cau, tl)
+    assert got and got[0] == "lai_suat_san_pham" and can in got[1], got

@@ -302,7 +302,7 @@ def _cac_loai_the(sp_doc: str) -> dict[str, tuple[str, str, str]]:
     return ra
 
 
-def _tra_loi_the_tin_dung(t: str, sp_doc: str) -> tuple[str, str] | None:
+def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "") -> tuple[str, str] | None:
     """Thẻ tín dụng: hạn mức và phí đi theo LOẠI THẺ."""
     t = re.sub(r"\bhang muc\b", "han muc", t)   # STT nghe "hạn mức" thành "hạng mức"
     if re.search(r"\b(hoan tien|cashback|cash back)\b", t):
@@ -335,7 +335,10 @@ def _tra_loi_the_tin_dung(t: str, sp_doc: str) -> tuple[str, str] | None:
             return "loai_the", f"Dạ thẻ {hien} có hạn mức {hm}, phí thường niên {phi}{duoi_mien} ạ."
         return None
 
-    if re.search(r"\btra gop\b", t) and not re.search(r"\b(khoan vay|vay)\b", t):
+    # Xét "vay" trên bản CÒN DẤU: bỏ dấu thì "trả góp được không vậy" cũng có
+    # chữ "vay" và câu hỏi trả góp thẻ bị đẩy sang mô hình (bộ thử 10k #5342).
+    goc = unicodedata.normalize("NFC", (text or "").lower())
+    if re.search(r"\btra gop\b", t) and not re.search(r"khoản vay|\bvay\b", goc):
         dong = next((d for d in _muc_tai_lieu(sp_doc, "ưu đãi") if "tra gop" in _bo_dau(d)), None)
         if dong:
             return "tra_gop_the", _cau_tu_dong("thẻ tín dụng được " + dong[:1].lower() + dong[1:])
@@ -587,7 +590,7 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     if ma_sp == "tiet_kiem":
         return _tra_loi_tiet_kiem(text, t, sp_doc) or tra_loi_dieu_kien(text, ma_sp, sp_doc)
     if ma_sp == "the_tin_dung":
-        return _tra_loi_the_tin_dung(t, sp_doc) or tra_loi_dieu_kien(text, ma_sp, sp_doc)
+        return _tra_loi_the_tin_dung(t, sp_doc, text) or tra_loi_dieu_kien(text, ma_sp, sp_doc)
     state = du_kien if du_kien is not None else resolve(history, text)
     if state.amount_updated and state.amount.status == "cancelled":
         return "huy_nhu_cau_vay", "Dạ em ghi nhận anh chị không tiếp tục nhu cầu vay này ạ."
@@ -643,7 +646,7 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         and not re.search(r"\b(so|tien|so tien)\s+lai\b|\blai\b.{0,18}\b(chi tra|phai tra|phai dong)\b", t))
     if (hoi_lai_suat and not co_hoi_tra_hang_thang and re.search(
             r"\b(bao nhieu|mot nam|la may|muc nao|the nao|nhu nao|nhu the nao|"
-            r"ra sao|hien tai|hien nay)\b", t)):
+            r"ra sao|hien tai|hien nay|may phan tram|phan tram)\b", t)):
         # Vay mua nhà có HAI dòng lãi: ưu đãi 2 năm đầu rồi thả nổi. Đọc dòng
         # đầu cho "sau hai năm lãi thế nào" là đọc sai (bộ thử 10k: 12/12 trượt).
         sau = _gia_tri_dong(sp_doc, "lãi suất sau ưu đãi")
