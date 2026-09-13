@@ -401,7 +401,8 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     # A question explicitly about an existing contract belongs to the profile
     # route, even when a separate new-loan request has already been discussed.
     if not (state.amount_updated or state.term_updated) and re.search(
-            r"\b(hop dong|khoan vay cu|han muc da duyet)\b|"
+            # "hợp đồng lao động" là giấy tờ, không phải hợp đồng vay cũ.
+            r"\b(hop dong(?! lao dong)|khoan vay cu|han muc da duyet)\b|"
             r"\bdu no\b(?! giam dan)", t):
         return None
 

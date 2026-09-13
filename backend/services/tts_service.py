@@ -19,7 +19,7 @@ from backend.core.logging_config import Timer
 from backend.core.device import DEVICE
 from backend.services.filler_store import CauDuoi, Kho, van_tay
 from backend.services.filler_store import MA_NHOM_CHUNG
-from backend.services.filler_pick import chon as _chon_filler, ghep
+from backend.services.filler_pick import GAN_DAI_NHAT_MS, chon as _chon_filler, ghep
 
 logger = logging.getLogger(__name__)
 
@@ -1581,6 +1581,18 @@ class F5TTSService:
         # đột ngột xuống câu 0,5s.
         if cac_nhom:
             tat_ca = [x for _, uv in cac_nhom for x in uv]
+            # Đã nhận ra chủ đề mà clip chủ đề chỉ ngắn hơn clip dài nhất không
+            # quá GAN_DAI_NHAT_MS thì GIỮ chủ đề. Từ 13-09-2026 nhóm chung có câu
+            # dài 1-1,3s ("Dạ em trả lời anh chị luôn ạ,") ngang câu chủ đề; để
+            # nguyên thì bộ chọn trộn hai nhóm theo độ dài và khách hỏi lãi suất
+            # lại nghe câu trung tính thay cho "Dạ về lãi suất," - đổi mất độ
+            # đúng ý để được vài trăm ms. Chênh nhiều hơn thì vẫn lấy câu dài
+            # (quãng im mới là lỗi nặng hơn), như trước.
+            th_dau, uv_dau = cac_nhom[0]
+            if (id_tinh_huong and th_dau == id_tinh_huong
+                    and max(ms for _, ms in uv_dau)
+                    >= max(ms for _, ms in tat_ca) - GAN_DAI_NHAT_MS):
+                tat_ca = uv_dau
             id_ghep = _chon_filler(tat_ca, min_ms=min_ms, dem=dem or {})
             if id_ghep:
                 th_chon = id_ghep.split("|", 1)[0]

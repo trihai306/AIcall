@@ -330,3 +330,27 @@ def test_lam_tu_do_chi_doc_dieu_kien_co_trong_tai_lieu():
 
 def test_cau_khong_co_so_van_de_llm_xu_ly():
     assert tra_loi("em giới thiệu giúp anh về ngân hàng", DOC) is None
+
+
+@pytest.mark.parametrize("cau", [
+    "có cần hợp đồng lao động không",
+    "không có hợp đồng lao động hoặc giấy phép kinh doanh thì có vay được không",
+])
+def test_hop_dong_lao_dong_khong_phai_ho_so_rieng(cau):
+    """Cuộc gọi 7db3f780: câu về hợp đồng LAO ĐỘNG kích tra hồ sơ, công cụ trả
+    "hãy nói với khách là sẽ kiểm tra lại" lên đầu ngữ cảnh và mô hình đáp "em
+    kiểm tra giúp" thay vì đọc điều kiện trong tài liệu."""
+    assert loc_nhanh(cau) != "tra_ho_so_khach"
+
+
+def test_hop_dong_vay_van_la_ho_so_rieng():
+    assert loc_nhanh("hợp đồng vay của anh còn bao lâu") == "tra_ho_so_khach"
+    assert loc_nhanh("hợp đồng của anh đến hạn ngày nào") == "tra_ho_so_khach"
+
+
+def test_hop_dong_lao_dong_khong_chan_luat_lam_tu_do():
+    doc = DOC.replace("## Hồ sơ cần thiết",
+                      "## Điều kiện vay\n- Có thu nhập ổn định từ 5 triệu\n"
+                      "- Có hợp đồng lao động hoặc giấy phép kinh doanh\n## Hồ sơ cần thiết")
+    got = tra_loi("anh làm tự do không có hợp đồng lao động thì vay được không", doc)
+    assert got and got[0] == "dieu_kien_lam_tu_do"

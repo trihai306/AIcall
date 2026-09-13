@@ -113,3 +113,28 @@ def test_khong_nhom_nao_du_thi_chi_xoay_cac_cau_gan_dai_nhat():
         "Vâng ạ,",
         "Dạ vâng ạ,",
     }
+
+
+def test_chu_de_gan_dai_bang_nhom_chung_thi_giu_chu_de():
+    """13-09-2026: nhóm chung có câu dài 1-1,3s ngang câu chủ đề. Chủ đề ngắn hơn
+    không quá 300ms thì phải giữ chủ đề - khách hỏi hạn mức mà nghe "Dạ em trả
+    lời anh chị luôn ạ," là mất độ đúng ý chỉ để đổi vài trăm ms."""
+    svc, kho = _dich_vu_co_nhom_chung(ms_chu_de=(1100, 1250, 1000),
+                                       ms_chung=(530, 1150, 1300))
+    dem = {}
+    for _ in range(6):
+        _, _, th = svc.pick_filler(kho, "g", min_ms=1800, dem=dem,
+                                   id_tinh_huong="hoi_han_muc")
+        assert th == "hoi_han_muc"
+
+
+def test_khong_ro_chu_de_thi_dung_cau_chung_dai():
+    """Không nhận ra chủ đề: lấy câu chung dài, không rơi xuống "Dạ," 0,27s."""
+    svc, kho = _dich_vu_co_nhom_chung(ms_chung=(270, 570, 1150, 1300))
+    kho.tinh_huong[1].mo_dau = ("Dạ,", "Dạ vâng,", "Dạ em trả lời anh chị ạ,",
+                                "Dạ em trả lời anh chị luôn ạ,")
+    nghe = set()
+    for _ in range(6):
+        svc.pick_filler(kho, "g", min_ms=1800, dem={}, id_tinh_huong=None)
+        nghe.add(svc._filler_text_cuoi)
+    assert nghe <= {"Dạ em trả lời anh chị ạ,", "Dạ em trả lời anh chị luôn ạ,"}, nghe

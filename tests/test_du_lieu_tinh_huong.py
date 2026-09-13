@@ -115,3 +115,21 @@ def test_cau_dem_bang_hoi_dap_khong_ket_bang_thi():
     dong = bang if isinstance(bang, list) else next(iter(bang.values()))
     sai = [d["id"] for d in dong if bo_thi_cuoi(d.get("cau_dem") or "") != (d.get("cau_dem") or "")]
     assert sai == []
+
+
+def test_nhom_chung_co_cau_du_dai_de_che_luot_cham():
+    """Cuộc gọi 7db3f780 (13-09-2026): nhóm chung chỉ còn "Dạ,"… dài 0,27-0,57s
+    trong khi lượt qua LLM chờ 1-1,5s, khách nghe "Dạ," rồi im 0,8-1,04s (đo trên
+    bản ghi). Nhóm chung phải có câu dài cỡ 1-1,3s. Độ dài tiếng không suy được
+    từ chữ, nên canh bằng số từ; độ dài thật đo lại sau khi dựng clip.
+
+    Cố ý KHÔNG dài tới 1,35s: `_FILLER_CHUNG_HUT_TOI_DA_MS` (450) + câu chung
+    dài nhất >= sàn che 1800ms thì hệ thống thôi chờ phân loại chủ đề ở MỌI lượt,
+    và câu đệm theo chủ đề ít được dùng. Đo khi dựng thật giọng heu_a6_35: "Dạ em
+    trả lời anh chị luôn ạ," 1,51s và "Dạ vâng, em thông tin luôn ạ," 1,35s đều
+    chạm mốc nên đã bỏ; ba câu còn lại 1,15-1,19s.
+    """
+    chung = next(t for t in TH if t["id"] == "chung")
+    dai = [m for m in chung["mo_dau"] if len(m.rstrip(",").split()) >= 5]
+    assert len(dai) >= 3, dai
+    assert all(len(m.rstrip(",").split()) <= 8 for m in chung["mo_dau"])

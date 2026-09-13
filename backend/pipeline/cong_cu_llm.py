@@ -192,8 +192,13 @@ def _bo_dau(s: str) -> str:
 # Hồ sơ RIÊNG của khách. Cố ý KHÔNG đòi có "của tôi/của anh": qua điện thoại
 # khách nói cụt ("dư nợ bao nhiêu em"), mà trong ngữ cảnh cuộc gọi thì hỏi dư nợ
 # gần như luôn là hỏi về chính họ.
+# "hợp đồng LAO ĐỘNG" là giấy tờ vay, không phải hợp đồng vay của khách. Cuộc gọi
+# 7db3f780 (13-09-2026): "có cần hợp đồng lao động không" kích công cụ này, nó
+# trả "Không có dữ liệu... hãy nói với khách là sẽ kiểm tra lại" lên ĐẦU ngữ cảnh
+# với nhãn ưu tiên tuyệt đối, và mô hình đáp "em kiểm tra giúp" thay vì đọc tài
+# liệu. Đối chứng 3 lần/ô: bỏ chuỗi đó thì đúng 6/6, giữ thì tụt còn 1/3.
 _RE_HO_SO = re.compile(
-    r"(du no|con no|no bao nhieu|hop dong|den han|ky han con|tra xong|"
+    r"(du no|con no|no bao nhieu|hop dong(?! lao dong)|den han|ky han con|tra xong|"
     r"con may thang|so du|khoan vay.{0,12}(cua|voi) (toi|anh|chi|minh))"
 )
 # Số liệu SẢN PHẨM.
