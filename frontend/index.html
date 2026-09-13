@@ -1629,7 +1629,7 @@
             <div>
               <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Base Model</label>
               <select id="trainBaseModel" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-xs text-gray-300 outline-none">
-                <option value="Qwen/Qwen2.5-3B-Instruct" selected>Qwen2.5-3B (đang chạy)</option>
+                <option value="Qwen/Qwen2.5-3B-Instruct" selected>Qwen2.5-3B (nhẹ, dễ train 12GB)</option>
                 <option value="Qwen/Qwen2.5-7B-Instruct">Qwen2.5-7B (mạnh hơn, chậm hơn)</option>
                 <option value="Qwen/Qwen2.5-1.5B-Instruct">Qwen2.5-1.5B (nhẹ nhất)</option>
               </select>
@@ -1661,8 +1661,8 @@
             </div>
           </div>
           <label class="flex items-center gap-2 text-[11px] text-gray-400 mb-4">
-            <input type="checkbox" id="trainAutoDeploy" checked class="accent-emerald-500">
-            Train xong tự nạp vào Ollama và chuyển sang dùng model mới
+            <input type="checkbox" id="trainAutoDeploy" class="accent-emerald-500">
+            Train xong tự chuyển production sang model mới (model vẫn được nạp vào Ollama để A/B khi bỏ chọn)
           </label>
           <div class="text-[11px] text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2 mb-4">
             Trong lúc train, F5-TTS và Ollama sẽ được nhả khỏi VRAM — hệ thống không nhận cuộc gọi cho tới khi train xong.
@@ -1792,11 +1792,10 @@
               <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
               <h3 class="text-sm font-semibold text-white">LLM Model</h3>
             </div>
-            <select id="settingModel" class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-cyan-500/40 transition-colors">
-              <option value="qwen2.5:3b">Qwen2.5-3B — Nhanh, TTFT thấp</option>
-              <option value="qwen2.5:7b">Qwen2.5-7B — Chất lượng cao</option>
-              <option value="qwen3:4b">Qwen3-4B — Thinking mode</option>
+            <select id="settingModel" disabled class="w-full bg-void border border-slate-750 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none opacity-80">
+              <option>Đang đọc model từ backend...</option>
             </select>
+            <div class="text-[10px] text-gray-500 mt-2">Model lấy từ <code>OLLAMA_MODEL</code> trong .env; đổi cấu hình rồi restart backend để áp dụng.</div>
           </div>
           <!-- Banking -->
           <div class="bg-deep border border-slate-750 rounded-xl p-5">
@@ -2304,8 +2303,8 @@
        trông như thông báo lỗi hệ thống chứ không phải phản hồi của app. -->
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
-  <script src="/static/app.js?v=20260812b"></script>
-  <script src="/static/trang_moi.js"></script>
+  <script src="/static/app.js?v=20260913-router"></script>
+  <script src="/static/trang_moi.js?v=20260913-router"></script>
 
   <!-- Ngăn kéo cho điện thoại.
        Đặt SAU app.js vì có bọc lại `switchPage` - phải có hàm gốc rồi mới bọc

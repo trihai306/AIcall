@@ -136,6 +136,7 @@ async def health_check():
         "system": getattr(app_state, "system_info", {}),
         "services": {
             "stt": "ok" if stt_ok else "unavailable",
+            "stt_engine": app_state.stt.engine,
             "llm": "ok" if llm_ok else "unavailable",
             "tts": "loaded" if app_state.tts._is_loaded else "not_loaded",
             "rag": f"{app_state.rag._collection.count() if app_state.rag._collection else 0} docs",

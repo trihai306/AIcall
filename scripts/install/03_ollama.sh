@@ -45,4 +45,4 @@ case "$PLATFORM" in
         ;;
 esac
 
-echo "[OK] Ollama installed (model Vistral sẽ được tạo ở bước 06_models_download.sh)"
+echo "[OK] Ollama installed (model theo OLLAMA_MODEL sẽ được tải ở bước 06_models_download.sh)"

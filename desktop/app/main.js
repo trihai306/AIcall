@@ -100,8 +100,9 @@ function sendLog(msg) {
 /**
  * Khởi động dịch vụ qua script của dự án chứ không tự chạy uvicorn.
  *
- * start_services.ps1 làm 5 việc mà spawn uvicorn trực tiếp KHÔNG có:
- * PhoWhisper server :8178 (thiếu là mất hẳn STT), OLLAMA_KEEP_ALIVE=-1
+ * start_services.ps1 làm các việc mà spawn uvicorn trực tiếp KHÔNG có:
+ * chọn đúng STT theo .env (Gipformer chạy trong backend; PhoWhisper mới cần
+ * server :8178), OLLAMA_KEEP_ALIVE=-1
  * (thiếu thì TTFT 1700ms thay vì ~515ms), khoá xung GPU 1500MHz (+160ms/lượt),
  * PATH ffmpeg, và STT_VAD_FILTER=0. Gọi lại script cũng có nghĩa là sửa script
  * thì app hưởng ngay, không phải build lại exe.
@@ -210,7 +211,7 @@ function buildMenu() {
               defaultId: 1,
               cancelId: 1,
               title: 'Dừng dịch vụ nền',
-              message: 'Dừng backend và PhoWhisper?',
+              message: 'Dừng các dịch vụ nền của ứng dụng?',
               detail: 'Ollama vẫn chạy. Lần mở app sau sẽ phải chờ 2-3 phút để nạp lại F5-TTS.',
             });
             if (response === 0) stopServices();

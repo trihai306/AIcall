@@ -1,0 +1,4 @@
+# Optional local call-ASR backend; pin the versions tested on Windows.
+huggingface-hub>=0.24,<2
+sherpa-onnx==1.13.8
+sherpa-onnx-core==1.13.8

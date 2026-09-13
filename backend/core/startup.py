@@ -117,12 +117,12 @@ async def startup(state: AppState):
                        "chung: %s", e)
 
     # 4. Check STT server
-    logger.info("[4/6] Checking Whisper STT server...")
+    logger.info("[4/6] Checking STT engine: %s...", state.stt.engine)
     stt_ok = await state.stt.health_check()
     if stt_ok:
         logger.info("  STT server: OK")
     else:
-        logger.warning("  STT server: NOT AVAILABLE - start whisper-server first")
+        logger.warning("  STT unavailable - check %s model/runtime", state.stt.engine)
 
     # 5. Check LLM
     logger.info("[5/6] Checking Ollama LLM...")

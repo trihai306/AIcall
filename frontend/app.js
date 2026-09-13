@@ -971,6 +971,20 @@ async function napTenModelBenchmark() {
   }
 }
 
+async function napModelSettings() {
+  const el = document.getElementById('settingModel');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/benchmark/info');
+    const d = await res.json();
+    const model = String(d.llm || '').replace(/^LLM\s*[—-]\s*/, '') || 'Không xác định';
+    el.innerHTML = `<option>${escapeHtml(model)}</option>`;
+  } catch (err) {
+    el.innerHTML = '<option>Không đọc được model đang chạy</option>';
+    console.warn('Không lấy được model cho trang Settings:', err);
+  }
+}
+
 async function runBenchmark(type) {
   const elId = BENCH_EL[type];
   const el = document.getElementById(elId);
@@ -1024,9 +1038,11 @@ function renderModelList(components) {
       ? '<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Đã cài</span>'
       : '<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-500">Chưa cài</span>';
     const size = c.size_mb > 0 ? `${c.size_mb} MB trên đĩa` : c.size_hint;
-    const btn = ok
-      ? `<button onclick="installComponent('${c.id}')" ${busy ? 'disabled' : ''} class="w-full py-2 rounded-lg bg-deep border border-slate-750 text-gray-500 text-xs font-semibold hover:text-cyan-400 hover:border-cyan-500/30 transition-colors disabled:opacity-40">Cài lại</button>`
-      : `<button onclick="installComponent('${c.id}')" ${busy ? 'disabled' : ''} class="w-full py-2 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/20 transition-colors disabled:opacity-40">Cài — ${escapeHtml(c.size_hint)}</button>`;
+    const btn = c.installable === false
+      ? `<button disabled class="w-full py-2 rounded-lg bg-deep border border-slate-750 text-gray-600 text-xs font-semibold">Model đã chọn từ benchmark</button>`
+      : ok
+        ? `<button onclick="installComponent('${c.id}')" ${busy ? 'disabled' : ''} class="w-full py-2 rounded-lg bg-deep border border-slate-750 text-gray-500 text-xs font-semibold hover:text-cyan-400 hover:border-cyan-500/30 transition-colors disabled:opacity-40">Cài lại</button>`
+        : `<button onclick="installComponent('${c.id}')" ${busy ? 'disabled' : ''} class="w-full py-2 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/20 transition-colors disabled:opacity-40">Cài — ${escapeHtml(c.size_hint)}</button>`;
 
     return `
       <div class="bg-deep border ${ok ? 'border-emerald-500/20' : 'border-slate-750'} rounded-xl p-5">
@@ -1053,12 +1069,14 @@ function renderServiceList(s) {
           <div class="text-[10px] text-gray-600">${up ? 'Đang chạy' : hint}</div>
         </div>
       </div>
-      ${up ? '' : `<button onclick="${action}" class="shrink-0 ml-2 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">Bật</button>`}
+      ${up || !action ? '' : `<button onclick="${action}" class="shrink-0 ml-2 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">Bật</button>`}
     </div>`;
 
   document.getElementById('serviceList').innerHTML =
     row('Ollama', s.ollama, "startSetupService('ollama')", 'Tắt — cổng 11434') +
-    row('PhoWhisper', s.whisper, "startSetupService('whisper')", 'Tắt — cổng 8178') +
+    (s.stt_engine === 'gipformer'
+      ? row('Gipformer (trong Backend)', s.stt_ready, '', 'Chưa nạp / thiếu model')
+      : row('PhoWhisper', s.whisper, "startSetupService('whisper')", 'Tắt — cổng 8178')) +
     row('F5-TTS (RAM)', s.tts_loaded, 'reloadTTS()', 'Chưa nạp model');
 }
 
@@ -1119,7 +1137,8 @@ async function cancelSetupJob() {
 }
 
 async function startSetupService(name) {
-  setupLog(`Đang bật dịch vụ "${name}"... (PhoWhisper mất ~20-40 giây nạp model)`);
+  const note = name === 'whisper' ? ' (PhoWhisper mất ~20-40 giây nạp model)' : '';
+  setupLog(`Đang bật dịch vụ "${name}"...${note}`);
   try {
     const res = await fetch(`/api/setup/service/${name}/start`, { method: 'POST' });
     const data = await res.json();
@@ -1234,13 +1253,44 @@ function clearLogs() {
 }
 
 // ---- Navigation ----
-function switchPage(name) {
+// Mỗi menu có một URL thật để F5, Back/Forward và copy link vẫn giữ đúng trang.
+// Backend phục vụ cùng index.html cho các đường dẫn này; phía client chỉ quyết
+// định page nào được hiện. Lấy danh sách từ chính sidebar để thêm menu mới không
+// phải nhớ sửa thêm một bảng route thứ hai ở đây.
+const PAGE_ROUTES = new Set(
+  Array.from(document.querySelectorAll('.nav-btn[data-page]')).map(b => b.dataset.page)
+);
+
+function pageFromPath(pathname = window.location.pathname) {
+  let name = '';
+  try { name = decodeURIComponent(pathname).replace(/^\/+|\/+$/g, ''); }
+  catch { name = ''; }
+  return PAGE_ROUTES.has(name) ? name : 'overview';
+}
+
+function pagePath(name) {
+  return '/' + name;
+}
+
+function switchPage(name, options = {}) {
+  if (!PAGE_ROUTES.has(name)) name = 'overview';
+
   document.querySelectorAll('.page').forEach(p => { p.classList.add('hidden'); p.classList.remove('flex'); });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const page = document.getElementById('page-' + name);
+  const nav = document.querySelector(`.nav-btn[data-page="${name}"]`);
+  if (!page || !nav) return;
+
   page.classList.remove('hidden');
   if (name === 'chat' || name === 'logs') page.classList.add('flex');
-  document.querySelector(`.nav-btn[data-page="${name}"]`).classList.add('active');
+  nav.classList.add('active');
+
+  // Khi người dùng bấm menu thì thêm một mốc history. Khi xử lý popstate/F5,
+  // options.history=false để chỉ render mà không tạo vòng lặp history mới.
+  const path = pagePath(name);
+  if (options.history !== false && window.location.pathname !== path) {
+    window.history.pushState({ page: name }, '', path);
+  }
   if (name === 'models') loadSetupStatus();
   // Vào tab Thiết bị là quét luôn: người dùng vừa cắm máy vào thì việc đầu tiên
   // họ muốn biết là máy có lên hay không, không phải bấm thêm một nút nữa.
@@ -1261,10 +1311,15 @@ function switchPage(name) {
   // Vào trang Benchmark là hỏi lại tên model đang chạy - nó đổi được
   // giữa chừng (đổi .env rồi khởi động lại dịch vụ).
   if (name === 'benchmark') napTenModelBenchmark();
+  if (name === 'settings') napModelSettings();
   if (name === 'knowledge') loadTriThuc();
   if (name === 'fillers') loadCauDem();
   batDauTuCapNhat(name);
 }
+
+window.addEventListener('popstate', () => {
+  window.switchPage(pageFromPath(), { history: false });
+});
 
 // ---- Tự cập nhật theo trang -------------------------------------------------
 //
@@ -1955,7 +2010,7 @@ async function refreshTrainStatus() {
     }
 
     const btnTrain = document.getElementById('btnStartTrain');
-    btnTrain.disabled = !s.env_ready || !s.gpu_ok;
+    btnTrain.disabled = !s.env_ready || !s.gpu_ok || !s.du_mau;
     btnTrain.classList.toggle('opacity-40', btnTrain.disabled);
     btnTrain.classList.toggle('cursor-not-allowed', btnTrain.disabled);
     document.getElementById('btnSetupEnv').textContent =
@@ -3100,6 +3155,14 @@ async function deleteSessionRecord(id, fromModal) {
 
 // ---- Init ----
 window.addEventListener('load', () => {
+  // Render route hiện tại trước. Với URL cũ `/`, chuẩn hoá sang `/overview`
+  // bằng replaceState để F5 lần sau vẫn ở route rõ ràng và không thêm history.
+  const initialPage = pageFromPath();
+  window.switchPage(initialPage, { history: false });
+  if (window.location.pathname !== pagePath(initialPage)) {
+    window.history.replaceState({ page: initialPage }, '', pagePath(initialPage));
+  }
+
   document.getElementById('textInput')?.addEventListener('input', schedulePrefetch);
   connectWS();
   loadVoices();

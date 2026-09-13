@@ -5,13 +5,14 @@ llm_chunk1_ms, tts_first_ms, ttfa_ms, total_ms. Script nay chi don ve mot bang.
 
 TTFA la thu khach cam nhan: tu luc ho dut loi den luc nghe thay tieng dau tien.
 """
-import asyncio, base64, io, json, sys, time
+import asyncio, json, sys, urllib.parse, urllib.request
 from pathlib import Path
 sys.path.insert(0, r"C:/duan/chat-ai"); sys.stdout.reconfigure(encoding="utf-8")
-import numpy as np, soundfile as sf, websockets
-from backend.services.tts_service import F5TTSService
+import websockets
 
 WS = "ws://127.0.0.1:8100/ws/call/do-moc"
+TTS = "http://127.0.0.1:8100/api/voices/test-tts"
+VOICE_KHACH = "giong_nam"
 LUOT = [
  "Alo em chào anh, anh đang cần vay tín chấp thì lãi suất bao nhiêu vậy em?",
  "Vậy hạn mức tối đa là bao nhiêu, và anh cần chuẩn bị giấy tờ gì?",
@@ -21,28 +22,53 @@ LUOT = [
 ]
 COT = ["stt_ms", "rag_ms", "cong_cu_ms", "llm_ttft_ms", "llm_chunk1_ms",
        "tts_first_ms", "ttfa_ms", "total_ms"]
+CACHE_AUDIO = Path(__file__).resolve().parents[1] / "logs" / "_bench_do_moc_audio.json"
 
-def wav_bytes(x, sr):
-    b = io.BytesIO(); sf.write(b, np.clip(x, -1, 1), sr, format="WAV", subtype="PCM_16")
-    return b.getvalue()
+def sinh_tieng_khach(text):
+    data = urllib.parse.urlencode({
+        "text": text,
+        "voice_name": VOICE_KHACH,
+        "qua_dien_thoai": "false",
+    }).encode()
+    req = urllib.request.Request(TTS, data=data)
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        body = json.load(resp)
+    if body.get("error"):
+        raise RuntimeError(body["error"])
+    return body["audio"]
+
+def lay_tieng_khach():
+    try:
+        cache = json.loads(CACHE_AUDIO.read_text(encoding="utf-8"))
+        if cache.get("voice") == VOICE_KHACH and cache.get("texts") == LUOT:
+            audio = cache.get("audio", [])
+            if len(audio) == len(LUOT) and all(audio):
+                return audio
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        pass
+
+    audio = [sinh_tieng_khach(c) for c in LUOT]
+    CACHE_AUDIO.parent.mkdir(parents=True, exist_ok=True)
+    CACHE_AUDIO.write_text(json.dumps({
+        "voice": VOICE_KHACH,
+        "texts": LUOT,
+        "audio": audio,
+    }, ensure_ascii=False), encoding="utf-8")
+    return audio
 
 async def main():
-    svc = F5TTSService(); svc.load()
-    await svc.ensure_voice("giong_nam")
-    tieng = []
-    for c in LUOT:
-        b = await svc.synthesize(c, voice="giong_nam")
-        x, sr = sf.read(io.BytesIO(b), dtype="float32")
-        tieng.append((x.mean(axis=1) if x.ndim > 1 else x, sr))
+    # Sinh audio khach qua chinh backend dang chay de benchmark khong load them
+    # mot F5/model CUDA o process rieng. Chi do pipeline sau khi audio da san sang.
+    tieng = lay_tieng_khach()
     ra = []
     async with websockets.connect(WS, max_size=64*1024*1024) as ws:
         await ws.send(json.dumps({"type": "set_session", "customer_name": "anh Hải",
                                   "product": "vay tín chấp", "phone": "0912345678"}))
         try: await asyncio.wait_for(ws.recv(), timeout=20)
         except asyncio.TimeoutError: pass
-        for i, (x, sr) in enumerate(tieng, 1):
+        for i, audio_b64 in enumerate(tieng, 1):
             await ws.send(json.dumps({"type": "audio", "turn_id": i,
-                                      "data": base64.b64encode(wav_bytes(x, sr)).decode()}))
+                                      "data": audio_b64}))
             while True:
                 g = json.loads(await asyncio.wait_for(ws.recv(), timeout=180))
                 if g.get("type") == "turn_complete":

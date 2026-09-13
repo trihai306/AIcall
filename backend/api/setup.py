@@ -8,6 +8,7 @@ import asyncio
 import logging
 import shlex
 import shutil
+import sys
 import time
 from pathlib import Path
 
@@ -102,8 +103,12 @@ async def _check_llm() -> dict:
     want = settings.ollama_model
     if models is None:
         return {"installed": False, "detail": "Ollama server chưa chạy", "size_mb": 0}
-    base = want.split(":")[0]
-    found = [m for m in models if m == want or m.split(":")[0] == base]
+
+    def _normalize(name: str) -> str:
+        name = (name or "").strip()
+        return name if ":" in name else f"{name}:latest"
+
+    found = [m for m in models if _normalize(m) == _normalize(want)]
     return {
         "installed": bool(found),
         "detail": found[0] if found else f"Chưa có model '{want}'",
@@ -112,6 +117,16 @@ async def _check_llm() -> dict:
 
 
 async def _check_stt() -> dict:
+    if settings.stt_engine == "gipformer":
+        d = _abs(settings.gipformer_model_path)
+        required = ("encoder.onnx", "decoder.onnx", "joiner.onnx", "tokens.txt")
+        missing = [name for name in required if not (d / name).is_file()]
+        return {
+            "installed": not missing,
+            "detail": (str(d.relative_to(PROJECT_DIR)) if not missing else
+                       "Thiếu Gipformer: " + ", ".join(missing)),
+            "size_mb": _dir_size_mb(d),
+        }
     d = _phowhisper_dir()
     return {
         "installed": d is not None,
@@ -173,11 +188,15 @@ COMPONENTS: dict[str, dict] = {
         "requires": ["ollama"],
     },
     "stt": {
-        "name": "STT — PhoWhisper",
+        "name": f"STT — {'Gipformer' if settings.stt_engine == 'gipformer' else 'PhoWhisper'}",
         "desc": "Nhận dạng giọng nói tiếng Việt",
-        "size_hint": "~500 MB",
+        "size_hint": "~300 MB" if settings.stt_engine == "gipformer" else "~500 MB",
         "check": _check_stt,
-        "command": ["bash", "scripts/install/02_pho_whisper.sh"],
+        # Dùng đúng Python của backend để Windows dạng .venv\python.exe và Unix
+        # cùng cài vào một môi trường, tránh cài sherpa-onnx nhầm interpreter.
+        "command": ([sys.executable, "scripts/install/02_gipformer.py"]
+                    if settings.stt_engine == "gipformer"
+                    else ["bash", "scripts/install/02_pho_whisper.sh"]),
         "requires": [],
     },
     "tts": {
@@ -211,6 +230,7 @@ async def get_status():
             "desc": spec["desc"],
             "size_hint": spec["size_hint"],
             "requires": spec["requires"],
+            "installable": spec["command"] is not None,
             **state,
         })
 
@@ -220,12 +240,18 @@ async def get_status():
     )
 
     from backend.main import app_state
+    try:
+        stt_ready = await app_state.stt.health_check()
+    except Exception:
+        stt_ready = False
 
     return {
         "components": components,
         "services": {
             "ollama": ollama_up,
             "whisper": whisper_up,
+            "stt_engine": settings.stt_engine,
+            "stt_ready": stt_ready,
             "tts_loaded": bool(getattr(app_state.tts, "_is_loaded", False)),
         },
         "running_job": runner.running_job_id,
@@ -240,11 +266,18 @@ async def install(component: str):
 
     if component == "all":
         steps = []
+        blocked = []
         for cid in INSTALL_ORDER:
             state = await COMPONENTS[cid]["check"]()
             if not state["installed"]:
-                steps.append(Step(command=COMPONENTS[cid]["command"], label=COMPONENTS[cid]["name"]))
+                if COMPONENTS[cid]["command"] is None:
+                    blocked.append(COMPONENTS[cid]["name"])
+                else:
+                    steps.append(Step(command=COMPONENTS[cid]["command"], label=COMPONENTS[cid]["name"]))
         if not steps:
+            if blocked:
+                return {"error": (", ".join(blocked) +
+                                  " cần chuẩn bị bằng scripts/chuan_bi_gipformer.py.")}
             return {"error": "Tất cả model đã được cài."}
         label = "Cài tất cả (" + ", ".join(s.label for s in steps) + ")"
         return runner.start("all", steps, label).to_dict()
@@ -252,6 +285,9 @@ async def install(component: str):
     spec = COMPONENTS.get(component)
     if not spec:
         return {"error": f"Không có component '{component}'"}
+    if spec["command"] is None:
+        return {"error": (f"{spec['name']} dùng model đã benchmark/stage. "
+                          "Chạy scripts/chuan_bi_gipformer.py để chuẩn bị model.")}
 
     for dep in spec["requires"]:
         if not (await COMPONENTS[dep]["check"]())["installed"]:
@@ -287,6 +323,9 @@ async def start_service(name: str):
     }
     if name not in commands:
         return {"error": f"Không có dịch vụ '{name}'"}
+    if name == "whisper" and settings.stt_engine != "phowhisper":
+        return {"error": (f"STT hiện dùng {settings.stt_engine}; không cần bật "
+                          "PhoWhisper server riêng.")}
 
     urls = {
         "ollama": f"{settings.ollama_base_url}/api/tags",

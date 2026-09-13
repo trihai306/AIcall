@@ -61,27 +61,30 @@ def venv_train_python() -> Path:
 # Dataset
 # ============================================================
 
-SAMPLE_SYSTEM = ("Bạn là nhân viên tư vấn ngân hàng ABC, tên Lan, đang gọi điện cho khách. "
-                 "Trả lời tối đa 2 câu, xưng em, gọi khách là anh/chị.")
+SAMPLE_SYSTEM = (
+    "Bạn là nhân viên tư vấn ngân hàng ABC, tên Lan, đang gọi điện cho khách. "
+    "Trả lời tối đa 35 từ trong 1-2 câu, xưng em, gọi khách là anh/chị. "
+    "Chỉ dùng dữ kiện có trong ngữ cảnh hoặc do khách vừa nói; không tự thêm con số."
+)
 
-# Phải khớp ràng buộc của SYSTEM_PROMPT_TEMPLATE trong services/llm_service.py:
-# tối đa 2 câu / 25 từ, viết số thành chữ, không liệt kê quá 2 thứ. Model học
-# theo data, nên mẫu dài dòng hay dùng chữ số sẽ dạy ngược lại quy tắc đang ép
-# ở system prompt.
+# Phải khớp ràng buộc của CORE_RULES trong services/llm_service.py: tối đa 35
+# từ / 2 câu, giữ nguyên con số khách nói và không tự thêm dữ kiện. Model học
+# theo data, nên mẫu có facts sản phẩm cố định sẽ biến LoRA thành một bản RAG
+# cũ không thể cập nhật khi tài liệu đổi.
 #
 # Câu hỏi ở đây cố ý KHÔNG trùng với dataset chính: make_dataset.py gộp mọi file
 # .jsonl trong thư mục, trùng câu hỏi sẽ làm model thiên lệch về mẫu đó.
 SAMPLE_PAIRS = [
     ("Tôi muốn vay để sửa nhà",
-     "Dạ anh chị vay tín chấp là được ạ, không cần thế chấp. Anh chị cần khoảng bao nhiêu ạ?"),
+     "Dạ em ghi nhận nhu cầu vay để sửa nhà ạ. Anh chị muốn tìm hiểu điều kiện hay hồ sơ trước để em tư vấn đúng phần đó ạ?"),
     ("Lương 12 triệu vay được bao nhiêu?",
-     "Dạ mức lương đó anh chị vay được khoảng hai trăm triệu ạ. Anh chị cần vay bao nhiêu ạ?"),
+     "Dạ hạn mức cụ thể cần dựa trên hồ sơ và thông tin sản phẩm ạ. Em sẽ dùng đúng dữ liệu hệ thống, không tự đoán số tiền cho anh chị."),
     ("Hồ sơ bị từ chối thì sao?",
-     "Dạ anh chị đợi sáu tháng rồi nộp lại được ạ. Em xem giúp anh chị lý do bị từ chối nhé ạ?"),
+     "Dạ em cần xem đúng lý do và trạng thái hồ sơ mới tư vấn chính xác ạ. Em không đoán khi hệ thống chưa có dữ liệu đó."),
     ("Tôi đang làm việc ở nước ngoài vay được không?",
      "Dạ em sẽ ghi nhận và có chuyên viên liên hệ lại ạ. Anh chị cho em xin số liên lạc nhé ạ?"),
     ("Vay tín chấp và mở thẻ cái nào lợi hơn?",
-     "Dạ vay tín chấp hợp khi cần tiền mặt lớn ạ. Thẻ tín dụng tiện chi tiêu và miễn lãi năm mươi lăm ngày ạ."),
+     "Dạ hai sản phẩm phục vụ nhu cầu khác nhau ạ. Anh chị cần tiền mặt hay chủ yếu muốn chi tiêu bằng thẻ để em tư vấn đúng hơn ạ?"),
 ]
 
 
@@ -91,12 +94,10 @@ DUOI_FILE = (".jsonl", ".json", ".csv", ".txt")
 
 
 def _dem_mau(path: Path) -> int:
-    """Đếm số mẫu. CSV phải trừ dòng tiêu đề, đếm dòng thô là lệch một."""
+    """Đếm đúng số cặp train đọc được, không đếm dòng thô của transcript."""
     try:
         cap = _doc_cap_tu_file(path.read_text(encoding="utf-8-sig"), path.suffix.lower())
-        if cap:
-            return len(cap)
-        return sum(1 for l in path.read_text(encoding="utf-8-sig").splitlines() if l.strip())
+        return len(cap)
     except Exception:
         return 0
 
@@ -138,14 +139,14 @@ COT_MAU = ["khach_hoi", "tu_van_tra_loi", "ghi_chu"]
 # phong cách, để người dùng nhìn là biết viết thế nào cho đúng.
 DONG_MAU = [
     ("Lãi suất vay tín chấp bao nhiêu?",
-     "Dạ vay tín chấp bên em lãi suất từ bảy phẩy chín phần trăm một năm ạ. Anh chị định vay khoảng bao nhiêu ạ?",
-     "Viết số thành CHỮ, không viết 7.9%"),
-    ("Vay 100 triệu trả hàng tháng bao nhiêu?",
-     "Dạ vay một trăm triệu ba năm thì mỗi tháng khoảng ba phẩy bốn triệu ạ. Mức đó ổn không ạ?",
-     "Trả lời xong hỏi lại để giữ mạch hội thoại"),
+     "Dạ em sẽ trả đúng mức đang có trong thông tin sản phẩm của hệ thống ạ. Em không tự đoán lãi suất khi chưa có nguồn.",
+     "Facts thay đổi như lãi suất phải lấy từ tài liệu/RAG, không train cứng vào LoRA"),
+    ("Tôi muốn vay 100 triệu",
+     "Dạ em ghi nhận anh chị muốn vay 100 triệu ạ. Anh chị đang quan tâm thời hạn khoảng bao lâu để em tư vấn theo đúng thông tin sản phẩm ạ?",
+     "Giữ nguyên con số khách nói; không tự đổi thành số khác"),
     ("Mở thẻ tín dụng cần giấy tờ gì?",
-     "Dạ anh chị chuẩn bị căn cước và sao kê lương ba tháng ạ. Anh chị đang làm ở đâu ạ?",
-     "Chỉ nói HAI thứ chính rồi hỏi lại, đừng liệt kê dài"),
+     "Dạ em sẽ dựa đúng mục điều kiện mở thẻ trong tài liệu để trả lời anh chị ạ. Em không tự thêm giấy tờ ngoài nguồn.",
+     "Dữ kiện sản phẩm nằm trong tài liệu, dataset chỉ dạy hành vi"),
     ("Tôi không quan tâm",
      "Dạ em xin lỗi đã làm phiền anh chị ạ. Em cảm ơn anh chị đã nghe máy ạ.",
      "Khách từ chối thì cảm ơn rồi dừng, đừng nài"),
@@ -202,6 +203,36 @@ def _doc_cap_tu_file(text: str, ext: str) -> list[tuple[str, str]]:
         for r in rows[dau:]:
             if len(r) >= 2:
                 cap.append((r[0].strip(), r[1].strip()))
+    elif ext == ".txt":
+        pending_user = None
+        for raw in text.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            upper = line[:3].upper()
+            if upper.startswith("KH:"):
+                pending_user = line[3:].strip()
+            elif upper.startswith("TV:"):
+                reply = line[3:].strip()
+                if pending_user and reply:
+                    cap.append((pending_user, reply))
+                    pending_user = None
+    elif ext == ".json":
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError:
+            return []
+        objs = raw if isinstance(raw, list) else [raw]
+        for obj in objs:
+            if not isinstance(obj, dict):
+                continue
+            msgs = obj.get("messages") or []
+            hoi = next((m.get("content", "") for m in reversed(msgs)
+                        if isinstance(m, dict) and m.get("role") == "user"), "")
+            tl = next((m.get("content", "") for m in reversed(msgs)
+                       if isinstance(m, dict) and m.get("role") == "assistant"), "")
+            if hoi and tl:
+                cap.append((hoi, tl))
     else:
         for line in text.splitlines():
             line = line.strip()
@@ -212,9 +243,12 @@ def _doc_cap_tu_file(text: str, ext: str) -> list[tuple[str, str]]:
             except json.JSONDecodeError:
                 continue
             msgs = obj.get("messages") or []
-            hoi = next((m["content"] for m in reversed(msgs) if m.get("role") == "user"), "")
-            tl = next((m["content"] for m in reversed(msgs) if m.get("role") == "assistant"), "")
-            cap.append((hoi, tl))
+            hoi = next((m.get("content", "") for m in reversed(msgs)
+                        if isinstance(m, dict) and m.get("role") == "user"), "")
+            tl = next((m.get("content", "") for m in reversed(msgs)
+                       if isinstance(m, dict) and m.get("role") == "assistant"), "")
+            if hoi and tl:
+                cap.append((hoi, tl))
     return cap
 
 
@@ -408,15 +442,16 @@ async def setup_env(force: bool = False):
 # ============================================================
 
 class TrainingConfig(BaseModel):
-    # Mặc định khớp model production đang chạy. Fine-tune lệch cỡ model là đổi
-    # luôn hồ sơ độ trễ của cả hệ thống gọi điện.
+    # Base 3B này vừa RTX 5070 12GB, nhưng KHÔNG mặc định coi là tương đương
+    # model production. Nếu production đang là Qwen3.5-9B thì chuyển thẳng sang
+    # bản 3B sau train là hạ model, phải A/B trước.
     base_model: str = "Qwen/Qwen2.5-3B-Instruct"
     epochs: int = 3
     learning_rate: float = 2e-4
     lora_rank: int = 16
     batch_size: int = 2
     grad_accum: int = 8
-    auto_deploy: bool = True
+    auto_deploy: bool = False
 
 
 def _chuyen_model_khi_xong(auto_deploy: bool):
@@ -447,9 +482,22 @@ async def start_training(config: TrainingConfig):
         if not p.exists():
             return {"error": f"Thiếu script: {p.relative_to(PROJECT_DIR)}"}
 
-    nguon = [f for f in DATASET_DIR.glob("*.jsonl") if f.name != MERGED.name]
+    nguon = [
+        f for duoi in DUOI_FILE for f in DATASET_DIR.glob(f"*{duoi}")
+        if f.name != MERGED.name
+    ]
     if not nguon:
         return {"error": "Chưa có dataset nào. Upload hoặc tạo dataset mẫu trước."}
+
+    tong_mau = sum(_dem_mau(f) for f in nguon)
+    if tong_mau < MIN_SAMPLES:
+        return {
+            "error": (
+                f"Mới có {tong_mau} mẫu, dưới mức tối thiểu {MIN_SAMPLES}. "
+                "Train lúc này rất dễ học thuộc và trả lời lệch khi gặp câu mới. "
+                "Bổ sung dữ liệu sạch rồi train lại."
+            )
+        }
 
     if not 1 <= config.epochs <= 50:
         return {"error": "epochs phải trong khoảng 1-50"}
@@ -473,16 +521,31 @@ async def start_training(config: TrainingConfig):
             "--grad-accum", str(config.grad_accum),
         ], label=f"Fine-tune {config.base_model}"),
     ]
+    # Luôn nạp model mới vào Ollama để có thể A/B với production. Chỉ sửa .env
+    # và chuyển model đang phục vụ khi người dùng bật auto_deploy rõ ràng.
+    deploy_cmd = [sys.executable, str(DEPLOY_SCRIPT),
+                  "--name", MODEL_NAME, "--modelfile", MODELFILE,
+                  "--gguf-name", GGUF_NAME]
     if config.auto_deploy:
-        steps.append(Step(
-            command=[sys.executable, str(DEPLOY_SCRIPT),
-                     "--name", MODEL_NAME, "--modelfile", MODELFILE,
-                     "--gguf-name", GGUF_NAME, "--set-env"],
-            label="Nạp vào Ollama và chuyển .env",
-        ))
+        deploy_cmd.append("--set-env")
+    steps.append(Step(
+        command=deploy_cmd,
+        label=("Nạp vào Ollama và chuyển .env" if config.auto_deploy
+               else "Nạp model vào Ollama để A/B (chưa chuyển production)"),
+    ))
 
     job = runner.start("train-llm", steps,
                        f"Fine-tune {config.base_model} ({config.epochs} epochs)")
+
+    # Cảnh báo rất dễ bỏ sót trên UI: hiện production có thể là Qwen3.5-9B,
+    # trong khi cấu hình mặc định fine-tune Qwen2.5-3B để vừa VRAM 12GB. Loss
+    # giảm không có nghĩa model nhỏ hơn sẽ tốt hơn model production lớn hơn.
+    if settings.ollama_model not in (MODEL_NAME, "qwen2.5:3b") \
+            and config.base_model == "Qwen/Qwen2.5-3B-Instruct":
+        job.log(
+            f"CẢNH BÁO: production đang dùng '{settings.ollama_model}', còn base train là "
+            "Qwen2.5-3B. Hãy A/B trước khi chuyển production."
+        )
 
     # Nhả VRAM SAU khi job đã tạo để dòng log đi vào đúng job, nhưng trước khi
     # bước train thật sự chạy - bước đầu (gộp dataset) không đụng GPU nên vẫn kịp.

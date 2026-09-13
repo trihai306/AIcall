@@ -10,21 +10,24 @@ Cái nguy hiểm là lỗi đó KHÔNG có gì báo. Train vẫn chạy, model v
 tiếng Việt, chỉ là trả lời sai phong cách - và chỉ phát hiện được khi nghe
 cuộc gọi thật.
 
-Nguồn luật: SYSTEM_PROMPT_TEMPLATE trong backend/services/llm_service.py.
-Sửa luật ở đó thì phải sửa ở đây.
+Nguồn luật: ``CORE_RULES`` trong backend/services/llm_service.py. Production
+hiện cho tối đa 35 từ và GIỮ chữ số để tầng chuẩn hoá/TTS đọc thống nhất; bộ
+kiểm dữ liệu phải cùng luật đó, nếu không fine-tune sẽ học ngược runtime.
 """
 
 import re
 
-GIOI_HAN_TU = 25      # quy tắc 2: "TỐI ĐA 25 từ"
-GIOI_HAN_CAU = 2      # quy tắc 2: "TỐI ĐA 2 câu"
+GIOI_HAN_TU = 35      # CORE_RULES: tối đa 35 từ
+GIOI_HAN_CAU = 2      # CORE_RULES: 1-2 câu
 
-_CHU_SO = re.compile(r"\d")
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
 # Gạch đầu dòng / đánh số đầu dòng - quy tắc 6 cấm markdown, quy tắc 9 cấm liệt kê.
 _GACH_DAU_DONG = re.compile(r"(^|\n)\s*([-*•+]|\d+[.)])\s")
 _MARKDOWN = re.compile(r"\*\*|__|`|^#{1,6}\s", re.MULTILINE)
-_TACH_CAU = re.compile(r"[.?!]+")
+# Không coi dấu chấm THẬP PHÂN là hết câu. ``7.9%`` phải là một cụm, trong khi
+# dấu chấm cuối câu sau chữ hoặc sau số vẫn phải tách. Hai nhánh dấu chấm dưới
+# đây chỉ bỏ qua đúng trường hợp cả hai phía đều là chữ số.
+_TACH_CAU = re.compile(r"(?<!\d)\.|\.(?!\d)|[?!]+")
 
 
 def dem_tu(text: str) -> int:
@@ -54,8 +57,6 @@ def kiem_tra_tra_loi(text: str) -> tuple[list[str], list[str]]:
         loi.append(f"{n_tu} từ (tối đa {GIOI_HAN_TU})")
     if n_cau > GIOI_HAN_CAU:
         loi.append(f"{n_cau} câu (tối đa {GIOI_HAN_CAU})")
-    if _CHU_SO.search(t):
-        loi.append("còn chữ số - phải viết thành chữ, ví dụ 6.5% -> sáu phẩy năm phần trăm")
     if _EMOJI.search(t):
         loi.append("có emoji")
     if _GACH_DAU_DONG.search(t):

@@ -55,43 +55,28 @@ CHUOI_DUNG = [
 # danh sách sáu món qua điện thoại, nhại lại chữ sai chính tả của bản ghi).
 # Đổi ngành không làm các lỗi đó hết đúng. Phần kịch bản thay được nằm ở
 # `build_system_prompt` bên dưới: tên tổ chức, tên nhân viên, ví dụ, luật riêng.
-CORE_RULES = """QUY TẮC BẮT BUỘC:
-1. Luôn xưng "em" và gọi khách là "anh/chị"
-2. CÂU ĐẦU TIÊN phải TRẢ LỜI THẲNG thứ khách vừa hỏi, rồi mới nói thêm.
-   - Khách hỏi "được không" thì câu đầu phải là được hoặc không được.
-   - Khách hỏi con số thì câu đầu phải có con số đó.
-   Sau đó TỐI ĐA 3 câu, TỐI ĐA 45 từ cả lượt. Đây là cuộc gọi thoại, không phải chat.
-3. MỌI CON SỐ (giá, lãi suất, hạn mức, phí, thời hạn) PHẢI lấy đúng từ mục THÔNG TIN
-   THAM KHẢO bên dưới. Con số trong phần VÍ DỤ chỉ minh hoạ CÁCH NÓI - TUYỆT ĐỐI
-   không dùng lại.
-   THÔNG TIN THAM KHẢO CÓ dữ liệu thì PHẢI trả lời bằng dữ liệu đó ngay. Câu
-   "em xin phép kiểm tra lại và báo anh/chị" CHỈ dùng khi thật sự KHÔNG tìm thấy
-   trong THÔNG TIN THAM KHẢO - đừng nói câu đó rồi lại trả lời được ngay sau.
-4. Nếu khách hỏi ngoài phạm vi, nói: "Dạ em sẽ ghi nhận và có chuyên viên liên hệ lại ạ"
-5. Nếu khách từ chối, cảm ơn lịch sự và kết thúc
-6. KHÔNG dùng markdown, emoji, gạch đầu dòng - chỉ văn nói tự nhiên
-7. Viết số bằng CHỮ SỐ đúng như trong THÔNG TIN THAM KHẢO (ví dụ: 500 triệu,
-   24 giờ). KHÔNG tự đọc thành chữ - hệ thống đọc hộ rồi.
-8. Chỉ nói tiếng Việt, không chèn từ tiếng Anh
-9. KHÔNG liệt kê dài. Khách hỏi "cần những giấy tờ gì" thì nói HAI ba thứ chính là
-   đủ - qua điện thoại không ai nhớ được danh sách dài.
-   CHỈ hỏi lại khi thật sự cần thêm thông tin để tư vấn tiếp. Đừng kết thúc lượt
-   nào cũng bằng một câu hỏi cho có.
-10. CÂU KHÁCH LÀ BẢN GHI TỰ ĐỘNG TỪ ĐƯỜNG THOẠI, CÓ THỂ SAI CHÍNH TẢ. Hãy đoán ý
-   thật từ ngữ cảnh trước khi trả lời. Trả lời theo Ý ĐOÁN ĐƯỢC, đừng nhắc lại
-   chữ sai và đừng hỏi lại chỉ vì một chữ lạ.
-11. Chỉ khi câu KHÔNG ĐOÁN NỔI ý (quá ngắn, rời rạc, không liên quan chủ đề đang
-   trao đổi) thì mới hỏi lại: "Dạ anh/chị nói lại giúp em được không ạ?". ĐỪNG bịa
-   một câu trả lời cho câu mình không hiểu.
-12. Phần VÍ DỤ bên dưới chỉ để học ĐỘ DÀI và giọng điệu. TUYỆT ĐỐI không chép lại
-   nguyên văn câu nào trong đó, trừ khi tình huống của khách đúng y như tình huống
-   của ví dụ.
-13. BÁM MẠCH cuộc gọi. Đọc lại những gì hai bên đã trao đổi ở trên TRƯỚC KHI trả lời:
-   - Con số hay điều kiện em đã nói với khách rồi thì GIỮ NGUYÊN. Muốn đưa số khác
-     thì phải nói rõ vì sao khác ("với thu nhập đó thì mức vay lên tới...").
-   - Khách đã cho biết gì (thu nhập, số tiền muốn vay, tình trạng hồ sơ) thì DÙNG LẠI,
-     đừng hỏi lại thứ khách vừa nói.
-   - Đây là MỘT cuộc trò chuyện, không phải các câu hỏi rời nhau."""
+CORE_RULES = """NGUYÊN TẮC TRẢ LỜI:
+1. Câu đầu TRẢ LỜI THẲNG ý khách vừa nói. Viết như đang trò chuyện qua điện
+   thoại: 1-2 câu, tối đa 35 từ, không liệt kê, không markdown.
+2. Chỉ khẳng định dữ kiện có trong THÔNG TIN THAM KHẢO hoặc do chính khách đã
+   nói trong cuộc gọi. Không tự thêm lãi suất, số tiền, điều kiện, giấy tờ, địa
+   điểm, số liên hệ, trạng thái hồ sơ hay việc sẽ làm.
+3. Dữ kiện trong tài liệu là thông tin CHUNG, không phải hoàn cảnh của khách.
+   Hạn mức sản phẩm KHÔNG phải hạn mức đã duyệt; trường hợp "đã tất toán" trong
+   tài liệu KHÔNG có nghĩa khách đã tất toán. Các mục "ví dụ tính toán" chỉ là
+   ví dụ: chỉ dùng khi khách đã nêu đủ điều kiện tương ứng; KHÔNG tự gán thời
+   hạn hay con số còn thiếu. Khi thiếu dữ liệu, nói ngắn là chưa có thông tin;
+   không đoán và không hứa suông.
+4. BÁM MẠCH cuộc gọi: GIỮ NGUYÊN con số đã nói, DÙNG LẠI thông tin khách đã cho
+   và không hỏi lại thứ vừa nghe.
+5. Lời khách là bản ghi tự động, có thể sai một vài chữ. Dựa vào mạch để hiểu;
+   nếu vẫn không rõ thì hỏi lại một ý, không tự bịa câu trả lời.
+6. Xưng "em", gọi khách là "anh/chị", chỉ nói tiếng Việt. Giữ chữ số để hệ
+   thống đọc. Chỉ hỏi tiếp khi thật sự cần cho câu trả lời.
+7. Nếu khách đang hỏi đúng sản phẩm đang tư vấn thì tiếp tục trả lời hoặc hỏi
+   đúng dữ kiện còn thiếu; KHÔNG tự chuyển chuyên viên hay hứa sẽ liên hệ lại.
+   Chỉ khi thật sự ngoài phạm vi mới nói: "Dạ em sẽ ghi nhận và có chuyên viên
+   liên hệ lại ạ". Khách từ chối thì cảm ơn lịch sự và kết thúc."""
 
 # Vì sao phải nhắc lại: mô hình 3B quên ràng buộc độ dài khi prompt dài. Đặt sát
 # lượt của khách nên nó "nhớ" hơn là luật số 2 nằm tận đầu prompt.
@@ -100,8 +85,8 @@ CORE_RULES = """QUY TẮC BẮT BUỘC:
 # `scripts/cham_chat_luong.py`, lỗi nhiều nhất là "không trả lời thẳng" (9/54),
 # gấp đôi mọi lỗi khác. Nhắc độ dài trước thì mô hình dồn sức cắt chữ và càng né
 # câu hỏi.
-CORE_REMINDER = """NHẮC LẠI TRƯỚC KHI TRẢ LỜI: câu đầu phải TRẢ LỜI THẲNG thứ khách vừa
-hỏi. Sau đó tối đa 3 câu, tối đa 45 từ, mở đầu bằng "Dạ", xưng "em"."""
+CORE_REMINDER = ('TRẢ LỜI THẲNG, tự nhiên trong 1-2 câu. Không có nguồn thì '
+                 'không khẳng định. mở đầu bằng "Dạ", xưng "em".')
 
 # Bản dùng khi lượt này ĐÃ phát câu đệm. Hai khác biệt, cả hai đều cần:
 #
@@ -123,28 +108,12 @@ hỏi. Sau đó tối đa 3 câu, tối đa 45 từ, mở đầu bằng "Dạ", 
 #
 # KHÔNG dặn gì thêm về việc nối câu - việc đó do `prefill` lo, xem
 # `stream_response`. Ba lần thử dặn bằng chữ đều hỏng, mỗi lần một kiểu.
-NHAC_CO_CAU_DEM = """NHẮC LẠI TRƯỚC KHI TRẢ LỜI: câu đầu phải TRẢ LỜI THẲNG thứ khách vừa
-hỏi. Sau đó tối đa 3 câu, tối đa 45 từ, xưng "em"."""
+NHAC_CO_CAU_DEM = ('TRẢ LỜI THẲNG, tự nhiên trong 1-2 câu. Không có nguồn thì '
+                   'không khẳng định. Xưng "em".')
 
 # Dùng khi kịch bản không khai ví dụ nào. Không có ví dụ thì mô hình hay trả lời
 # dài gấp đôi - đây là chỗ nó học ĐỘ DÀI, không phải học nội dung.
-_FALLBACK_EXAMPLES = [
-    # Ví dụ TRẢ LỜI THẲNG phải đứng ĐẦU. Hai ví dụ cũ đều là tình huống NÉ (khách
-    # bận, khách hỏi mơ hồ) nên mô hình học đúng cái đó và mang ra dùng cho cả
-    # câu hỏi có dữ liệu rõ ràng - đo được 07-08: hỏi "bao lâu giải ngân" mà mở
-    # đầu bằng "em xin phép gọi lại lúc khác".
-    #
-    # CỐ Ý KHÔNG có con số sản phẩm nào ở đây: bộ nhớ dự án ghi lại một lỗi nặng
-    # là con số trong ví dụ rò ra thành lãi suất thật báo cho khách.
-    {"khach": "Vay mức đó có được không?",
-     "tu_van": "Dạ được ạ, mức đó nằm trong hạn mức của bên em. "
-               "Anh chuẩn bị giấy tờ tuỳ thân và sao kê lương là được ạ."},
-    {"khach": "Tôi bận lắm.",
-     "tu_van": "Dạ em xin lỗi đã làm phiền ạ. Em xin phép gọi lại lúc khác ạ."},
-    {"khach": "Cái này là gì thế?",
-     "tu_van": "Dạ bên em đang có chương trình phù hợp với anh/chị ạ. "
-               "Anh/chị cho em xin một phút được không ạ?"},
-]
+_FALLBACK_EXAMPLES: list[dict] = []
 
 
 class LLMService:
@@ -278,7 +247,7 @@ class LLMService:
         # chặn mất lựa chọn tốt hơn, nên phải nói rõ THỨ TỰ ƯU TIÊN.
         if co_cong_cu:
             parts.append(
-                "CÁCH DÙNG CÔNG CỤ (ưu tiên hơn quy tắc 3 và 4):\n"
+                "CÁCH DÙNG CÔNG CỤ (ưu tiên hơn quy tắc thiếu dữ liệu):\n"
                 "- Khách hỏi con số mà THÔNG TIN THAM KHẢO không có -> GỌI HÀM để tra trước.\n"
                 "- Khách hỏi về hồ sơ RIÊNG của họ (dư nợ, hợp đồng, ngày đến hạn) "
                 "-> luôn GỌI HÀM tra_ho_so_khach, đừng hỏi xin số điện thoại "
@@ -482,10 +451,22 @@ class LLMService:
         try:
             result = await self.client.list()
             models = result.get("models", []) if isinstance(result, dict) else getattr(result, "models", [])
-            prefix = self.model.split(":")[0]
+            # Ollama trả model local không ghi tag dưới dạng ``name:latest`` ở
+            # mọi phiên bản client, còn cấu hình có thể ghi ``name`` hoặc
+            # ``name:latest``. Chuẩn hoá đúng hai dạng đó rồi so KHỚP CHÍNH XÁC.
+            #
+            # Trước đây chỉ so phần trước dấu ``:`` bằng ``startswith``. Vì vậy
+            # cấu hình ``qwen3.5:9b`` vẫn báo health OK nếu máy chỉ có
+            # ``qwen3.5:4b``. Startup nhìn xanh nhưng lượt đầu mới vỡ vì model
+            # cần dùng thực ra chưa được tải.
+            def _chuan(ten: str) -> str:
+                ten = (ten or "").strip()
+                return ten if ":" in ten else f"{ten}:latest"
+
+            can = _chuan(self.model)
             for m in models:
                 name = m.get("model", "") if isinstance(m, dict) else getattr(m, "model", "")
-                if name.startswith(prefix):
+                if _chuan(name) == can:
                     if getattr(self, "_ho_tro_think", None) is None:
                         await self.kiem_nang_luc()
                     return True

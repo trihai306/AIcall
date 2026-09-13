@@ -1463,6 +1463,17 @@ class F5TTSService:
         """
         return self._filler_ms.get((self._giong_thuc(voice), id_th, cau_id), 0.0)
 
+    def filler_dai_nhat_ms(self, voice: str | None = None,
+                           id_th: str = "") -> float:
+        """Độ dài clip dài nhất của một nhóm đã nằm sẵn trong cache.
+
+        Dùng để quyết định có đáng chờ phân loại tình huống hay phát ngay nhóm
+        chung. Chỉ đọc cache RAM, không sinh tiếng và không chạm GPU.
+        """
+        name = self._giong_thuc(voice)
+        return max((ms for k, ms in self._filler_ms.items()
+                    if k[0] == name and k[1] == id_th), default=0.0)
+
     @staticmethod
     def _chu_cua_filler(kho, id_th: str, i_mau: int, id_duoi: str) -> str:
         """Nguyên văn chữ của clip câu đệm vừa chọn.
@@ -1508,6 +1519,7 @@ class F5TTSService:
         # lượt không nhận ra chủ đề vẫn có tiếng thay vì im lặng trọn quãng chờ.
         # Rổ đuôi trần giữ lại cuối chuỗi cho tương thích ngược - từ 06-09-2026
         # kho đuôi thường rỗng.
+        cac_nhom: list[tuple[str, list[tuple[str, float]]]] = []
         for th in (id_tinh_huong, MA_NHOM_CHUNG, ""):
             if th is None:
                 # id_tinh_huong=None → không có tình huống, bỏ qua lần đầu
@@ -1518,32 +1530,63 @@ class F5TTSService:
             #
             # `id_ghep` mang cả hai để `_chon_filler` đếm lượt dùng riêng cho
             # từng clip - nó tránh lặp bằng cách duyệt hết nhóm rồi mới quay lại.
-            ung_vien = [(f"{k[2]}|{k[3]}", self._filler_ms[k]) for k in self._filler_cache
+            # Gắn cả id nhóm vào khoá đếm. Nếu chỉ dùng "số_mẩu|id_đuôi", mẩu
+            # số 0 của hạn mức và mẩu số 0 của lãi suất giẫm chung một bộ đếm.
+            ung_vien = [(f"{th}|{k[2]}|{k[3]}", self._filler_ms[k]) for k in self._filler_cache
                         if k[0] == name and k[1] == th
                         and (chi_duoi is None or k[3] in chi_duoi)]
             if not ung_vien:
                 continue
-            id_ghep = _chon_filler(ung_vien, min_ms=min_ms, dem=dem or {})
+            cac_nhom.append((th, ung_vien))
+
+        def _tra(th: str, ung_vien: list[tuple[str, float]],
+                 id_ghep: str | None = None):
+            id_ghep = id_ghep or _chon_filler(
+                ung_vien, min_ms=min_ms, dem=dem or {})
+            if not id_ghep:
+                return None
+            # Đếm lượt dùng NGAY ĐÂY, theo đúng khoá `_chon_filler` xếp hạng.
+            # Bản cũ để nơi gọi đếm theo `id_duoi` - từ khi bỏ kho đuôi id đó
+            # luôn "", nên sổ đếm của từng clip đứng yên ở 0 và mọi lượt cùng
+            # chủ đề ra ĐÚNG MỘT câu (cuộc 06b8aae1: ba lần "Dạ hạn mức bên em
+            # thì,"). Xem tests/test_cau_dem_xoay_vong.py.
+            if dem is not None:
+                dem[id_ghep] = dem.get(id_ghep, 0) + 1
+            _nhom, i_mau, chon_id = id_ghep.split("|", 2)
+            # Trả id_th="" thành None để nơi gọi ghi log đúng: "dùng đuôi
+            # trần" thay vì "dùng tình huống rỗng".
+            #
+            # Trả kèm CHỮ đã phát: `prefill` cần đúng chuỗi khách vừa nghe
+            # để mô hình viết tiếp. Trước đây nơi gọi tự đoán chữ từ id, và
+            # khi kho đuôi rỗng nó ghi nhãn "(chỉ mẩu mở đầu)" - prefill nhét
+            # nguyên cái nhãn đó vào miệng mô hình, nên mô hình bỏ qua và
+            # viết câu mới. Chữ phải đi cùng clip, không suy ngược từ id.
+            self._filler_text_cuoi = self._chu_cua_filler(kho, th, int(i_mau), chon_id)
+            return (self._filler_cache[(name, th, int(i_mau), chon_id)],
+                    chon_id, th or None)
+
+        # Giữ ưu tiên đúng chủ đề CHỈ KHI nhóm đó có clip đủ che. Trước đây
+        # `chon()` tự rơi xuống câu dài nhất ngay trong nhóm đầu, nên ba clip
+        # hạn mức 0,93-1,21s chặn không cho nhóm chung 1,99-2,22s được xét và
+        # khách nghe hở 0,5-0,9s trước câu trả lời thật.
+        for th, ung_vien in cac_nhom:
+            if min_ms <= 0 or any(ms >= min_ms for _, ms in ung_vien):
+                ket = _tra(th, ung_vien)
+                if ket:
+                    return ket
+
+        # Không nhóm nào đủ: chọn trên TOÀN BỘ đường rơi để lấy clip che được
+        # nhiều nhất, thay vì cố giữ chủ đề bằng một câu ngắn. `chon()` chỉ xoay
+        # các clip cách câu dài nhất <=300ms nên vẫn có biến thể mà không tụt
+        # đột ngột xuống câu 0,5s.
+        if cac_nhom:
+            tat_ca = [x for _, uv in cac_nhom for x in uv]
+            id_ghep = _chon_filler(tat_ca, min_ms=min_ms, dem=dem or {})
             if id_ghep:
-                # Đếm lượt dùng NGAY ĐÂY, theo đúng khoá `_chon_filler` xếp hạng.
-                # Bản cũ để nơi gọi đếm theo `id_duoi` - từ khi bỏ kho đuôi id đó
-                # luôn "", nên sổ đếm của từng clip đứng yên ở 0 và mọi lượt cùng
-                # chủ đề ra ĐÚNG MỘT câu (cuộc 06b8aae1: ba lần "Dạ hạn mức bên em
-                # thì,"). Xem tests/test_cau_dem_xoay_vong.py.
-                if dem is not None:
-                    dem[id_ghep] = dem.get(id_ghep, 0) + 1
-                i_mau, chon_id = id_ghep.split("|", 1)
-                # Trả id_th="" thành None để nơi gọi ghi log đúng: "dùng đuôi
-                # trần" thay vì "dùng tình huống rỗng".
-                #
-                # Trả kèm CHỮ đã phát: `prefill` cần đúng chuỗi khách vừa nghe
-                # để mô hình viết tiếp. Trước đây nơi gọi tự đoán chữ từ id, và
-                # khi kho đuôi rỗng nó ghi nhãn "(chỉ mẩu mở đầu)" - prefill nhét
-                # nguyên cái nhãn đó vào miệng mô hình, nên mô hình bỏ qua và
-                # viết câu mới. Chữ phải đi cùng clip, không suy ngược từ id.
-                self._filler_text_cuoi = self._chu_cua_filler(kho, th, int(i_mau), chon_id)
-                return (self._filler_cache[(name, th, int(i_mau), chon_id)],
-                        chon_id, th or None)
+                th_chon = id_ghep.split("|", 1)[0]
+                ket = _tra(th_chon, tat_ca, id_ghep)
+                if ket:
+                    return ket
         # Về tay không là khách nghe im lặng trọn TTFA — ghi rõ nguyên nhân.
         #
         # Nhưng KHÔNG kêu WARNING khi kho đuôi rỗng và lượt này không nhận ra

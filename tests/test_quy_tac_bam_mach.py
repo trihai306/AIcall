@@ -16,6 +16,8 @@ Thấy rõ nhất trên cuộc gọi `c6246696`:
     lượt 4 - AI: "Với thu nhập 8 triệu, anh có thể vay tối đa 300 triệu"
 tức nó không đối chiếu với chính mình sau ba lượt.
 """
+import re
+
 from backend.services.llm_service import LLMService
 
 
@@ -41,6 +43,30 @@ def test_dan_dung_lai_thong_tin_khach_da_cho():
     """Hỏi lại thứ khách vừa nói là dấu hiệu rõ nhất của việc không bám mạch."""
     p = _prompt()
     assert "DÙNG LẠI" in p
+
+
+def test_vi_du_tinh_toan_khong_duoc_bien_thanh_dieu_kien_cua_khach():
+    """Lỗi đo 13-09-2026: khách chỉ nói muốn vay 200 triệu nhưng model tự gán
+    luôn 36 tháng vì thấy đúng dòng ví dụ trong tài liệu sản phẩm."""
+    p = _prompt()
+    assert "ví dụ tính" in p.lower()
+    assert re.search(r"KHÔNG tự gán\s+thời\s+hạn", p)
+
+
+def test_tai_lieu_khong_duoc_bien_thanh_hoan_canh_cua_khach():
+    """Lỗi đo 13-09-2026: khách hỏi "nghe rõ không" nhưng model lấy dòng FAQ
+    "đã tất toán trên 1 năm" rồi hỏi lại như thể khách vừa nói điều đó."""
+    p = _prompt()
+    assert "thông tin CHUNG" in p
+    assert "KHÔNG có nghĩa khách đã tất toán" in p
+
+
+def test_khong_day_khach_dang_hoi_dung_san_pham_sang_chuyen_vien():
+    """Lỗi đo 13-09-2026: khách chỉ nói cần vay 50 triệu nhưng model tự hứa
+    chuyển chuyên viên, dù đây chính là sản phẩm nó đang tư vấn."""
+    p = _prompt()
+    assert "KHÔNG tự chuyển chuyên viên" in p
+    assert "đúng sản phẩm đang tư vấn" in p
 
 
 def test_prompt_khong_phinh_qua_muc():

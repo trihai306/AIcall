@@ -93,6 +93,16 @@ async def chay(duong_dan, t_bat_may, voice, product, scenario_id):
     # lại vẫn chạy trên mảnh CŨ và mọi kết luận về sửa tri thức đều sai.
     rag.ingest_directory("./knowledge")
     tts.load()
+    # Backend thật hâm các hình dạng tensor lúc khởi động và hâm cả hai nhánh
+    # LLM trong lúc điện thoại còn đổ chuông. Bản diễn lại bắt đầu thẳng từ lúc
+    # bắt máy; thiếu hai bước này làm lượt 1 trả giá nguội 2-4 giây mà cuộc gọi
+    # thật không phải trả, khiến phép so trước/sau sai ngay từ đầu.
+    await tts.ham_nong_hinh_dang()
+    async for _ in llm.stream_response(
+            [{"role": "user", "content": "xin chào"}], "Trả lời đúng một từ."):
+        break
+    from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
+    await ham_luot_quyet_dinh(llm)
     await tts.dung_fillers(lay_kho())
 
     from backend.main import app_state

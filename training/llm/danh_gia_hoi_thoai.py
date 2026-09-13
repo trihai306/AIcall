@@ -27,8 +27,11 @@ for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
 
+from backend.config import settings
 from backend.core.dataset_rules import kiem_tra_tra_loi, dem_tu, dem_cau
-from backend.services.llm_service import SYSTEM_PROMPT_TEMPLATE
+from backend.services.llm_service import CHUOI_DUNG, LLMService
+
+_PROMPT_BUILDER = LLMService.__new__(LLMService)
 
 # Một cuộc gọi thật: hỏi mơ hồ -> nêu số -> hỏi tiếp dựa vào số đó -> tham
 # chiếu ngược -> nghi ngờ -> chốt. Cố ý KHÔNG nhắc lại con số ở lượt 4 để xem
@@ -49,17 +52,34 @@ _HOI_LAI_SO = re.compile(r"(vay|cần|muốn)\s+(bao nhiêu|khoảng bao nhiêu)
 
 
 def dung_system(rag_context: str = "") -> str:
-    phan = f"THÔNG TIN THAM KHẢO:\n{rag_context}" if rag_context else ""
-    return SYSTEM_PROMPT_TEMPLATE.format(
-        bank_name="Ngân hàng ABC", agent_name="Lan",
-        customer_name="Anh Minh", product="vay tín chấp", rag_context=phan,
+    return LLMService.build_system_prompt(
+        _PROMPT_BUILDER,
+        customer_name="Anh Minh", product="vay tín chấp", rag_context=rag_context,
+        scenario={"org_name": "Ngân hàng ABC", "agent_name": "Lan"},
     )
+
+
+def lay_ngu_canh(rag, cau: str) -> str:
+    if settings.ngu_canh_tron_tai_lieu:
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        tron = toan_van("vay tín chấp")
+        if tron:
+            return tron
+    if not rag:
+        return ""
+    return asyncio.run(rag.retrieve(cau, top_k=2, san_pham="vay tín chấp"))
 
 
 def hoi(model: str, messages: list, timeout=120) -> tuple[str, float]:
     body = json.dumps({
         "model": model, "stream": False,
-        "options": {"temperature": 0.7, "num_ctx": 2048},
+        "think": False,
+        "options": {
+            "temperature": settings.llm_temperature,
+            "num_ctx": settings.llm_num_ctx,
+            "num_predict": settings.llm_max_tokens,
+            "stop": CHUOI_DUNG,
+        },
         "messages": messages,
     }).encode()
     req = urllib.request.Request("http://localhost:11434/api/chat", data=body,
@@ -77,15 +97,17 @@ def main():
 
     rag = None
     if dung_rag:
-        from backend.services.rag_service import RAGService
-        rag = RAGService()
-        rag.load()
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        if not (settings.ngu_canh_tron_tai_lieu and toan_van("vay tín chấp")):
+            from backend.services.rag_service import RAGService
+            rag = RAGService()
+            rag.load()
 
     print(f"=== {model} {'(có RAG)' if dung_rag else ''} ===")
     lich_su, dat, do_tre, mat_mach = [], 0, [], 0
 
     for i, cau in enumerate(KICH_BAN, 1):
-        ctx = asyncio.run(rag.retrieve(cau, top_k=2)) if rag else ""
+        ctx = lay_ngu_canh(rag, cau) if dung_rag else ""
         msgs = [{"role": "system", "content": dung_system(ctx)}] + lich_su
         msgs.append({"role": "user", "content": cau})
         try:

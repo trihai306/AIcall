@@ -1,5 +1,5 @@
 """
-QLoRA fine-tune Vistral-7B-Chat trên dataset tư vấn riêng (Unsloth).
+QLoRA fine-tune model Qwen theo dataset tư vấn riêng (Unsloth).
 
 Chạy trên máy GPU NVIDIA (RTX 5070 12GB: vừa với cấu hình mặc định).
 KHÔNG chạy được trên macOS (Unsloth cần CUDA).
@@ -13,6 +13,7 @@ Usage:
 """
 import argparse
 import json
+import random
 import sys
 import time
 from pathlib import Path
@@ -27,12 +28,10 @@ DATASET_PATH = PROJECT_DIR / "data" / "training" / "merged_dataset.jsonl"
 OUTPUT_DIR = PROJECT_DIR / "models" / "llm" / "tuvan-lora"
 GGUF_DIR = PROJECT_DIR / "models" / "llm"
 
-# Mặc định khớp model production đang chạy (.env: OLLAMA_MODEL=qwen2.5:3b).
-# Fine-tune lệch cỡ model là đổi luôn hồ sơ độ trễ của cả hệ thống - 7B sinh
-# token đầu chậm hơn 3B rõ rệt, mà đây là hệ thống gọi điện thời gian thực.
-#
-# Vistral-7B-Chat (base cũ) là repo gated: phải đăng nhập HuggingFace và xin
-# quyền mới tải được, không có token là hỏng ngay ở bước nạp model.
+# Base mặc định là bản nhỏ, ổn để fine-tune phong cách trên GPU 12GB. Production
+# có thể đang chạy model khác; vì vậy sau train PHẢI A/B bằng danh_gia.py và
+# danh_gia_hoi_thoai.py trước khi đổi OLLAMA_MODEL. Đừng coi LoRA nhỏ là nâng
+# cấp tự động chỉ vì loss giảm.
 BASE_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 MAX_SEQ_LEN = 2048
 
@@ -98,6 +97,8 @@ def main():
                         help="File .jsonl để train (mặc định merged_dataset.jsonl)")
     parser.add_argument("--max-samples", type=int, default=0,
                         help="Chỉ lấy N mẫu đầu - dùng để chạy thử nhanh, 0 = lấy hết")
+    parser.add_argument("--eval-ratio", type=float, default=0.1,
+                        help="Tỷ lệ holdout để đo eval_loss (mặc định 0.1; 0 = tắt)")
     parser.add_argument("--base-model", default=BASE_MODEL,
                         help=f"Repo HuggingFace của model gốc (mặc định {BASE_MODEL})")
     args = parser.parse_args()
@@ -121,50 +122,113 @@ def main():
         model,
         r=args.lora_rank,
         lora_alpha=args.lora_rank * 2,
-        lora_dropout=0.05,
+        # Unsloth tối ưu fast-path cho dropout=0 và khuyến nghị chỉ tăng
+        # regularization khi có bằng chứng overfit. weight_decay + holdout bên
+        # dưới đã cho tín hiệu rõ hơn so với thêm dropout mặc định.
+        lora_dropout=0.0,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
                         "gate_proj", "up_proj", "down_proj"],
         use_gradient_checkpointing="unsloth",
         random_state=42,
     )
 
-    # Dataset: apply chat template của chính Vistral
+    # TRL hỗ trợ trực tiếp conversational prompt-completion. Dùng đúng cấu trúc
+    # này thay vì render toàn bộ hội thoại thành một chuỗi `text`: khi đặt
+    # completion_only_loss=True, loss chỉ tính trên câu assistant CUỐI CÙNG.
+    #
+    # Đây là khác biệt rất quan trọng với transcript nhiều lượt. make_dataset.py
+    # tạo một mẫu cho mỗi lượt TV và giữ lịch sử trước đó làm ngữ cảnh. Nếu train
+    # full sequence thì câu chào/lượt đầu bị học lặp lại ở mọi prefix, còn system
+    # và lời khách cũng tiêu tốn gradient. Prompt-completion vẫn cho model nhìn
+    # toàn bộ lịch sử nhưng chỉ dạy đúng câu cần trả lời ở lượt hiện tại.
     rows = []
+    groups: dict[str, list[dict]] = {}
     with open(dataset_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             obj = json.loads(line)
-            text = tokenizer.apply_chat_template(
-                obj["messages"], tokenize=False, add_generation_prompt=False
-            )
-            rows.append({"text": text})
+            messages = obj.get("messages") or []
+            if not messages or messages[-1].get("role") != "assistant":
+                raise SystemExit(
+                    "[ERROR] Mỗi mẫu phải kết thúc bằng role=assistant để tách "
+                    "prompt/completion chính xác. Chạy lại make_dataset.py để kiểm tra."
+                )
+            row = {
+                "prompt": messages[:-1],
+                "completion": [messages[-1]],
+            }
+            rows.append(row)
+
+            # Các prefix của CÙNG một transcript chia sẻ system + lượt user và
+            # assistant đầu tiên. Gom chúng thành một group để holdout không bị
+            # rò rỉ: nếu lượt 1 của cuộc gọi nằm ở train còn lượt 2-8 nằm ở eval
+            # thì eval_loss đẹp giả vì model đã thấy gần như cùng ngữ cảnh.
+            dau = messages[:3] if len(messages) >= 3 else messages
+            group_key = json.dumps(dau, ensure_ascii=False, sort_keys=True)
+            groups.setdefault(group_key, []).append(row)
             if args.max_samples and len(rows) >= args.max_samples:
                 break
 
     print(f"Dataset: {len(rows)} mẫu từ {dataset_path.name}")
-    dataset = Dataset.from_list(rows)
 
-    # trl >= 0.20 đổi API: tokenizer -> processing_class, còn dataset_text_field
-    # và max_seq_length chuyển từ tham số của SFTTrainer sang SFTConfig. Giữ
-    # cách gọi cũ là ném TypeError ngay khi khởi tạo trainer.
+    # Không đánh giá trên chính dữ liệu train: loss train thấp chỉ chứng minh mô
+    # hình nhớ được data, không chứng minh nó trả lời tốt câu chưa thấy. Giữ lại
+    # khoảng 10% làm holdout THEO CUỘC HỘI THOẠI, không chia ngẫu nhiên từng
+    # prefix. Với smoke test quá nhỏ thì bỏ eval để tránh tập train chỉ còn vài
+    # mẫu.
+    eval_dataset = None
+    if args.eval_ratio and len(rows) >= 20 and len(groups) >= 2:
+        ratio = min(max(args.eval_ratio, 0.01), 0.5)
+        muc_tieu = max(1, round(len(rows) * ratio))
+        cac_nhom = list(groups.values())
+        random.Random(42).shuffle(cac_nhom)
+        eval_rows: list[dict] = []
+        train_rows: list[dict] = []
+        for nhom in cac_nhom:
+            if len(eval_rows) < muc_tieu and len(cac_nhom) > 1:
+                eval_rows.extend(nhom)
+            else:
+                train_rows.extend(nhom)
+        # Trường hợp group đầu quá lớn vẫn phải chừa ít nhất một group để train.
+        if not train_rows:
+            train_rows = eval_rows[-len(cac_nhom[-1]):]
+            del eval_rows[-len(cac_nhom[-1]):]
+        dataset = Dataset.from_list(train_rows)
+        eval_dataset = Dataset.from_list(eval_rows)
+        print(f"Split: train={len(dataset)}, eval={len(eval_dataset)} ({ratio:.0%} holdout)")
+    else:
+        dataset = Dataset.from_list(rows)
+        print("Split: không tạo holdout (dataset <20 mẫu, chỉ 1 hội thoại, hoặc --eval-ratio=0)")
+
+    # trl hiện tại hỗ trợ conversational prompt-completion và
+    # `completion_only_loss=True`: chỉ tối ưu phần completion thay vì system /
+    # user / lịch sử. Cách này không phụ thuộc template phải có `{% generation %}`
+    # như assistant_only_loss, nên an toàn hơn với các Qwen đời khác nhau.
     trainer = SFTTrainer(
         model=model,
         processing_class=tokenizer,
         train_dataset=dataset,
+        eval_dataset=eval_dataset,
         args=SFTConfig(
             output_dir=str(OUTPUT_DIR / "checkpoints"),
-            dataset_text_field="text",
             max_length=MAX_SEQ_LEN,
+            completion_only_loss=True,
             num_train_epochs=args.epochs,
             per_device_train_batch_size=args.batch_size,
             gradient_accumulation_steps=args.grad_accum,
             learning_rate=args.lr,
             lr_scheduler_type="cosine",
             warmup_ratio=0.05,
+            weight_decay=0.01,
             logging_steps=5,
             save_strategy="epoch",
+            save_total_limit=2,
+            eval_strategy="epoch" if eval_dataset is not None else "no",
+            load_best_model_at_end=eval_dataset is not None,
+            metric_for_best_model="eval_loss" if eval_dataset is not None else None,
+            greater_is_better=False if eval_dataset is not None else None,
             bf16=True,
             optim="adamw_8bit",
             seed=42,

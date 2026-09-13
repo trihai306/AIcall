@@ -16,12 +16,15 @@ from backend.pipeline.thuoc_tinh import (chan_thuoc_tinh_sai,
                                          sua_theo_tai_lieu)
 from backend.pipeline.ngu_canh_tai_lieu import toan_van as _toan_van_tai_lieu
 from backend.pipeline.text_normalizer import noi_tiep_ve_dang_do
+from backend.pipeline.noi_cau_dem import loi_sau_dem, xep_ghep_dau
 from backend.pipeline import cong_cu_llm
 from backend.pipeline.cau_chan_lap import cau_chan, dem_chan_lien_tiep
-from backend.pipeline.hoi_lai import chon_cau_hoi_lai, nen_hoi_lai
+from backend.pipeline.hoi_lai import CAU_LLM_RONG, chon_cau_hoi_lai, nen_hoi_lai
 from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.danh_muc_san_pham import tra_loi as tra_loi_danh_muc
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
+from backend.pipeline.tra_loi_khoan_vay import tra_loi as tra_loi_khoan_vay
+from backend.pipeline.du_kien_khoan_vay import resolve as resolve_loan_facts
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
                                             cho_gom_ms, nhip_nghi_sau, noi_lo,
                                             sap_cum_gop, tach_manh, ty_le_gop,
@@ -37,7 +40,7 @@ from backend.services.stt_service import STTService
 from backend.services.llm_service import LLMService
 from backend.services.tts_service import GOP_LO, LO_TOI_DA, F5TTSService
 from backend.services.rag_service import RAGService
-from backend.services.filler_store import lay_kho
+from backend.services.filler_store import MA_NHOM_CHUNG, lay_kho
 from backend.services.filler_pick import (NGUONG_BO_DEM_MS, can_che_ms,
                                           cho_den_khi, du_doan_cho_ms,
                                           loc_cau_dem_llm,
@@ -69,16 +72,14 @@ async def _persist_turn(session: CallSession):
 
 
 def _ghep_ngu_canh(session, rag_context: str) -> str:
-    """Ghép hồ sơ khách tra được (nếu có) vào ngữ cảnh tham khảo.
+    """Ngữ cảnh thường chỉ chứa dữ liệu CHUNG đúng sản phẩm.
 
-    Đặt TRƯỚC phần RAG chung: đây là số liệu của đúng khách đang nghe máy, nên
-    khi có mâu thuẫn thì nó phải là thứ mô hình đọc trước. Xem
-    services/data_source_service.py, chế độ "lookup".
+    Hồ sơ riêng đã được tra sẵn nhưng chỉ đưa vào khi bộ định tuyến chọn công
+    cụ ``tra_ho_so_khach``. Đổ toàn bộ hồ sơ vào mọi lượt từng làm câu hỏi chung
+    cạnh tranh giữa trần sản phẩm 500 triệu và hạn mức cá nhân 300 triệu; mô
+    hình chọn 300 rồi trả sai. Chọn nguồn trước, sau đó mới đưa đúng phần vào.
     """
-    rieng = getattr(session, "ngu_canh_khach", "")
-    if not rieng:
-        return rag_context
-    return f"{rieng}\n\n{rag_context}" if rag_context else rieng
+    return rag_context
 
 
 def _ghep_uu_tien(du_lieu_cong_cu: str, ngu_canh: str) -> str:
@@ -581,19 +582,13 @@ class StreamingPipeline:
         của cả lượt - audio đã đủ cả câu nên `_answer_hit` gần như chắc trúng,
         khác hẳn những lần giữa chừng vốn chỉ có câu cụt. Xem `_read_loop`.
         """
-        # Câu đệm sinh trong task RIÊNG, đặt TRƯỚC mọi lưới return của hàm này.
-        #
-        # Hai bản trước đặt nó bên trong `_run()` và cả hai đều CHƯA BAO GIỜ
-        # chạy. Lý do là lưới ngay dưới: bản đoán giữa chừng mất 1-2 giây (STT +
-        # RAG + LLM), nên `spec_running` gần như luôn True và mọi lần gọi
-        # `speculate(ngay=False)` sau đó thoát ngay tại dòng đầu. Log 06-09-2026
-        # ghi thẳng: "HUỶ bản giữa chừng (đang ở bước 'LLM')" - tức lúc khách
-        # dứt lời nó vẫn đang chạy dở.
-        #
-        # Tách ra task riêng thì câu đệm không còn phụ thuộc vòng đời bản đoán:
-        # nó chỉ cần `spec_stt` (ghi ngay sau STT, sớm nhất có chữ) chứ không
-        # cần RAG hay LLM của bản đoán.
-        self._xep_nghi_cau_dem(session)
+        # Câu đệm chỉ được lấy từ KHO ĐÃ DUYỆT. Trước đây lượt không khớp tình
+        # huống còn nhờ LLM tự nghĩ một câu dẫn, nên sinh ra các câu rất "máy"
+        # kiểu "em nói rõ cho anh chị phần này luôn nhé". Người dùng đã chốt
+        # 13-09-2026: nhóm chung chỉ dùng các tiếng đáp ngắn (Dạ/Vâng), còn các
+        # câu theo chủ đề phải lấy đúng từ kho tình huống đã có. Vì vậy không
+        # xếp task `_xep_nghi_cau_dem` nữa; đường dự phòng trong `_send_filler`
+        # trở thành van tương thích cho test/call cũ nhưng không được tạo mới.
 
         n = session.audio_len()
         if session.spec_running:
@@ -1016,6 +1011,12 @@ class StreamingPipeline:
     # tests/test_ngan_sach_cho_tinh_huong.py
     _CHO_TINH_HUONG_MS: int = 430
 
+    # Nếu câu chung dựng sẵn chỉ hụt mục tiêu che không quá mức này, phát nó
+    # ngay có lợi hơn chờ STT phân loại. Cuộc 06b8aae1: câu chung dài 2,217s,
+    # TTFA 2,158s nhưng code chờ phân loại 301ms rồi chọn câu chủ đề 1,213s —
+    # khách nghe hở 0,76-0,82s. Phát câu chung ngay che kín mà không tăng buffer.
+    _FILLER_CHUNG_HUT_TOI_DA_MS = 450.0
+
     def _filler_min_ms(self, session: CallSession, la_thoai: bool, mac_dinh: float) -> float:
         """Xem `filler_pick.can_che_ms` - luật nằm ở đó để test được không cần GPU."""
         return can_che_ms(session.latency_log, la_thoai, mac_dinh)
@@ -1120,10 +1121,9 @@ class StreamingPipeline:
         hai bên nhảy +3,0 đến +5,0 dB. Người dùng nghe ra: "đè lên từ phía trước,
         tiếng to hơn nghe rất giả".
 
-        CHỈ chèn khi câu đệm CÒN ĐANG PHÁT. Cùng bản ghi có 2/9 lượt `ĐÓI KHUNG`
-        (216ms, 287ms) - câu đệm hết trước khi nội dung tới, khách đang nghe
-        khoảng lặng thật. Chèn thêm ở đó là kéo dài đúng chỗ đang hỏng, nên mốc
-        `filler_xong_luc` là điều kiện bắt buộc chứ không phải để cho chặt.
+        Chỉ bù phần nhịp còn thiếu. Nếu câu đệm đã hết thì trừ khoảng chờ đã
+        trôi qua; không cộng thêm một nhịp đầy đủ vào khoảng lặng sẵn có.
+        `filler_xong_luc` là ước lượng lịch phát, không phải số đo tại tai nghe.
 
         Dùng lại `nhip_nghi_sau` chứ không đẻ hằng số mới: cùng một luật với mọi
         ranh giới khác, nên câu đệm đổi sang kết bằng dấu chấm là tự nghỉ dài hơn.
@@ -1132,9 +1132,11 @@ class StreamingPipeline:
         chu = metrics.get("filler_text") or ""
         if not xong or not chu:
             return 0.0
-        if time.perf_counter() >= xong:
-            return 0.0
-        return nhip_nghi_sau(chu)
+        # Count silence that has already elapsed instead of switching from a
+        # full comma pause to zero at a single instant. Never add the pause a
+        # second time when a slow response has already exhausted it.
+        da_nghi = max(0.0, (time.perf_counter() - xong) * 1000.0)
+        return max(0.0, nhip_nghi_sau(chu) - da_nghi)
 
     async def _send_filler(self, ws: WebSocket, session: CallSession, t_start: float,
                            metrics: dict, la_thoai: bool, n_audio: int = 0):
@@ -1200,7 +1202,13 @@ class StreamingPipeline:
         # hết hạn, nên speculate._run() tiếp tục chạy để phục vụ RAG/LLM/answer_hit
         # bên dưới. Đây là lý do chọn wait() thay vì shield()+wait_for().
         # Ghi thời gian chờ thật vào metrics để đo cái giá thực tế.
-        if self._CHO_TINH_HUONG_MS > 0 and n_audio > 0 and session.tinh_huong is None:
+        chung_dai_nhat = self.tts.filler_dai_nhat_ms(
+            session.voice_name, MA_NHOM_CHUNG)
+        chung_che_gan_du = (chung_dai_nhat > 0
+                            and chung_dai_nhat + self._FILLER_CHUNG_HUT_TOI_DA_MS
+                            >= can_che)
+        if (self._CHO_TINH_HUONG_MS > 0 and n_audio > 0
+                and session.tinh_huong is None and not chung_che_gan_du):
             # CHỜ chỉ khi task đoán trước còn đang chạy...
             if session.spec_task is not None and not session.spec_task.done():
                 # Chờ tới khi CÓ TÌNH HUỐNG, không phải tới khi tác vụ xong.
@@ -1236,6 +1244,13 @@ class StreamingPipeline:
             # kể cả khi khách hỏi thẳng lãi suất hay hạn mức.
             if session.tinh_huong is None:
                 self._phan_loai_dong_bo(session)
+        elif n_audio > 0 and session.tinh_huong is None and chung_che_gan_du:
+            # Có câu trung tính đủ dài thì bắt đầu nói ngay; tác vụ speculate
+            # vẫn chạy nền cho RAG/LLM, chỉ không được phép chặn tiếng mở đầu.
+            metrics["tinh_huong_cho_ms"] = 0
+            metrics["tinh_huong_bo_cho"] = (
+                f"cau chung {chung_dai_nhat:.0f}ms / can che {can_che:.0f}ms")
+            self._phan_loai_dong_bo(session)
 
         # n_audio được truyền vào từ process_turn (len(audio_bytes)). Trước đây
         # đọc session.audio_len() tại đây nhưng take_audio() đã làm sạch đệm
@@ -1277,6 +1292,9 @@ class StreamingPipeline:
             kho, session.voice_name, min_ms=can_che, dem=dem,
             id_tinh_huong=id_th, chi_duoi={d.id for d in duoi} or None,
         )
+        # Snapshot before the first await: TTS is shared between sessions and
+        # another call may pick a different filler while this one sends audio.
+        filler_text = getattr(self.tts, "_filler_text_cuoi", "") or ""
         if not filler_audio:
             # Kho không có gì hợp -> dùng câu đệm mô hình đã nghĩ trong lúc
             # khách nói. Đây là lượt vốn im lặng hoàn toàn (đo 06-09: 3/9 lượt).
@@ -1330,7 +1348,7 @@ class StreamingPipeline:
         # ghi nhãn "(chỉ mẩu mở đầu)" - prefill thành vô nghĩa và mô hình viết
         # câu mới. Đo 06-09-2026: "Dạ về hạn mức vay thì, Hạn mức vay tín chấp
         # tối đa lên đến 500 triệu đồng ạ" - lặp nguyên chủ đề.
-        metrics["filler_text"] = getattr(self.tts, "_filler_text_cuoi", "") or ""
+        metrics["filler_text"] = filler_text
         metrics["filler_id"] = id_duoi
         # th_dung là tình huống ĐÃ DÙNG THẬT (None khi rơi về đuôi trần), khác
         # với id_th (tình huống ĐOÁN ĐƯỢC). Ghi đúng cái đã dùng để đối soát log.
@@ -1459,6 +1477,21 @@ class StreamingPipeline:
         # ăn 419ms ngay trên đường găng - và hạ xuống model nhỏ hơn không cứu
         # được (qwen3 0.6B và 1.7B đều chỉ 2/9). Chi tiết ở `cong_cu_llm`.
         nhanh = cong_cu_llm.loc_nhanh(user_text)
+
+        # Khi mỗi lượt đã đưa TRỌN tài liệu sản phẩm vào prompt, gọi thêm công
+        # cụ sản phẩm chỉ lấy lại chính nội dung đó. Tệ hơn, câu không khớp lưới
+        # còn tốn một lượt LLM để định tuyến rồi mới tốn lượt LLM trả lời thật.
+        # Đo trên qwen3.5:9b/RTX 5070: các câu tự nhiên mất 1,2-2,4 giây vì hai
+        # lượt model; bỏ lượt định tuyến thừa không làm mất dữ liệu nào. Hồ sơ
+        # RIÊNG vẫn giữ đường nhanh bên dưới vì nó không nằm trong tài liệu.
+        if settings.ngu_canh_tron_tai_lieu:
+            if nhanh == "tra_thong_tin_san_pham":
+                metrics["cong_cu_bo_dinh_tuyen"] = "tai_lieu_san_pham_da_co"
+                return ""
+            if nhanh is None:
+                metrics["cong_cu_bo_dinh_tuyen"] = "khong_co_dau_hieu_ho_so"
+                return ""
+
         if nhanh:
             van = await cong_cu_llm.chay(nhanh, {}, session, rag=self.rag)
             metrics["cong_cu"] = nhanh
@@ -1587,19 +1620,72 @@ class StreamingPipeline:
             logger.info("Lượt thường gặp '%s' -> trả lời sẵn, bỏ qua RAG+LLM",
                         dap_san[0])
 
-        # Câu hỏi về HỒ SƠ RIÊNG của khách (dư nợ, ngày đến hạn, phải trả bao
-        # nhiêu...) trả lời THẲNG TỪ DỮ LIỆU, không qua mô hình. Đây là việc có
-        # quy tắc xác định, mà mô hình 3B thì không đáng tin ở đúng chỗ này -
-        # xem chú thích đầu `tra_loi_ho_so.py` và `data_source_service.dung_ngu_canh`.
-        #
-        # Đặt SAU `tra_loi_san`: lượt chào/từ chối phải được xử lý trước, không
-        # thì "anh bận lắm" có thể lọt vào mẫu hỏi số.
+        # Đặt các đường trả lời xác định SAU `tra_loi_san`: lượt chào/từ chối
+        # phải được xử lý trước, không thì "anh bận lắm" có thể lọt vào mẫu hỏi
+        # số. Quy tắc khoản vay mới đứng trước hồ sơ riêng vì câu nối tiếp về
+        # kỳ hạn/thanh toán phải dùng nhu cầu khách vừa nêu, không dùng hợp đồng cũ.
+        # Khách vừa nhắc sản phẩm nào thì nhớ neo đó TRƯỚC khi đọc tài liệu
+        # chuẩn; đảo thứ tự sẽ lấy tài liệu của neo cũ cho chính lượt vừa đổi.
+        try:
+            ten_sp = self.rag.neo_moi_tu_cau(
+                user_text, self.rag._san_pham_co_tai_lieu())
+            if ten_sp and ten_sp != session.product:
+                logger.info("Neo sản phẩm theo lời khách: %r -> %r",
+                            session.product, ten_sp)
+                session.product = ten_sp
+                metrics["neo_san_pham"] = ten_sp
+        except Exception as e:
+            logger.warning("Không neo được sản phẩm (%s)", e)
+
+        # "bên em có những sản phẩm gì / có bảo hiểm không": danh mục là dữ kiện
+        # xác định (kho có tài liệu nào thì bán sản phẩm đó), không để mô hình
+        # đoán - nhất là sản phẩm KHÔNG có, mô hình dễ nói "có" rồi bịa.
+        # Xem `danh_muc_san_pham`.
         if not dap_san:
-            from backend.services.gender_detect import xung_ho as _xh
-            ho_so = getattr(session, "ho_so_khach", None) or {}
-            got = tra_loi_ho_so(
-                user_text, ho_so,
-                _xh(getattr(session, "gender", ""), getattr(session, "gender_do_tin", None)))
+            try:
+                got = tra_loi_danh_muc(
+                    user_text, self.rag._san_pham_co_tai_lieu(),
+                    hoi_them=not (session.product or "").strip())
+            except Exception as e:
+                logger.warning("Không tra được danh mục sản phẩm (%s)", e)
+                got = None
+            if got:
+                dap_san = got
+                metrics["tra_tu_danh_muc"] = got[0]
+                logger.info("Danh mục sản phẩm '%s' -> trả lời xác định, bỏ qua RAG+LLM",
+                            got[0])
+
+        from backend.services.gender_detect import xung_ho as _xh
+        ho_so = getattr(session, "ho_so_khach", None) or {}
+        cach_xung = _xh(getattr(session, "gender", ""),
+                        getattr(session, "gender_do_tin", None))
+
+        # Câu có số tiền/kỳ hạn đi đường quy tắc: chọn đúng trần sản phẩm và số
+        # khách vừa nói, hoặc tự tính trả góp. Hồ sơ cá nhân chỉ được đọc ở
+        # nhánh riêng bên dưới, không nhồi hai nguồn vào prompt rồi để mô hình
+        # chọn bừa một con số.
+        #
+        # Phải xét TRƯỚC câu trả lời hồ sơ. Câu nối tiếp "vay 60 tháng thì mỗi
+        # tháng bao nhiêu" là phép tính cho nhu cầu 400 triệu vừa nêu, không
+        # phải hỏi số tiền trả của hợp đồng cũ. Nếu quy tắc không đủ số tiền +
+        # kỳ hạn thì nó trả None và câu hỏi riêng mới rơi xuống hồ sơ như cũ.
+        tai_lieu_chuan = _toan_van_tai_lieu(session.product)
+        if not dap_san:
+            # Rebuild only from committed customer turns. An unresolved new
+            # amount invalidates the old one; expose provenance for diagnosis.
+            du_kien = resolve_loan_facts(getattr(session, "history", None), user_text)
+            metrics["du_kien_vay"] = du_kien.evidence()
+            got = tra_loi_khoan_vay(
+                user_text, tai_lieu_chuan, ho_so,
+                getattr(session, "history", None) or [], cach_xung, du_kien=du_kien)
+            if got:
+                dap_san = got
+                metrics["tra_tu_quy_tac_tai_chinh"] = got[0]
+                logger.info("Quy tắc tài chính '%s' -> trả lời xác định, bỏ qua RAG+LLM",
+                            got[0])
+
+        if not dap_san:
+            got = tra_loi_ho_so(user_text, ho_so, cach_xung)
             if got:
                 dap_san = got
                 metrics["tra_tu_ho_so"] = got[0]
@@ -1624,41 +1710,7 @@ class StreamingPipeline:
         #
         # Đặt SAU nhánh `dap_san` (lượt đó cố ý không cần ngữ cảnh) và TRƯỚC
         # nhánh đoán trước: có tài liệu rồi thì bản đoán chẳng tiết kiệm được gì.
-        # Khách vừa nhắc sản phẩm nào thì NHỚ cho cả cuộc gọi. Phải đứng TRƯỚC
-        # `_toan_van_tai_lieu` ngay dưới, không thì lượt vừa neo được vẫn dùng
-        # tài liệu của neo cũ. Xem `RAGService.neo_moi_tu_cau` cho ca thật.
-        try:
-            ten_sp = self.rag.neo_moi_tu_cau(
-                user_text, self.rag._san_pham_co_tai_lieu())
-            if ten_sp and ten_sp != session.product:
-                logger.info("Neo sản phẩm theo lời khách: %r -> %r",
-                            session.product, ten_sp)
-                session.product = ten_sp
-                metrics["neo_san_pham"] = ten_sp
-        except Exception as e:
-            # Đường phụ trợ: hỏng thì giữ nguyên neo cũ, đừng làm chết cả lượt.
-            logger.warning("Không neo được sản phẩm (%s)", e)
-
-        # "bên em có những sản phẩm gì / có bảo hiểm không": danh mục là dữ kiện
-        # xác định (kho có tài liệu nào thì bán sản phẩm đó), không để mô hình
-        # đoán - nhất là sản phẩm KHÔNG có, mô hình dễ nói "có" rồi bịa.
-        # Xem `danh_muc_san_pham`.
-        if not dap_san:
-            try:
-                got = tra_loi_danh_muc(
-                    user_text, self.rag._san_pham_co_tai_lieu(),
-                    hoi_them=not (session.product or "").strip())
-            except Exception as e:
-                logger.warning("Không tra được danh mục sản phẩm (%s)", e)
-                got = None
-            if got:
-                dap_san = got
-                metrics["tra_tu_danh_muc"] = got[0]
-                logger.info("Danh mục sản phẩm '%s' -> trả lời xác định, bỏ qua RAG+LLM",
-                            got[0])
-
-        tron_tai_lieu = (_toan_van_tai_lieu(session.product)
-                         if settings.ngu_canh_tron_tai_lieu else "")
+        tron_tai_lieu = tai_lieu_chuan if settings.ngu_canh_tron_tai_lieu else ""
         if dap_san:
             # Câu trả lời sẵn không có con số nào phải tra, khỏi tốn bge-m3.
             rag_context = ""
@@ -1705,7 +1757,11 @@ class StreamingPipeline:
         # lên đầu ngữ cảnh, còn tri thức tra được vẫn giữ nguyên bên dưới. Đặt
         # lên đầu chứ không thay thế: câu khách hỏi có thể chạm hai chuyện, bỏ
         # hẳn phần tri thức là làm hẹp câu trả lời lại.
-        dong_bang = self._tra_bang_hoi_dap(
+        # Đã có câu trả lời xác định thì bảng hỏi-đáp không thể thay đổi kết quả
+        # (nhánh `dap_san` luôn được ưu tiên ở nguồn token phía dưới). Trước đây
+        # vẫn gọi `_tra_bang_hoi_dap`, kéo theo một lượt embedding ~100-170ms
+        # hoàn toàn thừa trên đúng đường fast-path cần phản hồi nhanh nhất.
+        dong_bang = None if dap_san else self._tra_bang_hoi_dap(
             user_text, session, tinh_huong_id=metrics.get("tinh_huong_id"))
         if dong_bang:
             metrics["bang_hoi_dap"] = dong_bang["id"]
@@ -1787,7 +1843,7 @@ class StreamingPipeline:
         # nghe, và bộ dò "bot đang bí" soi nhầm văn bản.
         cau_da_loc = ""
         chunks_enqueued = 0
-        tts_queue: asyncio.Queue[str | None] = asyncio.Queue()
+        tts_queue: asyncio.Queue[tuple[str, float] | None] = asyncio.Queue()
 
         # Mảnh đang GIỮ LẠI, chưa gửi, chờ xem còn mảnh nào sau nó không.
         #
@@ -1883,9 +1939,9 @@ class StreamingPipeline:
                 # sẵn trong hàng đợi. Chờ cho đủ 4 thì mảnh thứ 2 phải đợi mảnh
                 # thứ 5 của LLM, tức đổi thời gian GPU lấy độ trễ - sai hướng.
                 #
-                # KHÔNG gộp mảnh đầu: nó nằm trên đường găng của TTFA, phải đi
-                # ngay khi có chữ. Các mảnh sau thì TTS đã chạy trước tiếng phát
-                # ~3,5 lần nên gom lại không ai nghe ra.
+                # Không chờ gom mảnh đầu nếu chưa có tiếng nào che quãng chờ.
+                # Khi câu đệm còn phát, chỉ dùng phần dư địa đó; không gộp qua
+                # dấu chấm và không chờ cho đủ một lô cố định.
                 # `nghi_them` của mảnh đầu đã gộp vào `nghi_ms` ở trên rồi; ở đây
                 # giữ nguyên số THÔ của từng mảnh, việc cộng dồn để vòng phát ở
                 # dưới lo - đúng y hệt thứ tự của đường một mảnh.
@@ -1895,11 +1951,13 @@ class StreamingPipeline:
                 # nên chỗ nối - và chữ ngân ở đó - vẫn còn nguyên. Chỗ này nối
                 # chữ lại rồi sinh MỘT lần, chỗ nối biến mất thật.
                 #
-                # Vét CƠ HỘI, không chờ: chỉ lấy mảnh ĐÃ nằm sẵn trong hàng đợi.
-                # Chờ cho LLM sinh nốt để gộp được nhiều hơn là đổi độ trễ lấy
-                # ngữ điệu - sai hướng, và khách nghe ra quãng im ngay.
+                # Vét mảnh sẵn có; chỉ chờ có giới hạn khi còn dư địa phát.
+                # Ước lượng dư địa không phải số đo tại tai người nghe.
                 gop_mot = False
-                if settings.f5tts_gop_manh and not GOP_LO and idx > 0 and tieng_san is None:
+                du_dem = max(0.0, (metrics.get("filler_xong_luc", 0.0)
+                                   - time.perf_counter()) * 1000.0)
+                if (settings.f5tts_gop_manh and not GOP_LO and tieng_san is None
+                        and (idx > 0 or du_dem > 0)):
                     cho = []
                     het_luot = False
                     # CHỜ CÓ ĐIỀU KIỆN. Không chờ thì gộp chỉ ăn được 25% chỗ
@@ -1910,9 +1968,14 @@ class StreamingPipeline:
                     # gian sinh sắp tới - xem `cho_gom_ms`. Hết dư địa thì chờ
                     # 0ms, tức quay về đúng hành vi cũ. Không bao giờ được đổi
                     # chữ ngân lấy quãng im.
-                    if t_am_dau is not None:
-                        du_dia = da_gui_ms - (time.perf_counter() - t_am_dau) * 1000
+                    if chunk_text.rstrip().endswith(",") and (t_am_dau is not None or du_dem > 0):
+                        du_dia = (da_gui_ms - (time.perf_counter() - t_am_dau) * 1000
+                                  if t_am_dau is not None else du_dem)
                         doi = cho_gom_ms(du_dia, uoc_sinh_ms(chunk_text))
+                        if idx == 0:
+                            # A small bounded opportunity while the customer
+                            # is hearing the lead-in, not a new startup wait.
+                            doi = min(120.0, doi)
                         du_dia_tong += du_dia
                         doi_tong += doi
                         n_co_hoi += 1
@@ -1942,7 +2005,14 @@ class StreamingPipeline:
                     # coroutine nào chen được vào giữa. Việc xếp cụm và xếp thứ
                     # tự trả lại nằm trong `sap_cum_gop`, có test riêng
                     # (`tests/test_sap_cum_gop.py`) vì sai ở đây là mất tiếng.
-                    dan, tra_lai = sap_cum_gop((chunk_text, 0.0), cho, het_luot)
+                    if idx == 0:
+                        du_con = max(0.0, (metrics.get("filler_xong_luc", 0.0)
+                                           - time.perf_counter()) * 1000.0)
+                        dan, tra_lai = xep_ghep_dau(
+                            (chunk_text, 0.0), cho, het_luot, du_con, uoc_sinh_ms)
+                        metrics["ghep_dau_so_manh"] = len(dan)
+                    else:
+                        dan, tra_lai = sap_cum_gop((chunk_text, 0.0), cho, het_luot)
                     for goi_du in tra_lai:
                         tts_queue.put_nowait(goi_du)
                     gop_mot = len(dan) > 1
@@ -1965,6 +2035,7 @@ class StreamingPipeline:
 
                 t_synth = time.perf_counter()
                 n_manh_sinh += len(dan)
+                chu_audio_gop = None
                 if soi:
                     # Chế độ soi: KHÔNG sinh tiếng. Vẫn đi trọn vòng cắt mảnh và
                     # vẫn gửi `response_chunk` bên dưới, nên chữ hiện ra đúng
@@ -1996,6 +2067,7 @@ class StreamingPipeline:
                             d[0], voice=session.voice_name, session=session) for d in dan]
                     else:
                         song = [tieng_gop] + [None] * (len(dan) - 1)
+                        chu_audio_gop = mot
                 elif len(dan) > 1:
                     n_lan_sinh += len(dan)
                     song = await self._try_synthesize_lo(
@@ -2016,7 +2088,10 @@ class StreamingPipeline:
                     # ranh giới phẩy duy nhất trong hệ thống không được chèn
                     # nhịp, xem `_nghi_noi_cau_dem`.
                     if not first_audio_sent:
-                        nghi_ms = max(nghi_ms, self._nghi_noi_cau_dem(metrics))
+                        nghi_noi = self._nghi_noi_cau_dem(metrics)
+                        nghi_ms = max(nghi_ms, nghi_noi)
+                        if tieng and metrics.get("filler_text"):
+                            metrics["noi_dem_nghi_ms"] = round(nghi_noi, 1)
                     # Trả lại nhịp nghỉ mà trim_silence đã cắt mất ở ranh giới
                     # mảnh. Chèn vào ĐẦU mảnh này chứ không nối vào cuối mảnh
                     # trước, nên mảnh cuối không bị thêm đuôi lặng thừa.
@@ -2040,9 +2115,14 @@ class StreamingPipeline:
                         first_audio_done.set()   # trả GPU lại cho LLM
 
                     if tieng:
+                        # A cached/grouped waveform can contain more than one
+                        # response_chunk. The phone's interruption tracker
+                        # needs the full text actually carried by that audio.
+                        chu_audio = (chu_tieng_san if tieng_san is not None
+                                     else chu_audio_gop or t_chu)
                         await self._send_audio(ws, tieng, chunk_id=idx,
                                                turn_id=session.turn_id,
-                                               text=t_chu)
+                                               text=chu_audio)
                         if t_am_dau is None:
                             t_am_dau = time.perf_counter()
                         da_gui_ms += dai_wav_ms(tieng)
@@ -2082,10 +2162,25 @@ class StreamingPipeline:
         # câu bên dưới, để phần TTS không phải biết gì về chuyện này.
         dung_ban_nghi = bool(spec_answer) and self._answer_hit(spec_transcript, user_text)
         metrics["llm_nghi_san"] = dung_ban_nghi
+        # Resolve the spoken continuation BEFORE both tokenisation and audio
+        # lookup. Fixed answers still bypass number-repair rules; only their
+        # repeated opening politeness is removed when a filler was spoken.
+        if dap_san:
+            ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
+        elif dong_bang and doc_nguyen_van(dong_bang):
+            ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
+        if ma_tieng_san:
+            noi_tiep = loi_sau_dem(metrics.get("filler_text", ""), chu_tieng_san)
+            if noi_tiep != chu_tieng_san:
+                metrics["noi_dem_bo_mo_dau_lap"] = True
+                chu_tieng_san = noi_tiep
+                # Keep independent standalone/continuation cache variants;
+                # warming one must not evict the other on disk.
+                ma_tieng_san += "_noi_dem"
         if dap_san:
             # Lượt thường gặp (chào, "ai đấy", "đang bận"...) - xem
             # `luot_thuong_gap` để biết vì sao KHÔNG giao cho mô hình.
-            nguon_token = _phat_lai(dap_san[1])
+            nguon_token = _phat_lai(chu_tieng_san)
         elif dong_bang and doc_nguyen_van(dong_bang):
             # Khách hỏi gần đúng cách đã soạn -> đọc NGUYÊN VĂN nội dung đã
             # duyệt, bỏ qua mô hình. Đo được: đưa nội dung vào ngữ cảnh kèm nhãn
@@ -2094,7 +2189,7 @@ class StreamingPipeline:
             metrics["bang_doc_thang"] = True
             logger.info("Bảng hỏi-đáp: đọc NGUYÊN VĂN dòng %r (%.3f), bỏ qua mô hình",
                         dong_bang["id"], dong_bang.get("diem", 0.0))
-            nguon_token = _phat_lai(dong_bang["tra_loi"])
+            nguon_token = _phat_lai(chu_tieng_san)
         elif dung_ban_nghi:
             logger.info("LLM: dùng bản đã nghĩ sẵn, bỏ qua sinh mới (tiết kiệm ~220ms)")
             nguon_token = _phat_lai(spec_answer)
@@ -2114,10 +2209,6 @@ class StreamingPipeline:
 
         # Lượt chữ cố định -> tra kho tiếng sẵn. Chưa có thì lượt này vẫn đi F5
         # như cũ và dựng NỀN sau khi xong lượt (xem cuối hàm), lần sau phát sẵn.
-        if dap_san:
-            ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
-        elif dong_bang and doc_nguyen_van(dong_bang):
-            ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
         if ma_tieng_san and settings.tieng_san_bat and self._tts_available:
             tieng_san = kho_tieng_san.lay(
                 self.tts, ma_tieng_san, chu_tieng_san,
@@ -2303,6 +2394,16 @@ class StreamingPipeline:
             # qwen2.5:3b: 4/9 lượt gọi khách là "bạn".
             # `chan_chu_ngoai` chạy ĐẦU TIÊN: các bước sau xét chữ đầu và đếm
             # số, mà chữ Hán lẫn vào làm lệch cả hai.
+            # Hai đường này dựng câu từ dữ liệu đã chọn và công thức xác định,
+            # không phải chữ mô hình sinh. Không được đưa chúng qua lưới chống
+            # bịa của LLM: ở lượt `dap_san`, RAG cố ý rỗng nên lưới từng coi
+            # chính 500 triệu từ tài liệu và 300 triệu từ hồ sơ là "số bịa",
+            # rồi thay cả hai thành 400 triệu khách vừa nói. Đây là tầng cuối
+            # đã làm hỏng câu đúng trong bài chạy WebSocket thật.
+            if (ma_tieng_san or metrics.get("tra_tu_quy_tac_tai_chinh")
+                    or metrics.get("tra_tu_ho_so")):
+                return doan.strip()
+
             doan, lot = chan_chu_ngoai(doan)
             if lot:
                 logger.warning("Model để lọt chữ nước ngoài %r - đã bỏ. "
@@ -2384,6 +2485,17 @@ class StreamingPipeline:
         except Exception as e:
             logger.error(f"LLM error: {e}")
             await self._send_event(ws, "error", {"message": f"LLM error: {e}"})
+
+        # Ollama có thể kết thúc ngay ở stop token: không ném lỗi nhưng cũng
+        # không có một chữ nào. Cuộc test 12 lượt thật bắt được đúng ca này ở
+        # câu hỏi về phí: khách chỉ nghe câu đệm rồi AI im luôn. Đặt câu lùi vào
+        # chính hàng TTS để nó đi qua cùng bộ lọc, lịch sử và báo cáo như mọi
+        # câu trả lời khác; không mở một đường phát riêng dễ lệch trạng thái.
+        if not full_response.strip() and not text_buffer.strip() \
+                and chunks_enqueued == 0 and not session.yeu_cau_huy:
+            text_buffer = CAU_LLM_RONG
+            metrics["llm_rong"] = True
+            logger.warning("LLM trả stream rỗng - dùng câu lùi an toàn")
 
         # Xả nốt phần còn trong đệm. ĐUÔI NGẮN thì gộp vào mảnh đang giữ chứ
         # không gửi riêng - xem `_gui_manh`.
@@ -2480,7 +2592,7 @@ class StreamingPipeline:
             # Tách khỏi nhánh dưới vì bản cũ gộp cả hai và LUÔN in "KHÔNG có
             # filler" - đọc log không phân biệt được máy đang chạy đúng hay kho
             # câu đệm hỏng, và đó đúng là thứ đã làm mất một buổi truy lỗi.
-            logger.info("Bỏ câu đệm (%s) -> khách chờ %sms, ngắn nên nghe tự nhiên",
+            logger.info("Bỏ câu đệm (%s) -> TTFA thực đo %sms",
                         metrics["filler_bo_qua"], metrics.get("ttfa_ms", "-"))
         elif soi:
             # Chế độ soi không sinh tiếng, nên "khách chờ im lặng" ở nhánh dưới

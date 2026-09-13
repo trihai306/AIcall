@@ -9,11 +9,11 @@ BA CHỖ NỐI VÀO HỆ THỐNG, đừng thay bằng bản tự viết:
 
   `cat_manh`          cắt tài liệu ĐÚNG như RAG cắt, nên mỗi mảnh là đúng đơn vị
                       ngữ cảnh mà model sẽ nhận lúc chạy thật.
-  `doc_so_trong_cau`  đọc số thành chữ ĐÚNG như đường thoại đọc. Dataset còn chữ
-                      số thì model sinh ra chữ số, và system prompt ép cỡ nào
-                      cũng thua - đo được: 17% mẫu dính số làm điểm phong cách
-                      tụt từ 7/8 xuống 3/8 (xem training/llm/so_thanh_chu.py).
   `kiem_tra_tra_loi`  soi theo đúng luật của system prompt lúc chạy.
+
+Mỗi mẫu sinh từ tri thức phải mang chính mảnh RAG đó vào INPUT (system prompt),
+không chỉ nhét fact vào câu trả lời. Như vậy LoRA học cách BÁM NGUỒN động; khi
+tài liệu đổi, model có tín hiệu để dùng fact mới thay vì nhớ cứng fact cũ.
 
 Thà ít mẫu sạch còn hơn nhiều mẫu dạy hỏng: cặp nào chuẩn hoá xong vẫn phạm luật
 thì bỏ, và ghi rõ bỏ vì gì.
@@ -37,14 +37,17 @@ for _s in (sys.stdout, sys.stderr):
         _s.reconfigure(encoding="utf-8", errors="replace")
 
 from backend.core.dataset_rules import kiem_tra_tra_loi  # noqa: E402
-from backend.pipeline.text_normalizer import doc_so_trong_cau  # noqa: E402
 from backend.services.rag_service import cat_manh  # noqa: E402
 
 THU_MUC_TRI_THUC = GOC / "knowledge"
 THU_MUC_RA = GOC / "data" / "training"
 
-SYSTEM = ("Bạn là nhân viên tư vấn ngân hàng, đang gọi điện cho khách. "
-          "Trả lời tối đa 2 câu, xưng em, gọi khách là anh/chị.")
+SYSTEM = (
+    "Bạn là nhân viên tư vấn ngân hàng, đang gọi điện cho khách. "
+    "Trả lời tối đa 35 từ trong 1-2 câu, xưng em, gọi khách là anh/chị. "
+    "Chỉ dùng dữ kiện có trong THÔNG TIN THAM KHẢO hoặc do khách vừa nói; "
+    "không tự thêm con số. Giữ chữ số để hệ thống đọc."
+)
 
 # Model nhỏ hay chèn lời dẫn, tự đánh số, kẻ gạch ngang. Bắt đúng nhãn ở đầu
 # dòng chứ không tách cả khối, để mấy thứ đó không làm mất cặp.
@@ -75,21 +78,6 @@ def doc_cap(text: str) -> list[tuple[str, str]]:
     return cap
 
 
-# Khoảng viết bằng gạch nối: "3-5 ngày", "1-2%". Đọc số xong nó thành "ba-năm",
-# "một-hai" - TTS phát ra "ba năm" nghe như một khoảng THỜI GIAN, và dataset thì
-# dạy model viết dấu gạch nối, thứ TTS không đọc được. Bắt được trên mẫu sinh
-# thật từ faq_banking.md ("nợ xấu nhóm 3-5") và vay_mua_nha.md ("phí 1-2%").
-#
-# Chỉ đụng gạch nối GIỮA HAI SỐ, để không phá từ ghép.
-_KHOANG_GACH = re.compile(r"(\d)\s*[-–—]\s*(\d)")
-
-
-def chuan_hoa_tra_loi(s: str) -> str:
-    """Đọc số thành chữ, y như đường thoại làm trước khi đưa cho TTS."""
-    s = _KHOANG_GACH.sub(r"\1 đến \2", (s or "").strip())
-    return doc_so_trong_cau(s)
-
-
 def loc_cap(hoi: str, tra_loi: str) -> tuple[bool, str]:
     """Giữ hay bỏ, kèm lý do bỏ. Chỉ tính LỖI, cảnh báo thì vẫn giữ.
 
@@ -117,8 +105,8 @@ TÀI LIỆU:
 \"\"\"
 
 QUY TẮC BẮT BUỘC cho câu của tư vấn viên:
-- Tối đa 2 câu, tối đa 25 từ.
-- Viết số thành chữ: 7.9% viết là "bảy phẩy chín phần trăm".
+- Tối đa 2 câu, tối đa 35 từ.
+- Giữ nguyên chữ số và con số có trong tài liệu; không đổi sang số khác.
 - Mở đầu bằng "Dạ", xưng "em", gọi khách là "anh chị", kết câu có "ạ".
 - Không gạch đầu dòng, không liệt kê quá hai thứ, không emoji, không markdown.
 - Chỉ dùng thông tin có trong tài liệu trên. Không bịa thêm số.
@@ -128,9 +116,13 @@ KH: <câu khách hỏi>
 TV: <câu tư vấn trả lời>"""
 
 
-def lam_mau(hoi: str, tra_loi: str, system: str = SYSTEM) -> dict:
+def lam_mau(hoi: str, tra_loi: str, manh_tham_khao: str, system: str = SYSTEM) -> dict:
+    # Đặt fact vào prompt đúng vai trò input. train_lora.py mask toàn bộ prompt
+    # và chỉ tính loss trên completion nên model học cách DÙNG context, không bị
+    # ép học thuộc từng token của tài liệu.
+    system_co_nguon = f"{system}\n\nTHÔNG TIN THAM KHẢO:\n{manh_tham_khao.strip()}"
     return {"messages": [
-        {"role": "system", "content": system},
+        {"role": "system", "content": system_co_nguon},
         {"role": "user", "content": hoi},
         {"role": "assistant", "content": tra_loi},
     ]}
@@ -202,7 +194,7 @@ async def sinh(nhom: str | None, so_cap: int, so_lan_thu: int, ra_path: Path) ->
                 break
 
             for hoi, tl in doc_cap(out or ""):
-                tl = chuan_hoa_tra_loi(tl)
+                tl = (tl or "").strip()
                 ok, vi_sao = loc_cap(hoi, tl)
                 if not ok:
                     ly_do_bo[vi_sao] = ly_do_bo.get(vi_sao, 0) + 1
@@ -212,7 +204,7 @@ async def sinh(nhom: str | None, so_cap: int, so_lan_thu: int, ra_path: Path) ->
                     ly_do_bo["trùng câu hỏi"] = ly_do_bo.get("trùng câu hỏi", 0) + 1
                     continue
                 trung.add(khoa)
-                mau.append(lam_mau(hoi, tl))
+                mau.append(lam_mau(hoi, tl, noi_dung))
                 giu_manh += 1
                 if giu_manh >= so_cap:
                     break

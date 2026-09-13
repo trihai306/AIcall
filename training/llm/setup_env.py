@@ -139,8 +139,13 @@ def main():
                "Cài triton-windows (Unsloth cần, bản 'triton' thường chỉ có cho Linux)"):
             sys.exit(1)
 
-    if run([str(py), "-m", "pip", "install", "unsloth", "datasets", "trl", "transformers", "peft"],
-           "Cài unsloth + trl + datasets"):
+    # train_lora.py dùng API TRL hiện tại (prompt-completion +
+    # completion_only_loss). Venv cũ từng được tạo trước đây có thể vẫn giữ
+    # TRL/Unsloth cũ vì `pip install` không tự nâng gói đã thỏa dependency.
+    # Unsloth cũng khuyến nghị nâng đồng thời unsloth + unsloth_zoo.
+    if run([str(py), "-m", "pip", "install", "--upgrade",
+            "unsloth", "unsloth_zoo", "datasets", "trl", "transformers", "peft"],
+           "Cập nhật unsloth + trl + datasets"):
         sys.exit(1)
 
     print("\n" + "=" * 46)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 
@@ -287,10 +288,19 @@ def _sua_day_so(text: str, toi_thieu: int = 3) -> str:
 
 
 class STTService:
-    """Whisper.cpp HTTP server client for speech-to-text."""
+    """Selected live ASR, with PhoWhisper retained for word-aligned exports."""
 
     def __init__(self):
         self.base_url = settings.whisper_server_url
+        self.engine = settings.stt_engine
+        self._gipformer = None
+        if self.engine == "gipformer":
+            from pathlib import Path
+            from backend.services.gipformer_stt import GipformerSTT
+            model_path = Path(settings.gipformer_model_path)
+            if not model_path.is_absolute():
+                model_path = settings.project_dir / model_path
+            self._gipformer = GipformerSTT(model_path, settings.gipformer_num_threads)
         # Cùng lý do như llm_service: keepalive mặc định 5s khiến mỗi lượt nói
         # cách nhau lâu phải bắt tay TCP lại, cộng thêm độ trễ vào STT.
         self.client = httpx.AsyncClient(
@@ -490,6 +500,16 @@ class STTService:
         Nên: giữ mồi cho phần lợi, và khi mồi làm lượt bị vứt thì hỏi lại lần nữa
         KHÔNG mồi. Chỉ tốn thêm một lần gọi ở đúng những lượt vốn dĩ mất trắng.
         """
+        if self._gipformer is not None:
+            wav = (audio_bytes if audio_bytes[:4] == b"RIFF"
+                   else pcm_to_wav(audio_bytes, sample_rate=sample_rate))
+            with Timer("STT Gipformer", logger) as timer:
+                text = await asyncio.to_thread(self._gipformer.transcribe, wav)
+            # Do not retry silence without the gate, or pretend that a
+            # transducer returned Whisper avg_logprob/no_speech_prob values.
+            logger.info("STT Gipformer result: %r (%.0fms)", text, timer.elapsed_ms)
+            return text
+
         # Đo độ dài TRƯỚC khi bọc WAV: bọc rồi thì phải bóc header ra mới tính
         # được, mà độ dài là thứ `_dang_ngo` cần để nới ngưỡng cho lượt ngắn.
         giay = len(audio_bytes) / (sample_rate * 2)
@@ -521,10 +541,21 @@ class STTService:
 
     async def health_check(self) -> bool:
         try:
+            if self._gipformer is not None:
+                await asyncio.to_thread(self._gipformer.load)
+                return self._gipformer.info()["loaded"]
             resp = await self.client.get(f"{self.base_url}/health")
             return resp.status_code == 200
-        except Exception:
+        except Exception as exc:
+            logger.warning("STT %s not ready: %s", self.engine, exc)
             return False
+
+    async def model_info(self) -> dict:
+        if self._gipformer is not None:
+            return self._gipformer.info()
+        response = await self.client.get(f"{self.base_url}/health")
+        response.raise_for_status()
+        return response.json()
 
     async def close(self):
         await self.client.aclose()

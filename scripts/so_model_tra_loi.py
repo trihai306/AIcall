@@ -36,6 +36,9 @@ CA_THU = [
     ("anh cần vay năm mươi triệu",
      "Em đoán có lẽ là hai trăm triệu chứ không phải năm mươi",
      "phải GIỮ đúng con số khách nói, không tự sửa thành số khác"),
+    ("tôi muốn vay hai trăm triệu",
+     "Dạ được ạ, với khoản vay 200 triệu trong 36 tháng thì anh sẽ trả góp khoảng 6.8 triệu mỗi tháng ạ.",
+     "phải GIỮ 200 triệu nhưng KHÔNG tự gán 36 tháng hay 6.8 triệu khi khách chưa nói thời hạn"),
     ("ừ em ở đâu vậy",
      "Dạ em ở TP.HCM ạ (lần trước lại nói Hà Nội)",
      "không được BỊA địa điểm; nói không rõ hoặc hỏi lại thì tốt hơn"),
@@ -62,15 +65,23 @@ async def main() -> int:
     from backend.services.llm_service import LLMService
     from backend.services.rag_service import RAGService
 
-    rag = RAGService()
     ss = CallSession(customer_name="Anh", product="vay tín chấp")
 
-    # Dựng ngữ cảnh RAG MỘT LẦN, dùng chung cho mọi model - khác ngữ cảnh thì
-    # phép so vô nghĩa.
+    # Khớp đường production: ưu tiên trọn tài liệu sản phẩm để giữ prefix cache;
+    # chỉ dùng RAG top-k khi chế độ đó tắt hoặc chưa có tài liệu chuẩn.
+    tron = ""
+    if settings.ngu_canh_tron_tai_lieu:
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        tron = toan_van(ss.product)
+    rag = None if tron else RAGService()
+
+    # Dựng ngữ cảnh MỘT LẦN, dùng chung cho mọi model - khác ngữ cảnh thì phép
+    # so model vô nghĩa.
     ctx = {}
     for khach, _, _ in CA_THU:
-        ctx[khach] = await rag.retrieve(f"vay tín chấp {khach}", top_k=2,
-                                        san_pham=ss.product)
+        ctx[khach] = (tron if tron else
+                      await rag.retrieve(f"vay tín chấp {khach}", top_k=2,
+                                         san_pham=ss.product))
 
     for ten in a.model:
         print(f"\n{'='*78}\n  MODEL: {ten}\n{'='*78}")

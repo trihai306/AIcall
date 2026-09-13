@@ -78,6 +78,20 @@ def test_dung_mot_khong_sinh_lai_neu_da_co(tmp_path):
     assert len(tts.goi) == n
 
 
+def test_standalone_and_continuation_variants_do_not_evict_each_other(tmp_path):
+    from backend.pipeline.noi_cau_dem import loi_sau_dem
+    tts = TTSGia()
+    kho = KhoTiengSan(tmp_path)
+    original = "Dạ nếu được duyệt 275 triệu trong 24 tháng thì mới áp dụng ạ."
+    continuation = loi_sau_dem("Dạ em trả lời anh chị luôn,", original)
+    asyncio.run(kho.dung_mot(tts, "ltg_demo_noi_dem", continuation, "giong_a"))
+    asyncio.run(kho.dung_mot(tts, "ltg_demo", original, "giong_a"))
+    cold = KhoTiengSan(tmp_path)
+    assert cold.lay(tts, "ltg_demo_noi_dem", continuation, "giong_a") is not None
+    assert cold.lay(tts, "ltg_demo", original, "giong_a") is not None
+    assert cold.lay(tts, "ltg_demo_noi_dem", original, "giong_a") is None
+
+
 def test_dung_nhieu_tra_thong_ke(tmp_path):
     tts = TTSGia()
     kho = KhoTiengSan(tmp_path)

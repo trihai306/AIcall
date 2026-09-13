@@ -9,38 +9,25 @@ echo "Downloading AI models..."
 source "$PROJECT_DIR/.venv/bin/activate" 2>/dev/null || true
 pip install -q huggingface_hub 2>/dev/null || true
 
-# 1. Vistral-7B-Chat GGUF (LLM tiếng Việt) -> Ollama
-LLM_DIR="$MODELS_DIR/llm"
-GGUF_PATH="$LLM_DIR/vistral-7b-chat-q4.gguf"
-VISTRAL_REPO="${VISTRAL_REPO:-uonlp/Vistral-7B-Chat-gguf}"
-VISTRAL_FILE="${VISTRAL_FILE:-ggml-vistral-7B-chat-q4_1.gguf}"
-
-mkdir -p "$LLM_DIR"
-if [ -f "$GGUF_PATH" ]; then
-    echo "[SKIP] Vistral GGUF already exists"
-else
-    echo "Downloading Vistral-7B-Chat GGUF ($VISTRAL_FILE)..."
-    python3 -c "
-from huggingface_hub import hf_hub_download
-import shutil
-p = hf_hub_download(repo_id='$VISTRAL_REPO', filename='$VISTRAL_FILE')
-shutil.copy(p, '$GGUF_PATH')
-print('Saved to $GGUF_PATH')
-"
+# 1. LLM -> Ollama. Dùng đúng model mà app sẽ chạy thay vì tải Vistral cố định.
+# Installer thường chạy trước khi người dùng copy .env, nên fallback phải khớp
+# backend/config.py và .env.example.
+LLM_MODEL="${OLLAMA_MODEL:-}"
+if [ -z "$LLM_MODEL" ] && [ -f "$PROJECT_DIR/.env" ]; then
+    LLM_MODEL="$(sed -n 's/^OLLAMA_MODEL[[:space:]]*=[[:space:]]*//p' "$PROJECT_DIR/.env" | tail -n 1 | tr -d '\r')"
 fi
+LLM_MODEL="${LLM_MODEL:-qwen3.5:9b}"
 
 if command -v ollama &>/dev/null; then
-    if ollama list 2>/dev/null | grep -q "vistral-7b-chat"; then
-        echo "[SKIP] Ollama model vistral-7b-chat already created"
+    if ollama list 2>/dev/null | awk 'NR > 1 {print $1}' | grep -Fxq "$LLM_MODEL"; then
+        echo "[SKIP] Ollama model $LLM_MODEL already exists"
     else
-        echo "Creating Ollama model vistral-7b-chat..."
-        cd "$LLM_DIR"
-        ollama create vistral-7b-chat -f Modelfile.vistral
-        cd "$PROJECT_DIR"
+        echo "Pulling Ollama model $LLM_MODEL..."
+        ollama pull "$LLM_MODEL"
     fi
 else
     echo "[WARN] ollama not found - run 03_ollama.sh first, then:"
-    echo "       cd models/llm && ollama create vistral-7b-chat -f Modelfile.vistral"
+    echo "       ollama pull $LLM_MODEL"
 fi
 
 # 2. PhoWhisper CT2 (STT) - handled by 02_pho_whisper.sh, verify only

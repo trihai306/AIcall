@@ -6,8 +6,13 @@ dự án với đúng 5 mẫu ví dụ. Trong khi đó tài liệu tri thức đ
 
 Điều kiện để dùng được: mẫu sinh ra phải ĐÚNG LUẬT của system prompt, không thì
 train xong model nói sai phong cách mà không có gì báo (xem `dataset_rules`).
-Nên mọi cặp đều đi qua chuẩn hoá số rồi qua bộ soi, cặp nào không sửa được thì
-bỏ - thà ít mẫu sạch còn hơn nhiều mẫu dạy hỏng.
+Nên mọi cặp đều qua bộ soi, cặp nào phạm luật thì bỏ - thà ít mẫu sạch còn hơn
+nhiều mẫu dạy hỏng.
+
+ĐỔI THIẾT KẾ: dataset KHÔNG còn đổi số thành chữ. Đường chạy thật giữ chữ số trong
+đầu ra LLM (CORE_RULES: "Giữ chữ số để hệ thống đọc") và tầng chuẩn hoá trước TTS
+đọc số. Dạy model viết chữ là dạy ngược luật lúc chạy. Mỗi mẫu mang chính mảnh
+tài liệu vào system prompt để LoRA học BÁM NGUỒN thay vì học thuộc con số.
 """
 import sys
 from pathlib import Path
@@ -18,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 pytest.importorskip("chromadb")
 
-from training.llm.sinh_mau_tu_tri_thuc import (chuan_hoa_tra_loi, doc_cap,  # noqa: E402
+from training.llm.sinh_mau_tu_tri_thuc import (SYSTEM, doc_cap,  # noqa: E402
                                                duong_dan_ngan, dung_prompt, lam_mau,
                                                loc_cap)
 
@@ -48,36 +53,20 @@ def test_khong_co_cap_nao_thi_tra_rong():
     assert doc_cap("Tôi không tạo được câu hỏi nào từ đoạn này.") == []
 
 
-# --- chuẩn hoá ------------------------------------------------------------------
+# --- giữ chữ số ------------------------------------------------------------------
 
-def test_chu_so_duoc_doc_thanh_chu():
-    """Dataset dạy model viết số thành chữ, vì đường thoại thật luôn đọc thành
-    chữ. Để nguyên chữ số là train ngược lại chính luật đang ép lúc chạy."""
-    assert "bảy phẩy chín" in chuan_hoa_tra_loi("Dạ lãi suất 7.9%/năm ạ.")
-
-
-def test_khoang_noi_bang_gach_ngang_thanh_chu_den():
-    """Bắt được trên mẫu sinh thật: "nợ xấu nhóm 3-5" ra "nhóm ba-năm", TTS đọc
-    lên nghe như "ba năm" - thành một khoảng THỜI GIAN. "1-2%" cũng thành
-    "một-hai phần trăm". Dataset dạy dấu gạch nối là dạy model viết ra thứ TTS
-    không đọc được."""
-    ra = chuan_hoa_tra_loi("Dạ nợ xấu nhóm 3-5 tại CIC ạ.")
-    assert "ba đến năm" in ra
-    assert "-" not in ra
+def test_prompt_bat_giu_nguyen_chu_so():
+    """Model phải chép ĐÚNG con số trong tài liệu. Viết thành chữ thì model 7B đọc
+    sai số (đã đo: 7.9 thành "sáu phẩy chín"), nên việc đọc số giao cho code."""
+    p = dung_prompt("Lãi suất: 7.9%/năm", so_cap=3)
+    assert "giữ nguyên chữ số" in p.lower()
+    assert "viết số thành chữ" not in p.lower()
 
 
-def test_khoang_phan_tram_cung_thanh_chu_den():
-    ra = chuan_hoa_tra_loi("Dạ phí một-hai phần trăm ạ." .replace("một-hai", "1-2"))
-    assert "một đến hai" in ra
-
-
-def test_gach_noi_trong_chu_thi_giu_nguyen():
-    """Chỉ đụng gạch nối GIỮA HAI SỐ, không đụng từ ghép."""
-    assert "tuỳ-chọn" in chuan_hoa_tra_loi("Dạ đây là tuỳ-chọn ạ.")
-
-
-def test_cau_khong_co_so_thi_giu_nguyen():
-    assert chuan_hoa_tra_loi("Dạ em gửi hồ sơ ạ.") == "Dạ em gửi hồ sơ ạ."
+def test_system_mau_dan_giu_chu_so_va_bam_nguon():
+    thap = SYSTEM.lower()
+    assert "giữ chữ số" in thap
+    assert "thông tin tham khảo" in thap
 
 
 # --- lọc theo luật phong cách ---------------------------------------------------
@@ -121,9 +110,18 @@ def test_prompt_nhac_luat_quan_trong():
 
 
 def test_mau_dung_dinh_dang_ba_vai():
-    m = lam_mau("Lãi bao nhiêu?", "Dạ bảy phần trăm ạ.", "Bạn là tư vấn viên.")
+    m = lam_mau("Lãi bao nhiêu?", "Dạ lãi suất từ 7.9%/năm ạ.", "- Lãi suất: từ 7.9%/năm")
     assert [x["role"] for x in m["messages"]] == ["system", "user", "assistant"]
-    assert m["messages"][2]["content"] == "Dạ bảy phần trăm ạ."
+    assert m["messages"][2]["content"] == "Dạ lãi suất từ 7.9%/năm ạ."
+
+
+def test_mau_mang_manh_tai_lieu_trong_system():
+    """Fact phải nằm ở INPUT: train_lora chỉ tính loss trên câu trả lời, nên model
+    học cách DÙNG ngữ cảnh chứ không học thuộc tài liệu."""
+    m = lam_mau("Lãi bao nhiêu?", "Dạ lãi suất từ 7.9%/năm ạ.", "  - Lãi suất: từ 7.9%/năm  ")
+    sys_ = m["messages"][0]["content"]
+    assert sys_.startswith(SYSTEM)
+    assert "THÔNG TIN THAM KHẢO:\n- Lãi suất: từ 7.9%/năm" in sys_
 
 
 # --- đường dẫn hiển thị ----------------------------------------------------------

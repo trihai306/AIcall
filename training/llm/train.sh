@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Fine-tune LLM (Vistral) theo dữ liệu tư vấn riêng — QLoRA/Unsloth.
+# Fine-tune Qwen theo dữ liệu tư vấn riêng — QLoRA/Unsloth.
 # Chạy trên máy GPU NVIDIA. Unsloth cài vào venv RIÊNG (.venv-train)
 # để không xung đột dependency với f5-tts trong .venv chính.
 #
@@ -28,7 +28,7 @@ if [ ! -d "$VENV" ]; then
     source "$VENV/bin/activate"
     pip install --upgrade pip
     pip install torch --index-url https://download.pytorch.org/whl/cu128
-    pip install unsloth datasets trl transformers
+    pip install unsloth unsloth_zoo datasets trl transformers peft
 else
     source "$VENV/bin/activate"
 fi

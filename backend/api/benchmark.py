@@ -55,12 +55,10 @@ async def benchmark_info():
     # hai bên lệch nhau, mà kiểu sai đó nhìn như đúng.
     ten_stt = "STT — (không hỏi được máy chủ)"
     try:
-        import httpx
-        async with httpx.AsyncClient(timeout=5.0) as c:
-            h = (await c.get(f"{settings.whisper_server_url}/health")).json()
+        h = await app_state.stt.model_info()
         ten_stt = f"STT — {h.get('model') or settings.whisper_model}"
     except Exception:
-        ten_stt = f"STT — {settings.whisper_model} (chưa xác nhận)"
+        ten_stt = f"STT — {settings.stt_engine} (chưa xác nhận)"
 
     return {
         "stt": ten_stt,
@@ -77,7 +75,9 @@ async def benchmark_stt():
 
     stt_ok = await app_state.stt.health_check()
     if not stt_ok:
-        return {"error": "Whisper STT server chưa chạy. Chạy: bash whisper_server/start.sh"}
+        if settings.stt_engine == "gipformer":
+            return {"error": "Gipformer STT chưa sẵn sàng. Kiểm tra model và restart backend."}
+        return {"error": "PhoWhisper STT server chưa chạy. Chạy: bash whisper_server/start.sh"}
 
     # Lấy ĐÚNG giọng mẫu đang cấu hình, đừng trỏ cứng vào "default.wav" - file đó
     # không tồn tại nên trang Đo tốc độ luôn hiện lỗi ở ô STT.
@@ -105,7 +105,7 @@ async def benchmark_llm():
 
     llm_ok = await app_state.llm.health_check()
     if not llm_ok:
-        return {"error": "Ollama LLM chưa chạy. Chạy: ollama serve && ollama pull qwen2.5:3b"}
+        return {"error": f"Ollama LLM chưa sẵn sàng. Chạy: ollama serve && ollama pull {settings.ollama_model}"}
 
     prompt = "Lãi suất vay mua nhà bao nhiêu?"
     system = app_state.llm.build_system_prompt()

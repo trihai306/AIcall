@@ -45,7 +45,8 @@ DINH_NGHIA = [
                 "Tra hồ sơ của CHÍNH khách đang nghe máy: dư nợ, hợp đồng, "
                 "sản phẩm đang dùng, ngày đến hạn. Dùng khi khách hỏi về thông "
                 "tin RIÊNG của họ, ví dụ 'dư nợ của tôi', 'hợp đồng của anh', "
-                "'tôi còn nợ bao nhiêu'. KHÔNG dùng cho câu hỏi chung về sản phẩm."
+                "'tôi còn nợ bao nhiêu'. KHÔNG dùng chỉ vì câu có chữ 'khoản "
+                "vay'; nhu cầu vay mới và cách tính trả góp là thông tin sản phẩm."
             ),
             # Cố ý KHÔNG khai tham số nào. Số điện thoại lấy từ PHIÊN GỌI, không
             # để mô hình tự điền: nó không biết số thật, và một tham số nó tự
@@ -155,7 +156,8 @@ PROMPT_QUYET_DINH = (
     "Bạn là bộ định tuyến của tổng đài ngân hàng. Đọc câu khách vừa nói và quyết "
     "định có cần tra dữ liệu không.\n"
     "- Hỏi về hồ sơ RIÊNG của khách (dư nợ, hợp đồng, kỳ hạn còn lại, ngày đến "
-    "hạn, khoản vay của tôi) -> gọi tra_ho_so_khach.\n"
+    "hạn, khoản vay của tôi) -> gọi tra_ho_so_khach. Không gọi chỉ vì có chữ "
+    "'khoản vay'.\n"
     "- Hỏi con số của sản phẩm (lãi suất, hạn mức, phí, điều kiện) -> gọi "
     "tra_thong_tin_san_pham.\n"
     "- Chào hỏi, từ chối, hỏi thăm, nói chuyện phiếm -> KHÔNG gọi hàm nào.\n"
@@ -191,13 +193,15 @@ def _bo_dau(s: str) -> str:
 # khách nói cụt ("dư nợ bao nhiêu em"), mà trong ngữ cảnh cuộc gọi thì hỏi dư nợ
 # gần như luôn là hỏi về chính họ.
 _RE_HO_SO = re.compile(
-    r"(du no|con no|no bao nhieu|khoan vay|hop dong|den han|"
-    r"ky han|tra xong|con may thang|so du)"
+    r"(du no|con no|no bao nhieu|hop dong|den han|ky han con|tra xong|"
+    r"con may thang|so du|khoan vay.{0,12}(cua|voi) (toi|anh|chi|minh))"
 )
 # Số liệu SẢN PHẨM.
 _RE_SAN_PHAM = re.compile(
     r"(lai suat|han muc|bieu phi|phi thuong nien|phi tra no|dieu kien vay|"
-    r"vay toi da|vay duoc bao nhieu|thoi han vay|ho so can|giay to)"
+    r"vay toi da|vay duoc bao nhieu|thoi han vay|ho so can|giay to|"
+    r"muon vay|can vay|nhu cau vay|vay tam|vay khoang|vay trong|"
+    r"moi thang.{0,16}bao nhieu|tra.{0,16}moi thang)"
 )
 
 

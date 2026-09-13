@@ -54,3 +54,10 @@ def test_co_moc_thoi_gian_nhung_khong_co_chu_thi_khong_chen():
     """Chữ rỗng nghĩa là không biết câu đệm kết bằng dấu gì - đừng đoán bừa."""
     metrics = {"filler_text": "", "filler_xong_luc": time.perf_counter() + 0.5}
     assert StreamingPipeline._nghi_noi_cau_dem(metrics) == 0.0
+
+
+def test_khoang_lang_da_co_duoc_tru_khoi_nhip_noi(monkeypatch):
+    monkeypatch.setattr("backend.pipeline.streaming_pipeline.time.perf_counter", lambda: 10.05)
+    metrics = {"filler_text": DEM, "filler_xong_luc": 10.0}
+    import pytest
+    assert StreamingPipeline._nghi_noi_cau_dem(metrics) == pytest.approx(nhip_nghi_sau(DEM) - 50)

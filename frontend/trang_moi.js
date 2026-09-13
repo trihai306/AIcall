@@ -1393,8 +1393,9 @@ async function toggleInbound(id, bat, btn) {
 // ---------- khởi động ----------
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Trang chủ là Tổng quan. app.js không biết trang này nên phải gọi ở đây.
-  loadOverview();
+  // Route ban đầu do app.js chọn. Chỉ nạp Tổng quan ở đúng route của nó; nếu
+  // đang F5 tại /contacts thì không tải dữ liệu trang chủ vô ích.
+  if (location.pathname === '/' || location.pathname === '/overview') loadOverview();
   // Bọc `selectCampaign` của app.js để khối "chạy chiến dịch" đổi theo chip
   // người dùng vừa bấm. Bọc thay vì sửa app.js: sửa trực tiếp thì lần sau đọc
   // code không ai biết ai đang ghi đè ai.

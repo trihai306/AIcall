@@ -1,8 +1,12 @@
 from pathlib import Path
+from typing import Literal
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    stt_engine: Literal["phowhisper", "gipformer"] = "phowhisper"
+    gipformer_model_path: str = "./models/stt/gipformer1.5-fp32"
+    gipformer_num_threads: int = 4
     # STT - PhoWhisper (VinAI) via faster-whisper server
     whisper_server_url: str = "http://localhost:8178"
     whisper_model: str = "vinai/PhoWhisper-small"
@@ -23,9 +27,9 @@ class Settings(BaseSettings):
     # (`data/test_vung_mien/bac/`, hiện CHƯA CÓ) rồi chạy `do_vung_mien.py`.
     stt_vung_mien: str = ""
 
-    # Ollama LLM - Vistral-7B-Chat (Vietnamese)
+    # Ollama LLM - Qwen 3.5 9B (Vietnamese-capable, runs fully on a 12 GB GPU)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "vistral-7b-chat"
+    ollama_model: str = "qwen3.5:9b"
     # Đo 2026-09-02 (qwen2.5:7b, prompt_eval_count thật): lời dặn + tri thức
     # đã ăn 1414 token. Ở 2048 thì hội thoại chỉ còn 484 token ~ 6 lượt, rồi
     # Ollama cắt bỏ phần đầu KHÔNG BÁO GÌ - đó là lỗi "nói chuyện một lúc là
@@ -39,28 +43,16 @@ class Settings(BaseSettings):
     f5tts_ref_audio: str = "./models/tts/ref_voices/default.wav"
     f5tts_ref_text: str = "xin chào, tôi là nhân viên tư vấn ngân hàng"
     f5tts_nfe_step: int = 16
-    # Chunk đầu đánh đổi chất lượng lấy TTFA.
-    #
-    # ĐỔI 16 -> 12 ngày 14-08-2026. Lần chốt TRƯỚC (giữ lại để đừng ai lật đi
-    # lật lại): đo 6 câu mở đầu ngắn, nfe 8 -> WER 25%, nfe 12 -> 17%,
-    # nfe 16 -> 7%; ở nfe thấp chữ "Dạ" bị đọc thành "Giả"/"Sạc" - hỏng đúng từ
-    # khách nghe đầu tiên. Nên chốt 16 và chấp nhận chunk đầu chậm.
-    #
-    # Quyết định đó ĐÚNG ở thời điểm của nó, nhưng điều kiện đã đổi hẳn: tốc đọc
-    # về 0,98, hệ số thoại về 1,00, và "Dạ" nay được tách bằng dấu phẩy. Đo lại
-    # trên 16 câu mở đầu thật (`scripts/nfe_manh_dau_ky.py`), cho STT nghe lại:
-    #     nfe 16   chữ ĐẦU đúng 13/16   từ sai 2,2%   451ms
-    #     nfe 12   chữ ĐẦU đúng 14/16   từ sai 1,6%   244ms
-    # nfe 12 tốt HƠN ở cả hai thước đo mà nhanh hơn 207ms. Chỗ "Dạ -> Giả" nay
-    # xảy ra ở CẢ HAI mức gần như nhau, nên nó không còn phân biệt được hai mức.
-    #
-    # Đây là chunk ĐẦU của mỗi lượt, phần khách nghe ngay sau câu đệm - nên
-    # 200ms ở đây rơi thẳng vào TTFA. Đo trên cuộc gọi thật: TTFA 1991-2829ms,
-    # trong đó "TTS mảnh đầu" chiếm 601-799ms, là khoản lớn nhất.
-    #
-    # Ai đổi lại thì đo bằng chính script trên, và đo CHỮ ĐẦU chứ không chỉ WER
-    # cả câu - hỏng ở đây là hỏng từ khách nghe đầu tiên.
-    f5tts_nfe_step_first: int = 12
+    # Chunk đầu từng dùng nfe 12 để giảm khoảng 207ms TTFA. Sau khi câu đệm đã
+    # che được thời gian sinh câu đầu, ưu tiên chất lượng thay vì tiếp tục hạ
+    # ngân sách khuếch tán. Đo lại 11-09-2026 trên đúng giọng đang chạy
+    # `heu_a6_35`, ba lượt mới cho mỗi mức, bằng `scripts/quet_giong.py`:
+    #     nfe 12   âm rác 0/3   vượt trần 1/3
+    #     nfe 16   âm rác 0/3   vượt trần 0/3
+    #     nfe 24   âm rác 0/3   vượt trần 1/3
+    #     nfe 32   âm rác 0/3   vượt trần 1/3
+    # Tăng quá 16 không ổn định hơn; giữ cả mảnh đầu và các mảnh sau ở nfe 16.
+    f5tts_nfe_step_first: int = 16
     f5tts_speed: float = 1.0
     # Hai núm chất lượng của F5. Trước 16-08-2026 KHÔNG chỉnh được: đường một
     # mảnh gọi `infer_batch_process` mà không truyền (ăn mặc định thư viện),
@@ -215,7 +207,7 @@ class Settings(BaseSettings):
     tts_chunk_words: int = 8
     tts_first_chunk_words: int = 4
     llm_max_tokens: int = 80
-    llm_temperature: float = 0.7
+    llm_temperature: float = 0.3
 
     # Server
     host: str = "0.0.0.0"

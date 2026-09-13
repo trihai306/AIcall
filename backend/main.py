@@ -54,13 +54,25 @@ app.include_router(knowledge_api.router)
 app.include_router(fillers_api.router)
 app.include_router(luat_kiem_api.router)
 
+# Mỗi menu của SPA có một URL thật. Các route này đều trả cùng app shell;
+# frontend/app.js đọc location.pathname để mở đúng trang. Nhờ vậy reload/F5
+# `/contacts`, `/devices`, ... không rơi về Tổng quan.
+FRONTEND_PAGES = (
+    "overview", "chat", "messaging", "contacts", "reports",
+    "scenarios", "datasources", "knowledge", "fillers", "voice",
+    "devices", "settings", "sessions", "voice-test", "voice-training",
+    "training", "models", "benchmark", "logs",
+)
+FRONTEND_PATHS = {"/"} | {f"/{page}" for page in FRONTEND_PAGES}
+
+
 # Frontend must never be cached: without Cache-Control, Chromium applies
 # heuristic freshness (10% of file age) and Electron can keep serving a
 # months-old UI from disk cache.
 @app.middleware("http")
 async def no_cache_frontend(request: Request, call_next):
     response = await call_next(request)
-    if request.url.path == "/" or request.url.path.startswith("/static"):
+    if request.url.path in FRONTEND_PATHS or request.url.path.startswith("/static"):
         response.headers["Cache-Control"] = "no-cache"
     return response
 
@@ -69,6 +81,17 @@ async def no_cache_frontend(request: Request, call_next):
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def index():
     return FileResponse("frontend/index.html")
+
+
+async def frontend_page():
+    return FileResponse("frontend/index.html")
+
+
+for _page in FRONTEND_PAGES:
+    app.add_api_route(
+        f"/{_page}", frontend_page, methods=["GET"],
+        include_in_schema=False, name=f"frontend-{_page}",
+    )

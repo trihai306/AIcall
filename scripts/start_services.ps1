@@ -47,6 +47,21 @@ $PY      = "$PROJECT\.venv\python.exe"
 #     medium  CER 0.011   giu 7/7 tu khoa   0.24s/cau
 # CER giam 21 lan, gia chi +120ms moi luot. Dung ha ve small de "cho nhanh".
 $CT2DIR  = "$PROJECT\models\phowhisper\PhoWhisper-medium-ct2"
+$SttEngine = "phowhisper"
+$GipDir = "$PROJECT\models\stt\gipformer1.5-fp32"
+$LlmNumCtx = "8192"
+if (Test-Path "$PROJECT\.env") {
+    $stt = Select-String -Path "$PROJECT\.env" -Pattern '^\s*STT_ENGINE\s*=\s*(.+?)\s*$' -EA SilentlyContinue
+    if ($stt) { $SttEngine = $stt.Matches[0].Groups[1].Value.Trim().Trim('"').Trim("'").ToLowerInvariant() }
+    $gip = Select-String -Path "$PROJECT\.env" -Pattern '^\s*GIPFORMER_MODEL_PATH\s*=\s*(.+?)\s*$' -EA SilentlyContinue
+    if ($gip) {
+        $g = $gip.Matches[0].Groups[1].Value.Trim().Trim('"').Trim("'")
+        if ([IO.Path]::IsPathRooted($g)) { $GipDir = $g }
+        else { $GipDir = [IO.Path]::GetFullPath((Join-Path $PROJECT $g)) }
+    }
+    $ctx = Select-String -Path "$PROJECT\.env" -Pattern '^\s*LLM_NUM_CTX\s*=\s*(\d+)\s*$' -EA SilentlyContinue
+    if ($ctx) { $LlmNumCtx = $ctx.Matches[0].Groups[1].Value }
+}
 $LOGS    = "$PROJECT\logs"
 $RUN     = "$PROJECT\logs\_run"
 New-Item -ItemType Directory -Force -Path $LOGS,$RUN | Out-Null
@@ -256,7 +271,10 @@ if (Get-Process ollama -EA SilentlyContinue) {
 $canCo = @{
     "OLLAMA_FLASH_ATTENTION"   = "1"        # nhanh hon VA cho phep nen KV cache
     "OLLAMA_KV_CACHE_TYPE"     = "q8_0"     # nen KV cache: dinh 1 cuoc 10257 -> 8610 MiB
-    "OLLAMA_CONTEXT_LENGTH"    = "2048"     # app chi bao gio xin 2048, dung tra tien 4096
+    # Khớp đúng `LLM_NUM_CTX` mà request gửi. Giá trị cũ bị ghi cứng 2048,
+    # trong khi config hiện là 4096/8192 tuỳ máy, làm chẩn đoán cửa sổ nhớ rất
+    # dễ nhìn nhầm hai cấu hình khác nhau.
+    "OLLAMA_CONTEXT_LENGTH"    = $LlmNumCtx
     "OLLAMA_NUM_PARALLEL"      = "1"        # xem chu thich o Start-Detached
     "OLLAMA_MAX_LOADED_MODELS" = "1"
 }
@@ -296,18 +314,36 @@ if ($modelChinh) {
     Write-Host "[--] Khong doc duoc OLLAMA_MODEL tu .env, bo qua buoc don VRAM"
 }
 
-# --- 2. PhoWhisper STT ---
-if (-not (Test-Path "$CT2DIR\model.bin")) {
-    Write-Host "[ERROR] Thieu model PhoWhisper CT2: $CT2DIR"; exit 1
-}
-$pho = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -EA SilentlyContinue |
-       Where-Object { $_.CommandLine -like "*pho_server.py*" }
-if ($pho -and (Test-CanNapLai $pho @("$PROJECT\whisper_server") "PhoWhisper" -ChiCanhBao)) {
-    if (Stop-AndWait $pho $WhisperPort "PhoWhisper") { $pho = $null }
-}
-if ($pho) {
-    # Test-CanNapLai da in dong trang thai roi, khong in lai.
+# --- 2. STT ---
+if ($SttEngine -eq "gipformer") {
+    $thieuGip = @("encoder.onnx", "decoder.onnx", "joiner.onnx", "tokens.txt") |
+                Where-Object { -not (Test-Path (Join-Path $GipDir $_)) }
+    if ($thieuGip.Count -gt 0) {
+        Write-Host "[ERROR] STT_ENGINE=gipformer nhung model thieu: $($thieuGip -join ', ')"
+        Write-Host "        Thu muc: $GipDir"
+        exit 1
+    }
+    # Gipformer chay ngay trong backend tren CPU, khong co server :8178 rieng.
+    # Neu PhoWhisper cu dang song thi KHONG giet tu dong: training/voice co the
+    # dang dung no de nghe lai dataset. Lan khoi dong moi se khong tao them.
+    $phoCu = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -EA SilentlyContinue |
+             Where-Object { $_.CommandLine -like "*pho_server.py*" }
+    if ($phoCu) {
+        Write-Host "[--] STT_ENGINE=gipformer; PhoWhisper cu van dang chay PID $($phoCu.ProcessId) cho tac vu khac, khong dung tu dong"
+    }
+    Write-Host "[OK] STT Gipformer se nap trong backend: $GipDir"
 } else {
+    if (-not (Test-Path "$CT2DIR\model.bin")) {
+        Write-Host "[ERROR] Thieu model PhoWhisper CT2: $CT2DIR"; exit 1
+    }
+    $pho = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -EA SilentlyContinue |
+           Where-Object { $_.CommandLine -like "*pho_server.py*" }
+    if ($pho -and (Test-CanNapLai $pho @("$PROJECT\whisper_server") "PhoWhisper" -ChiCanhBao)) {
+        if (Stop-AndWait $pho $WhisperPort "PhoWhisper") { $pho = $null }
+    }
+    if ($pho) {
+        # Test-CanNapLai da in dong trang thai roi, khong in lai.
+    } else {
     # TAT VAD Silero cua faster-whisper. No cat SACH nhung cau ngan that: do
     # tren ban ghi cuoc goi that (scripts/do_tat_vad_whisper.py), doan "alo alo"
     # 820ms co tieng ro rang bi tra ve RONG khi bat VAD, tat thi doc duoc.
@@ -320,8 +356,9 @@ if ($pho) {
     # ca DAU CACH truoc && vao gia tri -> "0 " khong khop voi ("0","false") nen
     # VAD van BAT ma khong bao gi. Da mac dung loi nay, chi lo ra vi /health in
     # ra vad_filter. Kiem lai bang /health sau moi lan doi, dung tin log khoi dong.
-    $p1 = Start-Detached "phowhisper" "set `"STT_VAD_FILTER=0`" && `"$PY`" `"$PROJECT\whisper_server\pho_server.py`" --model `"$CT2DIR`" --port $WhisperPort > `"$LOGS\pho-server.log`" 2>&1"
-    Write-Host "[OK] PhoWhisper dang khoi dong (cmd PID $p1) -> :$WhisperPort"
+        $p1 = Start-Detached "phowhisper" "set `"STT_VAD_FILTER=0`" && `"$PY`" `"$PROJECT\whisper_server\pho_server.py`" --model `"$CT2DIR`" --port $WhisperPort > `"$LOGS\pho-server.log`" 2>&1"
+        Write-Host "[OK] PhoWhisper dang khoi dong (cmd PID $p1) -> :$WhisperPort"
+    }
 }
 
 # --- 3. FastAPI backend ---

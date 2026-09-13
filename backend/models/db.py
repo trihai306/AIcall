@@ -523,12 +523,28 @@ def _save_session_sync(
             provenance.get("gender", ""),
         ))
 
-        # INSERT OR IGNORE over the whole history rather than only the newest
-        # turn: it costs a handful of no-op statements but self-heals if an
-        # earlier background write failed, and needs no index bookkeeping.
+        # `history` is a SNAPSHOT, not an append-only log. When the customer
+        # interrupts, CallSession removes the unfinished user/assistant tail
+        # and later reuses those indexes for the merged, corrected turn. An
+        # INSERT OR IGNORE here used to leave the stale tail in SQLite forever:
+        # reports then showed words the customer never finished saying and an
+        # answer they never heard.
+        #
+        # Reconcile the stored tail to this snapshot in the same transaction:
+        # remove indexes that no longer exist, then update reused indexes. Keep
+        # recorded_at for an existing slot; it describes when that position was
+        # first recorded and is not exposed as a per-message edit timestamp.
+        _conn.execute(
+            "DELETE FROM conversation_turns "
+            "WHERE session_id = ? AND turn_index >= ?",
+            (session_id, len(history)),
+        )
         _conn.executemany(
-            "INSERT OR IGNORE INTO conversation_turns "
-            "(session_id, turn_index, role, content, recorded_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO conversation_turns "
+            "(session_id, turn_index, role, content, recorded_at) "
+            "VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(session_id, turn_index) DO UPDATE SET "
+            "role = excluded.role, content = excluded.content",
             [
                 (session_id, i, turn.get("role", ""), turn.get("content", ""), now)
                 for i, turn in enumerate(history)
@@ -572,7 +588,7 @@ async def save_session(session: "CallSession", ended: bool = False):
     ("lọc trạng thái: thành công, thất bại"), so dropping those rows would empty
     out half of every campaign report.
     """
-    if not session.history and not (
+    if not session.history and not getattr(session, "cau_bi_cat", "") and not (
         getattr(session, "contact_id", "") or getattr(session, "campaign_id", "")
     ):
         return

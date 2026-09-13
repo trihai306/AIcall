@@ -9,6 +9,11 @@
 param([int]$Port = 8100)
 
 $PROJECT = Split-Path -Parent $PSScriptRoot
+$SttEngine = "phowhisper"
+if (Test-Path "$PROJECT\.env") {
+    $sttLine = Select-String -Path "$PROJECT\.env" -Pattern '^\s*STT_ENGINE\s*=\s*(.+?)\s*$' -EA SilentlyContinue
+    if ($sttLine) { $SttEngine = $sttLine.Matches[0].Groups[1].Value.Trim().ToLower() }
+}
 
 function Show-Proc($name, $pattern, $label) {
     $p = Get-CimInstance Win32_Process -Filter "Name='$name'" -EA SilentlyContinue |
@@ -20,7 +25,9 @@ function Show-Proc($name, $pattern, $label) {
 Write-Host "=== Tien trinh ==="
 Show-Proc "VoiceBank AI.exe" ""                      "App Electron"
 Show-Proc "python.exe" "*uvicorn*backend.main*"      "FastAPI backend"
-Show-Proc "python.exe" "*pho_server.py*"             "PhoWhisper server"
+if ($SttEngine -eq "phowhisper") {
+    Show-Proc "python.exe" "*pho_server.py*"         "PhoWhisper server"
+}
 Show-Proc "ollama.exe" ""                            "Ollama"
 
 Write-Host ""
@@ -36,13 +43,24 @@ try {
     Write-Host "[--] Backend chua tra loi: $($_.Exception.Message)"
 }
 
-Write-Host ""
-Write-Host "=== PhoWhisper (:8178) ==="
-try {
-    $w = Invoke-RestMethod -Uri "http://127.0.0.1:8178/health" -TimeoutSec 8
-    Write-Host ($w | ConvertTo-Json -Compress)
-} catch {
-    Write-Host "[--] PhoWhisper chua tra loi: $($_.Exception.Message)"
+if ($SttEngine -eq "phowhisper") {
+    Write-Host ""
+    Write-Host "=== PhoWhisper (:8178) ==="
+    try {
+        $w = Invoke-RestMethod -Uri "http://127.0.0.1:8178/health" -TimeoutSec 8
+        Write-Host ($w | ConvertTo-Json -Compress)
+    } catch {
+        Write-Host "[--] PhoWhisper chua tra loi: $($_.Exception.Message)"
+    }
+} else {
+    Write-Host ""
+    Write-Host "=== Gipformer (trong backend) ==="
+    try {
+        $b = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/api/benchmark/info" -TimeoutSec 8
+        Write-Host "stt    : $($b.stt)"
+    } catch {
+        Write-Host "[--] Khong doc duoc thong tin Gipformer: $($_.Exception.Message)"
+    }
 }
 
 Write-Host ""

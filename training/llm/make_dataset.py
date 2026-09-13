@@ -31,7 +31,11 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_DIR / "data" / "training"
 OUTPUT_PATH = DATA_DIR / "merged_dataset.jsonl"
 
-DEFAULT_SYSTEM = "Bạn là nhân viên tư vấn ngân hàng ABC, tên Lan, đang gọi điện cho khách. Trả lời tối đa 2 câu, xưng em, gọi khách là anh/chị."
+DEFAULT_SYSTEM = (
+    "Bạn là nhân viên tư vấn ngân hàng ABC, tên Lan, đang gọi điện cho khách. "
+    "Trả lời tối đa 35 từ trong 1-2 câu, xưng em, gọi khách là anh/chị. "
+    "Chỉ dùng dữ kiện có trong ngữ cảnh hoặc do khách vừa nói; không tự thêm con số."
+)
 
 
 def parse_transcript(path: Path, system_prompt: str) -> list[dict]:
@@ -121,6 +125,8 @@ def validate_sample(obj: dict) -> str | None:
     roles = [m.get("role") for m in msgs]
     if "assistant" not in roles:
         return "không có lượt assistant"
+    if msgs[-1].get("role") != "assistant":
+        return "mẫu phải kết thúc bằng lượt assistant"
     for m in msgs:
         if not m.get("content", "").strip():
             return "có message rỗng"
@@ -161,6 +167,30 @@ def main():
                 continue
             samples.append(obj)
         print(f"[OK] {f.name}")
+
+    # 1b. JSON chuẩn: chấp nhận một object hoặc một mảng object cùng format
+    # `messages`. API upload từ trước đã cho phép .json nên make_dataset cũng
+    # phải đọc được, nếu không UI báo có mẫu nhưng lúc train lại bỏ qua file.
+    for f in sorted(DATA_DIR.glob("*.json")):
+        try:
+            raw = json.loads(f.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"  [WARN] {f.name} không phải JSON hợp lệ ({e}) - bỏ qua")
+            continue
+        objs = raw if isinstance(raw, list) else [raw]
+        kept = 0
+        for i, obj in enumerate(objs, 1):
+            if not isinstance(obj, dict):
+                print(f"  [WARN] {f.name}:{i} không phải object - bỏ qua")
+                continue
+            err = validate_sample(obj)
+            if err:
+                print(f"  [WARN] {f.name}:{i} {err} - bỏ qua")
+                continue
+            samples.append(obj)
+            kept += 1
+        if kept:
+            print(f"[OK] {f.name} -> {kept} mẫu")
 
     # 2. Transcript .txt
     for f in sorted(DATA_DIR.glob("*.txt")):
@@ -228,7 +258,7 @@ def main():
                 vi_pham.append((cuoi, loi))
         if vi_pham:
             print(f"\n[WARN] {len(vi_pham)}/{len(samples)} mẫu vi phạm phong cách "
-                  f"(tối đa {GIOI_HAN_TU} từ, 2 câu, không chữ số, không liệt kê):")
+                  f"(tối đa {GIOI_HAN_TU} từ, 2 câu, không markdown/liệt kê):")
             for cuoi, loi in vi_pham[:5]:
                 print(f"   - {'; '.join(loi)}")
                 print(f"     {cuoi[:100]}")

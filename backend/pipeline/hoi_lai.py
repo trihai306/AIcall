@@ -27,6 +27,13 @@ CAU_HOI_LAI: tuple[str, ...] = (
     "Dạ đường truyền hơi nhiễu, anh chị nhắc lại giúp em một lần nữa ạ.",
 )
 
+# Ollama đôi lúc kết thúc stream ngay ở token dừng và không trả ra chữ nào.
+# Khác lỗi STT ở trên: câu khách đã rõ, chỉ có bộ sinh câu trả về rỗng. Đừng
+# hỏi khách nói lại (họ không làm gì sai), và cũng đừng hứa sẽ gọi lại.
+CAU_LLM_RONG = (
+    "Dạ phần này chưa có quy định rõ trong tài liệu, nên em chưa thể khẳng định ạ."
+)
+
 # Hỏi lại quá số này thì thôi. Kênh có thể đang ồn liên tục hoặc khách đã bỏ máy;
 # hỏi mãi vào chỗ không ai nghe thì phiền hơn là im.
 TOI_DA_LIEN_TIEP = 2

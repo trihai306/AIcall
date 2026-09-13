@@ -85,8 +85,8 @@ def kiem_tinh_huong(d: dict) -> list[str]:
             loi.append(f"Mẩu mở đầu không được hứa khách chờ: {m!r} — câu đệm "
                        "phát NGAY TRƯỚC câu trả lời nên không có quãng chờ thật "
                        "để hứa, và mô hình viết tiếp lời hứa đó thành một câu "
-                       "câu giờ NỮA. Hãy viết thành lời DẪN vào nội dung, ví dụ "
-                       "'Dạ em thông tin ngay cho anh chị,'")
+                       "câu giờ NỮA. Hãy dùng lời đáp ngắn tự nhiên, ví dụ "
+                       "'Dạ vâng ạ,'")
 
     speed = d.get("speed")
     if speed not in (None, "") and not (0.5 <= float(speed) <= 1.5):

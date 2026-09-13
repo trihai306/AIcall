@@ -2028,14 +2028,14 @@ class PhoneCallManager:
 
         asyncio.create_task(_dung_filler())
 
-        from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
-
         async def _ham_llm():
             try:
                 async for _ in bridge.pipeline.llm.stream_response(
                         [{"role": "user", "content": "xin chào"}], "Trả lời đúng một từ."):
                     break          # có token đầu là model đã nằm sẵn, dừng ngay
-                await ham_luot_quyet_dinh(bridge.pipeline.llm)
+                if not settings.ngu_canh_tron_tai_lieu:
+                    from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
+                    await ham_luot_quyet_dinh(bridge.pipeline.llm)
                 logger.info(f"{bridge.tag} đã hâm nóng LLM trong lúc đổ chuông")
             except Exception as e:
                 logger.debug(f"{bridge.tag} hâm LLM bỏ qua: {e}")

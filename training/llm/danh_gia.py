@@ -4,17 +4,15 @@ Dùng để so trước/sau khi fine-tune: train xong mà không đo thì không
 model tốt lên hay tệ đi. Model gốc kèm system prompt mạnh vốn đã đạt điểm
 khá, nên fine-tune phải vượt được mốc đó mới đáng đổi.
 
-Dùng chính SYSTEM_PROMPT_TEMPLATE lúc chạy thật và chính bộ luật
-backend/core/dataset_rules.py, nên điểm ở đây đo đúng thứ quan trọng: model có
-nói được kiểu tổng đài ngắn gọn hay không.
+Dùng chính ``LLMService.build_system_prompt`` và cấu hình inference lúc chạy
+thật, nên điểm ở đây đo cùng prompt/context/temperature với production thay vì
+một bản prompt cũ được chép riêng trong script.
 
     python training/llm/danh_gia.py <ten_model> [ket_qua.json] [--rag]
 
---rag bơm kiến thức từ knowledge/ vào ngữ cảnh đúng như lúc chạy thật
-(streaming_pipeline gọi rag.retrieve(top_k=2)). KHÔNG có cờ này thì đang đo
-model ở trạng thái trần - nó phải tự nhớ số liệu, và fine-tune nhỏ rất dễ bịa
-số trong khi văn phong vẫn mượt. Muốn kết luận có nên đổi model hay không thì
-phải đo bản có RAG, vì đó mới là thứ khách hàng nghe thấy.
+--rag bơm kiến thức theo đúng chiến lược production: ưu tiên trọn tài liệu sản
+phẩm khi NGU_CANH_TRON_TAI_LIEU bật, nếu không mới dùng RAG top_k=2 có lọc theo
+sản phẩm. KHÔNG có cờ này thì đang đo model ở trạng thái trần.
 """
 import json
 import sys
@@ -25,17 +23,31 @@ import urllib.request
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+from backend.config import settings
 from backend.core.dataset_rules import kiem_tra_tra_loi, dem_tu, dem_cau
-from backend.services.llm_service import SYSTEM_PROMPT_TEMPLATE
+from backend.services.llm_service import CHUOI_DUNG, LLMService
+
+_PROMPT_BUILDER = LLMService.__new__(LLMService)
 
 def dung_system(rag_context: str = "") -> str:
-    # Khớp cách build_system_prompt() ghép: có RAG thì thêm tiêu đề, không thì
-    # để rỗng. Ghép khác đi là đang đo một prompt khác với lúc chạy thật.
-    phan_rag = f"THÔNG TIN THAM KHẢO:\n{rag_context}" if rag_context else ""
-    return SYSTEM_PROMPT_TEMPLATE.format(
-        bank_name="Ngân hàng ABC", agent_name="Lan",
-        customer_name="Anh Minh", product="vay tín chấp", rag_context=phan_rag,
+    return LLMService.build_system_prompt(
+        _PROMPT_BUILDER,
+        customer_name="Anh Minh", product="vay tín chấp", rag_context=rag_context,
+        scenario={"org_name": "Ngân hàng ABC", "agent_name": "Lan"},
     )
+
+
+def lay_ngu_canh(rag, cau: str) -> str:
+    """Ngữ cảnh giống đường thoại production cho sản phẩm của bộ benchmark."""
+    if settings.ngu_canh_tron_tai_lieu:
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        tron = toan_van("vay tín chấp")
+        if tron:
+            return tron
+    if not rag:
+        return ""
+    import asyncio
+    return asyncio.run(rag.retrieve(cau, top_k=2, san_pham="vay tín chấp"))
 
 # Câu hỏi KHÔNG có trong dataset train - đo khả năng khái quát, không phải
 # đo xem model có thuộc lòng data hay không.
@@ -55,7 +67,13 @@ def hoi(model: str, cau: str, system: str, timeout=120) -> tuple[str, float]:
     body = json.dumps({
         "model": model,
         "stream": False,
-        "options": {"temperature": 0.7, "num_ctx": 2048},
+        "think": False,
+        "options": {
+            "temperature": settings.llm_temperature,
+            "num_ctx": settings.llm_num_ctx,
+            "num_predict": settings.llm_max_tokens,
+            "stop": CHUOI_DUNG,
+        },
         "messages": [{"role": "system", "content": system},
                      {"role": "user", "content": cau}],
     }).encode()
@@ -75,16 +93,17 @@ def main():
 
     rag = None
     if dung_rag:
-        from backend.services.rag_service import RAGService
-        rag = RAGService()
-        rag.load()
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        if not (settings.ngu_canh_tron_tai_lieu and toan_van("vay tín chấp")):
+            from backend.services.rag_service import RAGService
+            rag = RAGService()
+            rag.load()
 
     ket_qua, tong_loi, do_tre = [], 0, []
     print(f"=== {model} {'(có RAG)' if dung_rag else '(không RAG)'} ===")
     for cau in CAU_HOI:
         try:
-            import asyncio
-            ctx = asyncio.run(rag.retrieve(cau, top_k=2)) if rag else ""
+            ctx = lay_ngu_canh(rag, cau) if dung_rag else ""
             tl, ms = hoi(model, cau, dung_system(ctx))
         except Exception as e:
             print(f"  LOI: {e}")

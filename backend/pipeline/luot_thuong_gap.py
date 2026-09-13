@@ -61,7 +61,8 @@ BANG = [
      # GÌ ANH NÓI không", rồi LLM đọc thành lời từ chối và đáp "em xin lỗi đã
      # làm phiền ạ". Một câu hỏi thành một lời xin lỗi.
      [r"\bco nghe\b.{0,22}\bkhong\b", r"\bnghe (ro|thay|duoc)\b.{0,25}\bkhong\b",
-      r"\bco ro khong\b", r"\bnghe ro chua\b"],
+      r"\bco ro khong\b", r"\bnghe ro chua\b",
+      r"\bnghe\b.{0,20}\b(anh|chi|toi) noi khong\b"],
      "Dạ em nghe rõ ạ."),
 
     ("ai_day",
@@ -76,6 +77,29 @@ BANG = [
      "Dạ số của anh chị có trong danh sách khách hàng đã đồng ý nhận thông tin "
      "của bên em ạ. Nếu anh chị không muốn nhận nữa, em xin phép ghi nhận để "
      "bên em không liên hệ lại ạ."),
+
+    ("sao_biet_ten",
+     [r"\bsao (em |minh )?(lai )?biet (ten )?(anh|chi|toi)\b",
+      r"\bsao (lai )?goi (dung )?ten\b",
+      r"\bsao em biet ca (anh|chi|toi)\b"],
+     "Dạ hệ thống cuộc gọi có hiển thị tên để em xưng hô cho đúng ạ."),
+
+    ("vi_tri_tu_van",
+     [r"^\s*em (dang )?o dau( nhi|vay|the)?\s*$",
+      r"^\s*(the )?em goi tu dau( vay|the)?\s*$"],
+     "Dạ em đang hỗ trợ anh chị qua điện thoại từ {bank} ạ."),
+
+    ("chua_ro_thong_tin",
+     [r"^\s*tim ra chua\s*$"],
+     "Dạ anh chị đang hỏi thông tin nào ạ?"),
+
+    ("chua_ro_thoi_gian",
+     [r"^\s*lau\s*$"],
+     "Dạ anh chị đang hỏi khoảng thời gian nào ạ?"),
+
+    ("chua_ro_nhu_cau",
+     [r"^\s*em tu van giup (anh|chi|toi).{0,28}con vay ben (minh|em)\s*$"],
+     "Dạ anh chị đang muốn hỏi về khoản vay mới hay khoản vay hiện tại ạ?"),
 
     ("moi_noi_tiep",
      [r"^\s*(u+|ok|okie|duoc|vang|roi)?\s*(thi |thoi )?em noi (di|xem)\b",
@@ -102,9 +126,9 @@ BANG = [
     ("hen_lai",
      [r"\bgoi lai (sau|sau nhe|gio khac|lan sau)\b", r"\bde (anh|chi|toi) xem\b",
       r"\bkhi nao (ranh|can) (thi )?(anh|chi|toi) (goi|bao)\b",
+      r"\bmai (anh|chi|toi) goi lai\b",
       r"\bnhan tin (cho|qua) (anh|chi|toi)\b"],
-     "Dạ vâng ạ. Em cảm ơn anh chị, em xin phép gửi thông tin qua tin nhắn để "
-     "anh chị xem lúc tiện ạ."),
+     "Dạ vâng ạ. Em cảm ơn anh chị, khi nào tiện anh chị gọi lại bên em nhé."),
 
     # Để CUỐI: "alo" trần trụi, sau khi các ý định cụ thể hơn đã xét xong.
     ("chao_bat_may",
@@ -121,7 +145,18 @@ CHAO_GIUA = "Dạ em vẫn nghe anh chị ạ."
 def nhan_dang(text: str) -> str | None:
     """Tên ý định, hoặc None nếu không phải lượt thường gặp."""
     t = _chuan(text)
-    if not t or len(t.split()) > TOI_DA_TU:
+    if not t:
+        return None
+    so_tu = len(t.split())
+    # Hai mẫu chắc chắn dưới đây dài hơn một lượt dò hỏi thông thường. Cho riêng
+    # chúng tới 12 từ; các ý định khác vẫn giữ trần 8 để không chặn nhầm câu có
+    # nội dung thật.
+    if so_tu > TOI_DA_TU:
+        if so_tu <= 12:
+            for ten_dai in ("hen_lai", "chua_ro_nhu_cau"):
+                ten, mau, _ = next(x for x in BANG if x[0] == ten_dai)
+                if any(re.search(m, t) for m in mau):
+                    return ten
         return None
     for ten, mau, _ in BANG:
         if any(re.search(m, t) for m in mau):

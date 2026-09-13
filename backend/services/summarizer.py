@@ -27,6 +27,27 @@ logger = logging.getLogger(__name__)
 NHAN_HOP_LE = ("quan_tam", "khong_quan_tam", "follow")
 PHAN_HOI_HOP_LE = ("tich_cuc", "trung_tinh", "tu_choi")
 
+# Tên tổ chức là dữ kiện định danh, sai một chữ cũng làm báo cáo mất tin cậy.
+# Prompt không đủ giữ qwen khỏi tự đổi "Ngân hàng Quân đội" thành "VCB", nên
+# kiểm chứng đầu ra theo chính bản ghi. Alias cùng một tổ chức được coi là một
+# nhóm; alias thuộc nhóm khác sẽ được thay bằng tên xuất hiện thật trong cuộc.
+_NHOM_TO_CHUC = {
+    "mb": ("Ngân hàng Quân đội", "MBBank", "MB Bank", "MB"),
+    "vcb": ("Ngân hàng Ngoại thương", "Vietcombank", "VCB"),
+    "bidv": ("Ngân hàng Đầu tư và Phát triển", "BIDV"),
+    "vietinbank": ("Ngân hàng Công Thương", "VietinBank"),
+    "techcombank": ("Techcombank", "TCB"),
+    "vpbank": ("VPBank", "VPB"),
+    "tpbank": ("TPBank", "TPB"),
+    "acb": ("ACB",),
+    "vib": ("VIB",),
+    "sacombank": ("Sacombank",),
+    "agribank": ("Agribank",),
+    "hdbank": ("HDBank",),
+    "shb": ("SHB",),
+    "ocb": ("OCB",),
+}
+
 _PROMPT = """Đọc bản ghi cuộc gọi tư vấn dưới đây và tóm tắt.
 
 CHỈ TRẢ VỀ JSON, không thêm lời dẫn, không dùng markdown:
@@ -95,6 +116,68 @@ def _dung_ban_ghi(history: list[dict]) -> str:
     return "\n".join(dong)
 
 
+def _tim_to_chuc(text: str) -> list[tuple[str, str]]:
+    """Trả về ``(nhóm, chữ xuất hiện thật)`` theo thứ tự trong văn bản."""
+    ket: list[tuple[int, str, str]] = []
+    for nhom, aliases in _NHOM_TO_CHUC.items():
+        for alias in aliases:
+            m = re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text or "", re.I)
+            if m:
+                ket.append((m.start(), nhom, m.group(0)))
+                break
+    return [(nhom, chu) for _, nhom, chu in sorted(ket)]
+
+
+def _neo_to_chuc_vao_ban_ghi(tom_tat: str, ban_ghi: str) -> tuple[str, list[str]]:
+    """Sửa alias tổ chức do model tự thêm bằng tên có thật trong bản ghi.
+
+    Trả cả danh sách alias sai để log/test nhìn thấy hàng rào đã can thiệp.
+    Nếu bản ghi không hề có tổ chức nào thì xoá câu chứa tên bịa sẽ dễ làm câu
+    hỏng ngữ pháp; trường hợp đó để caller dùng bản tóm tắt trích xuất an toàn.
+    """
+    trong_ban_ghi = _tim_to_chuc(ban_ghi)
+    trong_tom_tat = _tim_to_chuc(tom_tat)
+    nhom_that = {nhom for nhom, _ in trong_ban_ghi}
+    sai = [chu for nhom, chu in trong_tom_tat if nhom not in nhom_that]
+    if not sai:
+        return tom_tat, []
+    if len(nhom_that) != 1:
+        return "", sai
+
+    ten_that = trong_ban_ghi[0][1]
+    da_sua = tom_tat
+    for chu in sai:
+        # Model hay viết cả "VCB Bank" hoặc "Ngân hàng VCB". Chỉ thay ba chữ
+        # VCB sẽ tạo câu lai "Ngân hàng Quân đội Bank"; thay trọn cụm định danh
+        # để đầu ra đúng nguyên văn tên có trong bản ghi.
+        da_sua = re.sub(
+            rf"(?<!\w)(?:Ngân hàng\s+)?{re.escape(chu)}(?:\s+Bank)?(?!\w)",
+            ten_that, da_sua,
+            flags=re.I,
+        )
+    return da_sua, sai
+
+
+def _tom_tat_trich_xuat(history: list[dict]) -> str:
+    """Bản dự phòng chỉ ghép chữ đã có, tuyệt đối không phát minh thực thể."""
+    khach = [
+        (turn.get("content") or "").strip().rstrip(".?!")
+        for turn in history if turn.get("role") == "user"
+        and (turn.get("content") or "").strip()
+    ]
+    tu_van = [
+        (turn.get("content") or "").strip().rstrip(".?!")
+        for turn in history if turn.get("role") == "assistant"
+        and (turn.get("content") or "").strip()
+    ]
+    cac = []
+    if khach:
+        cac.append("Khách đã trao đổi: " + "; ".join(khach[-3:]) + ".")
+    if tu_van:
+        cac.append("Tư vấn đã trả lời: " + "; ".join(tu_van[-3:]) + ".")
+    return " ".join(cac)
+
+
 async def tom_tat_phien(session_id: str, llm) -> dict | None:
     """Tóm tắt một phiên đã lưu. Trả về dict đã lưu, hoặc None nếu bỏ qua."""
     phien = await db.get_session(session_id)
@@ -125,6 +208,17 @@ async def tom_tat_phien(session_id: str, llm) -> dict | None:
     sach = _lam_sach(data)
     if not sach["tom_tat"]:
         return None
+
+    tom_tat_da_neo, to_chuc_sai = _neo_to_chuc_vao_ban_ghi(
+        sach["tom_tat"], ban_ghi)
+    if to_chuc_sai:
+        logger.warning(
+            "[tóm tắt] %s: chặn tên tổ chức không có trong bản ghi: %s",
+            session_id, ", ".join(to_chuc_sai),
+        )
+        sach["tom_tat"] = tom_tat_da_neo or _tom_tat_trich_xuat(
+            phien.get("history") or [])
+        sach["da_chan_to_chuc_bia"] = to_chuc_sai
 
     await reports_db.save_summary(session_id, sach["tom_tat"], sach)
     logger.info(f"[tóm tắt] {session_id}: {sach['phan_hoi']} — {sach['tom_tat'][:60]}")

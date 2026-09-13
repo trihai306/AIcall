@@ -1,12 +1,11 @@
-"""Đổi chữ số trong dataset train thành chữ tiếng Việt.
+"""TIỆN ÍCH LEGACY: đổi chữ số trong dataset train thành chữ tiếng Việt.
 
-Vì sao cần: system prompt lúc chạy thật bắt "viết số thành chữ khi nói tiền,
-ngày tháng" - vì đây là hệ thống gọi điện, TTS đọc "6.5%" ra sẽ sai. Nhưng model
-học theo DATA chứ không theo system prompt: dataset còn chữ số thì model sinh ra
-chữ số, và system prompt có ép cỡ nào cũng thua.
+KHÔNG dùng script này cho pipeline LLM hiện tại. Runtime hiện giữ chữ số trong
+đầu ra LLM để tầng chuẩn hoá/TTS xử lý thống nhất; đổi dataset sang chữ sẽ dạy
+ngược với CORE_RULES trong backend/services/llm_service.py.
 
-Đo được trên dataset 284 mẫu: 48 mẫu (17%) còn chữ số, và model train từ đó
-tụt từ 7/8 xuống 3/8 điểm phong cách so với bản dataset sạch số.
+Script được giữ lại để tái hiện/tham khảo thí nghiệm cũ khi hệ thống còn yêu cầu
+model tự viết số thành chữ.
 
     python training/llm/so_thanh_chu.py --vao data/training/x.jsonl --xem-truoc
     python training/llm/so_thanh_chu.py --vao data/training/x.jsonl --ra data/training/x_sach.jsonl

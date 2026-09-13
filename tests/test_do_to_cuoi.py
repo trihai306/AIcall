@@ -54,7 +54,16 @@ def test_thuoc_do_dung_chuan_bs1770():
 
 def test_moi_manh_ra_cung_mot_do_to_du_khac_pho_va_khac_muc():
     sr = 8000
-    vao = (tieng(sr, 1500) * 6.0, tieng(sr, 1500, sang=True) * 0.8, tieng(sr, 600, seed=3) * 2.0)
+    # Đường thật đã được `chuan_muc_thoai` đưa về gần mức đích. Giữ mẫu trong
+    # vùng đó: `can_do_to_cuoi` cố ý chỉ bù tối đa 20 dB để không biến tạp âm
+    # hoặc đầu vào hỏng thành tiếng đầy thang.
+    mau = (tieng(sr, 1500), tieng(sr, 1500, sang=True), tieng(sr, 600, seed=3))
+    muc_vao = (settings.phone_muc_dbfs - 5, settings.phone_muc_dbfs + 3,
+               settings.phone_muc_dbfs + 7)
+    vao = tuple(
+        x * np.float32(10 ** ((muc - do_to_lufs(x, sr)) / 20))
+        for x, muc in zip(mau, muc_vao)
+    )
     ra = [do_to_lufs(pcs.can_do_to_cuoi(x, sr), sr) for x in vao]
     assert max(ra) - min(ra) <= 0.2, ra
     assert abs(np.mean(ra) - settings.phone_muc_dbfs) <= 0.2, ra

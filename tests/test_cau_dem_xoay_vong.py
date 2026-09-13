@@ -39,6 +39,22 @@ def _dich_vu():
     return svc, kho
 
 
+def _dich_vu_co_nhom_chung(ms_chu_de=(1100, 1250, 1000),
+                            ms_chung=(1990, 2030, 2217)):
+    svc, kho_cu = _dich_vu()
+    svc._filler_cache, svc._filler_ms = {}, {}
+    chung = ("Dạ vâng,", "Vâng ạ,", "Dạ vâng ạ,")
+    for th, cac_ms in (("hoi_han_muc", ms_chu_de), ("chung", ms_chung)):
+        for i, ms in enumerate(cac_ms):
+            k = ("g", th, i, "")
+            svc._filler_cache[k], svc._filler_ms[k] = _wav(ms), float(ms)
+    kho = types.SimpleNamespace(duoi=(), tinh_huong=(
+        types.SimpleNamespace(id="hoi_han_muc", mo_dau=MO_DAU),
+        types.SimpleNamespace(id="chung", mo_dau=chung),
+    ))
+    return svc, kho
+
+
 def test_ba_luot_cung_chu_de_ra_ba_cau_mo_dau_khac_nhau():
     """Cả ba clip đều ngắn hơn quãng cần che 2000ms - đúng tình trạng máy thật."""
     svc, kho = _dich_vu()
@@ -67,3 +83,33 @@ def test_dem_luot_dung_chi_o_mot_cho():
     from backend.pipeline.streaming_pipeline import StreamingPipeline
     src = inspect.getsource(StreamingPipeline._send_filler)
     assert "dem[id_duoi]" not in src, "_send_filler còn tự đếm theo id_duoi"
+
+
+def test_chu_de_ngan_thi_roi_sang_nhom_chung_du_dai():
+    """Số đo máy thật: hạn mức <=1,25s, nhóm chung gần 2-2,22s."""
+    svc, kho = _dich_vu_co_nhom_chung()
+    _, _, th = svc.pick_filler(kho, "g", min_ms=1800, dem={},
+                               id_tinh_huong="hoi_han_muc")
+    assert th == "chung"
+
+
+def test_chu_de_du_dai_van_duoc_uu_tien():
+    svc, kho = _dich_vu_co_nhom_chung(ms_chu_de=(1900, 2050, 2200))
+    _, _, th = svc.pick_filler(kho, "g", min_ms=1800, dem={},
+                               id_tinh_huong="hoi_han_muc")
+    assert th == "hoi_han_muc"
+
+
+def test_khong_nhom_nao_du_thi_chi_xoay_cac_cau_gan_dai_nhat():
+    svc, kho = _dich_vu_co_nhom_chung()
+    dem, nghe = {}, []
+    for _ in range(6):
+        svc.pick_filler(kho, "g", min_ms=2700, dem=dem,
+                        id_tinh_huong="hoi_han_muc")
+        nghe.append(svc._filler_text_cuoi)
+    assert len(set(nghe[:3])) == 3
+    assert set(nghe) == {
+        "Dạ vâng,",
+        "Vâng ạ,",
+        "Dạ vâng ạ,",
+    }

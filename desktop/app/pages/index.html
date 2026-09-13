@@ -107,13 +107,13 @@
       <div class="page-header"><h2>Benchmark</h2><p>Đo latency từng module AI</p></div>
       <div class="bench-grid">
         <div class="bench-card" id="benchSTT">
-          <h3>STT (Whisper)</h3>
+          <h3>STT</h3>
           <p>Nhận dạng giọng nói</p>
           <button class="btn btn-primary" onclick="runBench('stt')">Run Test</button>
           <pre class="bench-result" id="resultSTT">-</pre>
         </div>
         <div class="bench-card" id="benchLLM">
-          <h3>LLM (Qwen2.5)</h3>
+          <h3>LLM</h3>
           <p>Sinh câu trả lời</p>
           <button class="btn btn-primary" onclick="runBench('llm')">Run Test</button>
           <pre class="bench-result" id="resultLLM">-</pre>
@@ -143,10 +143,8 @@
       <div class="settings-grid">
         <div class="setting-group">
           <h3>LLM Model</h3>
-          <select id="settingModel">
-            <option value="qwen2.5:3b">Qwen2.5-3B (Nhanh)</option>
-            <option value="qwen2.5:7b">Qwen2.5-7B (Chất lượng)</option>
-            <option value="qwen3:4b">Qwen3-4B (Thinking)</option>
+          <select id="settingModel" disabled>
+            <option value="qwen3.5:9b">Qwen3.5-9B (cấu hình production)</option>
           </select>
         </div>
         <div class="setting-group">

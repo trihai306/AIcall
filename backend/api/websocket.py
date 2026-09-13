@@ -3,6 +3,7 @@ import base64
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from backend.config import settings
 from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
@@ -39,17 +40,18 @@ def _ham_llm(llm):
     WebSocket không có quãng đó nên trước giờ KHÔNG hâm gì, và toàn bộ giá nguội
     rơi vào lượt khách hỏi đầu tiên.
 
-    Hâm CẢ HAI hình dạng: lệnh thường và lệnh có `tools`. Chúng khác nhau nên
-    hâm cái nọ không làm ấm cái kia - đo 08-08: lượt quyết định công cụ đầu tiên
-    của mỗi cuộc tốn ~2700ms trong khi các lượt sau chỉ 115-600ms.
+    Chỉ hâm hình dạng có `tools` khi ứng dụng còn dùng LLM định tuyến. Ở chế độ
+    đưa trọn tài liệu vào prompt, bộ định tuyến LLM đã được bỏ; tiếp tục hâm nó
+    vừa vô ích vừa tranh GPU với câu đầu khách gửi ngay sau khi mở WebSocket.
     """
     async def run():
         try:
-            from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
             async for _ in llm.stream_response(
                     [{"role": "user", "content": "xin chào"}], "Trả lời đúng một từ."):
                 break
-            await ham_luot_quyet_dinh(llm)
+            if not settings.ngu_canh_tron_tai_lieu:
+                from backend.pipeline.cong_cu_llm import ham_luot_quyet_dinh
+                await ham_luot_quyet_dinh(llm)
             logger.info("Đã hâm nóng LLM cho phiên trang Hội thoại")
         except Exception as e:
             logger.debug("Hâm LLM cho phiên bỏ qua: %s", e)
@@ -171,9 +173,12 @@ async def websocket_call(websocket: WebSocket, session_id: str):
 
     await websocket.accept()
     logger.info(f"WebSocket connected: session={session_id}")
-    # Hâm ngay khi mở phiên, đừng đợi khách gõ/nói. Người dùng còn phải bấm nút
-    # và nói câu đầu, nên đây là khoảng rảnh y như lúc đổ chuông bên đường thoại.
-    _ham_llm(app_state.llm)
+    # Chế độ RAG cũ còn dùng một lượt LLM định tuyến nên phải hâm hình dạng đó.
+    # Chế độ trọn tài liệu đã hâm model một lần ở startup và ghim nó bằng
+    # keep_alive=-1. Hâm lại trên MỖI WebSocket sẽ tranh GPU đúng lúc người dùng
+    # gửi câu đầu; đo qwen3.5:9b thấy câu đầu 1021ms, hai phiên sau 764-784ms.
+    if not settings.ngu_canh_tron_tai_lieu:
+        _ham_llm(app_state.llm)
 
     session = app_state.sessions.get(session_id)
     # Trình duyệt xin đúng phiên cũ và phiên đó còn sống -> nối lại, kèm lịch sử

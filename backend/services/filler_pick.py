@@ -7,6 +7,13 @@ import re
 # đẩy câu trả lời thật lùi lại một cách vô ích.
 NOI_RONG_MS = 800.0
 
+# Khi không câu nào đủ dài, chỉ xoay vòng trong nhóm gần câu dài nhất. Nếu cân
+# bằng lượt dùng trên TOÀN BỘ nhóm như trước, sau khi phát câu 2,2 giây hệ thống
+# sẽ cố "công bằng" bằng một câu 0,5 giây ở lượt sau và trả lại nguyên quãng im
+# mà câu đệm sinh ra để che. 300ms vẫn đủ giữ vài biến thể để tránh lặp, nhưng
+# không đổi độ phủ một cách nghe thấy rõ giữa các lượt.
+GAN_DAI_NHAT_MS = 300.0
+
 
 # Nhân vào độ trễ quá khứ trước khi chọn câu đệm. KHÔNG có biên thì hụt ngay khi
 # lượt này chậm hơn mấy lượt trước - mà TTFA dao động rất rộng, đo được 678-1978ms
@@ -122,11 +129,11 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
     Ba tầng, rơi dần:
       1. Vừa khít: độ dài trong [min_ms, min_ms + NOI_RONG_MS]
       2. Đủ dài: độ dài >= min_ms
-      3. Không câu nào đủ -> câu DÀI NHẤT (làm quãng lặng ngắn nhất có thể)
+      3. Không câu nào đủ -> xoay trong các câu cách câu dài nhất <=300ms
 
     Trong mỗi tầng, chỉ xét nhóm có SỐ ĐẾM NHỎ NHẤT rồi bốc ngẫu nhiên trong
-    đó. Nhờ vậy nhóm 10 câu bảo đảm dùng hết 10 câu mới lặp lại câu đầu - chắc
-    chắn, không phải xác suất như cách "tránh 3 câu vừa dùng" trước đây.
+    đó. Nhờ vậy các câu có độ phủ tương đương được dùng hết một vòng mới lặp,
+    nhưng hệ thống không hy sinh 1-1,5 giây độ phủ chỉ để dùng cho đủ câu ngắn.
     """
     if not ung_vien:
         return None
@@ -144,7 +151,9 @@ def chon(ung_vien: list[tuple[str, float]], min_ms: float,
     if du_dai:
         return r.choice(it_dung_nhat(du_dai))[0]
 
-    return max(it_dung_nhat(ung_vien), key=lambda x: x[1])[0]
+    dai_nhat = max(ms for _, ms in ung_vien)
+    gan_dai_nhat = [x for x in ung_vien if x[1] >= dai_nhat - GAN_DAI_NHAT_MS]
+    return r.choice(it_dung_nhat(gan_dai_nhat))[0]
 
 
 

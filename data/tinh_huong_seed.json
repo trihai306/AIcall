@@ -1,6 +1,22 @@
 {
   "tinh_huong": [
     {
+      "id": "chung",
+      "ten": "Nhóm câu chung (dùng khi không rõ chủ đề)",
+      "vi_du": [
+        "câu này không dùng để chấm điểm",
+        "nhóm chung là đường rơi cuối"
+      ],
+      "tu_khoa": [],
+      "mo_dau": [
+        "Dạ,",
+        "Dạ vâng,",
+        "Vâng ạ,",
+        "Dạ vâng ạ,"
+      ],
+      "speed": null
+    },
+    {
       "id": "hoi_lai_suat",
       "ten": "Khách hỏi lãi suất",
       "vi_du": [

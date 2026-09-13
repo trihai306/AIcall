@@ -11,6 +11,11 @@ $F5DIR   = "$PROJECT\tools\F5-TTS-Vietnamese"
 $TTSDIR  = "$PROJECT\models\tts\F5-TTS-Vietnamese-ViVoice"
 $PHODIR  = "$PROJECT\models\phowhisper"
 $CT2DIR  = "$PHODIR\PhoWhisper-small-ct2"
+$SttEngine = "phowhisper"
+if (Test-Path "$PROJECT\.env") {
+    $sttLine = Select-String -Path "$PROJECT\.env" -Pattern '^\s*STT_ENGINE\s*=\s*(.+?)\s*$' -EA SilentlyContinue
+    if ($sttLine) { $SttEngine = $sttLine.Matches[0].Groups[1].Value.Trim().ToLower() }
+}
 
 function Step($n, $msg) {
     Write-Output ""
@@ -56,20 +61,29 @@ Step 4 "faster-whisper / ctranslate2 / transformers / huggingface_hub"
 & $PY @PIP huggingface_hub faster-whisper "ctranslate2>=4.5" transformers
 Write-Output "[EXIT] $LASTEXITCODE"
 
-# ---------- 5. PhoWhisper -> CTranslate2 (int8_float16 vi co CUDA) ----------
-Step 5 "PhoWhisper CT2"
-if (Test-Path "$CT2DIR\model.bin") {
-    Write-Output "[SKIP] CT2 model da co"
-} else {
-    New-Item -ItemType Directory -Force -Path $PHODIR | Out-Null
-    $conv = "$PROJECT\.venv\Scripts\ct2-transformers-converter.exe"
-    if (-not (Test-Path $conv)) { $conv = "$PROJECT\.venv\Scripts\ct2-transformers-converter" }
-    & $conv --model vinai/PhoWhisper-small --output_dir $CT2DIR --quantization int8_float16 --copy_files tokenizer.json preprocessor_config.json
-    if ($LASTEXITCODE -ne 0) {
-        Write-Output "[RETRY] khong copy_files"
-        & $conv --model vinai/PhoWhisper-small --output_dir $CT2DIR --quantization int8_float16
+# ---------- 5. STT theo STT_ENGINE ----------
+if ($SttEngine -eq "gipformer") {
+    Step 5 "Gipformer 1.5 65M FP32"
+    & $PY @PIP -r "$PROJECT\whisper_server\requirements-gipformer.txt"
+    if ($LASTEXITCODE -eq 0) {
+        & $PY "$PROJECT\scripts\install\02_gipformer.py"
     }
     Write-Output "[EXIT] $LASTEXITCODE"
+} else {
+    Step 5 "PhoWhisper CT2"
+    if (Test-Path "$CT2DIR\model.bin") {
+        Write-Output "[SKIP] CT2 model da co"
+    } else {
+        New-Item -ItemType Directory -Force -Path $PHODIR | Out-Null
+        $conv = "$PROJECT\.venv\Scripts\ct2-transformers-converter.exe"
+        if (-not (Test-Path $conv)) { $conv = "$PROJECT\.venv\Scripts\ct2-transformers-converter" }
+        & $conv --model vinai/PhoWhisper-small --output_dir $CT2DIR --quantization int8_float16 --copy_files tokenizer.json preprocessor_config.json
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "[RETRY] khong copy_files"
+            & $conv --model vinai/PhoWhisper-small --output_dir $CT2DIR --quantization int8_float16
+        }
+        Write-Output "[EXIT] $LASTEXITCODE"
+    }
 }
 
 # ---------- 6. F5-TTS ViVoice checkpoint (~5.4GB) ----------
@@ -89,7 +103,7 @@ if ((Test-Path "$TTSDIR\config.json") -and (-not (Test-Path "$TTSDIR\vocab.txt")
 # ---------- 7. Ollama model ----------
 Step 7 "Ollama model (theo OLLAMA_MODEL trong .env)"
 $envModel = (Select-String -Path "$PROJECT\.env" -Pattern '^OLLAMA_MODEL=(.+)$' | ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() })
-if (-not $envModel) { $envModel = "qwen2.5:3b" }
+if (-not $envModel) { $envModel = "qwen3.5:9b" }
 Write-Output "Model can co: $envModel"
 $have = (ollama list 2>$null | Out-String)
 if ($have -match [regex]::Escape($envModel)) {

@@ -14,13 +14,14 @@ báo cáo. Kịch bản thay được từ giao diện nên mở sang ngành kh�
 | Module | Tech | Latency Target |
 |--------|------|----------------|
 | VAD | Silero VAD (CPU) | endpoint 220ms |
-| STT | **PhoWhisper-small** (VinAI, faster-whisper CT2) | ~90ms |
-| LLM | Ollama + **Vistral-7B-Chat** (Viet-Mistral, Q4) | TTFT ~70ms |
-| TTS | F5-TTS-Vietnamese-ViVoice, **fine-tune giọng riêng** | chunk đầu ~130ms (nfe=8) |
+| STT | **Gipformer 1.5 65M FP32** (CPU, production) / PhoWhisper fallback | ~45-55ms đã đo; chất lượng cần transcript gán nhãn để chấm WER |
+| LLM | Ollama + **Qwen 3.5 9B** (mặc định hiện tại) | đo trên máy chạy bằng tab Benchmark |
+| TTS | F5-TTS-Vietnamese-ViVoice, **fine-tune giọng riêng** | nfe=16 mặc định |
 | RAG | ChromaDB + bge-m3 (CPU) | ~100ms |
 | **TTFA** | **Streaming pipeline + filler tức thì** | **~500-650ms** |
 
-VRAM trên GPU 12GB (RTX 5070): PhoWhisper ~0.8GB + Vistral Q4 ~5.2GB + F5-TTS ~2.5GB ≈ 8.5GB + KV cache.
+Máy production hiện nhắm GPU 12GB (RTX 5070). LLM, STT và TTS cùng chia VRAM;
+hãy dùng tab Benchmark và log startup để kiểm tra cấu hình/model đang chạy thật.
 
 ## Supported Platforms
 
@@ -59,13 +60,15 @@ bash scripts/start_services.sh
 
 Nếu backend chạy được mà thiếu model, mở tab **Cài Model** trong web UI:
 kiểm tra model nào còn thiếu, bấm cài từng cái (hoặc "Cài tất cả còn thiếu"),
-xem log tải trực tiếp, rồi bật dịch vụ Ollama / PhoWhisper ngay tại đó.
+xem log tải trực tiếp, rồi bật dịch vụ cần thiết ngay tại đó. Gipformer chạy
+trong backend nên không có server STT riêng; PhoWhisper mới dùng cổng `:8178`.
 Tương đương chạy tay:
 
 | Model | Script |
 |-------|--------|
 | Ollama | `bash scripts/install/03_ollama.sh` |
-| LLM (`OLLAMA_MODEL` trong .env) | `ollama pull qwen2.5:3b` |
+| LLM (`OLLAMA_MODEL` trong .env) | `ollama pull qwen3.5:9b` |
+| STT Gipformer (khi `STT_ENGINE=gipformer`) | `python scripts/install/02_gipformer.py` |
 | STT PhoWhisper | `bash scripts/install/02_pho_whisper.sh` |
 | TTS F5-TTS ViVoice | `bash scripts/install/07_tts_model.sh` |
 
@@ -98,9 +101,10 @@ Chi tiết (khi nào nên/không nên fine-tune, format data): [training/llm/REA
 ## App desktop trên Windows (VoiceBank-AI.exe)
 
 Bấm đúp `C:\duan\chat-ai\VoiceBank-AI.exe`. App tự chạy `scripts/start_services.ps1
--Detached -Port 8100` (Ollama + PhoWhisper :8178 + backend :8100, kèm khoá xung GPU
-và `OLLAMA_KEEP_ALIVE=-1`), hiện màn chờ có trạng thái từng dịch vụ, rồi vào giao diện
-khi TTS nạp xong (~2-3 phút ở lần chạy nguội).
+-Detached -Port 8100` (Ollama + STT đã chọn + backend :8100, kèm khoá xung GPU
+và `OLLAMA_KEEP_ALIVE=-1`). Với Gipformer, STT nạp ngay trong backend; chỉ khi
+`STT_ENGINE=phowhisper` mới cần server `:8178`. App vào giao diện khi TTS nạp xong
+(~2-3 phút ở lần chạy nguội).
 
 **File exe phải nằm trong thư mục dự án**, cạnh `backend/` và `.venv/`. Chép đi chỗ khác
 là app không tìm thấy gì và vào trang lỗi — muốn bấm từ Desktop thì tạo **lối tắt**, đừng
@@ -122,7 +126,7 @@ Copy-Item ..\dist\VoiceBank-AI.exe ..\VoiceBank-AI.exe -Force
 ```
 
 Kiểm tra sau khi chạy: `powershell -ExecutionPolicy Bypass -File scripts\kiem_tra_app.ps1`
-(in tiến trình, `/api/health`, PhoWhisper, xung GPU).
+(in tiến trình, `/api/health`, STT đang chọn, xung GPU).
 
 ## Manual Start (step by step)
 
@@ -130,9 +134,9 @@ Kiểm tra sau khi chạy: `powershell -ExecutionPolicy Bypass -File scripts\kie
 # Terminal 1: Ollama
 ollama serve
 
-# Terminal 2: PhoWhisper STT server
+# Terminal 2: chỉ cần nếu STT_ENGINE=phowhisper
 bash whisper_server/start.sh
-# (fallback whisper.cpp: bash whisper_server/start.sh legacy small)
+# STT_ENGINE=gipformer nạp STT trong FastAPI, không cần terminal STT riêng.
 
 # Terminal 3: FastAPI app
 source .venv/bin/activate
