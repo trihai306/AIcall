@@ -82,3 +82,8 @@ def test_neo_TRUOC_khi_nap_tron_tai_lieu():
     from backend.pipeline import streaming_pipeline
     ma = inspect.getsource(streaming_pipeline)
     assert ma.index("neo_moi_tu_cau") < ma.index("_toan_van_tai_lieu(session.product)")
+
+
+def test_nghe_nham_tinh_chap_van_neo_vay_tin_chap():
+    assert RAGService.neo_moi_tu_cau(
+        "chị hỏi chút độ tuổi vay vay tính chấp là bao nhiêu em", CO_TAI_LIEU) == "vay tín chấp"

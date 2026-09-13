@@ -30,6 +30,8 @@ TEN: dict[str, str] = {
     "bao_hiem": "bảo hiểm",
     "chung_khoan": "chứng khoán",
     "ngoai_te": "ngoại tệ",
+    "vay_kinh_doanh": "vay kinh doanh",
+    "vay_mua_xe": "vay mua xe",
 }
 
 # Cụm nhận ra sản phẩm trong câu ĐÃ BỎ DẤU. Dài trước ngắn để "vay tin chap" khớp
@@ -40,6 +42,10 @@ _CUM: list[tuple[str, str]] = [
     ("the_tin_dung", r"the tin dung"),
     ("tiet_kiem", r"gui tiet kiem|tiet kiem"),
     ("bao_hiem", r"bao hiem"),
+    # Khách hay hỏi mà kho không có: mô hình từng bịa "vay tín chấp hỗ trợ kinh
+    # doanh 500 triệu" cho câu "có cho vay kinh doanh không" (bộ thử 10k).
+    ("vay_kinh_doanh", r"vay (?:von )?kinh doanh"),
+    ("vay_mua_xe", r"vay mua (?:xe|o to|oto)"),
     ("chung_khoan", r"chung khoan"),
     ("ngoai_te", r"doi ngoai te|ngoai te|doi tien"),
 ]
@@ -99,7 +105,12 @@ def tra_loi(text: str, ma_co_tai_lieu: set[str] | None,
     # 1) "có X không" - X là một sản phẩm cụ thể.
     for ma, cum in _CUM:
         m = re.search(rf"\bco\s+{_DEM_CO}(?:{cum}){_DUOI_CO}", t)
-        if m and re.search(r"\b(?:khoan vay|goi vay|khi vay|the|vay)\b", t[:m.start()]):
+        # Xét trên bản CÒN DẤU: bỏ dấu thì "thế có bán bảo hiểm không" (thế đệm
+        # đầu câu) thành "the" y như "thẻ", và câu hỏi danh mục bị bỏ qua.
+        goc = unicodedata.normalize("NFC", (text or "").lower())
+        m_co = re.search(r"\bcó\b", goc)
+        truoc_co = goc[:m_co.start()] if m_co else ""
+        if m and re.search(r"khoản vay|gói vay|khi vay|\bthẻ\b|\bvay\b", truoc_co):
             # "vay tín chấp CÓ BẢO HIỂM không" hỏi THUỘC TÍNH của khoản vay,
             # không hỏi bên em có bán bảo hiểm - trả "chưa có sản phẩm bảo
             # hiểm" là trả lời trớt.

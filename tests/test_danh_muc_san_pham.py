@@ -107,3 +107,22 @@ def test_ten_khop_bang_tu_khoa_cua_rag():
 def test_hoi_bao_hiem_cua_khoan_vay_khong_phai_hoi_san_pham(cau):
     """Hỏi THUỘC TÍNH khoản vay, không hỏi bên em có bán bảo hiểm."""
     assert tra_loi(cau, KHO) is None
+
+
+@pytest.mark.parametrize("cau", [
+    "thế có bán bảo hiểm không em vậy",
+    "thế bên em có bảo hiểm không",
+])
+def test_the_dem_dau_cau_khong_phai_the_tin_dung(cau):
+    """Bộ thử 10k: "thế" bỏ dấu thành "the" giống "thẻ" nên bị coi là hỏi thẻ."""
+    got = tra_loi(cau, KHO)
+    assert got and got[0] == "chua_co_san_pham"
+
+
+@pytest.mark.parametrize("cau, ten", [
+    ("cho chị hỏi là có cho vay kinh doanh không thế", "vay kinh doanh"),
+    ("bên em có vay mua xe không", "vay mua xe"),
+])
+def test_san_pham_ngan_hang_khong_ban(cau, ten):
+    got = tra_loi(cau, KHO)
+    assert got and got[0] == "chua_co_san_pham" and ten in got[1]

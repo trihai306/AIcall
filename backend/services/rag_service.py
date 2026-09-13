@@ -265,7 +265,10 @@ class RAGService:
         ("bao_hiem", ("bảo hiểm",)),
         ("chung_khoan", ("chứng khoán",)),
         ("ngoai_te", ("ngoại tệ", "đổi tiền")),
-        ("vay_tin_chap", ("vay tín chấp", "tín chấp")),
+        # "tính chấp": nghe nhầm thật của STT. Bộ thử 10k (13-09): "độ tuổi vay
+        # tính chấp là bao nhiêu" không neo được sản phẩm, rơi xuống mô hình
+        # KHÔNG có tài liệu -> "chưa có thông tin về độ tuổi".
+        ("vay_tin_chap", ("vay tín chấp", "tín chấp", "tính chấp")),
         ("vay_mua_nha", ("vay mua nhà", "mua bất động sản")),
         ("the_tin_dung", ("thẻ tín dụng",)),
     ]
