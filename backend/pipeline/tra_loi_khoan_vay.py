@@ -665,9 +665,17 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
                 f"Dạ lãi suất của gói vay là {gia_tri} ạ."
             )
 
-    if (re.search(r"\bgiai ngan\b", t)
-            and re.search(r"\b(bao lau|khi nao|may ngay|may gio)\b", t)):
-        gia_tri = _gia_tri_dong(tai_lieu, "giải ngân")
+    # "khi nào thì có tiền" là hỏi giải ngân (bộ thử 10k #3380: mô hình đáp
+    # "chưa có thông tin về thời gian giải ngân" dù tài liệu ghi 24 giờ).
+    # "khi nào có tiền anh trả" thì không: có trả/đóng/gửi là chuyện khác.
+    hoi_co_tien = bool(re.search(
+        r"\b(khi nao|bao lau|bao gio|may ngay|may gio)\b.{0,16}\b(co tien|nhan (?:duoc )?tien|"
+        r"lay (?:duoc )?tien|ra tien|tien ve)\b|"
+        r"\b(co tien|nhan (?:duoc )?tien|tien ve)\b.{0,12}\b(khi nao|bao lau|bao gio|may ngay)\b", t)
+    ) and not re.search(r"\b(tra|dong|gui|nop)\b", t)
+    if ((re.search(r"\bgiai ngan\b", t)
+            and re.search(r"\b(bao lau|khi nao|may ngay|may gio)\b", t)) or hoi_co_tien):
+        gia_tri = _gia_tri_dong(sp_doc, "giải ngân")
         if gia_tri:
             return "thoi_gian_giai_ngan", f"Dạ bên em giải ngân {gia_tri} ạ."
 

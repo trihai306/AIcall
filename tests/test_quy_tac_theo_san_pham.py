@@ -235,3 +235,19 @@ def test_the_vay_tra_gop_van_khong_dung_luat_the():
 def test_lai_may_phan_tram_la_hoi_lai_suat(tl, cau, can):
     got = tra_loi(cau, tl)
     assert got and got[0] == "lai_suat_san_pham" and can in got[1], got
+
+
+@pytest.mark.parametrize("cau", [
+    "khi nào thì có tiền thế",
+    "vay tín chấp bao lâu thì nhận được tiền",
+    "có tiền trong bao lâu em",
+])
+def test_khi_nao_co_tien_la_hoi_giai_ngan(cau):
+    """Bộ thử 10k #3380: mô hình đáp "chưa có thông tin về thời gian giải ngân"."""
+    got = tra_loi(cau, TC)
+    assert got and got[0] == "thoi_gian_giai_ngan" and "24 giờ" in got[1], got
+
+
+def test_khi_nao_co_tien_de_tra_khong_phai_giai_ngan():
+    got = tra_loi("khi nào có tiền thì anh trả nợ trước hạn được không", TC)
+    assert not got or got[0] != "thoi_gian_giai_ngan"

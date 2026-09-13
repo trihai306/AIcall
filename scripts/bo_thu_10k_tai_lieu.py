@@ -238,7 +238,8 @@ NGAN_HANG: list[tuple[str, str, str, list[str], list[str]]] = [
      [r"không (yêu cầu|cần)|chỉ cần (cmnd|cccd|căn cước)"]),
     ("tiet_kiem", "ky_han", "fact",
      ["{sp} có những kỳ hạn nào", "gửi tiết kiệm được mấy tháng"],
-     [r"1.{0,12}36|không kỳ hạn|36 ?tháng"]),
+     # Mô hình hay đọc bằng chữ: "từ một đến ba mươi sáu tháng" là đúng.
+     [r"1.{0,12}36|không kỳ hạn|36 ?tháng|ba mươi sáu tháng"]),
     ("tiet_kiem", "uu_dai", "fact",
      ["{sp} có ưu đãi gì không"], [r"miễn phí|bảo hiểm tai nạn|100 ?triệu"]),
     ("tiet_kiem", "che_lai", "che",
