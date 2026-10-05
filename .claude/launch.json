@@ -4,8 +4,25 @@
     {
       "name": "chat-ai-backend",
       "runtimeExecutable": ".venv/bin/python",
-      "runtimeArgs": ["-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "backend.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
       "port": 8000
+    },
+    {
+      "name": "giao-dien-tinh",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "scripts/xem_giao_dien_tinh.py",
+        "8431"
+      ],
+      "port": 8431
     }
   ]
 }

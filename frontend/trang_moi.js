@@ -1429,6 +1429,12 @@ let msgDangCho = false;
 let msgOTraLoi = null;        // <div> câu trả lời đang chảy về
 let msgChuoiTraLoi = '';
 let msgDaGanPhim = false;
+let msgScenarioUserChosen = false;
+let msgProductUserChosen = false;
+let msgDangNoi = false;
+let msgSessionReady = false;
+let msgConfigInFlight = false;
+let msgConfigQueued = false;
 
 function msgTrangThai(chu, mau = 'text-gray-600') {
   const el = document.getElementById('msgTrangThai');
@@ -1436,7 +1442,13 @@ function msgTrangThai(chu, mau = 'text-gray-600') {
 }
 
 function initMessaging() {
-  msgNoi();
+  if (msgWs?.readyState === WebSocket.OPEN) {
+    // Mở lại trang: xác nhận lại đúng cấu hình đang thấy rồi mới cho gửi.
+    msgGuiCauHinh();
+  } else {
+    msgSetSessionReady(false);
+    msgNoi();
+  }
   msgNapToc();
   if (!msgDaGanPhim) {
     const o = document.getElementById('msgInput');
@@ -1448,37 +1460,90 @@ function initMessaging() {
   setTimeout(() => document.getElementById('msgInput')?.focus(), 50);
 }
 
-function msgNoi() {
+async function msgNoi() {
   if (msgWs && (msgWs.readyState === WebSocket.OPEN || msgWs.readyState === WebSocket.CONNECTING)) return;
+  if (msgDangNoi) return;
+  msgDangNoi = true;
+  if (typeof loadConversationScenarios === 'function') await loadConversationScenarios();
   const giaoThuc = location.protocol === 'https:' ? 'wss:' : 'ws:';
   // Nối lại bằng ĐÚNG session cũ: mất mạng giữa chừng mà xin phiên mới thì AI
   // quên sạch mấy lượt vừa rồi, còn người soi thì không nhận ra vì khung chat
   // vẫn còn nguyên chữ trên màn hình.
   msgWs = new WebSocket(`${giaoThuc}//${location.host}/ws/call/${msgSessionId || 'new'}`);
 
-  msgWs.onopen = () => { msgTrangThai('đã nối', 'text-emerald-400'); msgGuiCauHinh(); };
+  msgWs.onopen = () => {
+    msgDangNoi = false;
+    msgConfigInFlight = false;
+    msgConfigQueued = false;
+    msgSetSessionReady(false);
+    msgTrangThai('đã nối · chờ cấu hình', 'text-amber-400');
+  };
   msgWs.onmessage = (e) => msgNhan(JSON.parse(e.data));
   msgWs.onclose = () => {
+    msgDangNoi = false;
+    msgConfigInFlight = false;
+    msgConfigQueued = false;
+    msgSetSessionReady(false);
     msgTrangThai('mất kết nối - đang nối lại', 'text-amber-400');
     msgHienCho(false);
     setTimeout(msgNoi, 3000);
   };
-  msgWs.onerror = () => msgTrangThai('lỗi kết nối', 'text-red-400');
+  msgWs.onerror = () => { msgDangNoi = false; msgTrangThai('lỗi kết nối', 'text-red-400'); };
+}
+
+function msgApplyScenarioFromSession(payload) {
+  const session = payload?.session || payload;
+  if (!session) return;
+  if (!msgScenarioUserChosen && Object.prototype.hasOwnProperty.call(session, 'scenario_id')) {
+    const select = document.getElementById('msgScenario');
+    const value = session.scenario_id == null ? '' : String(session.scenario_id);
+    if (select && [...select.options].some(option => option.value === value)) select.value = value;
+  }
+  if (!msgProductUserChosen && session.product) {
+    const product = document.getElementById('msgProduct');
+    const value = String(session.product);
+    if (product && [...product.options].some(option => option.value === value)) product.value = value;
+  }
+}
+
+function msgScenarioChanged() {
+  msgScenarioUserChosen = true;
+  msgGuiCauHinh();
+}
+
+function msgProductChanged() {
+  msgProductUserChosen = true;
+  msgGuiCauHinh();
+}
+
+function msgSetSessionReady(ready) {
+  msgSessionReady = ready;
+  const button = document.getElementById('msgSend');
+  if (button) button.disabled = msgDangCho || !ready;
+  if (ready) msgTrangThai('đã sẵn sàng', 'text-emerald-400');
+  else if (msgWs?.readyState === WebSocket.OPEN) msgTrangThai('đang áp dụng cấu hình', 'text-amber-400');
 }
 
 function msgGuiCauHinh() {
+  msgSetSessionReady(false);
   if (!msgWs || msgWs.readyState !== WebSocket.OPEN) return;
+  if (msgConfigInFlight) {
+    msgConfigQueued = true;
+    return;
+  }
+  msgConfigInFlight = true;
   msgWs.send(JSON.stringify({
     type: 'set_session',
     customer_name: document.getElementById('msgCustomerName').value,
     product: document.getElementById('msgProduct').value,
+    scenario_id: document.getElementById('msgScenario')?.value || '',
   }));
 }
 
 function msgHienCho(bat) {
   msgDangCho = bat;
   document.getElementById('msgTyping').classList.toggle('hidden', !bat);
-  document.getElementById('msgSend').disabled = bat;
+  document.getElementById('msgSend').disabled = bat || !msgSessionReady;
 }
 
 function msgCuonXuong() {
@@ -1492,6 +1557,10 @@ function msgGui() {
   if (!chu || msgDangCho) return;
   if (!msgWs || msgWs.readyState !== WebSocket.OPEN) {
     msgTrangThai('chưa nối - thử lại sau giây lát', 'text-amber-400');
+    return;
+  }
+  if (!msgSessionReady) {
+    msgTrangThai('đang áp dụng cấu hình - thử lại sau giây lát', 'text-amber-400');
     return;
   }
 
@@ -1536,6 +1605,19 @@ function msgNhan(m) {
   switch (m.type) {
     case 'connected':
       msgSessionId = m.session_id;
+      msgApplyScenarioFromSession(m);
+      msgGuiCauHinh();
+      break;
+
+    case 'session_updated':
+      msgApplyScenarioFromSession(m);
+      msgConfigInFlight = false;
+      if (msgConfigQueued) {
+        msgConfigQueued = false;
+        msgGuiCauHinh();
+      } else {
+        msgSetSessionReady(true);
+      }
       break;
 
     case 'response_chunk':
@@ -1560,6 +1642,13 @@ function msgNhan(m) {
       break;
     }
 
+    case 'session_config_error':
+      msgConfigInFlight = msgConfigQueued = false;
+      msgScenarioUserChosen = msgProductUserChosen = false;
+      msgApplyScenarioFromSession(m);
+      document.getElementById('msgCustomerName').value = m.session?.customer_name || 'Anh/Chị';
+      msgSetSessionReady(true);
+      // Dùng cùng khung lỗi bên dưới, nhưng đã gỡ khoá cấu hình để chọn lại.
     case 'error': {
       msgHienCho(false);
       const d = document.createElement('div');
@@ -1574,8 +1663,19 @@ function msgNhan(m) {
 
 // ---------- phiếu soi ----------
 
-function msgChip(chu, mau = 'text-gray-400') {
-  return `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 ${mau}">${chu}</span>`;
+function msgChip(chu, mau = 'text-gray-400', detail = '') {
+  return `<span title="${esc(detail)}" class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 ${mau}">${esc(chu)}</span>`;
+}
+
+function msgAnswerReason(reason) {
+  return ({
+    ai_selected: 'AI chọn câu phù hợp',
+    exact_match: 'Khớp trực tiếp',
+    prepared_in_turn: 'Đã chuẩn bị trong lượt',
+    no_matching_answer: 'Chưa có câu phù hợp',
+    empty_model_response: 'Model không trả lời',
+    answer_bank_changed: 'Thư viện vừa thay đổi',
+  })[reason] || (reason ? 'Áp dụng quy tắc đã kiểm tra' : '');
 }
 
 function msgPhieuSoi(m, cau) {
@@ -1584,12 +1684,26 @@ function msgPhieuSoi(m, cau) {
   // --- đường đi: câu này do ĐÂU trả lời ---
   // Không có mấy cờ này thì rất dễ tưởng model vừa nghĩ ra câu trả lời, trong
   // khi thực ra nó lấy từ bảng cứng - sửa prompt cả buổi không đổi được gì.
-  if (m.luot_thuong_gap) chips.push(msgChip(`bảng sẵn: ${esc(m.luot_thuong_gap)}`, 'text-amber-400'));
-  if (m.tra_tu_ho_so) chips.push(msgChip(`hồ sơ: ${esc(m.tra_tu_ho_so)}`, 'text-amber-400'));
-  if (m.cong_cu) chips.push(msgChip(`công cụ: ${esc(m.cong_cu)}`, 'text-violet-400'));
+  const route = m.answer_route && typeof m.answer_route === 'object' ? m.answer_route : null;
+  const routeLabels = {
+    answer_bank: 'thư viện trả lời', rule: 'quy tắc', generated: 'model sinh',
+    speculative: 'câu đoán trước', safe_fallback: 'câu an toàn',
+  };
+  if (route) {
+    chips.push(msgChip(`nguồn: ${routeLabels[route.mode] || route.mode || 'không rõ'}`, 'text-emerald-400'));
+    if (route.model) chips.push(msgChip(`model: ${route.model}`, 'text-violet-400'));
+    if (route.selector_model && route.selector_model !== route.model) chips.push(msgChip(`model chọn: ${route.selector_model}`, 'text-violet-400'));
+    if (route.answer_id) chips.push(msgChip(`câu: ${route.answer_id}`, 'text-cyan-400'));
+    if (route.source_path) chips.push(msgChip(`tệp: ${route.source_path}`));
+    const reasonLabel = msgAnswerReason(route.reason);
+    if (reasonLabel) chips.push(msgChip(`lý do: ${reasonLabel}`, 'text-gray-400', route.reason));
+  }
+  if (m.luot_thuong_gap) chips.push(msgChip(`bảng sẵn: ${m.luot_thuong_gap}`, 'text-amber-400'));
+  if (m.tra_tu_ho_so) chips.push(msgChip(`hồ sơ: ${m.tra_tu_ho_so}`, 'text-amber-400'));
+  if (m.cong_cu) chips.push(msgChip(`công cụ: ${m.cong_cu}`, 'text-violet-400'));
   if (m.llm_nghi_san) chips.push(msgChip('bản nghĩ sẵn', 'text-violet-400'));
   if (m.rag_doan_truoc) chips.push(msgChip('RAG đoán trước', 'text-violet-400'));
-  if (!m.luot_thuong_gap && !m.tra_tu_ho_so) chips.push(msgChip('RAG → LLM'));
+  if (!route && !m.luot_thuong_gap && !m.tra_tu_ho_so) chips.push(msgChip('RAG → LLM'));
 
   // --- số đo ---
   if (m.rag_ms != null) chips.push(msgChip(`RAG ${m.rag_ms}ms`));
@@ -1598,12 +1712,12 @@ function msgPhieuSoi(m, cau) {
   if (m.llm_tokens != null) chips.push(msgChip(`${m.llm_tokens} token`));
 
   // --- lưới chặn ---
-  if (m.chan_so_sai) chips.push(msgChip(`chặn số: ${esc(m.chan_so_sai)}`, 'text-red-400'));
-  if (m.chan_tien_sai) chips.push(msgChip(`chặn tiền: ${esc(m.chan_tien_sai)}`, 'text-red-400'));
+  if (m.chan_so_sai) chips.push(msgChip(`chặn số: ${m.chan_so_sai}`, 'text-red-400'));
+  if (m.chan_tien_sai) chips.push(msgChip(`chặn tiền: ${m.chan_tien_sai}`, 'text-red-400'));
 
   let html = `<div class="flex flex-wrap gap-1.5 items-center">${chips.join('')}` +
     `<button class="text-[10px] font-mono px-2 py-0.5 rounded bg-void border border-slate-750 text-cyan-400" ` +
-    `onclick="msgNgheThu(this)" data-cau="${esc(cau)}">▶ nghe thử</button></div>`;
+    `onclick="msgNgheThu(this)" data-cau="${encodeURIComponent(cau)}">▶ nghe thử</button></div>`;
 
   // --- nguồn RAG ---
   const nguon = m.rag_nguon || [];
@@ -1616,7 +1730,7 @@ function msgPhieuSoi(m, cau) {
       return `<div class="border-l border-slate-750 px-2 py-1 ${mau}">` +
         `<div class="flex flex-wrap gap-1.5 items-center mb-1">` +
         `<span class="text-[10px] font-mono text-violet-400">${esc(n.nguon || 'không rõ nguồn')}</span>` +
-        `<span class="text-[10px] font-mono text-gray-600">khớp ${diem}</span>${nhan}</div>` +
+        `<span class="text-[10px] font-mono text-gray-600">khớp ${esc(diem)}</span>${nhan}</div>` +
         `<div class="text-[10px] font-mono">${esc(trich)}${(n.doan || '').length > 140 ? '…' : ''}</div></div>`;
     }).join('');
     html += `<div class="mt-1.5 space-y-1">` +
@@ -1628,7 +1742,8 @@ function msgPhieuSoi(m, cau) {
 }
 
 async function msgNgheThu(btn) {
-  const cau = btn.getAttribute('data-cau') || '';
+  let cau = '';
+  try { cau = decodeURIComponent(btn.getAttribute('data-cau') || ''); } catch { cau = ''; }
   if (!cau) return;
   const cu = btn.textContent;
   btn.textContent = '… đang đọc';

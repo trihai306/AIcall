@@ -23,6 +23,112 @@ let currentResponseEl = null;
 // Bong bóng câu khách nói gần nhất. Cần giữ để gỡ được khi lượt bị cắt lời -
 // câu đó sẽ xuất hiện lại bên trong câu đã ghép.
 let bongBongKhachCuoi = null;
+let chatScenarioUserChosen = false;
+let chatProductUserChosen = false;
+let conversationScenariosPromise = null;
+let chatSessionReady = false;
+let chatConfigInFlight = false;
+let chatConfigQueued = false;
+
+function setChatSessionReady(ready) {
+  chatSessionReady = ready;
+  const button = document.getElementById('micBtn');
+  if (button) {
+    // Mic đang thu vẫn phải bấm dừng được dù người dùng vừa đổi cấu hình.
+    button.disabled = !ready && !isRecording;
+    button.classList.toggle('opacity-40', !ready && !isRecording);
+    button.classList.toggle('cursor-not-allowed', !ready && !isRecording);
+  }
+  if (!isRecording) {
+    datGoiY(ready ? 'Bấm để nói · bấm lần nữa khi nói xong'
+                  : 'Đang áp dụng cấu hình cuộc gọi…',
+             ready ? 'text-gray-500' : 'text-amber-400');
+  }
+}
+
+function populateConversationScenarioSelect(select, scenarioList) {
+  if (!select) return;
+  const selected = select.value;
+  select.replaceChildren();
+  const fallback = document.createElement('option');
+  fallback.value = '';
+  fallback.textContent = 'Mặc định của hệ thống';
+  select.appendChild(fallback);
+  for (const scenario of scenarioList) {
+    if (!scenario || scenario.scenario_id == null) continue;
+    const option = document.createElement('option');
+    option.value = String(scenario.scenario_id);
+    option.textContent = String(scenario.name || scenario.scenario_id);
+    select.appendChild(option);
+  }
+  if ([...select.options].some(option => option.value === selected)) select.value = selected;
+}
+
+function loadConversationScenarios() {
+  if (conversationScenariosPromise) return conversationScenariosPromise;
+  conversationScenariosPromise = fetch('/api/scenarios')
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      const scenarioList = Array.isArray(data.scenarios) ? data.scenarios : [];
+      populateConversationScenarioSelect(document.getElementById('chatScenario'), scenarioList);
+      populateConversationScenarioSelect(document.getElementById('msgScenario'), scenarioList);
+      return scenarioList;
+    })
+    .catch(error => {
+      console.warn('Không tải được danh sách kịch bản:', error);
+      conversationScenariosPromise = null;
+      return [];
+    });
+  return conversationScenariosPromise;
+}
+
+function applyChatScenarioFromSession(payload) {
+  const session = payload?.session || payload;
+  if (!session) return;
+  if (!chatScenarioUserChosen && Object.prototype.hasOwnProperty.call(session, 'scenario_id')) {
+    const select = document.getElementById('chatScenario');
+    const value = session.scenario_id == null ? '' : String(session.scenario_id);
+    if (select && [...select.options].some(option => option.value === value)) select.value = value;
+  }
+  if (!chatProductUserChosen && session.product) {
+    const product = document.getElementById('product');
+    const value = String(session.product);
+    if (product && [...product.options].some(option => option.value === value)) product.value = value;
+  }
+}
+
+function chatScenarioChanged() {
+  chatScenarioUserChosen = true;
+  sendSessionConfig();
+}
+
+function chatProductChanged() {
+  chatProductUserChosen = true;
+  sendSessionConfig();
+}
+
+function answerRouteMeta(metrics) {
+  const route = metrics?.answer_route;
+  const parts = [];
+  const labels = {
+    answer_bank: 'thư viện trả lời', rule: 'quy tắc', generated: 'model sinh',
+    speculative: 'câu đoán trước', safe_fallback: 'câu an toàn',
+  };
+  if (route && typeof route === 'object') {
+    parts.push(`Nguồn: ${labels[route.mode] || route.mode || 'không rõ'}`);
+    if (route.model) parts.push(`Model: ${route.model}`);
+    if (route.selector_model && route.selector_model !== route.model) parts.push(`Model chọn: ${route.selector_model}`);
+    if (route.answer_id) parts.push(`Câu: ${route.answer_id}`);
+    if (route.source_path) parts.push(`Tệp: ${route.source_path}`);
+    const reason = typeof msgAnswerReason === 'function' ? msgAnswerReason(route.reason) : '';
+    if (reason) parts.push(reason);
+  }
+  if (metrics?.total_ms != null) parts.push(`${metrics.total_ms}ms`);
+  return parts.join(' · ');
+}
 
 // ---- WebSocket ----
 function connectWS() {
@@ -31,9 +137,11 @@ function connectWS() {
   ws = new WebSocket(`${protocol}//${location.host}/ws/call/${sid}`);
 
   ws.onopen = () => {
+    chatConfigInFlight = false;
+    chatConfigQueued = false;
+    setChatSessionReady(false);
     setStatus('connected', 'Đã kết nối');
     resetPlayback();   // phiên mới: bỏ lịch phát còn tồn của phiên trước
-    sendSessionConfig();
     sendVoiceConfig();
     // Đo mạng vài nhịp đầu để lượt hỏi đầu tiên đã có số RTT mà trừ ra.
     pingRtt();
@@ -41,6 +149,9 @@ function connectWS() {
     setTimeout(pingRtt, 1200);
   };
   ws.onclose = () => {
+    chatConfigInFlight = false;
+    chatConfigQueued = false;
+    setChatSessionReady(false);
     setStatus('connecting', 'Đang kết nối lại...');
     setTimeout(connectWS, 3000);
   };
@@ -54,6 +165,10 @@ function handleMessage(msg) {
       sessionId = msg.session_id;
       try { sessionStorage.setItem('maPhien', sessionId); } catch {}
       document.getElementById('sessionId').textContent = sessionId;
+      applyChatScenarioFromSession(msg);
+      // Đợi connected để phiên nối lại khôi phục scenario trước khi giao diện
+      // gửi cấu hình hiện tại lên server.
+      sendSessionConfig();
       // CHỈ vẽ khi khung đang trống. Mất mạng vài giây rồi tự nối lại cũng đi
       // qua đúng nhánh này, mà lúc đó màn hình đã đầy đủ - vẽ thêm là nhân đôi
       // toàn bộ cuộc nói chuyện.
@@ -112,18 +227,38 @@ function handleMessage(msg) {
         bongBongKhachCuoi = null;
         break;
       }
-      datGoiY(recStream ? 'Mic đang mở · bấm để nói tiếp'
-                        : 'Bấm để nói · bấm lần nữa khi nói xong');
+      if (chatSessionReady) {
+        datGoiY(recStream ? 'Mic đang mở · bấm để nói tiếp'
+                          : 'Bấm để nói · bấm lần nữa khi nói xong');
+      } else {
+        datGoiY('Đang áp dụng cấu hình cuộc gọi…', 'text-amber-400');
+      }
       turnCount++;
       document.getElementById('turnCount').textContent = turnCount;
       if (msg.metrics) updateMetrics(msg.metrics);
+      if (!currentResponseEl && msg.full_response) {
+        removeWelcome();
+        currentResponseEl = addMessage('assistant', msg.full_response, '');
+      }
       if (currentResponseEl && msg.full_response) {
         const bubble = currentResponseEl.querySelector('[data-bubble]');
         if (bubble) bubble.textContent = msg.full_response;
         const meta = currentResponseEl.querySelector('[data-meta]');
-        if (meta && msg.metrics?.total_ms) meta.textContent = `${msg.metrics.total_ms}ms`;
+        if (meta) {
+          meta.textContent = answerRouteMeta(msg.metrics || {});
+          meta.title = msg.metrics?.answer_route?.reason || '';
+        }
       }
       currentResponseEl = null;
+      break;
+
+    case 'session_config_error':
+      chatConfigInFlight = chatConfigQueued = false;
+      chatScenarioUserChosen = chatProductUserChosen = false;
+      applyChatScenarioFromSession(msg);
+      document.getElementById('customerName').value = msg.session?.customer_name || 'Anh/Chị';
+      setChatSessionReady(true);
+      addMessage('system', msg.message || 'Không áp dụng được kịch bản. Đã giữ cấu hình trước.');
       break;
 
     case 'error':
@@ -137,17 +272,33 @@ function handleMessage(msg) {
       break;
 
     case 'session_updated':
+      applyChatScenarioFromSession(msg);
+      chatConfigInFlight = false;
+      if (chatConfigQueued) {
+        chatConfigQueued = false;
+        sendSessionConfig();
+      } else {
+        setChatSessionReady(true);
+      }
+      break;
     case 'voice_updated':
       break;
   }
 }
 
 function sendSessionConfig() {
+  setChatSessionReady(false);
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (chatConfigInFlight) {
+    chatConfigQueued = true;
+    return;
+  }
+  chatConfigInFlight = true;
   ws.send(JSON.stringify({
     type: 'set_session',
     customer_name: document.getElementById('customerName').value,
     product: document.getElementById('product').value,
+    scenario_id: document.getElementById('chatScenario')?.value || '',
   }));
 }
 
@@ -183,6 +334,10 @@ function sendText() {
   // nên tin nhắn biến mất không dấu vết. Giờ báo rõ cho người dùng.
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     setStatus('connecting', 'Chưa kết nối — thử lại sau giây lát');
+    return;
+  }
+  if (!chatSessionReady) {
+    datGoiY('Đang áp dụng cấu hình cuộc gọi — thử lại sau giây lát', 'text-amber-400');
     return;
   }
   markTurnStart('text');   // mốc T0 cho đường chat
@@ -312,6 +467,10 @@ function showTyping(show) {
 // ---- Microphone ----
 async function toggleMic() {
   if (isRecording) { stopRecording(); return; }
+  if (!chatSessionReady) {
+    datGoiY('Đang áp dụng cấu hình cuộc gọi — thử lại sau giây lát', 'text-amber-400');
+    return;
+  }
   await moMic();          // đã mở sẵn thì không mở lại
   batDauGuiTieng();
 }
@@ -537,7 +696,7 @@ function baoThietLapMic(stream) {
 }
 
 function batDauGuiTieng() {
-  if (!recStream) return;
+  if (!recStream || !chatSessionReady) return;
   isRecording = true;
   daCatLoi = false;
   catLoiDem = 0;
@@ -580,7 +739,11 @@ function stopRecording() {
   daCatLoi = false;
   catLoiDem = 0;
   document.getElementById('micBtn').classList.remove('recording');
-  datGoiY('AI đang trả lời… nói đè lên để cắt lời', 'text-cyan-400');
+  if (chatSessionReady) {
+    datGoiY('AI đang trả lời… nói đè lên để cắt lời', 'text-cyan-400');
+  } else {
+    setChatSessionReady(false);
+  }
   sendAudioEnd();
 }
 
@@ -1307,7 +1470,7 @@ function switchPage(name, options = {}) {
   if (name === 'voice-training') initVoiceTraining();
   // Trang Training LLM trước đây không có hook nào - mở lên là bảng trống cho
   // tới khi người dùng tự bấm "Làm mới".
-  if (name === 'training') { refreshTrainStatus(); loadDatasets(); }
+  if (name === 'training') { refreshTrainStatus(); loadDatasets(); refreshBankvnTestStatus(); }
   // Vào trang Benchmark là hỏi lại tên model đang chạy - nó đổi được
   // giữa chừng (đổi .env rồi khởi động lại dịch vụ).
   if (name === 'benchmark') napTenModelBenchmark();
@@ -1315,6 +1478,7 @@ function switchPage(name, options = {}) {
   if (name === 'knowledge') loadTriThuc();
   if (name === 'fillers') loadCauDem();
   batDauTuCapNhat(name);
+  knAutoPageChanged(name);
 }
 
 window.addEventListener('popstate', () => {
@@ -1336,6 +1500,7 @@ const _NHIP = {
   sessions: 4000,
   devices: 6000,      // quét ADB tốn, để thưa
   reports: 15000,
+  training: 10000,    // BankVN 24/7: xem cycle/metric mới mà không phải F5
 };
 
 let _timerTrang = null;
@@ -1352,6 +1517,8 @@ function _napLaiTrang(name) {
     if (typeof loadSessionHistory === 'function') loadSessionHistory();
   }
   if (name === 'devices' && typeof loadDevices === 'function') loadDevices();
+  if (name === 'training' && typeof refreshTrainStatus === 'function') refreshTrainStatus();
+  if (name === 'training' && typeof refreshBankvnTestStatus === 'function') refreshBankvnTestStatus();
   // Báo cáo: hàm tên `loadReport` (số ít) và nằm ở trang_moi.js, không phải
   // app.js. Tra tên hàm chỉ trong app.js là bỏ sót - frontend có HAI tệp js.
   if (name === 'reports' && typeof loadReport === 'function') loadReport();
@@ -1852,7 +2019,8 @@ async function loadDatasets() {
 
     if (select) {
       select.innerHTML = '<option value="">-- Chọn dataset --</option>' +
-        data.datasets.map(d => `<option value="${d.id}">${d.id} (${d.samples} mẫu)</option>`).join('');
+        data.datasets.filter(d => d.trainable)
+          .map(d => `<option value="${d.id}">${d.id} (${d.samples} mẫu)</option>`).join('');
     }
   } catch {}
 }
@@ -1983,23 +2151,196 @@ function fmtThoiGian(giay) {
   return h ? `${h} giờ ${p} phút` : `${p} phút ${giay % 60} giây`;
 }
 
+function fmtBankvnSo(value, digits = 3) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : '—';
+}
+
+function fmtBankvnPct(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? `${(n * 100).toFixed(1)}%` : '—';
+}
+
+function fmtBankvnNgay(value) {
+  const d = new Date(value || '');
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN');
+}
+
+function fmtBankvnPhase(value) {
+  return ({
+    starting: 'khởi động vòng mới',
+    fetching_data: 'lấy thêm dữ liệu Việt',
+    preparing_corpus: 'lọc và chuẩn bị corpus',
+    teacher_generation: 'Qwen 9B sinh dữ liệu teacher',
+    router_training: 'train và gate router',
+    pretraining: 'continual pretrain',
+    sft_training: 'SFT student',
+    benchmarking: 'benchmark candidate',
+    quality_rejected: 'candidate bị gate chất lượng loại',
+    sleeping: 'chờ vòng học kế tiếp',
+    error: 'lỗi vòng học',
+  })[value] || value || 'chưa rõ';
+}
+
+let bankvnTestHistory = [];
+
+async function refreshBankvnTestStatus() {
+  const el = document.getElementById('bankvnTestStatus');
+  const btn = document.getElementById('bankvnTestSend');
+  if (!el || !btn) return;
+  try {
+    const d = await fetch('/api/training/bankvn-test/status').then(r => r.json());
+    const when = d.snapshot_utc ? ` · snapshot ${fmtBankvnNgay(d.snapshot_utc)}` : '';
+    const size = d.parameter_size ? ` · ${d.parameter_size}` : '';
+    const quant = d.quantization_level ? ` ${d.quantization_level}` : '';
+    el.textContent = `${d.message || '—'} · ${d.model || 'candidate'}${size}${quant}${when}`;
+    el.className = `text-[11px] ${d.ready ? 'text-emerald-400' : 'text-amber-400'}`;
+    btn.disabled = !d.ready;
+    btn.classList.toggle('opacity-40', !d.ready);
+    btn.classList.toggle('cursor-not-allowed', !d.ready);
+  } catch (err) {
+    el.textContent = 'Không đọc được trạng thái máy thử: ' + err.message;
+    el.className = 'text-[11px] text-red-400';
+    btn.disabled = true;
+  }
+}
+
+function bankvnTestBubble(role, content) {
+  const box = document.getElementById('bankvnTestChat');
+  if (!box) return;
+  if (box.dataset.empty === '1') { box.innerHTML = ''; box.dataset.empty = '0'; }
+  const row = document.createElement('div');
+  row.className = role === 'user' ? 'text-right' : 'text-left';
+  row.innerHTML = `<span class="inline-block max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
+    role === 'user' ? 'bg-violet-500/15 text-violet-100' : 'bg-void text-gray-300 border border-slate-750'
+  }">${escapeHtml(content)}</span>`;
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function guiThuBankvn() {
+  const input = document.getElementById('bankvnTestInput');
+  const btn = document.getElementById('bankvnTestSend');
+  const question = (input?.value || '').trim();
+  if (!question || !btn || btn.disabled) return;
+
+  const history = bankvnTestHistory.slice(-8);
+  bankvnTestBubble('user', question);
+  bankvnTestHistory.push({ role: 'user', content: question });
+  input.value = '';
+  btn.disabled = true;
+  btn.textContent = 'Đang trả lời…';
+  try {
+    const d = await fetch('/api/training/bankvn-test/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: question, history }),
+    }).then(r => r.json());
+    if (d.error) {
+      bankvnTestBubble('assistant', 'Lỗi: ' + d.error);
+    } else {
+      bankvnTestBubble('assistant', d.answer || 'Candidate không trả lời.');
+      bankvnTestHistory.push({ role: 'assistant', content: d.answer || '' });
+    }
+  } catch (err) {
+    bankvnTestBubble('assistant', 'Lỗi kết nối: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gửi thử';
+    input.focus();
+  }
+}
+
+function xoaThuBankvn() {
+  bankvnTestHistory = [];
+  const box = document.getElementById('bankvnTestChat');
+  if (box) {
+    box.dataset.empty = '1';
+    box.innerHTML = '<div class="text-xs text-gray-600 text-center py-6">Nhập một câu hỏi để trò chuyện trực tiếp với snapshot BankVN candidate.</div>';
+  }
+}
+
 async function refreshTrainStatus() {
   const grid = document.getElementById('trainStatusGrid');
   try {
     const s = await fetch('/api/training/status').then(r => r.json());
 
     const vram = s.vram_free_gb != null ? `${s.vram_free_gb} / ${s.vram_total_gb} GB` : '—';
-    grid.innerHTML = [
+    const cells = [
       statCell('Môi trường', s.env_ready ? 'Sẵn sàng' : 'Chưa cài',
                s.env_ready ? 'text-emerald-400' : 'text-red-400'),
       statCell('GPU', s.gpu_ok ? (s.gpu_name || 'CUDA') : s.device,
                s.gpu_ok ? 'text-emerald-400' : 'text-red-400'),
       statCell('VRAM trống', vram, 'text-cyan-400'),
-      statCell('Dữ liệu', `${s.tong_mau} mẫu`,
-               s.du_mau ? 'text-emerald-400' : 'text-amber-400'),
+      statCell('Dữ liệu train', 'Chọn file bên dưới', 'text-amber-400'),
       statCell('Model đang dùng', s.model_dang_dung, 'text-violet-400'),
       statCell('Sau khi train', s.model_sau_train, 'text-gray-400'),
-    ].join('');
+    ];
+
+    const b = s.bankvn_24x7 || {};
+    if (b.available) {
+      const q = b.sft || {};
+      const r = (b.router || {}).candidate || {};
+      const router = b.router || {};
+      const assistantGate = b.assistant_gate || {};
+      const progress = b.progress || {};
+      const evalText = q.eval_loss_before != null && q.eval_loss_after != null
+        ? `${fmtBankvnSo(q.eval_loss_before)} → ${fmtBankvnSo(q.eval_loss_after)} (${fmtBankvnSo(q.eval_improvement_pct, 1)}% tốt hơn)`
+        : '—';
+      const routerText = `Domain ${fmtBankvnPct(r.domain_accuracy)} · Tool ${fmtBankvnPct(r.tool_call_accuracy)} · No-tool ${fmtBankvnPct(r.no_tool_accuracy)}`;
+      const speedText = q.samples_per_second != null
+        ? `${fmtBankvnSo(q.samples_per_second, 2)} mẫu/s · VRAM ${fmtBankvnSo(q.cuda_peak_allocated_gb, 2)}/${fmtBankvnSo(q.cuda_peak_reserved_gb, 2)} GB`
+        : '—';
+      const gateOk = router.eligible_manual_review === true;
+      const phaseError = progress.phase === 'error';
+      const processText = progress.active_process
+        ? ` · ${progress.active_process} (${fmtThoiGian(progress.active_process_elapsed_seconds)})`
+        : '';
+      const recentCycles = Array.isArray(b.recent_cycles) ? b.recent_cycles.slice(-3).reverse() : [];
+      const trendText = recentCycles.length
+        ? recentCycles.map(cycle => {
+            const quality = cycle.sft_quality || {};
+            return `${fmtBankvnSo(quality.sft_eval_loss_improvement_pct, 1)}% / ${cycle.new_teacher_samples || 0} mẫu`;
+          }).join(' · ')
+        : '—';
+      const bankvnText = b.paused
+        ? `Đã tạm dừng · ${b.pause_reason || 'chờ sửa pipeline/dữ liệu'}`
+        : phaseError
+        ? `Lỗi: ${progress.error || 'vòng học lỗi'}`
+        : b.stale
+          ? `Mất cập nhật · ${fmtThoiGian(b.age_seconds)}`
+          : `${fmtBankvnPhase(progress.phase)} · cập nhật ${fmtThoiGian(b.age_seconds)} trước${processText}`;
+
+      cells.push(
+        statCell('BankVN 24/7', bankvnText,
+                 b.paused ? 'text-amber-400' : (phaseError || b.stale ? 'text-red-400' : 'text-emerald-400')),
+        statCell('Tiến độ vòng hiện tại', progress.cycle_age_seconds != null
+          ? `${fmtThoiGian(progress.cycle_age_seconds)}${processText}` : '—', 'text-cyan-400'),
+        statCell('Vòng học gần nhất', fmtBankvnNgay(b.last_cycle_utc), 'text-cyan-400'),
+        statCell('Mẫu mới', `${b.new_teacher_samples || 0} = ${b.new_assistant_samples || 0} hội thoại + ${b.new_router_samples || 0} router`, 'text-cyan-400'),
+        statCell('Tổng mẫu teacher', b.teacher_samples_total || 0, 'text-gray-300'),
+        statCell('Eval loss', evalText,
+                 Number(q.eval_improvement_pct) > 0 ? 'text-emerald-400' : 'text-amber-400'),
+        statCell('Train loss', fmtBankvnSo(q.train_loss), 'text-cyan-400'),
+        statCell('Router', routerText, gateOk ? 'text-emerald-400' : 'text-amber-400'),
+        statCell('Hallucination / p95', `${fmtBankvnPct(r.hallucination_rate)} · ${fmtBankvnSo(r.p95_latency_ms, 3)} ms`,
+                 Number(r.hallucination_rate) <= 0.05 ? 'text-emerald-400' : 'text-amber-400'),
+        statCell('Tốc độ train', speedText, 'text-cyan-400'),
+        statCell('Gate router', router.status || b.promotion || '—', gateOk ? 'text-emerald-400' : 'text-amber-400'),
+        statCell(
+          'Gate trả lời 3B',
+          assistantGate.passed == null
+            ? '—'
+            : `${assistantGate.passed ? 'PASS' : 'FAIL'} · dùng được ${fmtBankvnPct(assistantGate.usable_rate)} · đúng ý ${fmtBankvnPct(assistantGate.semantic_rate)} · an toàn ${fmtBankvnPct(assistantGate.safe_rate)}`,
+          assistantGate.passed ? 'text-emerald-400' : 'text-red-400',
+        ),
+        statCell('Xu hướng 3 vòng', trendText, 'text-cyan-400'),
+      );
+    } else {
+      cells.push(statCell('BankVN 24/7', b.message || 'Chưa có vòng học hoàn tất', 'text-amber-400'));
+    }
+
+    grid.innerHTML = cells.join('');
 
     // grid-column:1/-1 thay cho col-span-*: tailwind.css biên dịch sẵn chỉ có
     // tới col-span-3, khai lớp không tồn tại thì ô co lại một cột.
@@ -2046,6 +2387,7 @@ async function setupTrainEnv() {
 
 async function startTraining() {
   const config = {
+    dataset_id: document.getElementById('trainDataset').value,
     base_model: document.getElementById('trainBaseModel').value,
     epochs: parseInt(document.getElementById('trainEpochs').value, 10) || 3,
     learning_rate: parseFloat(document.getElementById('trainLR').value) || 2e-4,
@@ -2054,6 +2396,8 @@ async function startTraining() {
     grad_accum: parseInt(document.getElementById('trainGradAccum').value, 10) || 8,
     auto_deploy: document.getElementById('trainAutoDeploy').checked,
   };
+
+  if (!config.dataset_id) { trainLog('Hãy chọn dataset dùng để train.'); return; }
 
   if (!confirm('Train sẽ nhả F5-TTS và Ollama khỏi VRAM — hệ thống ngừng nhận cuộc gọi '
              + 'cho tới khi xong. Tiếp tục?')) return;
@@ -3154,7 +3498,7 @@ async function deleteSessionRecord(id, fromModal) {
 }
 
 // ---- Init ----
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   // Render route hiện tại trước. Với URL cũ `/`, chuẩn hoá sang `/overview`
   // bằng replaceState để F5 lần sau vẫn ở route rõ ràng và không thêm history.
   const initialPage = pageFromPath();
@@ -3164,6 +3508,8 @@ window.addEventListener('load', () => {
   }
 
   document.getElementById('textInput')?.addEventListener('input', schedulePrefetch);
+  setChatSessionReady(false);
+  await loadConversationScenarios();
   connectWS();
   loadVoices();
   checkHealth().finally(() => theoDoiTTSNap());
@@ -3908,6 +4254,7 @@ const KN_NHAN_GOC = {
   products: 'Sản phẩm',
   faq: 'Câu hỏi thường gặp',
   chinh_sach: 'Chính sách',
+  shinhan: 'Shinhan',
 };
 let knNhomTuAPI = {};      // mã -> nhãn, gồm cả nhóm người dùng tự thêm
 
@@ -3930,6 +4277,223 @@ let knGocNoiDung = '';      // nội dung lúc mở hộp soạn, để biết �
 let knVuaTaiLen = false;    // vừa tải file xong? (xem chú thích trong loadTriThuc)
 let knKhopNoiDung = {};     // 'nhom/ten' -> đoạn trích khớp từ khoá đang tìm
 let knTimHen = null;
+
+function knTenTaiLieu(ten) {
+  const names = {
+    nghiep_vu_co_ban_va_loi_thoai: 'Nghiệp vụ ngân hàng cơ bản & lời thoại',
+    the_tin_dung: 'Thẻ tín dụng', tiet_kiem: 'Tiết kiệm', vay_mua_nha: 'Vay mua nhà', vay_tin_chap: 'Vay tín chấp', faq_banking: 'Câu hỏi thường gặp',
+    shinhan_card_user_guide_vi: 'Hướng dẫn sử dụng thẻ Shinhan', shinhan_consumer_credit_terms_2025: 'Điều kiện tín dụng cá nhân Shinhan',
+    shinhan_corporate_credit_card_terms: 'Thẻ tín dụng doanh nghiệp Shinhan', shinhan_corporate_debit_card_terms: 'Thẻ ghi nợ doanh nghiệp Shinhan',
+    shinhan_digital_card_guide: 'Hướng dẫn thẻ số Shinhan', shinhan_individual_loan_terms: 'Điều kiện vay cá nhân Shinhan',
+    shinhan_loan_household_terms: 'Điều kiện vay hộ kinh doanh Shinhan'
+  };
+  const name = names[ten] || String(ten || '').replace(/[_-]+/g, ' ');
+  return name.charAt(0).toLocaleUpperCase('vi-VN') + name.slice(1);
+}
+
+function moTaiLieuNguon() {
+  const details = document.getElementById('knSourcesWorkspace');
+  details.open = true;
+  details.scrollIntoView({block: 'start', behavior: 'smooth'});
+}
+
+function knAutoConfigFeedback(message) {
+  const status = document.getElementById('knAutoConfigStatus');
+  if (status) status.textContent = message;
+  const save = document.getElementById('knAutoSave');
+  if (save) save.disabled = !knAutoHasLoaded || knAutoActionBusy || !knAutoConfigDirty;
+}
+
+const KN_AUTO_URL = '/api/knowledge/thu-vien-tu-dong';
+let knAutoTimer = null;
+let knAutoBusy = false;
+let knAutoActionBusy = false;
+let knAutoConfigDirty = false;
+let knAutoHasLoaded = false;
+let knAutoLast = null;
+
+function knAutoEsc(value) { return escapeHtml(String(value ?? '')); }
+
+function knAutoPageChanged(name) {
+  if (name !== 'knowledge') dongHoiDapTriThuc();
+  if (knAutoTimer) { clearInterval(knAutoTimer); knAutoTimer = null; }
+  if (name === 'knowledge' && !document.hidden) {
+    loadKnAuto();
+    knAutoTimer = setInterval(() => loadKnAuto(), 2500);
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (_trangHienTai !== 'knowledge') return;
+  if (document.hidden) {
+    if (knAutoTimer) { clearInterval(knAutoTimer); knAutoTimer = null; }
+  } else {
+    if (!knAutoTimer) knAutoTimer = setInterval(() => loadKnAuto(), 2500);
+    loadKnAuto();
+  }
+});
+
+for (const id of ['knAutoEnabled', 'knAutoQuestions', 'knAutoVariants', 'knAutoHistory']) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => { knAutoConfigDirty = true; knAutoConfigFeedback('Có thay đổi chưa lưu.'); });
+  if (el && id.endsWith('Enabled')) el.addEventListener('change', () => {
+    knAutoConfigDirty = true;
+    knAutoSaveConfig();
+  });
+}
+
+async function knAutoRequest(url = KN_AUTO_URL, options = {}) {
+  const timeoutSignal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(15000) : undefined;
+  const response = await fetch(url, { ...options, signal: options.signal || timeoutSignal });
+  let data = {};
+  try { data = await response.json(); } catch (_) { /* report HTTP status below */ }
+  if (!response.ok) throw new Error(data?.error || data?.detail || `Lỗi máy chủ (${response.status})`);
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+function knAutoConfigFromForm() {
+  const number = (id, fallback, min, max) => {
+    const n = Number(document.getElementById(id)?.value);
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback;
+  };
+  return {
+    enabled: !!document.getElementById('knAutoEnabled')?.checked,
+    questions_per_document: number('knAutoQuestions', 120, 12, 300),
+    variants_per_answer: number('knAutoVariants', 4, 1, 8),
+    learn_history: !!document.getElementById('knAutoHistory')?.checked
+  };
+}
+
+function veKnAuto(data) {
+  knAutoLast = data;
+  const model = document.getElementById('knAutoModel');
+  if (model && data.model) model.textContent = String(data.model);
+  const stats = data.stats || {};
+  const statEl = document.getElementById('knAutoStats');
+  if (statEl) statEl.innerHTML = `<div><strong>${knAutoEsc(stats.answers ?? 0)}</strong><span>Câu trả lời trong kho</span></div><div><strong>${knAutoEsc(stats.voice_ready ?? 0)}<small> / ${knAutoEsc(stats.voice_total ?? 0)}</small></strong><span>Giọng đọc sẵn sàng</span></div>`;
+  document.getElementById('knAutoExtraStats').textContent = `${stats.questions ?? 0} ví dụ hỗ trợ · ${stats.memory_questions ?? 0} ý khách đã xem`;
+  document.getElementById('knAutoTarget').textContent = `${data.config?.questions_per_document ?? 120} câu / tài liệu`;
+
+
+  if (!knAutoConfigDirty && !knAutoHasLoaded) {
+    const config = data.config || {};
+    document.getElementById('knAutoEnabled').checked = !!data.enabled;
+    document.getElementById('knAutoQuestions').value = config.questions_per_document ?? 120;
+    document.getElementById('knAutoVariants').value = config.variants_per_answer ?? 4;
+    document.getElementById('knAutoHistory').checked = config.learn_history !== false;
+  }
+  knAutoHasLoaded = true;
+  for (const id of ['knAutoEnabled', 'knAutoQuestions', 'knAutoVariants', 'knAutoHistory', 'knAutoBuild', 'knAutoFullBuild']) {
+    const control = document.getElementById(id);
+    if (control) control.disabled = knAutoActionBusy;
+  }
+  const job = data.job || {};
+  const running = job.status === 'running' || job.status === 'paused';
+  const status = document.getElementById('knAutoStatus');
+  const progress = document.getElementById('knAutoProgress');
+  const logs = document.getElementById('knAutoLogs');
+  const retry = document.getElementById('knAutoRetry');
+  const cancel = document.getElementById('knAutoCancel');
+  const build = document.getElementById('knAutoBuild');
+  const fullBuild = document.getElementById('knAutoFullBuild');
+  if (retry) retry.classList.add('hidden');
+  if (status) {
+    const labels = { idle: 'Chưa có tác vụ nào đang chạy.', running: 'Đang chuẩn bị thư viện…', paused: 'Tác vụ đang tạm dừng.', done: 'Đã cập nhật xong thư viện.', error: 'Có lỗi khi cập nhật thư viện.', cancelled: 'Đã dừng tác vụ.' };
+    const doc = job.current_document ? ` · ${knAutoEsc(knTenTaiLieu(job.current_document.split('/').pop().replace(/\.[^.]+$/, '')))}` : '';
+    const count = job.documents_total ? ` · ${job.documents_done || 0}/${job.documents_total} tài liệu` : '';
+    const phases = {answers: 'Soạn câu trả lời', voice: 'Tạo giọng đọc', voices: 'Tạo giọng đọc', history: 'Bổ sung từ lịch sử', memory: 'Bổ sung từ lịch sử'};
+    const phase = phases[job.phase] ? ` · ${phases[job.phase]}` : '';
+    status.innerHTML = `<span class="${job.status === 'error' ? 'text-red-400' : running ? 'text-cyan-300' : 'text-gray-300'}">${labels[job.status] || 'Trạng thái chưa xác định.'}</span>${phase}${doc}${count}`
+      + (job.status === 'error' && job.error ? '<div class="text-red-400 mt-1">AI chưa hoàn tất lần tạo vừa rồi. Bấm “AI bổ sung cả kho” để thử lại; xem nguyên nhân trong phần chi tiết.</div>' : '');
+  }
+  if (progress) progress.classList.toggle('hidden', !running);
+  const bar = document.getElementById('knAutoProgressBar');
+  if (bar) {
+    const pct = job.documents_total ? Math.min(100, Math.round((job.documents_done || 0) * 100 / job.documents_total)) : 0;
+    bar.style.width = `${pct}%`;
+  }
+  const logLines = Array.isArray(job.logs) ? job.logs : [];
+  if (logs) {
+    logs.classList.toggle('hidden', !logLines.length && !job.error);
+    logs.innerHTML = logLines.slice(-8).map(line => `<div>${knAutoEsc(line)}</div>`).join('')
+      + (job.error ? `<div class="text-red-400">Chi tiết lỗi: ${knAutoEsc(job.error)}</div>` : '');
+  }
+  if (cancel) { cancel.classList.toggle('hidden', !running); cancel.disabled = knAutoActionBusy; }
+  if (build) build.disabled = running || knAutoActionBusy;
+  if (fullBuild) fullBuild.disabled = running || knAutoActionBusy;
+  knAutoConfigFeedback(knAutoConfigDirty ? 'Có thay đổi chưa lưu.' : '');
+}
+
+async function loadKnAuto(showError = false) {
+  if (knAutoBusy || knAutoActionBusy || _trangHienTai !== 'knowledge' || document.hidden) return;
+  knAutoBusy = true;
+  try {
+    veKnAuto(await knAutoRequest());
+  } catch (error) {
+    const status = document.getElementById('knAutoStatus');
+    const retry = document.getElementById('knAutoRetry');
+    if (status) status.innerHTML = `<span class="text-red-400">Không tải được trạng thái: ${knAutoEsc(error.message)}</span>`;
+    if (retry) retry.classList.remove('hidden');
+    if (showError) thongBao(`Không tải được thư viện: ${error.message}`, 'loi');
+  } finally { knAutoBusy = false; }
+}
+
+async function knAutoSaveConfig() {
+  if (knAutoActionBusy) return;
+  knAutoActionBusy = true;
+  const status = document.getElementById('knAutoStatus');
+  const config = knAutoConfigFromForm();
+  let saved = false;
+  knAutoConfigFeedback('Đang lưu…');
+  try {
+    const result = await knAutoRequest(KN_AUTO_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    knAutoConfigDirty = JSON.stringify(knAutoConfigFromForm()) !== JSON.stringify(config);
+    saved = true;
+    veKnAuto(result);
+  } catch (error) {
+    if (status) status.innerHTML = `<span class="text-red-400">Không lưu được thiết lập: ${knAutoEsc(error.message)}</span>`;
+    thongBao(`Không lưu được thiết lập thư viện: ${error.message}`, 'loi');
+  } finally { knAutoActionBusy = false; if (knAutoLast) veKnAuto(knAutoLast); knAutoConfigFeedback(saved ? (knAutoConfigDirty ? 'Có thay đổi chưa lưu.' : 'Đã lưu thiết lập.') : 'Chưa lưu được. Vui lòng thử lại.'); }
+}
+
+async function knAutoBuild(fullRebuild = false) {
+  if (knAutoActionBusy) return;
+  knAutoActionBusy = true;
+  const button = document.getElementById(fullRebuild ? 'knAutoFullBuild' : 'knAutoBuild');
+  const status = document.getElementById('knAutoStatus');
+  let actionError = '';
+  if (button) button.disabled = true;
+  if (status) status.textContent = 'Đang lưu thiết lập…';
+  try {
+    const config = knAutoConfigFromForm();
+    const saved = await knAutoRequest(KN_AUTO_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) });
+    knAutoConfigDirty = false;
+    veKnAuto(saved);
+    const result = await knAutoRequest(`${KN_AUTO_URL}/build`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ full_rebuild: fullRebuild }) });
+    veKnAuto(result);
+  } catch (error) {
+    actionError = `Không thể bắt đầu: ${error.message}`;
+    thongBao(`Không thể cập nhật thư viện: ${error.message}`, 'loi');
+  } finally { knAutoActionBusy = false; if (knAutoLast) veKnAuto(knAutoLast); if (actionError && status) status.textContent = actionError; }
+}
+
+async function knAutoCancel() {
+  if (knAutoActionBusy) return;
+  knAutoActionBusy = true;
+  const cancel = document.getElementById('knAutoCancel');
+  let actionError = '';
+  if (cancel) cancel.disabled = true;
+  try { veKnAuto(await knAutoRequest(`${KN_AUTO_URL}/cancel`, { method: 'POST' })); }
+  catch (error) {
+    actionError = `Không thể dừng tác vụ: ${error.message}`;
+    thongBao(`Không thể dừng tác vụ: ${error.message}`, 'loi');
+  } finally { knAutoActionBusy = false; if (knAutoLast) veKnAuto(knAutoLast); if (actionError) document.getElementById('knAutoStatus').textContent = actionError; }
+}
 
 function knByte(n) {
   return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB';
@@ -4001,7 +4565,7 @@ function veThongKeTriThuc() {
   const o = document.getElementById('knStats');
   if (!o) return;
   const manh = knDanhSach.reduce((s, t) => s + (t.so_manh || 0), 0);
-  const chua = knDanhSach.filter(t => !t.so_manh).length;
+  const chua = knDanhSach.filter(t => (t.trang_thai_chi_muc || (t.so_manh ? 'da_lap' : 'chua_lap')) !== 'da_lap').length;
   const moi = knDanhSach.reduce((m, t) => Math.max(m, t.sua_doi || 0), 0);
   // Ghép tay thay vì toLocaleString: bộ vi-VN đẩy giờ lên trước ngày ("10:16
   // 16-08") — đọc ngược với mọi chỗ khác trong app.
@@ -4009,7 +4573,7 @@ function veThongKeTriThuc() {
   o.innerHTML =
     statCell('Tài liệu', knDanhSach.length, 'text-white')
     + statCell('Mảnh AI đã đọc', manh, 'text-cyan-400')
-    + statCell('Chưa nạp', chua, chua ? 'text-amber-400' : 'text-gray-600')
+    + statCell('Cần lập chỉ mục', chua, chua ? 'text-amber-400' : 'text-gray-600')
     + `<div class="stat-cell"><div class="k">Sửa gần nhất</div>
          <div class="v stat-name text-gray-300">${escapeHtml(gio)}</div></div>`;
 }
@@ -4051,6 +4615,7 @@ function locNhomTriThuc(ma) {
 }
 
 function locTaiLieuMau() {
+  moTaiLieuNguon();
   const tim = document.getElementById('knTim');
   if (tim) tim.value = '';
   locNhomTriThuc(KN_LOC_MAU);
@@ -4085,9 +4650,12 @@ function veBangTriThuc() {
     const mo = knDangMo.has(khoa);
     // so_manh = 0 nghĩa là file có trên đĩa nhưng RAG CHƯA đọc. Phải nói thẳng:
     // người dùng sửa xong tưởng đã xong, mà bot vẫn trả lời bản cũ.
-    const nap = t.so_manh > 0
-      ? `<span class="pill st-daNap"><span class="dot"></span>${t.so_manh} mảnh</span>`
-      : '<span class="pill st-chuaNap"><span class="dot"></span>Chưa nạp</span>';
+    const tt = t.trang_thai_chi_muc || (t.so_manh > 0 ? 'da_lap' : 'chua_lap');
+    const nap = tt === 'da_lap'
+      ? `<span class="pill st-daNap"><span class="dot"></span>Đã lập chỉ mục · ${t.so_manh} mảnh</span>`
+      : tt === 'can_cap_nhat'
+        ? `<span class="pill st-chuaNap"><span class="dot"></span>Cần cập nhật vector</span>`
+        : '<span class="pill st-chuaNap"><span class="dot"></span>Chưa lập chỉ mục</span>';
     const n = escapeHtml(t.nhom), e = escapeHtml(t.ten);
     return `<tr>
       <td class="pr-0">
@@ -4102,6 +4670,8 @@ function veBangTriThuc() {
       <td>${nap}</td>
       <td class="text-gray-500 text-[11px]">${new Date(t.sua_doi * 1000).toLocaleString('vi-VN')}</td>
       <td class="text-right whitespace-nowrap">
+        <button onclick="lapChiMucTriThuc('${n}','${e}',this,${tt === 'da_lap'})" class="btn btn-soft btn-xs">${tt === 'da_lap' ? 'Lập lại vector' : 'Lập chỉ mục AI'}</button>
+        <button onclick="moHoiDapTriThuc('${n}','${e}')" class="btn btn-soft btn-xs">Câu trả lời</button>
         <button onclick="moXemManh('${n}','${e}')" class="btn btn-ghost btn-xs">Mảnh</button>
         <button onclick="moLichSu('${n}','${e}')" class="btn btn-ghost btn-xs">Bản cũ</button>
         <button onclick="soanTaiLieu('${n}','${e}')" class="btn btn-ghost btn-xs">Sửa</button>
@@ -4354,6 +4924,428 @@ document.addEventListener('keydown', ev => {
 });
 
 // ---------------------------------------------------------------------------
+// Qwen chuẩn bị Q&A + voice từ tài liệu. Hộp được dựng bằng JS để không thêm
+// một modal tĩnh nữa vào index.html; mỗi tài liệu mở đúng dữ liệu của nó.
+// ---------------------------------------------------------------------------
+let knQaState = null;
+const knQaAttr = value => escapeHtml(String(value ?? '')).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const KN_QA_SOURCE_KEY = 'voicebank.answerBank.source';
+const knQaSearchKey = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLocaleLowerCase('vi-VN');
+const knQaSourceLabel = source => `${knNhanNhom(source.nhom)} · ${knTenTaiLieu(source.ten)}`;
+
+function dongHoiDapTriThuc() {
+  if (knQaState?.timer) clearTimeout(knQaState.timer);
+  knQaState?.discardPrompt?.finish(false);
+  const previousFocus = knQaState?.previousFocus;
+  knQaState = null;
+  document.getElementById('knQaModal')?.remove();
+  if (previousFocus?.isConnected) previousFocus.focus();
+}
+
+async function knQaRequestClose() {
+  const state = knQaState;
+  if (!state || !(await knQaMayDiscard(state)) || !knQaCurrent(state)) return;
+  dongHoiDapTriThuc();
+}
+
+function knQaCurrent(state) { return knQaState === state && state.hop.isConnected; }
+function knQaMayDiscard(state) {
+  if (!state.dirty) return Promise.resolve(true);
+  if (state.discardPrompt) return Promise.resolve(false);
+  const previousFocus = document.activeElement;
+  const window = state.hop.querySelector('.qa-window');
+  const prompt = document.createElement('div');
+  prompt.className = 'qa-discard';
+  prompt.setAttribute('role', 'alertdialog');
+  prompt.setAttribute('aria-modal', 'true');
+  prompt.setAttribute('aria-labelledby', 'knQaDiscardTitle');
+  prompt.setAttribute('aria-describedby', 'knQaDiscardText');
+  prompt.innerHTML = '<div class="qa-discard-card"><h3 id="knQaDiscardTitle">Bạn có thay đổi chưa lưu</h3><p id="knQaDiscardText">Tiếp tục sửa để giữ bản đang soạn, hoặc bỏ thay đổi để quay lại.</p><div><button type="button" class="btn btn-primary" data-qa-keep>Tiếp tục sửa</button><button type="button" class="btn btn-ghost" data-qa-discard>Bỏ thay đổi</button></div></div>';
+  window.inert = true;
+  state.hop.appendChild(prompt);
+  return new Promise(resolve => {
+    const finish = discard => {
+      state.discardPrompt = null;
+      window.inert = false;
+      prompt.remove();
+      if (previousFocus?.isConnected) previousFocus.focus();
+      resolve(discard);
+    };
+    state.discardPrompt = {finish};
+    prompt.querySelector('[data-qa-keep]').addEventListener('click', () => finish(false));
+    prompt.querySelector('[data-qa-discard]').addEventListener('click', () => finish(true));
+    prompt.querySelector('[data-qa-keep]').focus();
+  });
+}
+function knQaStatus(state, message, kind = 'info') {
+  if (!knQaCurrent(state)) return;
+  state.actionMessage = message;
+  state.actionKind = kind;
+  const el = state.hop.querySelector('#knQaTrangThai');
+  el.textContent = message;
+  el.classList.toggle('hidden', !message);
+  el.dataset.kind = kind;
+}
+
+function knQaReady(state, item) {
+  return typeof item.voice_ready === 'boolean' ? item.voice_ready : state.voiceReady;
+}
+
+function knQaMatchesFilter(state, item, filter) {
+  if (filter === 'manual') return item.nguon === 'nhap_tay';
+  if (filter === 'pending') return item.bat !== false && state.voiceStatus !== 'disabled' && knQaReady(state, item) === false;
+  if (filter === 'disabled') return item.bat === false;
+  return true;
+}
+
+function veHoiDapTriThuc(items) {
+  const state = knQaState;
+  if (!state || !knQaCurrent(state)) return;
+  if (items) state.items = items;
+  const term = knQaSearchKey(state.hop.querySelector('#knQaSearch').value.trim());
+  const filtered = state.items.map((item, index) => ({item, index})).filter(({item}) =>
+    knQaMatchesFilter(state, item, state.filter) && (!term || knQaSearchKey([...(item.cau_hoi || []), item.tra_loi || ''].join(' ')).includes(term)));
+  const pages = Math.max(1, Math.ceil(filtered.length / 20));
+  state.page = Math.min(state.page, pages - 1);
+  const ready = state.items.filter(x => x.bat !== false && knQaReady(state, x) === true && state.voiceStatus !== 'disabled').length;
+  state.hop.querySelector('#knQaCount').textContent = state.loading ? 'Đang tải…' : `${state.items.length} câu trả lời · ${ready} có giọng đọc`;
+  state.hop.querySelector('#knQaPageInfo').textContent = `${filtered.length} câu trả lời · Trang ${state.page + 1}/${pages}`;
+  state.hop.querySelector('#knQaPrev').disabled = state.loading || state.page === 0;
+  state.hop.querySelector('#knQaNext').disabled = state.loading || state.page + 1 >= pages;
+  state.hop.querySelectorAll('[data-qa-filter]').forEach(button => {
+    const key = button.dataset.qaFilter;
+    button.setAttribute('aria-pressed', String(state.filter === key));
+    button.querySelector('span').textContent = state.items.filter(x => knQaMatchesFilter(state, x, key)).length;
+  });
+  const list = state.hop.querySelector('#knQaList');
+  list.setAttribute('aria-busy', String(state.loading));
+  if (state.loading) { list.innerHTML = '<div class="qa-empty"><span class="qa-loading-dot"></span><strong>Đang tải câu trả lời…</strong></div>'; return; }
+  list.innerHTML = filtered.slice(state.page * 20, state.page * 20 + 20).map(({item: x, index}) => {
+    const source = {nhap_tay: 'Bạn đã chỉnh', nhan_vien: 'Từ câu hỏi thực tế', lich_su: 'Từ lịch sử', hoi_thoai: 'Từ lịch sử', memory: 'Từ lịch sử'}[x.nguon] || 'AI soạn';
+    const voice = knQaReady(state, x);
+    const tag = x.bat === false ? ['off', 'Đã tắt'] : state.voiceStatus === 'disabled' ? ['off', 'Giọng đọc đang tắt'] : voice === false ? ['pending', 'Đang tạo giọng'] : voice === true ? ['ready', 'Sẵn sàng dùng'] : ['off', 'Chưa rõ trạng thái giọng'];
+    return `<article class="qa-answer-card${x.bat === false ? ' qa-answer-off' : ''}">
+      <div class="qa-answer-meta"><span>${source}</span><span class="qa-badge qa-badge-${tag[0]}">${tag[1]}</span></div>
+      <p class="qa-answer-text">${escapeHtml(x.tra_loi || '')}</p>
+      <div class="qa-answer-footer">${x.cau_hoi?.length ? `<details><summary>${x.cau_hoi.length} ví dụ lời khách</summary><ul>${x.cau_hoi.map(q => `<li>${escapeHtml(q)}</li>`).join('')}</ul></details>` : '<span class="qa-answer-note">Chọn theo ý khách</span>'}
+      <button type="button" data-qa-edit="${index}" class="btn btn-soft" aria-label="Sửa câu trả lời ${index + 1}" ${state.busy ? 'disabled' : ''}>Sửa</button></div>
+    </article>`;
+  }).join('') || `<div class="qa-empty"><strong>${state.items.length ? 'Không có câu trả lời phù hợp' : 'Chưa có câu trả lời'}</strong><p>${state.items.length ? 'Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm.' : 'Thêm câu bạn muốn AI nói, hoặc để AI soạn từ tài liệu.'}</p>${state.items.length ? '<button type="button" class="btn btn-ghost" onclick="knQaClearFilters()">Xóa bộ lọc</button>' : '<button type="button" class="btn btn-primary" onclick="knQaOpenEditor()">+ Thêm câu trả lời đầu tiên</button>'}</div>`;
+}
+
+function knQaClearFilters() {
+  if (!knQaState) return;
+  knQaState.filter = 'all'; knQaState.page = 0;
+  knQaState.hop.querySelector('#knQaSearch').value = '';
+  veHoiDapTriThuc();
+}
+
+async function knQaRequest(url, options = {}) {
+  const response = await fetch(url, options);
+  let data;
+  try { data = await response.json(); } catch (_) { throw new Error('Chưa nhận được kết quả. Hãy thử lại.'); }
+  if (!response.ok || data.error) {
+    const error = new Error(typeof data.error === 'string' ? data.error : typeof data.detail === 'string' ? data.detail : 'Không thực hiện được. Hãy thử lại.');
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+function knQaSchedule(state) {
+  if (state.timer) clearTimeout(state.timer);
+  state.timer = null;
+  const active = state.items.filter(item => item.bat !== false);
+  const pending = active.some(item => knQaReady(state, item) === false);
+  if (knQaCurrent(state) && !['disabled', 'error'].includes(state.voiceStatus) && active.length && (pending || state.voiceStatus === 'queued') && !document.hidden) {
+    state.timer = setTimeout(() => knQaLoad(state, true), 3000);
+  }
+}
+
+function knQaControls(state) {
+  const disabled = state.busy || state.loading;
+  for (const id of ['knQaAdd', 'knQaAiToggle', 'knQaTao', 'knQaSoCau', 'knQaSave', 'knQaCancel', 'knQaBack', 'knQaReloadEdit', 'knQaReload', 'knQaStaffGenerate', 'knQaNhanVien', 'knQaQuestions', 'knQaAnswer', 'knQaEnabled']) state.hop.querySelector('#' + id).disabled = disabled;
+  state.hop.querySelector('#knQaSource').disabled = state.busy;
+  state.hop.querySelectorAll('[data-qa-amount]').forEach(button => { button.disabled = disabled; });
+  state.hop.querySelector('#knQaTao').textContent = state.busy && state.generating ? 'AI đang soạn…' : 'Bắt đầu tạo';
+  state.hop.querySelector('#knQaSave').textContent = state.busy && state.saving ? 'Đang lưu…' : 'Lưu câu trả lời';
+}
+
+async function knQaLoad(state, polling = false) {
+  const version = state.version;
+  if (!polling) { state.loading = true; knQaControls(state); veHoiDapTriThuc(); }
+  try {
+    const data = await knQaRequest(`/api/knowledge/hoi-dap?nhom=${encodeURIComponent(state.nhom)}&ten=${encodeURIComponent(state.ten)}`);
+    if (!knQaCurrent(state) || version !== state.version || state.busy) return;
+    state.voiceReady = typeof data.voice_ready === 'boolean' ? data.voice_ready : data.voice?.status === 'ready' ? true : data.voice?.status === 'queued' ? false : undefined;
+    state.voiceStatus = data.voice?.status;
+    state.loading = false;
+    veHoiDapTriThuc(data.items || []);
+    try { localStorage.setItem(KN_QA_SOURCE_KEY, knKhoa(state.nhom, state.ten)); } catch (_) { /* optional preference */ }
+    if (polling && (data.voice?.status === 'ready' || data.voice_ready === true)) knQaStatus(state, state.actionMessage ? state.actionMessage.replace('Giọng đọc đang được tạo.', 'Giọng đọc đã sẵn sàng.') : 'Giọng đọc đã sẵn sàng.');
+    else if (!polling && state.actionKind === 'error') knQaStatus(state, '');
+  } catch (_) {
+    if (knQaCurrent(state) && version === state.version && !polling) knQaStatus(state, 'Không tải được câu trả lời. Bấm Làm mới để thử lại.', 'error');
+  } finally {
+    if (knQaCurrent(state) && version === state.version) { state.loading = false; knQaControls(state); veHoiDapTriThuc(); knQaSchedule(state); }
+  }
+}
+
+function knQaToggleGenerator() {
+  const state = knQaState;
+  if (!state || state.busy || state.loading) return;
+  const panel = state.hop.querySelector('#knQaGenerator');
+  const open = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !open);
+  state.hop.querySelector('#knQaAiToggle').setAttribute('aria-expanded', String(open));
+  if (open) state.hop.querySelector('#knQaSoCau').focus();
+}
+
+function knQaUpdatePresets(state) {
+  const amount = Number(state.hop.querySelector('#knQaSoCau').value);
+  state.hop.querySelectorAll('[data-qa-amount]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.qaAmount) === amount)));
+}
+
+async function knQaOpenEditor(index = null) {
+  const state = knQaState;
+  if (!state || state.busy || state.loading) return;
+  const item = index === null ? null : state.items[index];
+  if (index !== null && !item) return;
+  if (!(await knQaMayDiscard(state)) || !knQaCurrent(state)) return;
+  state.editing = item ? {id: item.id, updated_at: item.updated_at} : null;
+  state.dirty = false;
+  state.hop.classList.add('qa-editor-open');
+  const form = state.hop.querySelector('#knQaEditor');
+  form.classList.remove('hidden');
+  form.querySelector('#knQaEditorTitle').textContent = item ? 'Sửa câu trả lời' : 'Thêm câu trả lời';
+  form.querySelector('#knQaQuestions').value = (item?.cau_hoi || []).join('\n');
+  form.querySelector('#knQaAnswer').value = item?.tra_loi || '';
+  form.querySelector('#knQaExamples').open = false;
+  form.querySelector('#knQaEnabled').checked = item?.bat !== false;
+  form.querySelector('#knQaFormStatus').textContent = '';
+  form.querySelector('#knQaReloadEdit').classList.add('hidden');
+  form.querySelector('#knQaAnswer').focus();
+  form.scrollIntoView({block: 'nearest'});
+}
+
+function knQaHideEditor(state) {
+  const id = state.editing?.id;
+  state.dirty = false; state.editing = null;
+  state.hop.querySelector('#knQaEditor').classList.add('hidden');
+  state.hop.classList.remove('qa-editor-open');
+  const index = state.items.findIndex(x => x.id === id);
+  (index >= 0 ? state.hop.querySelector(`[data-qa-edit="${index}"]`) : null)?.focus();
+  if (index < 0) state.hop.querySelector('#knQaAdd').focus();
+}
+
+async function knQaCloseEditor() {
+  const state = knQaState;
+  if (!state || state.busy) return;
+  if (!(await knQaMayDiscard(state)) || !knQaCurrent(state)) return;
+  knQaHideEditor(state);
+}
+
+function knQaBusy(state, busy) {
+  state.busy = busy;
+  knQaControls(state);
+  veHoiDapTriThuc();
+}
+
+function knQaApply(state, data) {
+  state.version++;
+  state.loading = false;
+  state.voiceStatus = data.voice?.status;
+  if (typeof data.voice_ready === 'boolean') state.voiceReady = data.voice_ready;
+  else if (data.voice) state.voiceReady = data.voice.status === 'ready' ? true : data.voice.status === 'queued' ? false : undefined;
+  veHoiDapTriThuc(data.items || state.items);
+  knQaSchedule(state);
+}
+
+function knQaVoiceMessage(data) {
+  return {queued: ' Giọng đọc đang được tạo.', ready: ' Giọng đọc đã sẵn sàng.', disabled: ' Giọng đọc đang tắt.', error: ' Đã lưu; giọng đọc chưa tạo được, hệ thống sẽ thử lại.'}[data.voice?.status] || '';
+}
+
+async function knQaSave(event) {
+  event.preventDefault();
+  const state = knQaState;
+  if (!state || state.busy || state.loading) return;
+  const form = state.hop.querySelector('#knQaEditor');
+  const questions = form.querySelector('#knQaQuestions').value.split('\n').map(x => x.trim()).filter(Boolean);
+  const answer = form.querySelector('#knQaAnswer').value;
+  const status = form.querySelector('#knQaFormStatus');
+  if (!answer.trim()) { status.textContent = 'Nhập nội dung bạn muốn AI nói với khách.'; return; }
+  const editing = state.editing;
+  const payload = {nhom: state.nhom, ten: state.ten, cau_hoi: questions, tra_loi: answer, bat: form.querySelector('#knQaEnabled').checked};
+  if (editing) payload.expected_updated_at = editing.updated_at;
+  let savedId = null;
+  state.saving = true; knQaBusy(state, true);
+  status.textContent = 'Đang lưu câu trả lời…';
+  try {
+    const data = await knQaRequest(editing ? `/api/knowledge/hoi-dap/${encodeURIComponent(editing.id)}` : '/api/knowledge/hoi-dap', {
+      method: editing ? 'PATCH' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+    });
+    if (!knQaCurrent(state)) return;
+    knQaApply(state, data);
+    savedId = data.item?.id || editing?.id || null;
+    state.filter = 'all';
+    state.hop.querySelector('#knQaSearch').value = '';
+    state.page = Math.max(0, Math.floor(state.items.findIndex(x => x.id === savedId) / 20));
+    state.dirty = false;
+    knQaHideEditor(state);
+    knQaStatus(state, `Đã lưu câu trả lời.${knQaVoiceMessage(data)}`, 'success');
+  } catch (error) {
+    if (!knQaCurrent(state)) return;
+    status.textContent = error.status === 409 ? 'Câu trả lời đã thay đổi ở nơi khác. Bản bạn đang soạn vẫn được giữ. Tải bản mới để đối chiếu.' : error.status === 404 ? 'Câu trả lời không còn trong tài liệu. Bản đang soạn vẫn được giữ.' : [400, 422].includes(error.status) ? `${error.message}. Bản đang soạn vẫn được giữ.` : 'Chưa lưu được. Bản đang soạn vẫn được giữ; hãy thử lại.';
+    if (error.status === 409) form.querySelector('#knQaReloadEdit').classList.remove('hidden');
+  } finally { if (knQaCurrent(state)) { state.saving = false; knQaBusy(state, false); if (savedId) { const index = state.items.findIndex(x => x.id === savedId); (state.hop.querySelector(`[data-qa-edit="${index}"]`) || state.hop.querySelector('#knQaAdd')).focus(); } } }
+}
+
+async function knQaReloadEditor() {
+  const state = knQaState;
+  if (!state?.editing || state.busy) return;
+  if (!(await knQaMayDiscard(state)) || !knQaCurrent(state)) return;
+  const id = state.editing.id;
+  knQaBusy(state, true);
+  try {
+    const data = await knQaRequest(`/api/knowledge/hoi-dap?nhom=${encodeURIComponent(state.nhom)}&ten=${encodeURIComponent(state.ten)}`);
+    if (!knQaCurrent(state)) return;
+    knQaApply(state, data);
+    const index = state.items.findIndex(x => x.id === id);
+    knQaBusy(state, false);
+    if (index < 0) { state.hop.querySelector('#knQaFormStatus').textContent = 'Câu trả lời không còn tồn tại. Bản đang soạn vẫn được giữ.'; return; }
+    state.dirty = false;
+    knQaOpenEditor(index);
+  } catch (_) { if (knQaCurrent(state)) state.hop.querySelector('#knQaFormStatus').textContent = 'Không tải được bản mới. Hãy thử lại.'; }
+  finally { if (knQaCurrent(state)) knQaBusy(state, false); }
+}
+
+async function taoHoiDapTriThuc() {
+  const state = knQaState;
+  if (!state || state.busy || state.loading) return;
+  const input = state.hop.querySelector('#knQaSoCau');
+  if (!input.reportValidity()) return;
+  const count = Number(input.value);
+  state.generating = true; knQaBusy(state, true);
+  knQaStatus(state, `AI đang soạn thêm tối đa ${count} câu trả lời. Bạn có thể để cửa sổ này mở để theo dõi.`);
+  try {
+    const data = await knQaRequest('/api/knowledge/tao-them-hoi-dap', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nhom: state.nhom, ten: state.ten, so_cau: count})});
+    if (!knQaCurrent(state)) return;
+    knQaApply(state, data);
+    knQaStatus(state, `Đã thêm ${data.added || 0}/${data.requested ?? count} câu trả lời. Các câu cũ được giữ nguyên.${knQaVoiceMessage(data)}`, 'success');
+  } catch (error) { knQaStatus(state, [400, 409, 422, 503].includes(error.status) ? error.message : 'Chưa tạo thêm được câu trả lời. Hãy thử lại.', 'error'); }
+  finally { if (knQaCurrent(state)) { state.generating = false; knQaBusy(state, false); } }
+}
+
+async function knQaStaffGenerate() {
+  const state = knQaState;
+  if (!state || state.busy || state.loading) return;
+  const input = state.hop.querySelector('#knQaNhanVien');
+  const questions = input.value.split('\n').map(x => x.trim()).filter(Boolean);
+  if (!questions.length) { knQaStatus(state, 'Nhập ít nhất một câu hỏi để AI trả lời.', 'error'); input.focus(); return; }
+  knQaBusy(state, true);
+  knQaStatus(state, 'AI đang soạn đáp án cho các câu hỏi bạn ghi nhận…');
+  const form = new FormData();
+  form.append('nhom', state.nhom); form.append('ten', state.ten);
+  form.append('so_cau', String(Math.min(questions.length, 300)));
+  form.append('cau_hoi_nhan_vien', questions.join('\n'));
+  try {
+    const data = await knQaRequest('/api/knowledge/tao-hoi-dap', {method: 'POST', body: form});
+    if (!knQaCurrent(state)) return;
+    knQaApply(state, data);
+    knQaStatus(state, `Đã cập nhật đáp án cho câu hỏi thực tế. Tổng ${state.items.length} câu trả lời.`, 'success');
+  } catch (_) { knQaStatus(state, 'Chưa trả lời được các câu hỏi. Nội dung đã nhập vẫn được giữ.', 'error'); }
+  finally { if (knQaCurrent(state)) knQaBusy(state, false); }
+}
+
+async function moQuanLyCauTraLoi() {
+  if (!knDanhSach.length) await loadTriThuc();
+  if (!knDanhSach.length) { thongBao('Thêm tài liệu trước để AI có căn cứ soạn câu trả lời.', 'loi'); moTaiLieuNguon(); return; }
+  let previous = '';
+  try { previous = localStorage.getItem(KN_QA_SOURCE_KEY) || ''; } catch (_) { /* optional preference */ }
+  const selected = knDanhSach.find(x => knKhoa(x.nhom, x.ten) === previous) || knDanhSach.find(x => !KN_TEN_MAU.includes(x.ten)) || knDanhSach[0];
+  await moHoiDapTriThuc(selected.nhom, selected.ten);
+}
+
+async function moHoiDapTriThuc(nhom, ten) {
+  if (knQaState && !(await knQaMayDiscard(knQaState))) return;
+  dongHoiDapTriThuc();
+  const hop = document.createElement('div');
+  hop.id = 'knQaModal';
+  hop.setAttribute('role', 'dialog'); hop.setAttribute('aria-modal', 'true'); hop.setAttribute('aria-labelledby', 'knQaTitle');
+  const sources = knDanhSach.length ? knDanhSach : [{nhom, ten}];
+  const filters = [['all', 'Tất cả'], ['manual', 'Bạn đã chỉnh'], ['pending', 'Chờ giọng'], ['disabled', 'Đã tắt']];
+  hop.innerHTML = `<div class="qa-window">
+    <header class="qa-window-header"><div><span class="kn-eyebrow">ĐÁP ÁN AI SẼ NÓI VỚI KHÁCH</span><h2 id="knQaTitle">Kho câu trả lời</h2><span id="knQaCount">Đang tải…</span></div><button type="button" class="btn btn-ghost qa-close" onclick="knQaRequestClose()">Đóng <span aria-hidden="true">×</span></button></header>
+    <div class="qa-body">
+      <div class="qa-source"><label for="knQaSource">Chọn tài liệu<select id="knQaSource">${sources.map((x, i) => `<option value="${i}" ${x.nhom === nhom && x.ten === ten ? 'selected' : ''}>${knQaAttr(knQaSourceLabel(x))}</option>`).join('')}</select></label></div>
+      <div class="qa-actions"><button id="knQaAdd" type="button" class="btn btn-primary" onclick="knQaOpenEditor()">+ Thêm câu trả lời</button><button id="knQaAiToggle" type="button" class="btn btn-soft" aria-expanded="false" aria-controls="knQaGenerator" onclick="knQaToggleGenerator()"><span aria-hidden="true">✦</span> AI tạo thêm</button><button id="knQaReload" type="button" class="btn btn-ghost" aria-label="Tải lại câu trả lời">Làm mới</button></div>
+      <section id="knQaGenerator" class="qa-generator hidden" aria-labelledby="knQaGeneratorTitle"><div><h3 id="knQaGeneratorTitle">Để AI soạn thêm đáp án</h3><p>AI đọc tài liệu đang chọn, bổ sung ý còn thiếu và giữ các câu bạn đã sửa.</p></div><div class="qa-generator-controls"><label for="knQaSoCau">Số câu muốn thêm<input id="knQaSoCau" type="number" min="1" max="300" step="1" value="24"></label><div class="qa-amounts" role="group" aria-label="Chọn nhanh số câu">${[12,24,50,100].map(n => `<button type="button" data-qa-amount="${n}" aria-pressed="${n === 24}">${n}</button>`).join('')}</div><button id="knQaTao" type="button" class="btn btn-primary" onclick="taoHoiDapTriThuc()">Bắt đầu tạo</button></div><small>Số thực tế phụ thuộc nội dung nguồn. Giọng đọc được tạo tự động sau đó.</small></section>
+      <div id="knQaTrangThai" class="qa-feedback hidden" role="status" aria-live="polite"></div>
+      <div class="qa-layout">
+        <section class="qa-library" aria-label="Danh sách câu trả lời"><div class="qa-library-tools"><label class="qa-search" for="knQaSearch"><span aria-hidden="true">⌕</span><input id="knQaSearch" type="search" placeholder="Tìm nội dung trả lời…" aria-label="Tìm câu trả lời"></label><div class="qa-filters" role="group" aria-label="Lọc câu trả lời">${filters.map(([key,label]) => `<button type="button" data-qa-filter="${key}" aria-pressed="${key === 'all'}">${label} <span>0</span></button>`).join('')}</div></div><div id="knQaList"></div><div class="qa-pagination"><span id="knQaPageInfo"></span><div><button id="knQaPrev" type="button" class="btn btn-ghost">← Trước</button><button id="knQaNext" type="button" class="btn btn-ghost">Sau →</button></div></div></section>
+        <form id="knQaEditor" class="hidden"><div class="qa-editor-heading"><button id="knQaBack" type="button" class="btn btn-ghost" onclick="knQaCloseEditor()">← Danh sách</button><h3 id="knQaEditorTitle"></h3></div><p class="qa-editor-source" id="knQaEditorSource">${escapeHtml(knTenTaiLieu(ten))}</p><label for="knQaAnswer">Nội dung khách sẽ nghe<textarea id="knQaAnswer" rows="7" required placeholder="Nhập câu trả lời bạn muốn AI nói với khách…"></textarea></label><p class="qa-editor-hint">Chỉ cần nội dung trả lời. Lưu xong, hệ thống tự tạo giọng đọc mới.</p><details id="knQaExamples" class="qa-examples"><summary>Ví dụ lời khách <span>Không bắt buộc</span></summary><label for="knQaQuestions">Mỗi dòng một ví dụ<textarea id="knQaQuestions" rows="3" placeholder="Có thể để trống"></textarea></label></details><label class="qa-enable"><input id="knQaEnabled" type="checkbox" checked><span>Cho phép AI dùng câu trả lời này</span></label><div id="knQaFormStatus" role="status" aria-live="polite"></div><div class="qa-editor-footer"><button id="knQaSave" type="submit" class="btn btn-primary">Lưu câu trả lời</button><button id="knQaCancel" type="button" class="btn btn-ghost" onclick="knQaCloseEditor()">Bỏ thay đổi</button><button id="knQaReloadEdit" type="button" class="hidden btn btn-soft">Tải bản mới</button></div></form>
+      </div>
+      <details class="qa-staff"><summary>Tôi có câu hỏi thực tế của khách</summary><p>Dán câu hỏi đã ghi nhận. AI dùng tài liệu này để soạn đáp án.</p><label for="knQaNhanVien">Mỗi dòng một câu hỏi<textarea id="knQaNhanVien" rows="3"></textarea></label><button id="knQaStaffGenerate" type="button" class="btn btn-soft" onclick="knQaStaffGenerate()">AI soạn đáp án</button></details>
+    </div></div>`;
+  const state = {hop, nhom, ten, previousFocus: document.activeElement, items: [], page: 0, filter: 'all', version: 0, busy: false, loading: true, dirty: false, editing: null, voiceReady: undefined, voiceStatus: undefined, timer: null, actionMessage: '', actionKind: 'info'};
+  knQaState = state;
+  document.body.appendChild(hop);
+  hop.querySelector('#knQaSource').focus();
+  hop.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && !hop.querySelector('#knQaEditor').classList.contains('hidden')) { event.preventDefault(); hop.querySelector('#knQaEditor').requestSubmit(); }
+    if (event.key !== 'Tab') return;
+    const targets = [...hop.querySelectorAll('button, input, textarea, select, summary')].filter(el => !el.disabled && !el.closest('[inert]') && el.getClientRects().length);
+    const first = targets[0], last = targets[targets.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  });
+  hop.addEventListener('click', event => {
+    if (event.target === hop) knQaRequestClose();
+    const edit = event.target.closest('[data-qa-edit]');
+    if (edit) knQaOpenEditor(Number(edit.dataset.qaEdit));
+    const filter = event.target.closest('[data-qa-filter]');
+    if (filter) { state.filter = filter.dataset.qaFilter; state.page = 0; veHoiDapTriThuc(); }
+    const amount = event.target.closest('[data-qa-amount]');
+    if (amount) { hop.querySelector('#knQaSoCau').value = amount.dataset.qaAmount; knQaUpdatePresets(state); }
+  });
+  hop.querySelector('#knQaEditor').addEventListener('submit', knQaSave);
+  hop.querySelector('#knQaEditor').addEventListener('input', () => { state.dirty = true; });
+  hop.querySelector('#knQaSoCau').addEventListener('input', () => knQaUpdatePresets(state));
+  hop.querySelector('#knQaReloadEdit').addEventListener('click', knQaReloadEditor);
+  hop.querySelector('#knQaReload').addEventListener('click', () => knQaLoad(state));
+  hop.querySelector('#knQaSearch').addEventListener('input', () => { state.page = 0; veHoiDapTriThuc(); });
+  hop.querySelector('#knQaPrev').addEventListener('click', () => { state.page = Math.max(0, state.page - 1); veHoiDapTriThuc(); hop.querySelector('#knQaSearch').focus(); });
+  hop.querySelector('#knQaNext').addEventListener('click', () => { state.page++; veHoiDapTriThuc(); hop.querySelector('#knQaSearch').focus(); });
+  hop.querySelector('#knQaSource').addEventListener('change', async event => {
+    const selected = sources[Number(event.target.value)];
+    if (!selected) return;
+    if (state.busy || !(await knQaMayDiscard(state))) { event.target.value = String(sources.findIndex(x => x.nhom === state.nhom && x.ten === state.ten)); return; }
+    if (!knQaCurrent(state)) return;
+    state.version++; state.nhom = selected.nhom; state.ten = selected.ten;
+    state.items = []; state.page = 0; state.filter = 'all'; state.loading = true; state.dirty = false; state.editing = null; state.voiceReady = undefined; state.voiceStatus = undefined;
+    hop.classList.remove('qa-editor-open'); hop.querySelector('#knQaEditor').classList.add('hidden');
+    hop.querySelector('#knQaEditorSource').textContent = knTenTaiLieu(selected.ten);
+    hop.querySelector('#knQaSearch').value = '';
+    knQaStatus(state, '');
+    await knQaLoad(state);
+  });
+  await knQaLoad(state);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!knQaState) return;
+  if (document.hidden) { clearTimeout(knQaState.timer); knQaState.timer = null; }
+  else knQaSchedule(knQaState);
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !knQaState) return;
+  event.preventDefault();
+  if (knQaState.discardPrompt) { knQaState.discardPrompt.finish(false); return; }
+  if (!knQaState.hop.querySelector('#knQaEditor').classList.contains('hidden')) knQaCloseEditor();
+  else knQaRequestClose();
+});
+
+// ---------------------------------------------------------------------------
 // Nhóm tài liệu: chỉ là thư mục con của knowledge/, thêm được từ giao diện
 // ---------------------------------------------------------------------------
 function veChonNhom() {
@@ -4545,9 +5537,9 @@ async function uploadTriThuc() {
     } else {
       box.className = 'mt-3 text-[11px] text-emerald-300';
       box.innerHTML = `Đã ${d.ghi_de ? 'ghi đè' : 'thêm'} <b>${escapeHtml(d.ten)}</b> — `
-        + `${d.so_dong} dòng, AI đọc được ${d.so_manh} mảnh.`
+        + `${d.so_dong} dòng, đã lập chỉ mục ${d.so_manh} mảnh vector.`
         + `<pre class="mt-2 text-[10px] text-gray-500 bg-void/50 rounded p-2 overflow-x-auto">${escapeHtml(d.xem_truoc || '')}</pre>`;
-      thongBao(`Đã ${d.ghi_de ? 'ghi đè' : 'thêm'} ${d.ten} — AI đọc được ${d.so_manh} mảnh.`, 'xong');
+      thongBao(`Đã ${d.ghi_de ? 'ghi đè' : 'thêm'} ${d.ten} — lập chỉ mục ${d.so_manh} mảnh.`, 'xong');
       boFileTriThuc();
       knVuaTaiLen = true;
       loadTriThuc();
@@ -4558,6 +5550,27 @@ async function uploadTriThuc() {
     box.textContent = 'Lỗi: ' + e.message;
   } finally {
     btn.disabled = false; btn.textContent = 'Tải lên';
+  }
+}
+
+async function lapChiMucTriThuc(nhom, ten, btn, force = false) {
+  const cu = btn?.textContent || '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Đang tạo vector…'; }
+  try {
+    const fd = new FormData();
+    fd.append('nhom', nhom);
+    fd.append('ten', ten);
+    fd.append('force', force ? 'true' : 'false');
+    const d = await fetch('/api/knowledge/lap-chi-muc', { method: 'POST', body: fd }).then(r => r.json());
+    if (d.error) { thongBao(d.error, 'loi'); return; }
+    thongBao(d.bo_qua
+      ? `${ten} đã có vector mới nhất (${d.so_manh} mảnh).`
+      : `Đã lập chỉ mục ${ten}: ${d.so_manh} mảnh bằng ${d.model} trong ${d.ms}ms.`, 'xong');
+    loadTriThuc();
+  } catch (e) {
+    thongBao('Không lập chỉ mục được: ' + e.message, 'loi');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = cu; }
   }
 }
 
@@ -4785,18 +5798,17 @@ async function xoaTaiLieuMau() {
 }
 
 async function napLaiTriThuc() {
-  if (!confirm('Nạp lại toàn bộ tài liệu vào kho tri thức của AI?')) return;
   const btn = document.getElementById('knNapBtn');
-  btn.disabled = true; btn.textContent = 'Đang nạp…';
+  btn.disabled = true; btn.textContent = 'Đang đồng bộ…';
   try {
     const d = await fetch('/api/knowledge/nap-lai', { method: 'POST' }).then(r => r.json());
     if (d.error) { thongBao(d.error, 'loi'); return; }
-    thongBao(`Đã nạp lại ${d.so_tai_lieu} tài liệu trong ${d.ms}ms.`, 'xong');
+    thongBao(`Đã đồng bộ ${d.so_tai_lieu} tài liệu: ${d.da_cap_nhat} cập nhật, ${d.giu_nguyen} giữ nguyên (${d.ms}ms).`, 'xong');
     loadTriThuc();
   } catch (e) {
     thongBao('Lỗi: ' + e.message, 'loi');
   } finally {
-    btn.disabled = false; btn.textContent = 'Nạp lại toàn bộ';
+    btn.disabled = false; btn.textContent = 'Đồng bộ kho vector';
   }
 }
 
@@ -5602,7 +6614,7 @@ function veCauDuoi() {
   o.innerHTML = (cdKho.cau_duoi || []).map(d =>
     `<span class="chip" title="${escapeHtml(d.id)}">${escapeHtml(d.text)}
       <span class="chip-x" onclick="xoaCauDuoi('${escapeHtml(d.id)}')">&times;</span></span>`).join('')
-    || '<span class="text-[11px] text-red-400">Không có câu đuôi nào — khách sẽ nghe im lặng trọn quãng chờ.</span>';
+    || '<span class="text-[11px] text-gray-500">Chưa có câu đuôi; nhóm câu chung vẫn có thể dùng khi không rõ tình huống.</span>';
 }
 
 // --- thử ---------------------------------------------------------------------
@@ -5623,25 +6635,33 @@ async function thuCauDem() {
   try {
     const d = await fetch('/api/fillers/thu', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cau }),
+      body: JSON.stringify({
+        cau,
+        cau_khach_truoc: (document.getElementById('cdThuKhachTruoc')?.value || '').trim(),
+        loi_ai_truoc: (document.getElementById('cdThuAiTruoc')?.value || '').trim(),
+      }),
     }).then(r => r.json());
     if (d.error) { o.innerHTML = '<div class="text-[11px] text-red-400">' + escapeHtml(d.error) + '</div>'; return; }
 
-    const pct = Math.round(d.diem * 100);
+    const pct = d.diem == null ? null : Math.round(d.diem * 100);
     if (!d.dat_nguong) {
-      // Dưới ngưỡng KHÔNG phải hỏng: nói sai chủ đề tệ hơn nói "Dạ" trung tính.
+      if (d.cach_chon === 'trung_vi_du') {
+        o.innerHTML = `<div class="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5 text-[11px] text-amber-200/80 leading-relaxed">
+          Câu này đang là ví dụ của nhiều tình huống. Hãy sửa ví dụ trùng để hệ thống chọn đúng.</div>`;
+        return;
+      }
+      // Dưới ngưỡng: tránh gán nhầm tình huống, để bộ chọn dùng phương án trung tính.
       o.innerHTML = `<div class="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5 text-[11px] text-amber-200/80 leading-relaxed">
-        Điểm cao nhất <b>${pct}%</b>, dưới ngưỡng ${Math.round(d.nguong * 100)}% — câu này sẽ dùng
-        câu đuôi chung ("Dạ", "Vâng ạ") chứ không dẫn vào chủ đề.
-        Đây là hành vi cố ý: nói trớt chủ đề tệ hơn nói trung tính.
+        Điểm cao nhất <b>${pct}%</b>, dưới ngưỡng ${Math.round(d.nguong * 100)}% — chưa chọn câu đệm theo tình huống.
+        Hệ thống có thể dùng nhóm câu chung trung tính khi không đủ ngữ cảnh.
         Muốn bắt được thì thêm chính câu này vào ví dụ của tình huống phù hợp.</div>`;
       return;
     }
     o.innerHTML = `<div class="rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2.5">
       <div class="flex items-center gap-2 flex-wrap text-[11px]">
         <span class="pill st-daNap"><span class="dot"></span>${escapeHtml(d.ten || d.id)}</span>
-        <span class="text-gray-400">khớp ${pct}%</span>
-        <span class="text-gray-600">ngưỡng ${Math.round(d.nguong * 100)}%</span>
+        <span class="text-gray-400">${d.cach_chon === 'ngu_canh_phien' ? 'theo câu AI vừa nói · chọn ngay' : d.cach_chon === 'vi_du_da_luu' ? 'ví dụ đã lưu · chọn ngay' : d.cach_chon === 'tu_khoa_ro' ? 'từ khóa rõ · chọn ngay' : `khớp ${pct}%`}</span>
+        ${d.cach_chon === 'vector' ? `<span class="text-gray-600">ngưỡng ${Math.round(d.nguong * 100)}%</span>` : ''}
       </div>
       <div class="text-[11px] text-gray-300 mt-2">Sẽ phát một trong ${d.mo_dau.length} mẩu:</div>
       <div class="text-[11px] text-gray-500 mt-1 leading-relaxed">${d.mo_dau.map(escapeHtml).join(' · ')}</div>
