@@ -1,0 +1,156 @@
+[
+  {
+    "scenario": "card17",
+    "question": "Tôi mới 17 tuổi thì có thể mở thẻ tín dụng được không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card17",
+    "question": "Liệu người 17 tuổi này có đủ điều kiện để làm hồ sơ xin thẻ tín dụng hay không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card17",
+    "question": "Với độ tuổi 17, tôi cần chuẩn bị những gì để đăng ký mở thẻ tín dụng?",
+    "accepted": true
+  },
+  {
+    "scenario": "card17",
+    "question": "Mình đang 17 tuổi, quy trình mở thẻ tín dụng cho nhóm tuổi này diễn ra như thế nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "card17",
+    "question": "Có chính sách đặc biệt nào dành riêng cho khách hàng 17 tuổi khi mở thẻ tín dụng không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card17",
+    "question": "Tôi muốn biết thêm về các yêu cầu cụ thể để một bạn trẻ 17 tuổi có thể sở hữu thẻ tín dụng.",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Tôi mới 20 tuổi thì có thể mở thẻ tín dụng được không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card20",
+    "question": "Đã đến tuổi 20 rồi, liệu tôi đã đủ điều kiện để sở hữu một chiếc thẻ tín dụng chưa?",
+    "accepted": true
+  },
+  {
+    "scenario": "card20",
+    "question": "Với độ tuổi 20, quy trình đăng ký mở thẻ tín dụng diễn ra như thế nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "card20",
+    "question": "Mình vừa tròn 20 tuổi, có nên bắt đầu mở thẻ tín dụng ngay lúc này không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card20",
+    "question": "Ở mốc tuổi 20, tôi cần chuẩn bị những gì để hồ sơ mở thẻ tín dụng được duyệt?",
+    "accepted": true
+  },
+  {
+    "scenario": "card20",
+    "question": "Khi mới 20 tuổi, cơ hội của tôi trong việc mở thẻ tín dụng thành công là bao nhiêu?",
+    "accepted": true
+  },
+  {
+    "scenario": "card18",
+    "question": "Tôi đã tròn 18 tuổi rồi thì có thể mở thẻ tín dụng ngay không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card18",
+    "question": "Hiện tại tôi mới đủ 18 tuổi, liệu có được cấp thẻ tín dụng đợt này không?",
+    "accepted": true
+  },
+  {
+    "scenario": "card18",
+    "question": "Với độ tuổi chính xác là 18, tôi có đủ điều kiện đăng ký mở thẻ tín dụng trong đợt 20260923-a không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Tôi vừa tròn 18 tuổi hôm qua, vậy mình có thể làm hồ sơ mở thẻ tín dụng được chưa?",
+    "accepted": true
+  },
+  {
+    "scenario": "card18",
+    "question": "Nếu tôi đã đến 18 tuổi thì quy trình mở thẻ tín dụng đợt 20260923-a sẽ bắt đầu từ đâu?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Mình cần bao nhiêu năm tuổi tối thiểu để mở thẻ tín dụng và liệu 18 tuổi là đủ cho đợt này không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "question": "Tôi mới 21 tuổi thì có đủ điều kiện vay mua nhà được không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "question": "Với độ tuổi 21, tôi có thể xin gói vay mua nhà ngay đợt này không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "question": "Mình đang 21 tuổi, quy trình thẩm định cho hồ sơ vay mua nhà sẽ thế nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "question": "Năm nay mình tròn 21, liệu ngân hàng có chấp nhận hỗ trợ vay mua nhà hay không?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21",
+    "question": "Tôi mới đủ 21 tuổi thì khả năng được duyệt khoản vay mua nhà như thế nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "question": "Độ tuổi 21 của tôi có nằm trong danh sách ưu tiên cho chương trình vay mua nhà không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Tôi mới 22 tuổi thì có được vay mua nhà không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Với độ tuổi 22, tôi cần chuẩn bị những gì để được duyệt khoản vay mua nhà?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Chương trình hỗ trợ cho người trẻ như tôi (22 tuổi) có những chính sách đặc biệt nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Tôi đang 22 tuổi, liệu ngân hàng có chấp nhận cho vay mua nhà ngay từ lần đầu không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Điều kiện vay mua nhà dành cho khách hàng 22 tuổi khác gì so với các độ tuổi khác?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Làm sao để tôi (22 tuổi) tăng cơ hội được phê duyệt khoản vay mua nhà?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21-followup",
+    "error": "HTTPError: HTTP Error 500: Internal Server Error"
+  }
+]

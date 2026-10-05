@@ -268,3 +268,36 @@ def test_tra_truoc_han_khong_can_chu_phi(tl, cau, can):
 def test_tra_truoc_han_kem_tinh_tien_khong_bi_bat():
     got = tra_loi("anh muốn trả trước hạn 100 triệu thì mỗi tháng còn đóng bao nhiêu", TC)
     assert not got or got[0] != "phi_tra_truoc_han"
+
+
+# --- chủ đề tài liệu không có (02-10-2026) -------------------------------------
+@pytest.mark.parametrize("tl, cau, chu_de", [
+    (TC, "lãi suất thấu chi bao nhiêu", "thấu chi"),
+    (THE, "ứng tiền mặt bằng thẻ tín dụng có được miễn lãi không", "ứng tiền mặt"),
+    (THE, "rút tiền mặt từ thẻ có mất phí không", "ứng tiền mặt"),
+])
+def test_chu_de_khong_co_trong_tai_lieu_thi_noi_chua_co_thong_tin(tl, cau, chu_de):
+    ma, noi = tra_loi(cau, tl)
+    assert ma == "chua_co_thong_tin_chu_de"
+    assert chu_de in noi and "%" not in noi and "55" not in noi
+
+
+@pytest.mark.parametrize("tl, cau", [
+    (TC, "lãi suất vay tín chấp bao nhiêu"),          # không nêu chủ đề hẹp
+    (TK, "rút trước hạn có mất lãi không"),           # tài liệu tiết kiệm có mục này
+    (NHA, "trả nợ trước hạn có mất phí không"),       # tài liệu vay mua nhà có mục này
+    (TC, "gửi tiết kiệm rút trước hạn có mất lãi không"),  # đổi sang sản phẩm khác
+    ("", "lãi suất thấu chi bao nhiêu"),              # chưa biết sản phẩm -> để RAG
+])
+def test_chu_de_co_trong_tai_lieu_hoac_doi_san_pham_khong_bi_chan(tl, cau):
+    got = tra_loi(cau, tl)
+    assert got is None or got[0] != "chua_co_thong_tin_chu_de"
+
+
+@pytest.mark.parametrize("cau", [
+    "thẻ tín dụng Shinhan miễn lãi bao nhiêu ngày",
+    "gửi tiết kiệm 12 tháng lãi bao nhiêu",
+])
+def test_chua_co_tai_lieu_thi_luat_khoan_vay_khong_tra_loi_the_va_tiet_kiem(cau):
+    # Kịch bản riêng (Shinhan) không nạp tài liệu sản phẩm chung: tai_lieu rỗng.
+    assert tra_loi(cau, "") is None

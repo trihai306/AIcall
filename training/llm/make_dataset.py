@@ -141,15 +141,32 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--system", default=DEFAULT_SYSTEM,
                         help="System prompt gắn vào các mẫu chuyển từ transcript")
+    parser.add_argument("--sources", nargs="+", metavar="FILENAME",
+                        help="Chỉ gộp các file nguồn được chọn trong data/training")
+    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument("--conversation-style", action="store_true",
+                        help="Gắn cùng quy tắc văn phong đang dùng lúc trả lời")
     args = parser.parse_args()
 
     if not DATA_DIR.exists():
         sys.exit(f"[ERROR] Chưa có thư mục {DATA_DIR}. Upload dataset qua web UI hoặc copy file vào đó.")
 
+    if args.sources:
+        selected = []
+        for name in args.sources:
+            path = DATA_DIR / name
+            if path.name != name or not path.is_file() or path.suffix.lower() not in (".jsonl", ".json", ".csv", ".txt"):
+                sys.exit(f"[ERROR] Nguồn không hợp lệ: {name}")
+            selected.append(path)
+    else:
+        selected = [p for p in DATA_DIR.iterdir()
+                    if p.is_file() and p.suffix.lower() in (".jsonl", ".json", ".csv", ".txt")
+                    and p.name != OUTPUT_PATH.name]
+
     samples: list[dict] = []
 
     # 1. JSONL có sẵn
-    for f in sorted(DATA_DIR.glob("*.jsonl")):
+    for f in sorted(p for p in selected if p.suffix.lower() == ".jsonl"):
         if f.name == OUTPUT_PATH.name:
             continue
         for i, line in enumerate(f.read_text(encoding="utf-8").splitlines()):
@@ -171,7 +188,7 @@ def main():
     # 1b. JSON chuẩn: chấp nhận một object hoặc một mảng object cùng format
     # `messages`. API upload từ trước đã cho phép .json nên make_dataset cũng
     # phải đọc được, nếu không UI báo có mẫu nhưng lúc train lại bỏ qua file.
-    for f in sorted(DATA_DIR.glob("*.json")):
+    for f in sorted(p for p in selected if p.suffix.lower() == ".json"):
         try:
             raw = json.loads(f.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
@@ -193,14 +210,14 @@ def main():
             print(f"[OK] {f.name} -> {kept} mẫu")
 
     # 2. Transcript .txt
-    for f in sorted(DATA_DIR.glob("*.txt")):
+    for f in sorted(p for p in selected if p.suffix.lower() == ".txt"):
         converted = parse_transcript(f, args.system)
         if converted:
             samples.extend(converted)
             print(f"[OK] {f.name} -> {len(converted)} mẫu")
 
     # 3. Bảng tính .csv (mẫu cho người dùng tự điền)
-    for f in sorted(DATA_DIR.glob("*.csv")):
+    for f in sorted(p for p in selected if p.suffix.lower() == ".csv"):
         converted = parse_csv(f, args.system)
         if converted:
             samples.extend(converted)
@@ -235,11 +252,22 @@ def main():
               f"({len(samples)} -> {len(giu)})")
     samples = giu
 
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as fw:
+    if args.conversation_style:
+        sys.path.insert(0, str(PROJECT_DIR))
+        from backend.core.conversation_style import STYLE_GUIDE
+        for sample in samples:
+            messages = sample["messages"]
+            if messages[0]["role"] == "system" and STYLE_GUIDE not in messages[0]["content"]:
+                messages[0]["content"] += "\n\n" + STYLE_GUIDE
+            elif messages[0]["role"] != "system":
+                messages.insert(0, {"role": "system", "content": STYLE_GUIDE})
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with open(args.output, "w", encoding="utf-8") as fw:
         for s in samples:
             fw.write(json.dumps(s, ensure_ascii=False) + "\n")
 
-    print(f"\nTổng: {len(samples)} mẫu -> {OUTPUT_PATH}")
+    print(f"\nTổng: {len(samples)} mẫu -> {args.output}")
 
     # Soi phong cách theo đúng luật của system prompt lúc chạy thật. Trước đây
     # chỉ đếm ">40 từ" - một con số không khớp với bất kỳ quy tắc nào, nên mẫu

@@ -1,0 +1,17 @@
+Cập nhật UTC: 2026-09-24T02:15:03+00:00
+Worker: running / creating_scoring_and_mining
+Câu hỏi đã tạo (không trùng chính tả): 7360
+Còn tới trần cấu hình (ước lượng tối đa, có thể cạn ý sớm): 1340
+Chờ Qwen 9B chấm: 1
+Qwen 9B cho qua, chờ rà nguồn: 5537
+9B chấm lỗi, chờ rà tay: 14
+Đã duyệt cho các lượt train tiếp: 145
+Ý nghiệp vụ mới chờ rà PDF: 37
+Lượt fine-tune hoàn tất: 2
+Câu thật sự dùng cập nhật model qua các lượt: 158
+Candidate gần nhất: shinhan-qwen35-2b-20260924-015747; train 131 câu, giữ riêng 14 câu
+Kiểm tra Shinhan: 6/6 ca đạt
+Kiểm tra nói tự nhiên: 2/10 ca đạt
+Kiểm tra nghiệp vụ giả lập cũ: 3/7 ca đạt
+Kết luận chất lượng: chưa đạt
+Số ca kiểm tra đạt không phải số câu đã học tốt trong mọi tình huống.

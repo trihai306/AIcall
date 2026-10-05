@@ -213,6 +213,7 @@ class Job:
     finished: float | None = None
     process: asyncio.subprocess.Process | None = None
     task: asyncio.Task | None = None   # giữ tham chiếu, tránh bị GC giữa chừng
+    service_ready_task: asyncio.Task | None = None  # TTS + LLM ready after training
     progress: dict | None = None       # mốc tiến độ mới nhất do script con phát
     step_label: str = ""               # tên bước đang chạy, hiện lên UI
 

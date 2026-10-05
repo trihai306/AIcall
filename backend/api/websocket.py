@@ -166,6 +166,31 @@ async def websocket_campaign(websocket: WebSocket, campaign_id: str):
         runner.thoi_theo_doi(websocket)
 
 
+async def _configure_web_session(session: CallSession, data: dict, cancel_turn):
+    """Validate before stopping a turn or changing the conversation scope."""
+    scenario = None
+    if "scenario_id" in data:
+        scenario_id = data["scenario_id"]
+        if not isinstance(scenario_id, str) or len(scenario_id) > 100:
+            raise ValueError("Kịch bản không hợp lệ")
+        scenario = (await scenarios_db.get_scenario(scenario_id) if scenario_id
+                    else await scenarios_db.resolve(""))
+        if scenario_id and not scenario:
+            raise ValueError("Kịch bản không tồn tại")
+    await cancel_turn()
+    if scenario is not None:
+        session.set_scenario(scenario)
+    session.customer_name = data.get("customer_name", session.customer_name)
+    product = data.get("product", session.product)
+    if product != session.product:
+        session.clear_speculation()
+        session.__dict__.pop("_answer_bank_vector", None)
+    session.product = product
+    if data.get("phone"):
+        session.phone = str(data["phone"]).strip()
+        _tra_san_ho_so(session, session.phone)
+
+
 @router.websocket("/ws/call/{session_id}")
 async def websocket_call(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for real-time voice conversation."""
@@ -250,7 +275,7 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                     session.danh_dau_bi_cat()
         luot_task = None
 
-    async def chay_luot(coro):
+    async def chay_luot(coro, token):
         """Bọc lỗi giống hệt khối try/except cũ, vì lỗi trong task không còn nổi
         lên vòng lặp nữa."""
         try:
@@ -267,17 +292,28 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                 )
             except Exception:
                 pass   # socket đã đóng
+        finally:
+            from backend.core.service_priority import release_customer_turn
+            release_customer_turn(token)
 
     async def bat_dau_luot(data: dict, coro_factory):
         nonlocal luot_task
-        await huy_luot_cu()
-        # Dọn cờ trước khi mở lượt mới: nếu cờ được đặt đúng lúc lượt cũ vừa kết
-        # thúc thì không ai tiêu thụ, để nguyên là lượt mới vừa sinh đã tự huỷ.
-        session.yeu_cau_huy = False
-        # Số lượt do client cấp: hai bên không cần đồng bộ đếm, client chỉ việc
-        # so số nó gửi đi với số nhận về.
-        session.turn_id = int(data.get("turn_id", session.turn_id + 1))
-        luot_task = asyncio.create_task(chay_luot(coro_factory()))
+        from backend.core.service_priority import (
+            prepare_customer_service, reserve_customer_turn, release_customer_turn,
+        )
+        token = object()
+        reserve_customer_turn(token)
+        try:
+            await prepare_customer_service()
+            await huy_luot_cu()
+            # Dọn cờ trước khi mở lượt mới: nếu cờ được đặt đúng lúc lượt cũ vừa
+            # kết thúc thì lượt mới sẽ tự huỷ ngay.
+            session.yeu_cau_huy = False
+            session.turn_id = int(data.get("turn_id", session.turn_id + 1))
+            luot_task = asyncio.create_task(chay_luot(coro_factory(), token))
+        except BaseException:
+            release_customer_turn(token)
+            raise
 
     try:
         while True:
@@ -405,14 +441,12 @@ async def websocket_call(websocket: WebSocket, session_id: str):
                         logger.debug(f"prefetch lỗi (bỏ qua): {e}")
 
             elif msg_type == "set_session":
-                session.customer_name = data.get("customer_name", session.customer_name)
-                session.product = data.get("product", session.product)
-                # Số điện thoại: cuộc gọi thật lấy từ danh bạ, còn ở trang Hội
-                # thoại thì không có đường nào đặt - mà thiếu nó thì công cụ
-                # `tra_ho_so_khach` không tra được và không thử được tính năng.
-                if data.get("phone"):
-                    session.phone = str(data["phone"]).strip()
-                    _tra_san_ho_so(session, session.phone)
+                try:
+                    await _configure_web_session(session, data, huy_luot_cu)
+                except ValueError as e:
+                    await websocket.send_json({"type": "session_config_error", "message": str(e),
+                                               "session": session.to_dict()})
+                    continue
                 await websocket.send_json({"type": "session_updated", "session": session.to_dict()})
 
             elif msg_type == "set_voice":

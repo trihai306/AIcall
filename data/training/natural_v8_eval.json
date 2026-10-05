@@ -1,0 +1,89 @@
+{
+  "model": "banking-qwen35-2b-style-20260923-220147",
+  "passed": 9,
+  "total": 10,
+  "results": [
+    {
+      "question": "Gọi tôi là cô. Nếu gửi kỳ hạn ba tháng thì lãi ra sao?",
+      "answer": "Dạ cô, kỳ hạn ba tháng có lãi suất 3,8% một năm ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Bác hỏi thẻ Gold, sang năm thứ hai phải trả phí bao nhiêu?",
+      "answer": "Dạ bác, phí thường niên thẻ Gold từ năm thứ hai là 400.000 đồng một năm ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Em 20 tuổi, cứ gọi em là em. Riêng tuổi mở thẻ có đạt chưa?",
+      "answer": "Dạ, 20 tuổi đã đạt riêng điều kiện tuổi mở thẻ, vì mức tối thiểu là 18 tuổi ạ. Các điều kiện khác vẫn cần xét riêng.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Nói kiểu miền Bắc giúp cô nhé. Gửi trên ứng dụng có thêm lãi không?",
+      "answer": "Vâng, gửi trên ứng dụng được cộng thêm 0,2 điểm phần trăm một năm so với gửi tại quầy ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Nói kiểu miền Nam giúp chú nhé. Gửi tiết kiệm có cần chứng minh thu nhập không?",
+      "answer": "Dạ chú, gửi tiết kiệm không cần chứng minh thu nhập ạ. Các điều kiện khác là công dân Việt Nam từ 18 tuổi và CMND/CCCD còn hiệu lực.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Gửi ba tháng thì lãi suất tại quầy bao nhiêu?",
+      "answer": "Dạ cô, kỳ hạn 3 tháng gửi tại quầy có lãi suất 3.8%/năm ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Tôi đang hỏi phí năm thứ hai, bao nhiêu?",
+      "answer": "Từ năm thứ hai, phí thường niên thẻ Gold là 400.000 đồng một năm ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Tôi không vay nữa, đừng hỏi thêm.",
+      "answer": "Dạ, em hiểu rồi. Em xin dừng tư vấn ở đây, cảm ơn đã dành thời gian nghe máy ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Đừng quảng cáo. Lãi suất từ 7,9% là mức chắc chắn cho hồ sơ tôi à?",
+      "answer": "Dạ, 7,9% một năm là mức khởi điểm trong tài liệu, chưa thể xác định lãi suất cho hồ sơ của anh/chị ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Nếu chuyển qua ứng dụng thì mức cuối cùng là bao nhiêu?",
+      "answer": "Gửi 12 tháng qua ứng dụng được cộng thêm 0,2 điểm phần trăm một năm so với mức 5,5% tại quầy ạ.",
+      "ok": false,
+      "missing": [
+        "5[,.]7"
+      ],
+      "unwanted": [],
+      "concise": true
+    }
+  ]
+}

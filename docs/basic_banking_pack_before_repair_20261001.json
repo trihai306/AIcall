@@ -1,0 +1,314 @@
+{
+  "pack_sha256": "a79c3ed5a8d3d2b2432d365067effa424fbf34d233c264873bc6961b0ecfa267",
+  "source": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+  "provenance": "authored_generic_service_script",
+  "entries": {
+    "call_greeting_general": {
+      "id": "ab_manual_dda3806fa4c547ac80c053097ac8dda9",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Chào khách và mở đầu"
+    },
+    "call_invite_request": {
+      "id": "ab_manual_b94a5f32ab174050830e1ff898fbbea0",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Mời khách trình bày nhu cầu"
+    },
+    "call_clarify_need": {
+      "id": "ab_manual_97345a79a50b40beb1ea946abda9ddb4",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Làm rõ nhu cầu chưa cụ thể"
+    },
+    "call_one_issue_at_a_time": {
+      "id": "ab_manual_0549e28f970542bfa5dc1a5b6ae756d8",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Tách nhiều vấn đề trong một lượt"
+    },
+    "call_cannot_hear": {
+      "id": "ab_manual_945c2d36e4bd4619b1caf70e0a09e6ff",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Không nghe rõ lời khách"
+    },
+    "call_noisy_line": {
+      "id": "ab_manual_b80195f0f0df4964a0dbcbcc03d1002f",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Đường truyền có nhiều tạp âm"
+    },
+    "call_repeat_answer": {
+      "id": "ab_manual_cb3af445889441cea01b55091a18bb2f",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách đề nghị nhắc lại"
+    },
+    "call_speak_slowly": {
+      "id": "ab_manual_2b372682a9a147f091db367bc98f388f",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách yêu cầu nói chậm"
+    },
+    "call_simplify_explanation": {
+      "id": "ab_manual_093e0af328b04fc99a50e4c3ec813dfd",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Giải thích theo cách đơn giản hơn"
+    },
+    "call_confirm_understanding": {
+      "id": "ab_manual_16ca6ea35e4e451b8e45ff5c4dc82638",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Kiểm tra khách đã hiểu"
+    },
+    "call_customer_busy": {
+      "id": "ab_manual_d45146bfc2b44efd8f52a339bc6bf8cf",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách đang bận"
+    },
+    "call_wrong_number": {
+      "id": "ab_manual_8efbc538d6144f3381635d6aa3e52bbb",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách báo nhầm số"
+    },
+    "call_stop_requested": {
+      "id": "ab_manual_96f8aacb10c445a49aa3e85ff9d11297",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách yêu cầu dừng trao đổi"
+    },
+    "call_no_sales_consent": {
+      "id": "ab_manual_171b0bced2de423e8ba9ff15969d9491",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách không đồng ý nhận nội dung bán hàng"
+    },
+    "call_decline_information": {
+      "id": "ab_manual_c4c24fec1f6943e1975ffda6e8f0887b",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Khách không muốn cung cấp thông tin"
+    },
+    "call_thank_customer": {
+      "id": "ab_manual_01ba6f9077b84e9ea998a5f710e70773",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Cảm ơn khách đã cung cấp bối cảnh"
+    },
+    "call_thank_feedback": {
+      "id": "ab_manual_67bebea1fea74615be644899e3bdf790",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Cảm ơn góp ý của khách"
+    },
+    "call_general_apology": {
+      "id": "ab_manual_80f5530d827b4edd8677d8f868a18480",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Xin lỗi khi khách gặp bất tiện"
+    },
+    "call_no_account_lookup": {
+      "id": "ab_manual_a9de119004dd4bfaa0f2a660adfd5cb3",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Nói rõ không thể tra cứu tài khoản"
+    },
+    "call_close_politely": {
+      "id": "ab_manual_e2ed1297a71e47fa823f66f7550ec51f",
+      "category": "xu_ly_cuoc_goi",
+      "title": "Kết thúc trao đổi lịch sự"
+    },
+    "basic_account_vs_card": {
+      "id": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+      "category": "tai_khoan_va_the",
+      "title": "Phân biệt tài khoản và thẻ"
+    },
+    "basic_debit_vs_credit_card": {
+      "id": "ab_manual_369da87ded794d99bb5a93f3f12edbc7",
+      "category": "tai_khoan_va_the",
+      "title": "Phân biệt thẻ ghi nợ và thẻ tín dụng"
+    },
+    "basic_check_own_balance": {
+      "id": "ab_manual_1dc62f8d1f68468aa72c95d07015f7d2",
+      "category": "tai_khoan_va_the",
+      "title": "Kiểm tra số dư của chính mình"
+    },
+    "basic_available_vs_current_balance": {
+      "id": "ab_manual_ea35510e8196433aa4e2f4174d14d116",
+      "category": "tai_khoan_va_the",
+      "title": "Số dư hiện tại và số dư khả dụng"
+    },
+    "basic_card_declined": {
+      "id": "ab_manual_70b75fdca4eb4cf4bcd5591741cf6728",
+      "category": "tai_khoan_va_the",
+      "title": "Thẻ bị từ chối khi thanh toán"
+    },
+    "basic_contactless_payment": {
+      "id": "ab_manual_7b32a9f662de42db9d8e6a23bbb3c9d7",
+      "category": "tai_khoan_va_the",
+      "title": "Thanh toán không tiếp xúc"
+    },
+    "basic_lost_card": {
+      "id": "ab_manual_4c71839ab10a4bd5a388894a2ab0ca75",
+      "category": "tai_khoan_va_the",
+      "title": "Mất thẻ hoặc nghi bị lấy cắp"
+    },
+    "basic_transfer_pending": {
+      "id": "ab_manual_048cc4363faf46a6afe95d062d01f0b4",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Chuyển khoản đang chờ xử lý"
+    },
+    "basic_transfer_failed": {
+      "id": "ab_manual_0acdf3550b644cd9934bff15e3133b20",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Chuyển khoản báo thất bại"
+    },
+    "basic_duplicate_transfer": {
+      "id": "ab_manual_55db1f2096414448b21fa115aacd56b6",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Nghi chuyển khoản trùng"
+    },
+    "basic_wrong_beneficiary": {
+      "id": "ab_manual_e7552ba6b9f54646a82cc8010585983b",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Chuyển nhầm người nhận"
+    },
+    "basic_beneficiary_not_received": {
+      "id": "ab_manual_70f5759a182249fe8cd87e32833b4f6e",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Người nhận chưa thấy tiền"
+    },
+    "basic_disputed_transaction": {
+      "id": "ab_manual_c049f74966084b99947838e3e5db6b41",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Khiếu nại giao dịch không đồng ý"
+    },
+    "basic_atm_retained_card": {
+      "id": "ab_manual_490ef2b0cff842918db5943a9d53bf4c",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "ATM giữ thẻ"
+    },
+    "basic_atm_debited_no_cash": {
+      "id": "ab_manual_e2a53075ce6d409689ee03e4868baa4d",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "ATM ghi nợ nhưng không trả tiền"
+    },
+    "basic_transfer_fee_unknown": {
+      "id": "ab_manual_a782f9fb06554925835b3957e7aeca78",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Hỏi phí chuyển khoản"
+    },
+    "basic_transfer_limit_unknown": {
+      "id": "ab_manual_3563c7e90bdb434db3ea3068e4edacf5",
+      "category": "chuyen_khoan_va_giao_dich",
+      "title": "Hỏi hạn mức chuyển khoản"
+    },
+    "security_forgot_password": {
+      "id": "ab_manual_804b66ef9ea342b393cc07d2483192f7",
+      "category": "an_toan_bao_mat",
+      "title": "Quên mật khẩu đăng nhập"
+    },
+    "security_password_reset": {
+      "id": "ab_manual_30935e2f664742f0bdfb1cd076cd3cbe",
+      "category": "an_toan_bao_mat",
+      "title": "Đặt lại mật khẩu an toàn"
+    },
+    "security_otp_safety": {
+      "id": "ab_manual_804f15138e094b9ba4b2ab4967108065",
+      "category": "an_toan_bao_mat",
+      "title": "Giữ an toàn mã OTP"
+    },
+    "security_pin_safety": {
+      "id": "ab_manual_735d06e14bb34c4ebeaad1bb0e1f9d2d",
+      "category": "an_toan_bao_mat",
+      "title": "Giữ an toàn mã PIN"
+    },
+    "security_card_data_safety": {
+      "id": "ab_manual_f1ebfe9034324d4b94bc6f525031b702",
+      "category": "an_toan_bao_mat",
+      "title": "Bảo vệ thông tin trên thẻ"
+    },
+    "security_phishing_link": {
+      "id": "ab_manual_b982d47c7a58428e9d52062be4e95875",
+      "category": "an_toan_bao_mat",
+      "title": "Nghi ngờ đường dẫn giả mạo"
+    },
+    "security_impersonation_call": {
+      "id": "ab_manual_6bba1322f6524a79be3321de18ba5a79",
+      "category": "an_toan_bao_mat",
+      "title": "Cuộc gọi nghi giả mạo ngân hàng"
+    },
+    "security_lost_phone": {
+      "id": "ab_manual_c0f97587a46f480c95ab62cddb18e0ed",
+      "category": "an_toan_bao_mat",
+      "title": "Mất điện thoại có ứng dụng ngân hàng"
+    },
+    "app_login_issue": {
+      "id": "ab_manual_40d91c27a0e3460dbb0a1548426d80d7",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Không đăng nhập được ứng dụng"
+    },
+    "app_generic_error": {
+      "id": "ab_manual_dc776aa3097749d7b4ba76bf4bad1256",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Ứng dụng báo lỗi chung"
+    },
+    "app_notification_missing": {
+      "id": "ab_manual_5d3a91cd0468438abeaa1636b9be2e5e",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Không nhận được thông báo giao dịch"
+    },
+    "service_transaction_history": {
+      "id": "ab_manual_1e892a71198a4a7cba96b50648861ca7",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Xem lịch sử giao dịch"
+    },
+    "service_bank_statement": {
+      "id": "ab_manual_693ea2077b504747b5fc1658b8df3b2d",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Hiểu về sao kê tài khoản"
+    },
+    "service_update_contact_info": {
+      "id": "ab_manual_bd50e6be34034a6996943f85005a5e94",
+      "category": "ung_dung_va_dich_vu",
+      "title": "Cập nhật số điện thoại hoặc thông tin liên hệ"
+    },
+    "concept_credit_card": {
+      "id": "ab_manual_43e9bd42975744b294f1d5e10be9a295",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Khái niệm thẻ tín dụng"
+    },
+    "concept_statement_balance_vs_minimum": {
+      "id": "ab_manual_07069e72d6ab4be3a82640086e258005",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Dư nợ sao kê và số tiền tối thiểu"
+    },
+    "concept_credit_limit": {
+      "id": "ab_manual_d0865096013d4421983a0b02c2f129da",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Khái niệm hạn mức tín dụng"
+    },
+    "concept_installment": {
+      "id": "ab_manual_2b9f4c284e36462b92e9e08f980addbd",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Khái niệm trả góp"
+    },
+    "concept_loan_principal_interest": {
+      "id": "ab_manual_677cf459b5174b339b6655f523408dee",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Tiền gốc và tiền lãi khoản vay"
+    },
+    "concept_loan_approval": {
+      "id": "ab_manual_87eeddd71ded4753a7964bd68f5820b8",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Điều kiện và phê duyệt khoản vay"
+    },
+    "concept_deposit_interest": {
+      "id": "ab_manual_0dc2ec5b65954eceb783beb8385e155b",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Khái niệm lãi tiền gửi"
+    },
+    "concept_term_vs_demand_deposit": {
+      "id": "ab_manual_c5b5e50d3d98496c95325d0034ca393e",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Tiền gửi có kỳ hạn và không kỳ hạn"
+    },
+    "concept_early_term_deposit_withdrawal": {
+      "id": "ab_manual_697ce2a1404a4fedbec7a871008427a7",
+      "category": "tin_dung_vay_va_tien_gui",
+      "title": "Rút tiền gửi có kỳ hạn trước hạn"
+    }
+  },
+  "expected": 60,
+  "created_this_run": 60,
+  "saved": 60,
+  "enabled": 60,
+  "voice_ready": 60,
+  "content_intact": true,
+  "mismatches": []
+}

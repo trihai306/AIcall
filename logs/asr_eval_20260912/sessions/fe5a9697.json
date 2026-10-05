@@ -1,0 +1,83 @@
+{
+  "session_id": "fe5a9697",
+  "customer_name": "Khách thử",
+  "product": "vay tín chấp",
+  "voice_name": "default",
+  "status": "ended",
+  "turn_count": 3,
+  "created_at": 1789145030.4514098,
+  "ended_at": 1789145089.6397655,
+  "duration_seconds": 59.2,
+  "campaign_id": "",
+  "contact_id": "ct_b496cd7e",
+  "scenario_id": "sc_nganhang",
+  "phone": "0396130621",
+  "direction": "outbound",
+  "caller_number": "",
+  "outcome": "done",
+  "quality": "co_phan_hoi",
+  "label": "",
+  "gender": "male",
+  "recording_path": "C:\\duan\\chat-ai\\data\\recordings\\2026-09-11\\fe5a9697.opus",
+  "recording_size": 266656,
+  "summary": "Lan từ Ngân hàng Quân đội gọi tư vấn cho khách về gói vay với lãi suất 7,9% và giới thiệu chuyên viên sẽ liên hệ lại.",
+  "suggested_label": "follow",
+  "transferred_to": "",
+  "transfer_reason": "",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "Dạ em chào anh/chị, em là Lan bên Ngân hàng Quân đội ạ."
+    },
+    {
+      "role": "user",
+      "content": "ờ tư vấn cho anh khoản vay bên mình"
+    },
+    {
+      "role": "assistant",
+      "content": "Dạ gói vay có lãi suất từ 7,9% một năm, hạn mức tối đa 500 triệu đồng và thời hạn từ 12 đến 60 tháng ạ."
+    },
+    {
+      "role": "user",
+      "content": "anh muốn vay bốn trăm trong mười hai tháng thì"
+    },
+    {
+      "role": "assistant",
+      "content": "Anh vay 400 triệu trong 12 tháng thì em sẽ tính toán giúp anh khoản trả góp hàng tháng ạ."
+    },
+    {
+      "role": "user",
+      "content": "ờ tính ý"
+    },
+    {
+      "role": "assistant",
+      "content": "Có chuyên viên liên hệ lại ạ."
+    }
+  ],
+  "latency_log": [
+    {
+      "turn": 1,
+      "timestamp": 1789145048.1855521,
+      "stt_ms": 0,
+      "rag_ms": 0,
+      "ttfa_ms": 143,
+      "total_ms": 183
+    },
+    {
+      "turn": 2,
+      "timestamp": 1789145064.9351892,
+      "stt_ms": 699,
+      "rag_ms": 0,
+      "ttfa_ms": 2451,
+      "total_ms": 2479
+    },
+    {
+      "turn": 3,
+      "timestamp": 1789145076.3201365,
+      "stt_ms": 0,
+      "rag_ms": 0,
+      "ttfa_ms": 1559,
+      "total_ms": 1565
+    }
+  ]
+}

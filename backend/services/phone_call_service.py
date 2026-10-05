@@ -470,6 +470,7 @@ class PhoneAudioSink:
         self.bridge = bridge
         self.last_transcript = ""
         self.last_reply = ""
+        self.last_metrics: dict = {}
 
     async def send_json(self, msg: dict):
         kind = msg.get("type")
@@ -496,6 +497,7 @@ class PhoneAudioSink:
             # bắt được dấu hiệu mạnh nhất trong ba dấu hiệu.
             self.bridge.soi_hop_thu_thoai(self.last_transcript)
         elif kind == "turn_complete":
+            self.last_metrics = dict(msg.get("metrics") or {})
             # Tên trường là `full_response`, không phải `text` - lấy nhầm thì
             # giao diện luôn hiện AI chưa nói gì dù nó đã trả lời xong.
             self.last_reply = msg.get("full_response", self.last_reply)
@@ -1871,6 +1873,9 @@ class PhoneCallManager:
                 "khung_gio_trong_luot": c._khung_gio_trong_luot,
                 "turns": c.turns, "last_error": c.last_error,
                 "khach_noi": c.sink.last_transcript, "ai_noi": c.sink.last_reply,
+                "session_id": c.session.session_id,
+                "scenario_id": c.session.scenario_id,
+                "answer_route": c.sink.last_metrics.get("answer_route", {}),
             }
             for s, c in self._calls.items()
         ]
@@ -1896,6 +1901,9 @@ class PhoneCallManager:
 
         if serial in self._calls:
             return False, "Máy này đã có phiên tiếng đang chạy"
+
+        from backend.core.service_priority import prepare_customer_service
+        await prepare_customer_service()
 
         ok, msg = await adb_service.start_bridge(
             serial, port=port, src=src, dem_xuong=settings.phone_dem_xuong_ms)

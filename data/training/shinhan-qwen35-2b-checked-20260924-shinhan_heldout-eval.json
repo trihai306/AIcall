@@ -1,0 +1,97 @@
+{
+  "model": "shinhan-qwen35-2b-checked-20260924",
+  "passed": 9,
+  "total": 10,
+  "results": [
+    {
+      "scenario": "activate",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tôi vừa nhận thẻ Shinhan, cần làm gì trước khi dùng?",
+      "answer": "Dạ, sau khi nhận thẻ, mình có thể kích hoạt tại Thẻ > Kích hoạt thẻ trong SOL/Internet Banking hoặc gọi 1900 1577.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "pin",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Mình đang ở xa chi nhánh, đặt PIN cho thẻ mới qua đâu?",
+      "answer": "Dạ, mình có thể thiết lập PIN qua Internet Banking hoặc Mobile Banking, hoặc đến chi nhánh Shinhan.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "lost",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Thẻ tôi bị rơi ở ngoài đường, cần làm gì ngay bây giờ?",
+      "answer": "Dạ, mình cần báo Shinhan ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ để khóa thẻ.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "minimum",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tháng này tôi chỉ trả mức tối thiểu được không, xem số tiền ở đâu?",
+      "answer": "Dạ, mình có thể xem sao kê ngân hàng để biết số tiền tối thiểu. Thanh toán theo số đó sẽ tránh được phí trả chậm.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "statement",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Bảng sao kê thẻ thể hiện những gì vậy em?",
+      "answer": "Bảng sao kê ghi giao dịch, phí và lãi nếu có trong chu kỳ, cùng ngày đến hạn thanh toán.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "digital",
+      "source": "digital_card_guide.pdf",
+      "prompt": "Muốn đăng ký thẻ điện tử trên SOL thì bắt đầu từ chỗ nào?",
+      "answer": "Dạ, mình đăng ký thẻ điện tử trong SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận và làm theo các bước xác thực/kích hoạt.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "pay_card_own",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tôi muốn dùng chức năng Thanh toán thẻ để trả thẻ tín dụng của chị gái, được không?",
+      "answer": "Dạ, theo hướng dẫn thẻ Shinhan, chức năng Thanh toán thẻ chỉ dùng cho thẻ tín dụng của chính khách hàng. Chuyển khoản nội bộ có thể dùng để trả thẻ của chủ thẻ khác.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "partial_early",
+      "source": "loan_household_terms.pdf",
+      "prompt": "Tôi trả trước một phần gốc khoản vay hộ gia đình; số tiền đó sẽ được tính vào đâu?",
+      "answer": "Số tiền trả trước sẽ được dùng để thanh toán các kỳ trả nợ gốc tiếp theo của khoản vay.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "suspicious",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tôi nhận email hỏi mã PIN thẻ, có nên gửi cho họ không?",
+      "answer": "Dạ, Shinhan không yêu cầu mã PIN qua email. Vui lòng báo ngân hàng để kiểm tra và tránh cung cấp thông tin đó qua đường dây đáng ngờ.",
+      "fact_pattern": false,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "foreign_toggle",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tôi muốn tắt giao dịch thẻ ở nước ngoài, có làm trong Internet Banking được không?",
+      "answer": "Dạ, trong Internet Banking, mình có thể bật hoặc tắt giao dịch thẻ ở nước ngoài. Giao dịch trực tuyến không nằm trong tùy chọn này ạ.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    }
+  ]
+}

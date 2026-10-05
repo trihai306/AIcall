@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chạy test Windows"
+  short_description: "Chạy pytest với GPU và dịch vụ thật"
+  default_prompt: "Dùng $run-test-win để chạy các test liên quan trên máy Windows."

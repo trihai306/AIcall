@@ -1,0 +1,4 @@
+{
+  "paused_at_utc": "2026-09-23T05:40:00+00:00",
+  "reason": "candidate 283M không sinh được câu dùng được; teacher data trộn 8783 mẫu router và 6204 mẫu assistant, cần làm sạch trước khi train tiếp"
+}

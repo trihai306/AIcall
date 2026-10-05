@@ -1,0 +1,423 @@
+{
+  "environment": {
+    "platform": "Windows",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "python": "3.11.15",
+    "qwen": "qwen3.5:9b",
+    "f5_voice": "heu_a6_35"
+  },
+  "tests": {
+    "passed": 217,
+    "deselected": 1,
+    "failed": 0,
+    "deselected_baseline": "test_spec_vector_cache.py::test_phan_loai_dong_bo_dung_lai_vector_spec",
+    "note": "Windows test fixture now reads Vietnamese text explicitly as UTF-8."
+  },
+  "ui_append": {
+    "requested": 8,
+    "added": 1,
+    "manual_preserved": true,
+    "before": {
+      "nhom": "chinh_sach",
+      "ten": "kiem_thu_editor_20261001",
+      "so_dong": 1,
+      "items": [
+        {
+          "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "cau_hoi": [
+            "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+            "Liên hệ hỗ trợ kiểm thử ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị gửi yêu cầu tại mục Hỗ trợ trong ứng dụng ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828792.5720117,
+          "nguon": "nhap_tay",
+          "voice_ready": false
+        }
+      ],
+      "voice": {
+        "status": "queued"
+      }
+    },
+    "after": {
+      "nhom": "chinh_sach",
+      "ten": "kiem_thu_editor_20261001",
+      "so_dong": 2,
+      "items": [
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_editor_20261001_74bf23d240_e4f60812ece4",
+          "cau_hoi": [
+            "Tôi làm sao để theo dõi tiến độ yêu cầu kiểm thử?",
+            "Cách nào biết được trạng thái xử lý hỗ trợ kiểm thử?",
+            "Làm thế nào để xem tiến độ bộ phận hỗ trợ kiểm thử?",
+            "Tiến độ xử lý hỗ trợ kiểm thử hiển thị ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị xem tiến độ xử lý trong mục Yêu cầu của tôi ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828844.1058328,
+          "nguon": "tu_dong",
+          "voice_ready": false
+        },
+        {
+          "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "cau_hoi": [
+            "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+            "Liên hệ hỗ trợ kiểm thử ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị gửi yêu cầu tại mục Hỗ trợ trong ứng dụng ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828792.5720117,
+          "nguon": "nhap_tay",
+          "voice_ready": true
+        }
+      ],
+      "voice": {
+        "status": "queued"
+      }
+    }
+  },
+  "ui_edits": {
+    "both_edits_same_id": true,
+    "ai_edited_to_manual": true,
+    "before": {
+      "nhom": "chinh_sach",
+      "ten": "kiem_thu_editor_20261001",
+      "so_dong": 2,
+      "items": [
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_editor_20261001_74bf23d240_e4f60812ece4",
+          "cau_hoi": [
+            "Tôi làm sao để theo dõi tiến độ yêu cầu kiểm thử?",
+            "Cách nào biết được trạng thái xử lý hỗ trợ kiểm thử?",
+            "Làm thế nào để xem tiến độ bộ phận hỗ trợ kiểm thử?",
+            "Tiến độ xử lý hỗ trợ kiểm thử hiển thị ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị xem tiến độ xử lý trong mục Yêu cầu của tôi ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828844.1058328,
+          "nguon": "tu_dong",
+          "voice_ready": false
+        },
+        {
+          "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "cau_hoi": [
+            "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+            "Liên hệ hỗ trợ kiểm thử ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị gửi yêu cầu tại mục Hỗ trợ trong ứng dụng ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828792.5720117,
+          "nguon": "nhap_tay",
+          "voice_ready": true
+        }
+      ],
+      "voice": {
+        "status": "queued"
+      }
+    },
+    "after": {
+      "nhom": "chinh_sach",
+      "ten": "kiem_thu_editor_20261001",
+      "so_dong": 2,
+      "items": [
+        {
+          "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "cau_hoi": [
+            "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+            "Liên hệ hỗ trợ kiểm thử ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị mở mục Hỗ trợ, mô tả vấn đề rồi bấm Gửi ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828924.3396814,
+          "nguon": "nhap_tay",
+          "voice_ready": false
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_editor_20261001_74bf23d240_e4f60812ece4",
+          "cau_hoi": [
+            "Tôi làm sao để theo dõi tiến độ yêu cầu kiểm thử?",
+            "Cách nào biết được trạng thái xử lý hỗ trợ kiểm thử?",
+            "Làm thế nào để xem tiến độ bộ phận hỗ trợ kiểm thử?",
+            "Tiến độ xử lý hỗ trợ kiểm thử hiển thị ở đâu?"
+          ],
+          "tra_loi": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790828910.115559,
+          "nguon": "nhap_tay",
+          "voice_ready": false
+        }
+      ],
+      "voice": {
+        "status": "queued"
+      }
+    }
+  },
+  "actual_f5_replay": {
+    "mode": "verify",
+    "source": [
+      "chinh_sach",
+      "kiem_thu_editor_20261001"
+    ],
+    "row": {
+      "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+      "cau_hoi": [
+        "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+        "Liên hệ hỗ trợ kiểm thử ở đâu?"
+      ],
+      "tra_loi": "Dạ anh chị mở mục Hỗ trợ, mô tả vấn đề rồi bấm Gửi ạ.",
+      "san_pham": "",
+      "bat": true,
+      "updated_at": 1790828924.3396814,
+      "nguon": "nhap_tay",
+      "voice_ready": true
+    },
+    "samples": [
+      {
+        "question": "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+        "answer": "Dạ anh chị mở mục Hỗ trợ, mô tả vấn đề rồi bấm Gửi ạ.",
+        "metrics": {
+          "stt_ms": 0,
+          "la_thoai": false,
+          "du_kien_vay": {
+            "amount": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            },
+            "term": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            },
+            "income": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            }
+          },
+          "bang_hoi_dap": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "bang_diem": 1.0,
+          "bang_theo_tinh_huong": false,
+          "rag_ms": 0,
+          "rag_doan_truoc": false,
+          "llm_nghi_san": false,
+          "bang_doc_thang": true,
+          "tieng_san": "hd_ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "llm_ttft_ms": 0,
+          "llm_chunk1_ms": 0,
+          "total_ms": 149,
+          "turn": 1,
+          "timestamp": 1790828979.0408826
+        },
+        "wall_ms": 149.9,
+        "audio_bytes": 0
+      },
+      {
+        "question": "Tôi cần liên hệ bộ phận hỗ trợ kiểm thử bằng cách nào?",
+        "answer": "anh chị mở mục Hỗ trợ, mô tả vấn đề rồi bấm Gửi ạ.",
+        "metrics": {
+          "stt_ms": 0,
+          "la_thoai": false,
+          "tinh_huong_diem": 0.669,
+          "tinh_huong_cach_chon": "vector",
+          "tinh_huong_chon_ms": 140.65,
+          "tinh_huong_tu_cau_day_du": true,
+          "filler_ms": 143,
+          "filler_xong_luc": 8001.153617999999,
+          "filler_text": "Dạ em trả lời anh chị ạ,",
+          "filler_id": "",
+          "tinh_huong_id": "chung",
+          "du_kien_vay": {
+            "amount": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            },
+            "term": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            },
+            "income": {
+              "status": "unknown",
+              "value": null,
+              "raw": "",
+              "turn": -1
+            }
+          },
+          "bang_hoi_dap": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779",
+          "bang_diem": 1.0,
+          "bang_theo_tinh_huong": false,
+          "rag_ms": 0,
+          "rag_doan_truoc": false,
+          "llm_nghi_san": false,
+          "noi_dem_bo_mo_dau_lap": true,
+          "bang_doc_thang": true,
+          "tieng_san": "hd_ab_manual_a4d74dfecdd349c08a0c48cf54ebc779_noi_dem",
+          "llm_ttft_ms": 0,
+          "llm_chunk1_ms": 0,
+          "noi_dem_nghi_ms": 80.0,
+          "ttfa_ms": 284,
+          "tts_first_ms": 0,
+          "tts_first_chars": 22,
+          "total_ms": 290,
+          "turn": 2,
+          "timestamp": 1790828979.3332174
+        },
+        "wall_ms": 291.4,
+        "audio_bytes": 131084
+      }
+    ],
+    "session": {
+      "type": "connected",
+      "session_id": "7fb2e5e1",
+      "noi_lai": false,
+      "history": []
+    }
+  },
+  "stale_edit_rejected": {
+    "mode": "api-negative",
+    "expected_status": 409,
+    "status": 409,
+    "body": {
+      "detail": "Đáp án đã được sửa ở nơi khác; hãy tải lại"
+    },
+    "id": "ab_manual_a4d74dfecdd349c08a0c48cf54ebc779"
+  },
+  "responsiveness": {
+    "started_utc": "2026-10-01T04:26:22.603738+00:00",
+    "finished_utc": "2026-10-01T04:29:22.618008+00:00",
+    "host": "Admin-PC",
+    "platform": "Windows-10-10.0.22621-SP0",
+    "endpoint": "http://127.0.0.1:8100/api/health",
+    "duration_s": 180,
+    "cadence_s": 1,
+    "request_timeout_s": 3,
+    "sample_count": 235,
+    "failure_count": 0,
+    "latency_ms": {
+      "p50": 15.9,
+      "p95": 26.71,
+      "max": 60.57,
+      "mean": 15.76
+    },
+    "sampling_note": "Intended one-second cadence. The original monitor made extra probes in the final second; raw aggregate retained. One-probe-per-second values below exclude that burst.",
+    "one_per_second_summary": {
+      "sample_count": 180,
+      "failure_count": 0,
+      "latency_ms": {
+        "p50": 15.78,
+        "p95": 26.3,
+        "max": 30.6
+      }
+    }
+  },
+  "fixture_cleanup": {
+    "ok": true,
+    "da_xoa": "kiem_thu_editor_20261001.md",
+    "hoi_dap": {
+      "ok": true,
+      "queued": true,
+      "runtime": {
+        "so_dong": 258,
+        "voice": null
+      },
+      "job": {
+        "id": "answer_bank_1790828678141",
+        "status": "cancelled",
+        "phase": "",
+        "current_document": "",
+        "documents_done": 0,
+        "documents_total": 0,
+        "answers_added": 0,
+        "voice_done": 2,
+        "voice_total": 2,
+        "logs": [],
+        "error": "Đã hủy theo yêu cầu"
+      }
+    },
+    "cleaned_own_sessions": 1
+  },
+  "configuration_after_qa": {
+    "enabled": true,
+    "model": "qwen3.5:9b",
+    "config": {
+      "questions_per_document": 300,
+      "variants_per_answer": 4,
+      "learn_history": true
+    },
+    "stats": {
+      "answers": 252,
+      "questions": 951,
+      "memory_questions": 408,
+      "voice_ready": 252,
+      "voice_total": 252
+    },
+    "job": {
+      "id": "answer_bank_1790829079595",
+      "status": "running",
+      "phase": "answers",
+      "current_document": "products/tiet_kiem.md",
+      "documents_done": 2,
+      "documents_total": 12,
+      "answers_added": 0,
+      "voice_done": 0,
+      "voice_total": 0,
+      "logs": [
+        "Chờ khách yên lặng thêm 20 giây.",
+        "Chờ khách yên lặng thêm 19 giây.",
+        "Chờ khách yên lặng thêm 18 giây.",
+        "Chờ khách yên lặng thêm 17 giây.",
+        "Chờ khách yên lặng thêm 16 giây.",
+        "Chờ khách yên lặng thêm 15 giây.",
+        "Chờ khách yên lặng thêm 14 giây.",
+        "Chờ khách yên lặng thêm 13 giây.",
+        "Chờ khách yên lặng thêm 12 giây.",
+        "Chờ khách yên lặng thêm 11 giây.",
+        "Chờ khách yên lặng thêm 10 giây.",
+        "Chờ khách yên lặng thêm 9 giây.",
+        "Chờ khách yên lặng thêm 8 giây.",
+        "Chờ khách yên lặng thêm 7 giây.",
+        "Chờ khách yên lặng thêm 6 giây.",
+        "Chờ khách yên lặng thêm 5 giây.",
+        "Chờ khách yên lặng thêm 4 giây.",
+        "Chờ khách yên lặng thêm 3 giây.",
+        "Chờ khách yên lặng thêm 2 giây.",
+        "Chờ khách yên lặng thêm 1 giây.",
+        "faq/faq_banking.md: lỗi Expecting ',' delimiter: line 1 column 1681 (char 1680)",
+        "products/the_tin_dung.md: lỗi Expecting ',' delimiter: line 1 column 4124 (char 4123)"
+      ],
+      "error": ""
+    },
+    "last_run": 1790829079.5958323
+  },
+  "console_errors": [],
+  "screenshots": [
+    "answer_bank_editor_windows_saved_20261001.png",
+    "answer_bank_editor_windows_config_20261001.png",
+    "answer_bank_editor_windows_20261001.png"
+  ],
+  "scope_note": "Disposable support-process source used for add/edit/append/F5 QA, then removed with its own recorded session. The 300-per-source setting is a target and expansion is ongoing.",
+  "visual_verification": {
+    "offline_css_fixed": true,
+    "scoped_to_answer_editor": true,
+    "input_background": "rgb(11, 16, 24)",
+    "input_text": "rgb(226, 232, 240)",
+    "sticky_close_button_visible": true,
+    "final_screenshot": "answer_bank_editor_windows_20261001.png",
+    "earlier_saved_screenshot_note": "Functional save and voice readiness proof captured before the final CSS repair."
+  }
+}

@@ -1,0 +1,766 @@
+REF.CARDTC-02-VN-202604
+
+
+
+
+        ĐIỀU KIỆN VÀ ĐIỀU KHOẢN THẺ TÍN DỤNG CÁ NHÂN
+
+ (Dành cho Thẻ Tín Dụng Cá Nhân Shinhan Visa hạng Bạch Kim/ hạng Vàng/ hạng Chuẩn/ E-card chưa
+                                          được nâng cấp hệ thống)
+
+
+Trước khi sử dụng Thẻ tín dụng cá nhân Shinhan Visa hạng Bạch Kim/ hạng Vàng/ hạng Chuẩn/ E-card
+(sau đây gọi chung là “Thẻ Tín Dụng”) do Ngân hàng TNHH MTV Shinhan Việt Nam (sau đây gọi là
+“Shinhan”) phát hành, Quý khách nên đọc kỹ các điều khoản và điều kiện về Thẻ Tín Dụng được quy định
+dưới đây. Điều Khoản và Điều Kiện Thẻ Tín Dụng này là một phần trong các Điều khoản và Điều kiện áp
+dụng đối với các dịch vụ và sản phẩm của Shinhan.
+Khi đã nhận và sử dụng Thẻ Tín Dụng do Shinhan phát hành có nghĩa là Chủ Thẻ đã đồng ý áp dụng Điều
+Khoản và Điều Kiện Thẻ Tín Dụng này cùng với các Điều khoản và Điều kiện khác của Shinhan.
+
+
+1.   Giải thích thuật ngữ
+1.1. “Chủ Thẻ” là cá nhân sở hữu Thẻ Tín Dụng, được chia thành Chủ Thẻ Chính và Chủ Thẻ Phụ.
+1.2. “Chủ Thẻ Chính” là người đứng tên, ký nộp đơn đề nghị phát hành Thẻ Tín Dụng và được Shinhan
+     phát hành Thẻ Tín Dụng.
+1.3. “Chủ Thẻ Phụ” là người được Chủ Thẻ chính chỉ định và chấp nhận cho sử dụng Thẻ Tín Dụng phụ.
+     Chủ Thẻ Phụ không áp dụng cho Thẻ tín dụng cá nhân quốc tế hạng chuẩn.
+1.4. “Mật Khẩu Thẻ” là mã số nhận diện cá nhân được Chủ thẻ tự thiết lập hoặc thay đổi theo quy trình
+     của Shinhan sau khi kích hoạt thẻ.
+1.5. “Ứng Trước Tiền Mặt” là dịch vụ rút tiền từ Hạn Mức Thẻ do Shinhan cấp.
+1.6. “Rút Tiền Mặt” là dịch vụ rút tiền từ số dư có sẵn trong tài khoản thanh toán được chỉ định của Chủ
+     Thẻ.
+1.7. “Đơn Vị Chấp Nhận Thẻ” là tổ chức, cá nhân đã đăng ký để chấp nhận thanh toán hàng hóa, dịch vụ
+     bằng Thẻ Tín Dụng.
+1.8. “Dịch vụ Thanh toán An Toàn Trực Tuyến” (“Verified by Visa”) là dịch vụ nhận diện Chủ thẻ
+     trong các giao dịch thương mại điện tử được cung cấp bởi Shinhan và Visa.
+1.9. “Mật khẩu sử dụng một lần cho dịch vụ Thanh toán An Toàn Trực Tuyến” (“OTP”) là mã gồm
+     6 chữ số mà Chủ thẻ nhận được qua tin nhắn đến số điện thoại mà Chủ thẻ đã đăng ký khi thực hiện
+     các giao dịch. OTP có hiệu lực trong 180 giây kể từ thời gian nhận và chỉ được sử dụng một lần.
+1.10. “Bảng Sao Kê” là bảng kê chi tiết hàng tháng các giao dịch Thẻ Tín Dụng, lãi và phí liên quan đến
+     việc sử dụng Thẻ Tín Dụng, số tiền đến hạn thanh toán, Ngày Đến Hạn Thanh Toán của Khoản thanh
+     toán v.v.
+1.11. “Chương Trình Điểm Thưởng Shinhan” là chương trình tích lũy điểm thưởng khi Chủ Thẻ thực
+     hiện giao dịch mua hàng/ dịch vụ bằng Thẻ Tín Dụng.
+1.12. “Ngày Đến Hạn Thanh Toán” là ngày mà cho đến ngày đó, Chủ Thẻ phải thanh toán khoản đến hạn
+     thanh toán trên Bảng Sao Kê. Nếu Ngày Đến Hạn Thanh Toán không phải ngày làm việc, khoản đến
+     hạn thanh toán sẽ được trả vào ngày làm việc tiếp theo của Ngày Đến Hạn Thanh Toán.
+
+
+2.   Quản lý Thẻ Tín Dụng
+2.1. Shinhan chỉ giao Thẻ Tín Dụng được phát hành cho người đứng tên trên Thẻ Tín Dụng. Chủ Thẻ
+     Chính có quyền nhận thay cho Chủ Thẻ Phụ. Ngay khi nhận Thẻ Tín Dụng, Chủ Thẻ tương ứng phải
+     kí tên của mình lên dải chữ kí trên Thẻ Tín Dụng và không cho phép bất kỳ người nào khác sử dụng
+     Thẻ Tín Dụng.
+2.2. Chủ Thẻ Chính chịu trách nhiệm đối với tất cả các hoạt động liên quan đến Thẻ Tín Dụng của mình
+     và của Chủ Thẻ Phụ, và hoàn toàn chịu trách nhiệm pháp lý đối với các khoản nợ liên quan đến các
+     Thẻ Tín Dụng này. Qui định này cũng áp dụng đối với Thẻ Tín Dụng phát hành lại, Thẻ Tín Dụng
+     phát hành thêm và Thẻ Tín Dụng gia hạn. Chủ Thẻ Phụ chỉ chịu trách nhiệm đối với việc sử dụng và
+     quản lý Thẻ Tín Dụng phụ.
+2.3. Chủ Thẻ có trách nhiệm bảo mật PIN và không được tiết lộ PIN cho bất kỳ ai trong bất kỳ tình huống
+     nào hoặc bất kỳ lí do nào.
+2.4. Vì Thẻ Tín Dụng thuộc sở hữu của Shinhan, Chủ Thẻ không được cho mượn hoặc chuyển Thẻ Tín
+     Dụng cho bên thứ ba hay dùng Thẻ Tín Dụng làm vật thế chấp, cầm cố và phải thực hiện các biện
+     pháp phòng ngừa cần thiết đối với mọi rủi ro trong việc sử dụng và quản lý Thẻ Tín Dụng, bao gồm
+     cả việc ngăn ngừa việc PIN bị tiết lộ cho bên thứ ba.
+2.5. Chủ Thẻ không được sử dụng Thẻ Tín Dụng đã hết hạn hoặc Thẻ Tín Dụng cũ sau khi Thẻ Tín Dụng
+     thay thế đã được phát hành và hủy Thẻ Tín Dụng hết hạn/ Thẻ Tín Dụng cũ bằng cách cắt thẻ làm đôi
+     theo đường chéo (kể cả chip điện tử trên Thẻ Tín Dụng).
+
+
+3.   Hạn Mức Thẻ
+3.1. “Hạn Mức Thẻ” là tổng số tiền tối đa mà Shinhan cấp cho Chủ Thẻ (gộp chung cho cả Chủ Thẻ Chính
+     và Chủ Thẻ Phụ) và Chủ Thẻ chỉ được phép giao dịch trong hạn mức đó. Hạn Mức Thẻ (bao gồm cả
+     hạn mức Ứng Trước Tiền Mặt) sẽ được Shinhan ấn định theo các tiêu chuẩn thẩm định riêng của
+     Shinhan. Shinhan có quyền thay đổi (tăng hoặc giảm) Hạn Mức Tín Dụng này dù có hay không có
+     yêu cầu hoặc sự chấp thuận trước của Chủ Thẻ.
+3.2. Shinhan có thể toàn quyền chấp nhận một giao dịch mua sắm hàng hóa hoặc Ứng Trước Tiền Mặt
+     vượt quá Hạn Mức Thẻ. Trong trường hợp đó, Chủ Thẻ được xem là đã chấp nhận các giao dịch nói
+     trên.
+3.3. Shinhan toàn quyền tự động giảm Hạn Mức Thẻ căn cứ trên số lần trễ hạn, thời gian trễ hạn của Chủ
+     Thẻ tại Shinhan hoặc tình trạng tín dụng xấu đi của Chủ Thẻ. Tùy từng trường hợp, Shinhan có thể
+     thông báo cho Chủ Thẻ việc giảm Hạn mức này theo phương thức Shinhan cho là thích hợp.
+3.4. Chủ Thẻ có thể yêu cầu Shinhan điều chỉnh tăng Hạn Mức Thẻ. Shinhan có quyền quyết định (nhưng
+     không có nghĩa vụ) chấp nhận dựa trên các phân tích về rủi ro của mình.
+
+
+4.   Thẻ Tín Dụng bảo đảm
+4.1. Thẻ Tín Dụng được phát hành với điều kiện có tài sản đảm bảo là tiền gửi tại Shinhan. Shinhan có thể
+     quy định nhiều hơn một tài sản đảm bảo đối với Chủ Thẻ để đảm bảo nghĩa vụ hoàn trả nợ của Chủ
+     Thẻ.
+4.2. Khi yêu cầu phát hành Thẻ Tín Dụng bảo đảm, Chủ Thẻ phải ký hợp đồng cầm cố theo Mẫu quy định
+     của Shinhan và tất cả các văn bản khác có liên quan theo yêu cầu của Shinhan.
+4.3. Việc sử dụng Thẻ Tín Dụng bảo đảm sẽ bị khóa cùng với việc hủy hợp đồng cầm cố cho Thẻ Tín
+      Dụng đó. Hợp đồng bảo đảm vẫn giữ nguyên hiệu lực cho đến khi chấm dứt Thẻ Tín Dụng có liên
+      quan. Việc chấm dứt Thẻ Tín Dụng theo yêu cầu sẽ phải thực hiện theo Điều 17 dưới đây.
+
+
+5.   Phí và lãi
+5.1. Các loại phí và lãi Chủ Thẻ có thể phải trả được quy định sau đây:
+     (a)     Phí thường niên: phí Chủ Thẻ phải trả hàng năm cho việc sử dụng Thẻ Tín Dụng;
+     (b)     Phí Ứng Trước Tiền Mặt: phí phải trả nếu Chủ Thẻ thực hiện giao dịch Ứng Trước Tiền Mặt;
+     (c)     Lãi Ứng Trước Tiền Mặt: giao dịch Ứng Trước Tiền Mặt không được áp dụng chính sách miễn
+             lãi của Thẻ Tín Dụng. Vì vậy, Chủ Thẻ phải trả lãi Ứng Trước Tiền Mặt cho các giao dịch Ứng
+             Trước Tiền Mặt đã thực hiện. Lãi được tính từ ngày tiếp theo của các giao dịch Ứng Trước Tiền
+             Mặt đến ngày thanh toán thực tế;
+     (d)     Phí chậm thanh toán (Phí quá hạn): phí Chủ Thẻ phải trả nếu Chủ Thẻ không thanh toán toàn
+             bộ số tiền phải thanh toán theo Sao kê vào Ngày Đến Hạn Thanh Toán. Phí này sẽ áp dụng cho
+             mỗi lần trễ hạn thanh toán trong 2 tháng trễ hạn đầu tiên;
+     (e)     Lãi chậm thanh toán (Lãi quá hạn): lãi Chủ Thẻ phải trả nếu Chủ Thẻ không thanh toán toàn bộ
+             số tiền phải thanh toán theo sao kê vào Ngày Đến Hạn Thanh Toán;
+     (f)     Phí yêu cầu hóa đơn giao dịch Thẻ Tín Dụng: phí phải trả nếu Chủ Thẻ yêu cầu bản sao của
+             hóa đơn giao dịch;
+     (g)    Phí khiếu nại và điều tra sự cố: phí phải trả nếu Chủ Thẻ yêu cầu Shinhan tra soát các vụ việc
+            liên quan tới sử dụng Thẻ Tín Dụng trong trường hợp lỗi được xác định do Chủ Thẻ.
+     (h)    Phí cấp lại Thẻ Tín Dụng: phí phải trả nếu Thẻ Tín Dụng được phát hành lại theo yêu cầu của
+            Chủ Thẻ;
+     (i)    Phí giao dịch ngoại tệ (quốc tế): phí có thể phát sinh nếu các giao dịch xuất phát từ giao dịch
+            nước ngoài hoặc các giao dịch với đồng tiền của nước ngoài. Khoản này sẽ được đưa vào hóa
+            đơn cho Chủ Thẻ sau khi chuyển đổi giá trị giao dịch sang đồng Việt Nam;
+     (j)    Phí Rút Tiền Mặt: phí phải trả nếu Chủ Thẻ rút tiền mặt trong tài khoản thanh toán bằng Thẻ
+            Tín Dụng qua máy ATM của ngân hàng khác;
+     (k)    Phí tăng hạn mức sử dụng Thẻ Tín Dụng: phí phải trả nếu Chủ Thẻ yêu cầu tăng Hạn Mức Thẻ
+            của mình và việc tăng hạn mức được Shinhan chấp nhận;
+     (l)    Phí dịch vụ đặc biệt: được tính khi Chủ Thẻ yêu cầu về công việc đặc biệt hoặc bổ sung thêm
+            mà Shinhan đồng ý thực hiện.
+5.2. Chủ Thẻ có thể tham khảo và cập nhật các loại phí và lãi trên trong Biểu phí được công bố trên website
+     shinhan.com.vn và Biểu phí này được xem là một phần không thể tách rời của Điều Khoản và Điều
+     Kiện Thẻ Tín Dụng này. Shinhan sẽ không chịu trách nhiệm về bất kì tổn thất hay tranh chấp nào phát
+     sinh do sự sơ suất của Chủ Thẻ khi không cập nhật thông tin Biểu phí kịp thời.
+
+
+6.   Sử dụng Thẻ Tín Dụng
+6.1. Khi mua hàng hóa hoặc dịch vụ bằng Thẻ Tín Dụng, Thẻ Tín Dụng cần được xuất trình tới Đơn Vị
+     Chấp Nhận Thẻ của các tổ chức thẻ thương hiệu quốc tế của VISA. Tùy thuộc vào Đơn Vị Chấp Nhận
+     Thẻ, Chủ Thẻ có thể được hoặc không được yêu cầu ký vào hóa đơn mua hàng để thực hiện Giao Dịch.
+     Giao Dịch qua Thẻ sẽ phát sinh hiệu lực không phụ thuộc vào việc có hay không chữ ký của Chủ Thẻ
+     trên hóa đơn mua hàng. Quy trình nêu trên có thể được bỏ qua nếu Đơn Vị Chấp Nhận Thẻ có thể xác
+     minh được Chủ Thẻ trong các giao dịch gián tiếp như các giao dịch thương mại điện tử hoặc các giao
+     dịch đặt hàng qua thư.
+6.2. Shinhan được miễn trách nhiệm về việc từ chối chấp nhận Thẻ Tín Dụng của Đơn Vị Chấp Nhận Thẻ,
+     về chất lượng hàng hóa, dịch vụ cung cấp bởi Đơn Vị Chấp Nhận Thẻ, hoặc các tranh chấp phát sinh
+     giữa Chủ Thẻ và Đơn Vị Chấp Nhận Thẻ.
+6.3. Chủ Thẻ không được sử dụng Thẻ Tín Dụng đối với việc vi phạm pháp luật liên quan đến giao dịch
+     ngoại hối hoặc với các mục đích bất hợp pháp như đầu tư hay cờ bạc.
+6.4. Shinhan có thể đưa ra 1 hạn mức đối với việc sử dụng Thẻ Tín Dụng hoặc số tiền được sử dụng tại
+     một Đơn Vị Chấp Nhận Thẻ nhất định sau khi xem xét đánh giá tín dụng của Đơn Vị Chấp Nhận Thẻ
+     đó, các luật liên quan, hoặc các chỉ thị từ một tổ chức giám sát.
+6.5. Chủ Thẻ có thể sử dụng dịch vụ Ứng Trước Tiền Mặt hoặc Rút Tiền Mặt (nếu có) từ máy ATM hoặc
+     theo các phương thức khác mà Shinhan quy định. Khi sử dụng dịch vụ Ứng Trước Tiền Mặt hoặc Rút
+     Tiền Mặt, Chủ Thẻ phải nhập đúng PIN của mình.
+6.6. Giao dịch tại nước ngoài hoặc giao dịch bằng ngoại tệ sẽ áp dụng tỷ giá ấn định bởi các tổ chức thẻ
+     quốc tế VISA.
+6.7. Nếu Shinhan đã xử lý các giao dịch yêu cầu PIN như Ứng Trước Tiền Mặt, Rút Tiền Mặt và các giao
+     dịch điện tử … đúng theo thông tin được cung cấp khi thao tác sau khi xác nhận PIN được nhập trùng
+     với PIN đã đăng ký với Shinhan thì Shinhan sẽ không chịu trách nhiệm cho các thiệt hại mà Chủ Thẻ
+     phải chịu do Thẻ Tín Dụng bị trộm, mất hoặc làm giả.
+
+
+7.   Các trường hợp từ chối thanh toán thẻ
+7.1. Đối với các Giao Dịch thực hiện bằng Thẻ, Shinhan có quyền từ chối bất kỳ Giao Dịch nào trong các
+     trường hợp bao gồm nhưng không giới hạn:
+     (a) Các Giao Dịch thẻ gian lận, giả mạo; giao dịch khống tại Đơn Vị Chấp Nhận Thẻ (không phát
+          sinh việc mua bán hàng hóa và cung ứng dịch vụ);
+     (b) Các Giao Dịch sử dụng Thẻ để nhằm phục vụ cho mục đích rửa tiền, tài trợ khủng bố, lừa đảo,
+          gian lận và các hành vi vi phạm pháp luật khác;
+     (c) Giao Dịch vượt quá Hạn Mức Tín Dụng khả dụng, Thẻ bị khóa bởi Chủ Thẻ hoặc Shinhan hoặc
+          Chủ Thẻ nhập sai các thông tin bảo mật hoặc đã nhập sai các thông tin này quá số lần qui định;
+     (d) Thẻ hết hạn sử dụng;
+     (e) Shinhan có nghi ngờ về tính trung thực, mục đích giao dịch của Chủ Thẻ theo quy định pháp luật
+          về phòng, chống rửa tiền.
+7.2. Ngoài ra, các Giao Dịch thực hiện bằng Thẻ có thể bị từ chối theo quy định của Đơn Vị Chấp Nhận
+     Thẻ hoặc tổ chức thanh toán thẻ.
+
+
+
+8.   Chuyển sang thanh toán trả góp
+8.1. Chủ Thẻ có thể chuyển một giao dịch thanh toán mua hàng hóa/ dịch vụ sang thanh toán trả góp bằng
+     cách thức do Shinhan quy định cho từng chương trình và công bố trên website shinhan.com.vn. Số
+     tiền tối thiểu của giao dịch có thể được Quy định bởi Shinhan theo từng thời kỳ
+8.2. Chủ Thẻ có thể xác định thời gian trả góp trong giới hạn tối đa và có thể phải trả phí chuyển đổi khi
+     đăng ký sang thanh toán trả góp theo từng chương trình cụ thể được quy định bởi Shinhan.
+8.3. Chủ Thẻ phải thanh toán các khoản trả góp cộng thêm lãi trả góp hàng tháng (nếu có), trong suốt thời
+     gian trả góp.
+8.4. Phần dư không thể chia lẻ của khoản thanh toán trả góp sẽ được cộng vào khoản trả góp đầu tiên.
+8.5. Chủ Thẻ có thể phải trả phí trả trước hạn gói trả góp nếu thanh toán hết gói trả góp trước hạn đã đăng
+      ký.
+
+
+9.    Dịch vụ Thanh toán An Toàn Trực Tuyến (Verified by Visa)
+9.1. Khi Thẻ được sử dụng để thực hiện các giao dịch trực tuyến trên các trang web có hỗ trợ Dịch vụ
+      Thanh Toán An Toàn Trực Tuyến, mật khẩu OTP sẽ được gửi tự động đến số điện thoại của Chủ thẻ
+      đã đăng ký với Shinhan sau khi ấn vào nút "Generate OTP". Chủ thẻ không đóng trình duyệt khi chờ
+      nhận OTP. Sau khi nhận OTP, chủ thẻ nhập OTP vào trường được cung cấp và ấn vào nút “Submit”.
+9.2. Một OTP có hiệu lực trong 180 giây và Chủ thẻ được phép nhập 3 lần. Nếu vượt quá khung thời gian
+      này hoặc nhập sai 3 lần, Chủ thẻ phải nhận OTP mới bằng cách chọn “Generate OTP” trên giao diện
+      thanh toán.
+9.3. Dịch vụ Thanh Toán An Toàn Trực Tuyến có thể bị ngưng hoặc bị hạn chế xuất hiện khi có những lý
+      do không thể tránh khỏi liên quan đến gián đoạn, phát triển dịch vụ hoặc kiểm tra hệ thống định kỳ
+      hoặc từ phía nhà cung cấp dịch vụ. Trong các trường hợp này, Shinhan hoặc Visa sẽ thông báo cho
+      Chủ thẻ cùng với lý do và thời gian dự kiến bị ảnh hưởng.
+9.4. Shinhan và Visa sẽ không chịu trách nhiệm về mất mát và/ hoặc thiệt hại mà Chủ thẻ phải chịu vì một
+      trong những lý do sau đây:
+      (a)   Dịch vụ Thanh Toán An Toàn Trực Tuyến không được cung cấp hoặc bị trì hoãn cung cấp do
+            bất cứ sự cố nào về thiết bị liên lạc, mạch, máy chủ hoặc số lượng giao dịch tăng mạnh.
+      (b)   Lỗi của Chủ thẻ trong việc quản lý, thao tác máy tính, điện thoại hoặc các thiết bị kết nối trực
+            tuyến khác của Chủ thẻ.
+
+
+10.   Tài khoản thanh toán và rút tiền tự động
+10.1. Tài khoản thanh toán của Thẻ Tín Dụng có thể được lựa chọn giữa tài khoản bằng đồng nội tệ hoặc
+      ngoại tệ của Chủ Thẻ và do Chủ Thẻ chỉ định. Việc thanh toán bằng tài khoản ngoại tệ sẽ được thực
+      hiện tự động sau khi đã chuyển đổi theo tỷ giá do Shinhan quyết định tại thời điểm thanh toán.
+10.2. Shinhan có thể tự động trừ số tiền thanh toán đến hạn hoặc quá hạn của Chủ Thẻ trong tài khoản thanh
+      toán đã chỉ định của Chủ Thẻ mà không cần có bất kỳ yêu cầu thanh toán nào từ Chủ Thẻ vào Ngày
+      Đến Hạn Thanh Toán hoặc quá hạn thanh toán.
+
+
+11.   Bảng Sao Kê và Thanh toán
+11.1. Số tiền dư nợ Thẻ Tín Dụng đến hạn thanh toán, bao gồm cả lãi và phí liên quan được gọi chung là
+      “Khoản Thanh Toán Thẻ”.
+11.2. Hàng tháng Shinhan sẽ gửi cho Chủ Thẻ một Bảng Sao Kê đến địa chỉ email hoặc địa chỉ nhận thư
+      qua đường bưu điện do Chủ Thẻ đăng ký trừ trường hợp Thẻ Tín Dụng không có giao dịch nào hoặc
+      không có Khoản Thanh Toán Thẻ nào hoặc Thẻ Tín Dụng bị quá hạn trên 60 ngày hoặc Sao kê gửi
+      qua đường bưu điện cho Chủ Thẻ bị trả lại Shinhan trong 3 tháng liên tiếp). Nếu Khoản Thanh Toán
+      Thẻ nhỏ hơn 50.000 VNĐ, Sao kê sẽ thể hiện số tiền cần thanh toán là 50.000 VNĐ.
+11.3. Chủ Thẻ phải duy trì số dư đủ để thanh toán Khoản Thanh Toán Thẻ theo hình thức do Chủ Thẻ lựa
+      chọn vào trước 16:30 của Ngày Đến Hạn Thanh Toán.
+11.4. Bảng Sao Kê sẽ được lập theo thứ tự ngày giao dịch được cập nhật vào hệ thống.
+11.5. Các khoản thanh toán sẽ được áp dụng ưu tiên thu đầu tiên là tiền lãi, các loại phí phát sinh trong biểu
+      phí Thẻ Tín Dụng, các phí pháp lý và các phí như tín dụng nhờ thu, và cuối cùng là các khoản nợ gốc
+      chưa thanh toán của các giao dịch. Ngoài ra, Shinhan cũng có quyền thu theo thứ tự khác mà Shinhan
+      cho là phù hợp mà không cần thông báo trước với Chủ Thẻ.
+11.6. Shinhan sẽ chỉ tự động trích đúng và đủ số tiền để thanh toán Khoản Thanh Toán Thẻ vào Ngày Đến
+      Hạn Thanh Toán. Nếu Chủ Thẻ muốn thanh toán trả trước hoặc thanh toán nhiều hơn Khoản Thanh
+      Toán Thẻ, Chủ Thẻ phải tới các chi nhánh Shinhan hoặc gọi lên Tổng đài 1900 1577 trong giờ làm
+      việc của Shinhan để yêu cầu thanh toán. Trong các trường hợp trả trước thông qua tài khoản thanh
+      toán, Chủ Thẻ phải đảm bảo số dư trong tài khoản thanh toán đủ theo nhu cầu thanh toán của Chủ Thẻ.
+11.7. Khi thanh toán trả trước, Chủ Thẻ có thể chọn trả trước bất kỳ một giao dịch nào hoặc nếu Chủ Thẻ
+      không chọn giao dịch trả trước, Shinhan sẽ thanh toán các giao dịch theo thứ tự ngày giao dịch được
+      cập nhật vào hệ thống. Nếu Chủ Thẻ có phát sinh nợ quá hạn, Chủ Thẻ phải thanh toán phần nợ quá
+      hạn trước khi yêu cầu thanh toán trả trước.
+11.8. Đối với các giao dịch thanh toán được ghi nhận không đúng so với việc thanh toán trên thực tế của
+      Chủ Thẻ, bao gồm nhưng không giới hạn bởi số tiền thanh toán bị sai, một khoản thanh toán được ghi
+      nhận nhiều lần, sai thông tin người thụ hưởng mà được Shinhan điều tra và xác định là do lỗi hệ thống,
+      nhân viên phụ trách, đối tác bút toán sai … thì Shinhan được quyền điều chỉnh lại cho đúng với giao
+      dịch thanh toán trên thực tế (bao gồm cả việc hủy giao dịch thanh toán đó, ghi nợ một giao dịch thanh
+      toán mới vào thẻ) sau khi đã thông báo trước bằng điện thoại và/ hoặc email đến Chủ Thẻ.
+
+
+12.   Khiếu nại và trách nhiệm đối với khoản tiền giao dịch của Thẻ Tín Dụng
+12.1. Đối với các khiếu nại liên quan đến Giao Dịch của Thẻ Tín dụng, Chủ thẻ có trách nhiệm thông báo
+      cho Shinhan trong thời hạn 60 (sáu mươi) ngày kể từ ngày Giao Dịch được thực hiện.
+      Việc thông báo được thực hiện bằng cách nộp Đơn yêu cầu tra soát giao dịch thẻ quốc tế (theo mẫu)
+      trực tiếp tại Chi nhánh/Phòng giao dịch của Shinhan hoặc thông qua Trung tâm Hỗ trợ Khách hàng
+      24/7 theo tổng đài điện thoại 1900 1577 (cuộc gọi có ghi âm). Trường hợp khiếu nại được thực hiện
+      qua Trung tâm Hỗ trợ Khách hàng, Chủ thẻ phải gửi Đơn yêu cầu tra soát giao dịch thẻ quốc tế (bản
+      điện tử theo mẫu) từ địa chỉ thư điện tử đã đăng ký chính thức đến Shinhan trong thời hạn 07 (bảy)
+      ngày làm việc kể từ ngày thông báo qua Trung tâm Hỗ trợ Khách hàng để làm căn cứ xử lý.
+12.2. Kể từ ngày nhận được thông báo, Shinhan sẽ tiến hành tra soát vụ việc và xác định thiệt hại (nếu có)
+      căn cứ vào quy định của Tổ chức thẻ và thời hạn Shinhan trả lời các khiếu nại là từ 45 đến 100 ngày
+      làm việc. Trường hợp hết thời hạn xử lý tra soát mà vẫn chưa xác định được nguyên nhân, Shinhan và
+      Chủ Thẻ sẽ tiến hành thỏa thuận phương án xử lý tiếp theo.
+12.3. Chủ Thẻ phải tự chịu trách nhiệm đối với các giao dịch Thẻ Tín Dụng phát sinh do một trong các
+      trường hợp sau:
+      (a) Chủ Thẻ cố ý gian lận trong việc sử dụng Thẻ Tín Dụng;
+      (b) Việc sử dụng Thẻ Tín Dụng do Chủ Thẻ chưa ký, do thiếu sự quản lý, cho mượn, chuyển giao,
+           đem làm thế chấp, cầm cố, cho vay bất hợp pháp và các hình thức sử dụng tương tự khác;
+      (c) Thẻ Tín Dụng bị mất mà chưa được Chủ Thẻ thông báo cho Shinhan.
+      (d) Chủ Thẻ từ chối hợp tác khi Shinhan yêu cầu để điều tra về những thiệt hại gây ra bởi việc sử
+           dụng thẻ gian lận.
+12.4. Trong thời gian tiến hành tra soát, Chủ thẻ vẫn có nghĩa vụ thanh toán đầy đủ và đúng hạn toàn bộ dư
+      nợ theo Bảng sao kê, bao gồm cả các Giao Dịch đang được tra soát. Nếu kết quả điều tra xác nhận
+      rằng lỗi không thuộc về Chủ Thẻ thì Shinhan sẽ tiến hành bồi hoàn số tiền thiệt hại. Nếu việc điều tra
+      xác nhận rằng Chủ Thẻ là người chịu trách nhiệm, Shinhan có quyền đưa vào Bảng Sao Kê khoản
+      thanh toán bị chậm trễ, lãi suất và các loại phí phát sinh trong khoảng thời gian điều tra vụ việc.
+12.5. Tổng số lượng Giao Dịch tra soát với lí do gian lận không được vượt quá 35 (ba mươi lăm) Giao Dịch
+      cho mỗi số thẻ.
+12.6. Shinhan được quyền từ chối tiếp nhận yêu cầu tra soát Giao Dịch trong các trường hợp sau:
+      (a) Giao Dịch có giá trị nhỏ hơn 25 (hai mươi lăm) Đô la Mỹ (USD) hoặc tương đương, phát sinh
+           tại Đơn vị chấp nhận thẻ thuộc loại hình Du lịch và Giải trí;
+      (b) Số lượng Giao Gịch tra soát vượt quá giới hạn quy định tại Điều 12.5;
+      (c) Yêu cầu tra soát được thực hiện sau thời hạn quy định tại Điều 12.1
+
+
+13.   Chương Trình Điểm Thưởng Shinhan
+13.1. Điểm thưởng sẽ được tích luỹ cho Chủ Thẻ với các giao dịch mua hàng (không áp dụng cho giao dịch
+      tiền mặt) với tỷ lệ tích luỹ điểm thưởng được quy định với từng loại sản phẩm Thẻ Tín Dụng. Điểm
+      thưởng tích lũy sẽ bị trừ trong trường hợp giao dịch mua hàng bị hủy.
+13.2. Điểm thưởng được tặng cho Chủ Thẻ Chính, điểm tích luỹ từ việc sử dụng Thẻ Tín Dụng phụ cũng
+      sẽ được tính cho Chủ Thẻ Chính.
+13.3. Chủ Thẻ Chính được hoàn tiền mặt hoặc ghi có số tiền tương ứng vào Tài khoản thanh toán VNĐ của
+      Chủ Thẻ Chính thông qua việc đổi điểm thưởng tại các chi nhánh Shinhan hoặc gọi lên Tổng đài 1900
+      1577. Mức điểm tối thiểu để được hoàn lại tiền là 15.000 điểm. Số điểm quy đổi phải là bội số của
+      1.000.
+13.4. Thời hạn hiệu lực của điểm thưởng (hay còn gọi là thời gian ghi nhận) là 3 năm kể từ tháng giao dịch
+      tương ứng được ghi nhận. Tổng điểm thưởng sẽ tự động tổng kết hàng tháng và các điểm thưởng có
+      thời gian ghi nhận quá 3 năm sẽ tự động ghi nhận về 0.
+13.5. Nếu Thẻ Tín Dụng hết hạn và Chủ Thẻ không kịp gia hạn Thẻ Tín Dụng trước ngày hết hạn hoặc Thẻ
+      Tín Dụng chính bị hủy vì bất kỳ lý do gì, toàn bộ điểm thưởng tích lũy được của Chủ Thẻ sẽ tự động
+      hết hiệu lực.
+13.6. Điểm thưởng đã tích lũy sẽ không được quy đổi nếu Chủ Thẻ đang trong tình trạng tín dụng xấu tại
+      thời điểm yêu cầu quy đổi.
+
+
+14.   Thanh toán không đầy đủ
+14.1. Nếu số dư trong tài khoản của Chủ Thẻ không đủ để thực hiện thanh toán toàn bộ Khoản Thanh Toán
+      Thẻ hay Thẻ bị ngưng hoạt động hoặc sự kiện vi phạm các nghĩa vụ khác làm cản trở việc thanh toán
+      kịp thời Khoản Thanh Toán Thẻ, Chủ Thẻ sẽ phải trả phí theo biểu phí Shinhan và lãi quá hạn theo
+      công thức dưới đây từ ngày ghi nhận giao dịch cho đến khi việc thanh toán đầy đủ được thực hiện.
+14.2. Lãi quá hạn = Khoản thanh toán trễ x Lãi suất quá hạn x Số ngày trễ hạn / 365.
+14.3. Nếu Chủ Thẻ thanh toán trễ hạn như được đề cập tại Khoản 14.1 hoặc việc sử dụng của Chủ Thẻ vượt
+      quá Hạn Mức Thẻ như được đề cập tại Khoản 3.2 trên đây, Shinhan sẽ đưa khoản thanh toán trễ hạn
+      và khoản vượt Hạn Mức Thẻ vào Sao kê của kỳ thanh toán tiếp theo.
+14.4. Chủ Thẻ có nghĩa vụ thanh toán toàn bộ dư nợ Thẻ Tín Dụng sau khi nhận được yêu cầu thanh toán
+      của Shinhan trong các trường hợp sau đây:
+      (a) Khi Thẻ Tín Dụng của Chủ Thẻ bị chấm dứt theo Điều 17 này hoặc hết hạn và không được gia
+           hạn theo Điều 19;
+      (b) Khi Chủ Thẻ không thanh toán đủ trong hơn 05 (năm) kỳ thanh toán liên tiếp.
+14.5. Đối với các trường hợp nêu tại Khoản 14.1 trên đây, vào bất kỳ lúc nào trong ngày làm việc sau Ngày
+      Đến Hạn Thanh Toán ban đầu, Shinhan có thể trích tiền từ tài khoản thanh toán chỉ định hoặc bất kỳ
+      tài khoản thanh toán nào khác của Chủ Thẻ tại Shinhan (bao gồm cả tài khoản tiết kiệm) hoặc quy đổi
+      Điểm thưởng đang có trên hệ thống của Chủ Thẻ để thanh toán khoản quá hạn hoặc thanh toán toàn
+      bộ dư nợ mà không cần có yêu cầu thanh toán của Chủ Thẻ. Trường hợp tài khoản thanh toán ngoại
+      tệ, việc thanh toán sẽ được thực hiện sau khi đã chuyển đổi theo tỷ giá Shinhan quyết định tại thời
+      điểm thu nợ.
+14.6. Đối với trường hợp Thẻ Tín Dụng bảo đảm, nếu số ngày trễ hạn vượt quá 30 ngày và Chủ Thẻ không
+      thực hiện nghĩa vụ thanh toán dư nợ quá hạn của Thẻ Tín Dụng, Shinhan có quyền sử dụng tài sản
+      bảo đảm cho Thẻ Tín Dụng để thanh toán khoản quá hạn hoặc thanh toán toàn bộ dư nợ mà không cần
+      có yêu cầu thanh toán của Chủ Thẻ.
+14.7. Nếu các chi phí phát sinh như chi phí pháp lý hay phí tín dụng nhờ thu phát sinh khi Shinhan thu tiền
+      đến hạn từ Chủ Thẻ, hoặc Chủ Thẻ gây ra những chi phí phụ thêm do vi phạm Đơn đề nghị phát hành
+      Thẻ Tín Dụng và/ hoặc Điều Khoản và Điều Kiện Thẻ Tín Dụng này thì Chủ Thẻ sẽ phải gánh chịu
+      tất cả các chi phí đó.
+14.8. Trong trường hợp cơ quan có thẩm quyền có những có những biện pháp yêu cầu phong tỏa một phần
+      tài khoản thanh toán của Chủ Thẻ thì Chủ Thẻ phải duy trì số dư tài khoản còn lại đủ để thanh toán
+      dư nợ Thẻ Tín Dụng cho Shinhan.
+14.9. Trong trường hợp Chủ Thẻ kéo dài việc không thanh toán nợ quá hạn, Shinhan được quyền thực hiện
+      mọi biện pháp nghiệp vụ theo quy định để thu hồi khoản nợ kể cả việc khởi kiện, cưỡng chế và phát
+      mãi tài sản.
+
+
+15.   Báo mất Thẻ Tín Dụng và bồi thường
+15.1. Trường hợp bị mất Thẻ Tín Dụng hoặc bị đánh cắp, Chủ Thẻ phải thông báo lập tức cho Shinhan bằng
+      cách đến các chi nhánh Shinhan gần nhất hoặc thông qua số điện thoại Tổng đài 1900 1577 hoặc sử
+      dụng chức năng Thông báo mất thẻ trên Shinhan trực tuyến.
+15.2. Shinhan chỉ chịu trách nhiệm đối với khoản tiền bị tổn thất sau khi nhận được báo cáo mất thẻ của
+      Chủ Thẻ và Chủ Thẻ có yêu cầu Shinhan đền bù bằng văn bản, ngoại trừ những trường hợp được quy
+      định tại Khoản 12.3 trên đây.
+
+
+16.   Tạm khóa việc sử dụng Thẻ Tín Dụng
+16.1. Shinhan sẽ tạm khóa việc sử dụng Thẻ Chính và/ hoặc Thẻ Phụ nếu có yêu cầu của Chủ Thẻ Chính.
+      Shinhan cũng sẽ tạm khóa Thẻ Phụ nếu có yêu cầu của Chủ Thẻ Phụ.
+16.2. Shinhan có quyền tạm khóa Thẻ Tín Dụng mà không cần yêu cầu của Chủ Thẻ nếu xảy ra một trong
+      các trường hợp dưới đây. Tùy từng trường hợp, Shinhan có thể thông báo việc khóa Thẻ Tín Dụng
+      cho Chủ Thẻ bằng phương thức Shinhan cho là hợp lý.
+      (a) Trong trường hợp thanh toán trễ đối với số tiền giao dịch qua Thẻ Tín Dụng hoặc nợ cá nhân quá
+           hạn tại Shinhan hay tổ chức tài chính khác;
+      (b) Trong trường hợp tình trạng tín dụng của Chủ Thẻ bị xấu đi đáng kể do các nguyên nhân như nợ
+           quá hạn tại các tổ chức tài chính, phá sản hay các nguyên nhân khác;
+      (c) Khả năng hoặc nguy cơ về thiệt hại đối với Chủ Thẻ do hệ thống của Shinhan hoặc của Chủ Thẻ
+           bị truy cập bởi bên ngoài;
+      (d) Khi có các lý do đáng kể dẫn đến các giao dịch bất thường hoặc giao dịch với thẻ giả mạo;
+      (e) Nếu các thông tin Chủ Thẻ cung cấp trong Đơn đề nghị phát hành Thẻ Tín Dụng bị phát hiện là
+           không đúng sự thật;
+      (f)    Trong trường hợp Chủ Thẻ không thể trả nợ vì các lý do như xuất ngoại, bị bắt giữ, chết, phá sản
+             vv…hoặc trong trường hợp việc trả nợ được cho là cực kì khó khăn;
+      (g) Trong trường hợp Chủ Thẻ vi phạm các qui định của đơn đề nghị phát hành hành Thẻ Tín Dụng
+             và/ hoặc Điều Kiện và Điều Khoản Thẻ Tín Dụng này;
+      (h) Trong trường hợp Chủ Thẻ có số ngày quá hạn thanh toán cộng dồn vượt quá 45 ngày tính trong
+             vòng 365 ngày gần nhất;
+      (i)    Chủ thẻ là người nước ngoài không cập nhật thông tin theo quy định tại Điều 21.1 của ĐKĐK
+             này;
+      (j)    Các trường hợp khác có khả năng ảnh hưởng đến việc sử dụng Thẻ Tín Dụng theo đánh giá của
+             Shinhan.
+16.3. Shinhan có thể mở lại việc sử dụng Thẻ Tín Dụng cho Chủ Thẻ nếu Shinhan xét thấy Chủ Thẻ vẫn
+      còn đủ điều kiện được sử dụng Thẻ Tín Dụng theo quy định của Shinhan. Tuy nhiên, việc mở lại sẽ
+      không tự động và chỉ được xem xét nếu có yêu cầu bằng văn bản của Chủ Thẻ trong các trường hợp
+      sau:
+      (a) Việc tạm khóa Thẻ Tín Dụng là do yêu cầu của Chủ Thẻ;
+      (b) Các trường hợp khác mà Shinhan đánh giá là còn rủi ro tín dụng.
+      Trong trường hợp (b), Shinhan có quyền từ chối mở lại việc sử dụng Thẻ Tín Dụng dựa trên các phân
+      tích về rủi ro của mình.
+16.4. Nếu Thẻ Tín Dụng bị tạm khóa do Shinhan xét thấy Chủ Thẻ không còn đủ tiêu chuẩn sử dụng Thẻ
+      Tín Dụng của Shinhan, Shinhan có thể yêu cầu Chủ Thẻ phải ngay lập tức trả lại Thẻ Tín Dụng cho
+      Shinhan hoặc hủy Thẻ Tín Dụng bằng cách cắt thẻ làm đôi theo đường chéo (kể cả chip điện tử trên
+      Thẻ Tín Dụng) và Chủ Thẻ phải hoàn trả tất cả các khoản nợ lũy kế tính đến ngày đó.
+
+
+17.   Chấm dứt Thẻ Tín Dụng
+17.1. Chấm dứt bởi Chủ Thẻ
+
+      (a) Chủ Thẻ Chính có thể yêu cầu chấm dứt bất kỳ Thẻ Tín Dụng có liên quan nào hoăc Chủ Thẻ
+             Phụ có thể yêu cầu chấm dứt Thẻ Tín Dụng của mình bằng cách gửi thông báo trước cho Shinhan
+             bằng văn bản hoặc trong trường hợp được Shinhan chấp nhận, bằng cuộc gọi được ghi âm đến
+             Tổng đài Chăm Sóc Khách hàng 1900 1577 (“Thông Báo Chấm Dứt”).
+
+      (b) Shinhan chỉ chấp nhận Thông Báo Chấm Dứt khi (các) Thẻ Tín Dụng được yêu cầu không còn
+             bất kỳ giao dịch nào đang chờ xác nhận yêu cầu thanh toán từ Đơn Vị Chấp Nhận Thẻ và Chủ
+             Thẻ Chính phải thanh toán toàn bộ Tổng Dư Nợ hiện hữu mà không cần phải có thông báo hay
+             yêu cầu thanh toán nào từ Shinhan;
+
+      (c) Việc Chủ Thẻ tiếp tục thực hiện Giao Dịch hay sử dụng Thẻ Tín Dụng kể từ khi Shinhan nhận
+             Thông Báo Chấm Dứt sẽ không được phép. Nếu Chủ Thẻ thực hiện bất kỳ Giao Dịch nào hay sử
+         dụng Thẻ Tín Dụng sau khi Shinhan nhận Thông Báo Châm Dứt thì xem như Chủ Thẻ đã hủy
+         bỏ Thông Báo Chấm Dứt của mình.
+
+17.2. Chấm Dứt bởi Shinhan
+
+      (a) Shinhan có quyền chấm dứt Thẻ Tín Dụng trong các trường hợp dưới đây:
+
+          (i)    Shinhan, theo toàn quyền của mình, cho rằng việc sử dụng Thẻ Tín Dụng có thể gây tổn
+                 thất cho Chủ Thẻ hoặc Shinhan; hoặc
+
+          (ii)   Thẻ Tín Dụng của Chủ Thẻ bị tạm ngưng và Shinhan xét thấy Chủ Thẻ không còn đủ tiêu
+                 chuẩn sử dụng Thẻ Tín Dụng bao gồm nhưng không giới hạn trường hợp chủ thẻ là người
+                 nước ngoài không cập nhật thông tin theo quy định tại Điều 21.1 của ĐKĐK này; hoặc
+
+          (iii) Xảy ra một Sự Kiện Vi Phạm hoặc một hoàn cảnh (bao gồm cả việc thay đổi luật) liên
+                 quan đến Shinhan khi việc Shinhan tiếp tục cung cấp dịch vụ theo Hợp Đồng Thẻ Tín
+                 Dụng trở nên bất hợp pháp hoặc sau một khoảng thời gian sẽ trở nên bất hợp pháp, vì bất
+                 kỳ lý do nào; hoặc
+
+          (iv) Đối với các Thẻ Tín Dụng có tài sản bảo đảm mà tài sản bảo đảm không còn hoặc đã
+                 được dùng để thanh toán cho các nghĩa vụ tài chính của Chủ Thẻ với Shinhan mà sau đó
+                 Chủ Thẻ, theo đánh giá và quyết định của Shinhan, không đủ điều kiện để tiếp tục duy trì
+                 Thẻ Tín Dụng mà không có tài sản bảo đảm.
+
+      (b) Trong các trường hợp nêu tại Khoản 17.2a trên đây, Chủ Thẻ phải hủy hoặc trả lại Thẻ Tín
+          Dụng trong vòng 01 (một) ngày làm việc kể từ khi Chủ Thẻ được xem là đã nhận được yêu cầu
+          từ Shinhan theo phương thức thông báo do Shinhan lựa chọn. Vào lúc chấm dứt như vậy, Tổng
+          Dư Nợ trên Thẻ Tín Dụng kể cả các khoản phí và tiền lãi của tất cả các Giao Dịch sẽ được xem
+          là đến hạn và phải được thanh toán trong vòng 01 (một) ngày làm việc kể từ khi được xem là
+          đã nhận được yêu cầu từ Shinhan mà không cần phải có thông báo hay yêu cầu thêm nào từ
+          Shinhan.
+
+    17.3. Việc chấm dứt Thẻ Tín Dụng sẽ chỉ có hiệu lực sau khi toàn bộ Tổng Dư Nợ được tất toán theo
+          yêu cầu của Shinhan và đồng thời (các) Thẻ Tín Dụng được yêu cầu chấm dứt không còn bất
+          kỳ Giao Dịch nào đang còn chờ xác nhận yêu cầu thanh toán từ các Đơn Vị Chấp Nhận Thẻ.
+          Bất kỳ Tài Sản Bảo Đảm nào được cung cấp cho Shinhan liên quan đến Thẻ Tín Dụng sẽ tiếp
+          tục được Shinhan giữ trong thời hạn 30 (ba mươi) ngày kể từ ngày chấm dứt.
+    17.4. Việc chấm dứt tất cả các Thẻ Tín Dụng có liên quan của Chủ Thẻ Chính sẽ đồng thời làm chấm
+          dứt Hợp Đồng Thẻ Tín Dụng. Việc chấm Dứt Hợp Đồng Thẻ Tín Dụng gây ra bởi hoặc có liên
+          quan đến Chủ Thẻ Chính cũng sẽ chấm dứt việc sử dụng Thẻ Tín Dụng của các Chủ Thẻ Phụ.
+      17.5. Đối với số dư trên Thẻ Tín Dụng chưa sử dụng hết khi Thẻ Tín Dụng bị chấm dứt, Chủ Thẻ có
+             quyền thực hiện yêu cầu hoàn trả khoản tiền này tại Chi nhánh/Phòng giao dịch của ngân hàng
+             Shinhan. Trong trường hợp Chủ Thẻ không yêu cầu hoàn trả, khoản tiền này sẽ được trừ dần
+             vào phí quản lý tài khoản thẻ không hoạt động như quy định tại Điều 26.3 (o) của ĐKĐK này.
+
+      17.6. Chủ Thẻ, bằng việc chấp nhận ĐKĐK này, đồng ý ủy quyền cho Shinhan ký kết bất kỳ văn bản
+             nào và thực hiện bất kỳ hành động cần thiết nào nhằm mục đích thu hồi nợ theo Hợp Đồng Thẻ
+             Tín Dụng;
+
+      17.7. Bất kể việc chấm dứt tại Điều 17 này, bất kỳ việc sử dụng Thẻ Tín Dụng hoặc Mật Khẩu Thẻ
+             (dù có phải do Chủ Thẻ thực hiện hay không) trước khi Thẻ Tín Dụng được trả lại cho Shinhan
+             hoặc bị hủy đều được xem là việc sử dụng Thẻ Tín Dụng hoặc Mật Khẩu Thẻ bởi Chủ Thẻ và
+             Chủ Thẻ sẽ chịu trách nhiệm thanh toán đầy đủ Tổng Dư Nợ của Thẻ Tín Dụng, bao gồm cả
+             các giao dịch đã xảy ra nhưng chưa được ghi nợ vào Thẻ Tín Dụng.
+
+
+18. Các trường hợp thu giữ thẻ
+
+      Shinhan có quyền thu giữ thẻ trong các trường hợp sau:
+        (a) Thẻ giả;
+
+        (b) Thẻ sử dụng trái phép;
+
+        (c) Phục vụ công tác điều tra, xử lý tội phạm theo quy định của pháp luật;
+
+        (d) Các trường hợp khác theo quy định của Shinhan trong từng thời kỳ.
+
+
+
+19. Gia hạn Thẻ Tín Dụng
+19.1. Ngày hết hạn của Thẻ Tín Dụng là ngày cuối cùng của tháng được ghi trên mặt Thẻ Tín Dụng.
+19.2. Thẻ Tín Dụng sẽ không được gia hạn khi hết hạn. Nếu Chủ thẻ muốn gia hạn thẻ, Chủ thẻ phải yêu
+      cầu Shinhan chuyển đổi hệ thống. Trong trường hợp Thẻ Tín dụng không được chuyển đổi hệ thống,
+      Chủ Thẻ sẽ phải thanh toán toàn bộ dư nợ còn lại (bao gồm cả các giao dịch trả góp) khi Thẻ Tín Dụng
+      hết hạn.
+
+
+20.   Việc cung cấp và sử dụng các thông tin tín dụng
+20.1. Thông tin tín dụng bao gồm các thông tin nhận dạng cá nhân (như tên, CMND, địa chỉ, số điện thoại,
+      địa chỉ e-mail v.v…), các thông tin giao dịch tín dụng (như vay, tài sản thế chấp, tình trạng bảo lãnh
+      các khoản nợ, phát hành Thẻ Tín Dụng, sử dụng Thẻ Tín Dụng và các giao dịch có liên quan), thông
+      tin về việc vi phạm nghĩa vụ thanh toán (các khoản chậm thanh toán, phá sản và v.v…), thông tin về
+      năng lực tín dụng (vị trí, tài sản, tổng nợ và v.v…) và toàn bộ các thông tin khác có thể được sử dụng
+      để xác định tình trạng tín dụng của Chủ Thẻ.
+20.2. Chủ Thẻ đồng ý cho Shinhan sử dụng và cung cấp các thông tin tín dụng có được hoặc hình thành liên
+      quan đến Đơn đề nghị phát hành Thẻ Tín Dụng, Điều Khoản và Điều Kiện Thẻ Tín Dụng này và việc
+      sử dụng Thẻ Tín Dụng cho các thành viên của tập đoàn tài chính Shinhan, các tổ chức thông tin tín
+      dụng liên kết với Shinhan, các đối tác và các tổ chức liên kết khác mà Shinhan cho là thích hợp.
+20.3. Chủ Thẻ đồng ý để Shinhan thực hiện tra cứu thông tin từ tổ chức cung cấp thông tin tín dụng hoặc từ
+      các cục thông tin tín dụng (như Cục thông tin tín dụng Hàn Quốc (KCB), Cục thông tin tín dụng Nice,
+      Cục thông tin tín dụng KIS và v.v... dành cho các Chủ Thẻ Hàn Quốc) để xác định tình trạng tín dụng,
+      duy trì giao dịch hoặc quản lý Sao kê qua đường bưu chính và cũng đồng ý cho Shinhan cung cấp các
+      thông tin tín dụng của Chủ Thẻ cho các tổ chức thông tin tín dụng nói trên.
+20.4. Chủ Thẻ có quyền gửi văn bản yêu cầu Shinhan sửa chữa, hiệu đính bất kỳ thông tin nào không chính
+      xác liên quan đến thông tin tín dụng Chủ Thẻ tại Shinhan. Shinhan có nghĩa vụ kiểm tra và điều chỉnh
+      thông tin nếu Shinhan nhận thấy yêu cầu của Chủ Thẻ là hợp lý.
+
+
+21.   Thông báo thay đổi và Sự cho phép các thay đổi
+21.1. Chủ Thẻ sẽ thông báo ngay lập tức cho Shinhan bất kỳ sự thay đổi nào về thông tin của Chủ Thẻ cũng
+      như về bất kỳ phương thức nào mà Chủ Thẻ muốn sử dụng để liên lạc giữa Chủ Thẻ và Shinhan. Chủ
+      thẻ là người nước ngoài phải cập nhật thẻ cư trú/ thị thực hoặc giấy tờ chứng minh tình trạng cư trú
+      khác còn hiệu lực mới nhất cho Shinhan ít nhất 1 (một) tháng trước ngày hết hạn của Thẻ cư trú/ thị
+      thực/ các giấy tờ chứng minh tình trạng cư trú khác hiện tại. Chủ Thẻ phải chịu trách nhiệm đối với
+      những thiệt hại do trì hoãn thông báo đó hoặc hồ sơ thông báo những thông tin như trên được lập cẩu
+      thả và các hệ quả pháp lý tương ứng liên quan đến sự chậm trễ đó.
+21.2. Trong trường hợp có bất cứ thay đổi nào trong Điều Khoản và Điều Kiện Thẻ Tín Dụng này, hệ thống
+      phí và lãi và dịch vụ liên quan đến Thẻ Tín Dụng, Shinhan có nghĩa vụ phải thông báo bằng phương
+      thức mà Shinhan cho là phù hợp các thay đổi đó tối thiểu 7 ngày trước ngày thay đổi có hiệu lực. Các
+      thay đổi sẽ xem như đã được chấp thuận nếu Chủ Thẻ không chấm dứt Thẻ Tín Dụng. Nếu Chủ Thẻ
+      không đồng ý các sửa đổi này, Chủ Thẻ có thể chấm dứt Thẻ Tín Dụng theo quy định ở Điều 17 này.
+      Nếu Chủ Thẻ không chấm dứt Thẻ Tín Dụng, Chủ Thẻ được xem như đã chấp thuận và bị ràng buộc
+      bởi những thay đổi này.
+      Tuy nhiên, việc này không áp dụng đối với những thay đổi đơn phương trong trường hợp phá sản,
+      thiên tai, thay đổi đột ngột trong môi trường tài chính, khủng hoảng kinh doanh tại các ngân hàng hoặc
+      thay đổi không thể tránh khỏi khác phát sinh vì các lý do khác tương tự.
+22.   Trách nhiệm đối với vi phạm
+      Mỗi bên, Shinhan hoặc Chủ Thẻ sẽ chịu trách nhiệm đối với các hậu quả xảy ra do vi phạm một trong
+      những nội dung quy định tại Đơn đề nghị phát hành Thẻ Tín Dụng, Điều Khoản và Điều Kiện Thẻ
+      Tín Dụng này và bên có lỗi sẽ phải bồi thường cho bên còn lại nếu gây ra thiệt hại.
+
+
+23.   Chỉ Thị của Chủ Thẻ
+23.1. Bất kỳ yêu cầu hoặc Chỉ Thị nào của Chủ Thẻ cho Shinhan phải được đưa ra bằng văn bản. Tuy nhiên
+      Shinhan có thể (nhưng không có nghĩa vụ) đồng ý hoặc thực hiện theo bất kỳ chỉ thị hoặc yêu cầu nào
+      qua điện thoại, email, tin nhắn hoặc bất kỳ phương tiện điện tử nào khác ("các Phương Thức không
+      khuyến khích") mà Shinhan tin rằng được đưa ra hoặc được thực hiện hoặc được cho phép bởi Chủ
+      Thẻ.
+23.2. Khi Chủ Thẻ đưa ra chỉ thị thông qua một Phương Thức không khuyến khích (bao gồm nhưng không
+      giới hạn chỉ thị kích hoạt thẻ tín dụng, điều chỉnh Hạn mức, cấp phép giao dịch,...), Chủ Thẻ xác nhận
+      và đồng ý rằng:
+      Chủ Thẻ hiểu rằng đây không phải là một phương thức an toàn để gửi các Chỉ Thị, và Chủ Thẻ sử
+      dụng Phương Thức không khuyến khích vì lí do thuận tiện và vì lợi ích của Chủ Thẻ;
+      Chủ Thẻ chấp nhận bất kỳ rủi ro nào khi đưa ra và gửi chỉ thị đó thông qua một Phương Thức không
+      khuyến khích, bao gồm rủi ro về việc chỉ thị đó có thể không hoàn chỉnh hoặc không chính xác, có
+      thể được đưa ra với ý đồ gian lận hay do nhầm lẫn, hoặc bị thay đổi hoặc theo hình thức khác không
+      được Chủ Thẻ cho phép hoặc Shinhan không nhận được toàn bộ mà chỉ nhận được một phần;
+      Shinhan không có nghĩa vụ thực hiện theo hoặc căn cứ vào bất kỳ chỉ thị nào như vậy; nhưng nếu
+      Shinhan quyết định (theo quyền quyết định của mình) hành động theo chỉ thị đó thì Shinhan có quyền
+      (nhưng không có nghĩa vụ) thực hiện việc kiểm tra xác minh hoặc các biện pháp bảo mật cần thiết
+      khác (không xét đến bản chất của giao dịch hoặc thỏa thuận hoặc số tiền có liên quan); và
+      Trường hợp Shinhan quyết định hành động theo chỉ thị đó, Shinhan có quyền xem chỉ thị đó được
+      Chủ Thẻ cho phép hoàn toàn và có tính chất ràng buộc đối với Chủ Thẻ (dù có thực hiện kiểm tra xác
+      minh hoặc biện pháp bảo mật khác hay không) như thể chỉ thị đó được đưa ra dưới hình thức văn bản
+      có chữ ký hợp lệ.
+23.3. Shinhan hoặc Chủ Thẻ có thể ghi âm lại bất kỳ cuộc gọi điện thoại nào giữa các bên nhằm kiểm soát
+      chất lượng, kiểm tra an ninh và tuân thủ pháp luật, quy định, và có thể trình các bản ghi âm thông tin
+      trao đổi này làm bằng chứng trong các thủ tục tố tụng được tiến hành liên quan đến việc phát hành, sử
+      dụng Thẻ Tín Dụng.
+24.   Chuyển nhượng
+      Shinhan được quyền bán hoặc chuyển nhượng các khoản nợ xấu phát sinh từ Thẻ Tín Dụng của Khách
+      hàng cho bất kỳ tổ chức hoặc cá nhân nào trên cơ sở phù hợp với những quy định pháp luật có liên
+      quan tại thời điểm thực hiện bán nợ xấu.
+
+
+25.   Các quy định khác
+25.1. Nếu bất cứ điều khoản nào trong Điều Khoản và Điều Kiện Thẻ Tín Dụng này trái luật, vô hiệu hoặc
+      không thể thực hiện được thì các điều khoản khác vẫn giữ nguyên hiệu lực.
+25.2. Điều Khoản và Điều Kiện Thẻ Tín Dụng này được diễn giải theo quy định và được điều chỉnh bởi luật
+      hiện hành của Việt Nam và được trình bày bằng tiếng Việt và tiếng Anh và có giá trị như nhau. Trong
+      trường hợp có khác biệt giữa cách giải thích của 2 văn bản, bản tiếng Việt sẽ được ưu tiên.
+25.3. Các vấn đề không được quy định trong Đơn đề nghị phát hành Thẻ Tín Dụng, Điều Khoản và Điều
+      Kiện Thẻ Tín Dụng này sẽ tuân theo các quy định của Shinhan hoặc các tập quán thương mại được
+      chấp nhận chung.
+
+
+ĐIỀU KHOẢN VÀ ĐIỀU KIỆN PHƯƠNG THỨC THANH TOÁN TUẦN HOÀN
+Điều Khoản và Điều Kiện Phương Thức Thanh Toán Tuần Hoàn này được áp dụng cho các Chủ Thẻ đăng
+ký sử dụng và đã được Shinhan chấp thuận. Điều Khoản và Điều Kiện Phương Thức Thanh Toán Tuần
+Hoàn này là một phần không tách rời của Điều Khoản và Điều Kiện Thẻ Tín Dụng.
+Nếu Chủ Thẻ đồng ý sử dụng Phương Thức Thanh Toán Tuần Hoàn có nghĩa là Chủ Thẻ đã đồng ý và tự
+nguyện tuân theo Điều Khoản và Điều Kiện Phương Thức Thanh Toán Tuần Hoàn này.
+
+
+1.    Định nghĩa
+1.1. “Phương Thức Thanh Toán Tuần Hoàn” là phương thức thanh toán một phần dư nợ Thẻ Tín Dụng
+      hàng tháng theo một tỷ lệ thanh toán cố định (nhỏ hơn 100%) do Chủ Thẻ lựa chọn theo quy định
+      Shinhan.
+1.2. “Khoản Thanh Toán Tuần Hoàn” là khoản thanh toán Thẻ Tín Dụng được Shinhan lập trên Sao kê
+      hàng tháng theo Phương Thức Thanh Toán Tuần Hoàn.
+
+
+2.    Phạm vi áp dụng
+2.1. Phương Thức Thanh Toán Tuần Hoàn áp dụng cho giao dịch mua hàng và Ứng Trước Tiền Mặt trong
+      và ngoài nước của Chủ Thẻ, không áp dụng cho các giao dịch đã chuyển đổi thanh toán trả góp.
+2.2. Khi Phương Thức Thanh Toán Tuần Hoàn được áp dụng đối với Chủ Thẻ, phương thức này cũng sẽ
+      được tự động áp dụng cho các Thẻ Phụ tương ứng.
+2.3. Phương Thức Thanh Toán Tuần Hoàn sẽ được tiếp tục áp dụng cho Thẻ Tín Dụng thay thế, Thẻ Tín
+     Dụng phát hành thêm và Thẻ Tín Dụng gia hạn.
+
+
+3.   Tỷ lệ thanh toán và chuyển đổi phương thức thanh toán
+3.1. Chủ Thẻ sẽ lựa chọn một tỷ lệ thanh toán tuần hoàn hàng tháng (“Tỷ lệ thanh toán”) theo các tỷ lệ cố
+     định được Shinhan quy định.
+3.2. Chủ Thẻ có thể thay đổi phương thức thanh toán và/ hoặc Tỷ lệ thanh toán theo các tỷ lệ sẵn có của
+     Shinhan bằng cách trực tiếp đến các chi nhánh của Shinhan hoặc gọi lên Tổng đài điện thoại
+     1900 1577 để yêu cầu.
+3.3. Nếu Chủ Thẻ muốn chuyển từ Phương Thức Thanh Toán Tuần Hoàn sang phương thức thanh toán
+     thông thường (thanh toán toàn bộ 100% dư nợ) hoặc sang tỷ lệ thanh toán cao hơn, Chủ Thẻ phải tất
+     toán toàn bộ dư nợ Thẻ Tín Dụng trước khi chuyển. Phương thức thanh toán mới sẽ áp dụng bắt đầu
+     từ tháng tiếp theo sau khi hệ thống cập nhật thay đổi.
+3.4. Khi Chủ Thẻ đã thay đổi phương thức thanh toán thông thường sang Phương Thức Thanh Toán Tuần
+     Hoàn, số tiền gốc cộng với tiền lãi của giao dịch trước sẽ được chuyển đến số dư tuần hoàn của Chủ
+     Thẻ trong Ngày Đến Hạn Thanh Toán tiếp theo.
+
+
+4.   Lãi suất tuần hoàn
+4.1. Lãi suất tuần hoàn là lãi suất áp dụng khi Chủ Thẻ sử dụng Phương Thức Thanh Toán Tuần Hoàn
+     (tham khảo lãi suất tuần hoàn tại Biểu phí của Shinhan). Shinhan có quyền thay đổi lãi suất tuần hoàn
+     áp dụng cho Chủ Thẻ khi có thay đổi về tình hình tài chính, xếp hạng tín dụng của Chủ Thẻ hoặc
+     những lý do tương tự khác.
+4.2. Khi áp dụng Phương Thức Thanh Toán Tuần Hoàn, lãi suất tuần hoàn sẽ được tính cho tất cả các giao
+     dịch mua hàng hóa/ dịch vụ (không bao gồm các giao dịch trả góp) bắt đầu ngày giao dịch ghi nhận
+     trên hệ thống Shinhan.
+     (a) Trong trường hợp Chủ Thẻ thanh toán toàn bộ giá trị của khoản giao dịch thực hiện từ Thẻ Tín
+          Dụng trước Ngày Đến Hạn Thanh Toán đầu tiên của khoản giao dịch đó, Chủ Thẻ sẽ không phải
+          chịu lãi tuần hoàn cho khoản giao dịch đó.
+     (b) Trong trường hợp Chủ Thẻ không thanh toán toàn bộ giá trị của khoản giao dịch trước Ngày Đến
+          Hạn Thanh Toán đầu tiên của khoản giao dịch, Chủ Thẻ phải trả lãi tuần hoàn hàng tháng theo
+          dư nợ giảm dần còn lại của khoản giao dịch đó cho đến khi giao dịch được tất toán.
+4.3. Lãi suất đối với giao dịch Ứng Trước Tiền Mặt vẫn áp dụng cách tính lãi riêng của giao dịch Ứng
+     Trước Tiền Mặt.
+5.   Sao kê dư nợ phải trả
+5.1. Chủ Thẻ phải trả dư nợ Thẻ Tín Dụng bao gồm số tiền tuần hoàn cộng thêm thanh toán trả góp và phí
+     (nếu có).
+5.2. Số tiền thanh toán tuần hoàn mà Shinhan lập trên Sao kê hàng tháng cho Chủ Thẻ là phần thanh toán
+     được tính theo Tỷ lệ thanh toán tuần hoàn Chủ Thẻ đã đăng ký trên số tiền gốc dư nợ tuần hoàn cộng
+     với tiền lãi tuần hoàn tương ứng, cụ thể như sau:
+     (a) Số tiền sao kê: Số tiền chưa trả tuần hoàn (khoản tiền gốc tuần hoàn + lãi tuần hoàn) x tỷ lệ thanh
+          toán tuần hoàn hàng tháng.
+     (b) Số tiền gốc tuần hoàn: Số tiền tuần hoàn chưa thanh toán (số dư còn lại sau khi thanh toán vào
+          tháng trước + số tiền các giao dịch Thẻ Tín Dụng phát sinh trong tháng giao dịch).
+     (c) Lãi tuần hoàn = Lãi tuần hoàn của dư nợ tuần hoàn còn lại của tháng trước + Lãi tuần hoàn của
+          các giao dịch phát sinh trong tháng giao dịch.
+            i.    Lãi tuần hoàn của dư nợ tuần hoàn còn lại của tháng trước = (Số dư còn lại sau khi thanh
+                  toán của tháng trước x Số ngày tính từ Ngày Đến Hạn Thanh Toán tháng trước đến Ngày
+                  Đến Hạn Thanh Toán của tháng giao dịch x Lãi suất tuần hoàn) ÷ 365.
+            ii.   Lãi tuần hoàn của các giao dịch phát sinh trong tháng giao dịch là tổng lãi tuần hoàn của
+                  các giao dịch phát sinh trong tháng giao dịch, trong đó, Lãi tuần hoàn mỗi giao dịch = (Số
+                  tiền giao dịch x Số ngày từ ngày giao dịch được cập nhật đến ngày hạn thanh toán của
+                  tháng giao dịch x Lãi suất tuần hoàn) ÷ 365.
+5.3. Khi số tổng dư nợ của Khoản Thanh Toán Tuần Hoàn còn lại nhỏ hơn 50.000 VNĐ, Sao kê số tiền
+     thanh toán sẽ bao gồm tất cả các Khoản Thanh Toán Tuần Hoàn còn lại. Khi Khoản Thanh Toán Tuần
+     Hoàn cần lên Sao kê nhỏ hơn 50.000 VNĐ, Sao kê số tiền cần phải thanh toán sẽ là 50.000 VNĐ.
+
+
+6.   Những điều khoản khác
+6.1. Shinhan có thể thay đổi số tiền thanh toán yêu cầu, phạm vi hoạt động của yêu cầu thanh toán, phương
+     thức bồi hoàn, số tiền thanh toán tối thiểu hàng tháng và lãi suất tuần hoàn.
+6.2. Bất kỳ thay đổi nào đối với Điều khoản và Điều kiện Phương Thức Thanh Toán Tuần Hoàn này sẽ
+     được Shinhan thông báo trong vòng 7 ngày trước ngày áp dụng thực tế để Chủ Thẻ xác nhận thông
+     tin. Các thay đổi sẽ xem như đã được chấp thuận nếu Chủ Thẻ không hủy Phương Thức Thanh Toán
+     Tuần Hoàn. Nếu Chủ Thẻ không đồng ý các sửa đổi này, Chủ Thẻ có thể hủy Phương Thức Thanh
+     Toán Tuần Hoàn.
+6.3. Nếu bất cứ điều khoản nào trong Điều khoản và Điều kiện Phương Thức Thanh Toán Tuần Hoàn này
+     trái luật, vô hiệu hoặc không thể thực hiện được thì các điều khoản khác vẫn giữ nguyên hiệu lực.
+6.4. Những vấn đề không được đề cập trong Điều khoản và Điều kiện Phương Thức Thanh Toán Tuần
+     Hoàn này sẽ tuân theo luật, Đơn đề nghị phát hành Thẻ Tín Dụng, Điều Khoản và Điều Kiện Thẻ Tín
+     Dụng của Shinhan.
+
+
+ĐIỀU KHOẢN VÀ ĐIỀU KIỆN DỊCH VỤ NHẬN THÔNG BÁO
+Điều khoản và Điều kiện Dịch vụ Nhận thông báo này được áp dụng cho các Chủ Thẻ đăng ký sử dụng và
+đã được Shinhan chấp thuận. Điều khoản và Điều kiện Dịch vụ Nhận thông báo này là một phần không tách
+rời của Điều Khoản và Điều Kiện Thẻ Tín Dụng.
+Nếu Chủ Thẻ đồng ý sử dụng Dịch vụ Nhận thông báo có nghĩa là Chủ Thẻ đã đã đồng ý và tự nguyện tuân
+theo Điều khoản và Điều kiện Dịch vụ Nhận thông báo này.
+
+
+1.   Định nghĩa
+      “Dịch vụ Nhận Thông Báo” (sau đây gọi tắt là "Dịch vụ”) là dịch vụ mà Shinhan gửi thông báo qua
+      các kênh thuộc sự quản lý của Shinhan (bao gồm nhưng không giới hạn các kênh được định nghĩa
+      bên dưới) đến số điện thoại mà Khách hàng đã đăng ký với Shinhan, hoặc gửi đến ứng dụng liên lạc
+      trực tuyến Zalo của Khách hàng (sau đây gọi tắt là “Zalo”), khi đã xác thực tài khoản Zalo chính chủ
+      qua số điện thoại mà khách đã đăng ký với Shinhan.
+      (a) “Kênh SMS” là hình thức mà các thông báo tự động từ phía Shinhan sẽ được gửi đến số điện
+          thoại Khách hàng đã đăng ký với Shinhan.
+      (b) “Kênh ZNS” là hình thức mà các thông báo tự động từ phía Shinhan sẽ được gửi đến ứng dụng
+          Zalo của Khách hàng sau khi đã xác thực tài khoản Zalo chính chủ, và thiết bị di động của Khách
+          hàng có kết nối Internet.
+
+
+2.   Nội dung dịch vụ
+2.1. Shinhan sẽ cung cấp cho Chủ Thẻ những thông tin sau:
+     (a) Chi tiết về việc chấp thuận/ từ chối cấp phép giao dịch đối với Thẻ Tín Dụng;
+     (b) Khoản tiền đến hạn thanh toán, Ngày Đến Hạn Thanh Toán, khoản tiền thanh toán trễ và những
+          trường hợp khác;
+     (c) Các thông tin khác liên quan đến Thẻ Tín Dụng và tình trạng của Thẻ Tín Dụng.
+2.2. Shinhan có thể cung cấp thêm các thông tin ngoài những thông tin được nêu ở Điều 2.1 trên đây ngoại
+     trừ các thông tin quảng cáo chỉ được gửi khi có sự chấp thuận của Chủ Thẻ.
+2.3. Dịch vụ hoạt động 24 giờ/ ngày và tất cả những ngày trong năm trừ khi có trường hợp đặc biệt hoặc
+     do Shinhan và nhà cung cấp dịch vụ viễn thông di động có liên quan, công ty cung cấp Kênh ZNS
+     thực hiện bảo trì hệ thống.
+3.    Phí dịch vụ và lập hóa đơn
+3.1. Để có thể sử dụng dịch vụ Nhận thông báo, Chủ Thẻ phải trả một khoản phí sử dụng hàng tháng theo
+      biểu phí dịch vụ được công bố trên website shinhan.com.vn vào Ngày Đến Hạn Thanh Toán Chủ Thẻ
+      đã đăng ký.
+3.2. Phí dịch vụ có thể được thay đổi hoặc tạm hoãn phụ thuộc vào chính sách chung của Shinhan hoặc
+      chính sách riêng của từng chi nhánh Shinhan. Bất cứ thay đổi nào về việc này đều yêu cầu Shinhan
+      phải thông báo tới Chủ Thẻ 7 ngày trước ngày thay đổi có hiệu lực bằng phương thức Shinhan cho là
+      phù hợp. Nếu Chủ Thẻ không đồng ý với những thay đổi này, Chủ Thẻ có thể yêu cầu chấm dứt Dịch
+      vụ.
+      Tuy nhiên, điều này không áp dụng đối với những thay đổi theo chính sách riêng của từng chi nhánh
+      Shinhan hoặc trong trường hợp phá sản, thiên tai, thay đổi đột ngột trong môi trường tài chính, khủng
+      hoảng kinh doanh tại Shinhan hoặc thay đổi không thể tránh khỏi khác phát sinh vì các lý do khác
+      tương tự.
+
+
+4.    Nghĩa vụ của Shinhan
+4.1. Dựa trên sự đồng thuận của Khách hàng khi hoàn tất đăng ký dịch vụ Nhận Thông Báo, Shinhan được
+      phép chia sẻ thông tin của Khách hàng cho bên thứ ba (Các nhà mạng viễn thông, Zalo) nhằm mục
+      đích cung cấp dịch vụ Nhận Thông Báo đến khách hàng;
+4.2. Đảm bảo hệ thống cung cấp Dịch Vụ Nhận Thông Báo của Ngân Hàng vận hành ổn định, an toàn, trừ
+      trường hợp bất khả kháng hoặc bảo trì hệ thống;
+4.3. Khách hàng tự chịu trách nhiệm về việc không nhận được hoặc chậm nhận được thông tin qua Dịch
+      Vụ Nhận Thông Báo trong các trường hợp sau:
+      (a)   Thiết bị của khách hàng không đăng nhập ứng dụng Zalo hoặc thiết bị của khách hàng không
+            được kết nối Internet quá 48 giờ kể từ thời điểm thông báo được Ngân Hàng gửi đến ứng dụng
+            liên lạc trực tuyến Zalo của Khách hàng hoặc ứng dụng liên lạc trực tuyến Zalo của Khách hàng
+            bị khóa theo chính sách của Zalo hoặc các trường hợp khác dẫn đến Khách Hàng thất bại trong
+            việc nhận thông báo của Ngân Hàng theo chính sách của Zalo vào tùy từng thời điểm.
+      (b)   Do lỗi/quá tải/tấn công hệ thống ngoài tầm kiểm soát của Ngân Hàng.
+
+
+5.    Nghĩa vụ của Chủ Thẻ
+5.1. Chủ Thẻ có trách nhiệm:
+     (a) Cung cấp thông tin cá nhân chính xác theo yêu cầu của Shinhan để việc sử dụng Dịch vụ được tối
+        ưu. Những thông tin trên sẽ được cung cấp và được sử dụng bởi các công ty cung cấp dịch vụ thuê
+        ngoài (Zalo, …) cũng như các nhà cung cấp viễn thông di động nhằm mục đích thực hiện Dịch vụ.
+       Trách nhiệm không tiết lộ, cung cấp và sử dụng thông tin Chủ Thẻ cho các mục đích không liên
+       quan đến dịch vụ này sẽ được ràng buộc chặt chẽ trong hợp đồng giữa Shinhan với các công ty và
+       nhà cung cấp trên.
+      (b)   Hoàn tất xác thực tài khoản Zalo tương ứng với số điện thoại đăng ký tại Ngân Hàng để kích
+            hoạt Dịch vụ Nhận Thông Báo qua Kênh ZNS.
+      (c)   Đảm bảo số điện thoại Khách hàng cung cấp cho Ngân Hàng là số điện thoại chính chủ của
+            Khách hàng;
+      (d)   Đăng ký/thay đổi/chấm dứt sử dụng Dịch vụ Nhận Thông Báo bất cứ lúc nào sau khi đã thông
+            báo chính thức bằng văn bản cho Shinhan hoặc chủ động thay đổi/ dừng dịch vụ thông qua ứng
+            dụng ngân hàng trực tuyến Shinhan SOL Việt Nam (Sau đây gọi tắt là “Ứng dụng SOL”)
+5.2. Chủ Thẻ phải thông báo cho Shinhan về thay đổi (hoặc hủy) số điện thoại di động hoặc thiết bị viễn
+     thông không dây mà Chủ Thẻ sử dụng cho Dịch vụ. Chủ Thẻ sẽ chịu trách nhiệm cho những hậu quả
+     xảy ra do không cung cấp thông tin hoặc cung cấp thông tin chậm trễ.
+5.3. Chủ Thẻ phải để thiết bị viễn thông di động ở chế độ hoạt động để sử dụng dịch vụ.
+5.4. Nếu Chủ Thẻ không nhận được tin nhắn do lỗi phần mềm của điện thoại di động cầm tay, Chủ Thẻ có
+     trách nhiệm liện hệ nhà cung cấp dịch vụ viễn thông nâng cấp/ sửa chữa phần mềm.
+
+
+6.   Giới hạn sử dụng dịch vụ
+Shinhan có thể quy định giới hạn hoặc hủy/ từ chối/ tạm ngưng việc cung cấp Dịch vụ cho Chủ Thẻ hoặc
+từ chối áp dụng Dịch vụ cho Chủ Thẻ mới khi một trong những điều sau đây được áp dụng:
+     (a)    Khi Shinhan thấy rằng Chủ Thẻ hoặc người đăng kí dùng dịch vụ có vấn đề về tín dụng hoặc
+            Chủ Thẻ bị tạm khóa hoạt động giao dịch;
+     (b)    Khi Chủ Thẻ vi phạm Đơn đề nghị phát hành Thẻ Tín Dụng, Điều Kiện và Điều Khoản Thẻ
+            Tín Dụng, Điều khoản và Điều kiện Dịch vụ Nhận thông báo này;
+     (c)    Cơ sở vật chất của hệ thống không đủ hoặc có vấn đề về kỹ thuật/ pháp lý;
+     (d)    Khi người đăng ký là công ty hay doanh nghiệp và không đủ điều kiện để sử dụng Dịch vụ;
+     (e)    Khi Shinhan e ngại rằng Chủ Thẻ có thể chịu tổn thất hoặc thiệt hại do hệ thống của Shinhan
+            hoặc hệ thống của công ty dịch vụ thuê ngoài bị tấn công dữ liệu;
+     (f)    Khi Chủ Thẻ có đăng ký hủy sử dụng Dịch vụ theo những cách mà Shinhan đưa ra và việc hủy
+            sử dụng Dịch vụ có hiệu lực kể từ ngày đăng ký hủy.
+     (g)    Thông báo không được gửi thành công đến tài khoản Zalo của khách hàng trong vòng 30 ngày
+            liên tiếp (kể từ ngày nhận thông báo gần nhất).
+

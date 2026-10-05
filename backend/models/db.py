@@ -97,6 +97,83 @@ CREATE TABLE IF NOT EXISTS hoi_dap (
     updated_at REAL
 );
 
+-- Trạng thái bền vững của bộ chuẩn bị trước Q&A. Câu trả lời thực tế vẫn nằm
+-- trong hoi_dap để đường gọi cũ dùng nguyên trạng; các bảng này chỉ giữ cấu
+-- hình, nguồn gốc, checkpoint và tiến độ nền.
+CREATE TABLE IF NOT EXISTS answer_bank_config (
+    id                     INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled                INTEGER NOT NULL DEFAULT 1,
+    questions_per_document INTEGER NOT NULL DEFAULT 120,
+    variants_per_answer    INTEGER NOT NULL DEFAULT 4,
+    learn_history          INTEGER NOT NULL DEFAULT 1,
+    updated_at             REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS answer_bank_sources (
+    source_path   TEXT PRIMARY KEY,
+    source_group  TEXT NOT NULL,
+    source_stem   TEXT NOT NULL,
+    content_hash  TEXT NOT NULL,
+    config_hash   TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pending',
+    answers_count INTEGER NOT NULL DEFAULT 0,
+    attempts      INTEGER NOT NULL DEFAULT 0,
+    last_error    TEXT NOT NULL DEFAULT '',
+    built_at      REAL,
+    updated_at    REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS answer_bank_entries (
+    hoi_dap_id   TEXT PRIMARY KEY,
+    source_path  TEXT NOT NULL,
+    source_hash  TEXT NOT NULL,
+    origin       TEXT NOT NULL,       -- auto | memory
+    evidence     TEXT NOT NULL DEFAULT '',
+    voice_ready  INTEGER NOT NULL DEFAULT 0,
+    voice_fingerprint TEXT NOT NULL DEFAULT '',
+    voice_attempts INTEGER NOT NULL DEFAULT 0,
+    created_at   REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_answer_bank_entries_source
+    ON answer_bank_entries(source_path, origin);
+
+CREATE TABLE IF NOT EXISTS answer_bank_history (
+    session_id  TEXT NOT NULL,
+    turn_index  INTEGER NOT NULL,
+    source_path TEXT NOT NULL DEFAULT '',
+    status      TEXT NOT NULL,        -- learned | ignored | failed
+    error       TEXT NOT NULL DEFAULT '',
+    processed_at REAL NOT NULL,
+    PRIMARY KEY (session_id, turn_index)
+);
+
+CREATE TABLE IF NOT EXISTS answer_bank_staging (
+    source_path  TEXT NOT NULL,
+    source_hash  TEXT NOT NULL,
+    stage_key    TEXT NOT NULL,
+    batch_index  INTEGER NOT NULL,
+    items        TEXT NOT NULL,
+    updated_at   REAL NOT NULL,
+    PRIMARY KEY (source_path, stage_key, batch_index)
+);
+
+CREATE TABLE IF NOT EXISTS answer_bank_job (
+    id              INTEGER PRIMARY KEY CHECK (id = 1),
+    job_id          TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'idle',
+    phase           TEXT NOT NULL DEFAULT '',
+    current_document TEXT NOT NULL DEFAULT '',
+    documents_done  INTEGER NOT NULL DEFAULT 0,
+    documents_total INTEGER NOT NULL DEFAULT 0,
+    answers_added   INTEGER NOT NULL DEFAULT 0,
+    voice_done      INTEGER NOT NULL DEFAULT 0,
+    voice_total     INTEGER NOT NULL DEFAULT 0,
+    logs            TEXT NOT NULL DEFAULT '[]',
+    error           TEXT NOT NULL DEFAULT '',
+    last_run        REAL,
+    updated_at      REAL NOT NULL
+);
+
 -- Ghi nho quyet dinh cua nguoi van hanh ve kho cau dem. Can mot cho de danh
 -- dau "da co y xoa het cau duoi" - khong co no thi `do_json_vao_db` thay bang
 -- rong se do lai nguyen 42 cau tu fillers.json, va nguoi dung xoa bao nhieu lan
@@ -339,6 +416,7 @@ _ADDED_COLUMNS: dict[str, dict[str, str]] = {
 # (guard SQL returning a count, statement to run when the count is non-zero).
 # Empty for now - kept so the first real data migration has an obvious home.
 _DATA_MIGRATIONS: list[tuple[str, str]] = []
+
 
 # Once a session is marked ended it stays ended: a stray background write that
 # lands after the disconnect flush must not resurrect it as active.

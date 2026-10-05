@@ -1,0 +1,351 @@
+{
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "102 docs"
+    }
+  },
+  "results": [
+    {
+      "kind": "text_soi",
+      "session_id": "d4c0629d",
+      "question": "Tài khoản và thẻ có phải là một không?",
+      "transcript": "Tài khoản và thẻ có phải là một không?",
+      "answer": "Dạ, tài khoản là nơi ghi nhận số dư và giao dịch của anh/chị. Thẻ là một phương tiện để sử dụng tiền hoặc hạn mức gắn với sản phẩm tương ứng; khóa thẻ không đồng nghĩa tài khoản đã đóng ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+        "bang_diem": 0.774,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+          "source_path": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 541,
+        "turn": 1,
+        "timestamp": 1790843551.2586808
+      },
+      "audio_bytes": 0,
+      "selected_pack_answer": true
+    },
+    {
+      "kind": "text_soi",
+      "session_id": "0ee80206",
+      "question": "Số dư khả dụng khác số dư hiện tại thế nào?",
+      "transcript": "Số dư khả dụng khác số dư hiện tại thế nào?",
+      "answer": "Dạ, số dư hiện tại là số tiền được ghi nhận, còn số dư khả dụng là phần có thể dùng tại thời điểm kiểm tra. Hai số có thể khác do khoản chờ xử lý hoặc khoản tạm giữ; nguyên nhân cụ thể cần kiểm tra chính thức ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_manual_ea35510e8196433aa4e2f4174d14d116",
+        "bang_diem": 0.784,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_ea35510e8196433aa4e2f4174d14d116",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_manual_ea35510e8196433aa4e2f4174d14d116",
+          "source_path": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_manual_ea35510e8196433aa4e2f4174d14d116",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 387,
+        "turn": 1,
+        "timestamp": 1790843551.6485844
+      },
+      "audio_bytes": 0,
+      "selected_pack_answer": true
+    },
+    {
+      "kind": "text_soi",
+      "session_id": "d6a505b0",
+      "question": "Tiền gốc với tiền lãi khác nhau thế nào?",
+      "transcript": "Tiền gốc với tiền lãi khác nhau thế nào?",
+      "answer": "Dạ, tiền gốc là khoản đã vay, còn tiền lãi là chi phí tính theo điều khoản vay. Số tiền phải trả còn có thể chịu các điều kiện khác trong hợp đồng; anh/chị nên đọc lịch trả nợ và tài liệu chính thức ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_manual_677cf459b5174b339b6655f523408dee",
+        "bang_diem": 0.783,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_677cf459b5174b339b6655f523408dee",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_manual_677cf459b5174b339b6655f523408dee",
+          "source_path": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_manual_677cf459b5174b339b6655f523408dee",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 368,
+        "turn": 1,
+        "timestamp": 1790843552.020202
+      },
+      "audio_bytes": 0,
+      "selected_pack_answer": true
+    },
+    {
+      "kind": "text",
+      "session_id": "0a9ac4e6",
+      "question": "Tài khoản và thẻ có phải là một không?",
+      "transcript": "Tài khoản và thẻ có phải là một không?",
+      "answer": "tài khoản là nơi ghi nhận số dư và giao dịch của anh/chị. Thẻ là một phương tiện để sử dụng tiền hoặc hạn mức gắn với sản phẩm tương ứng; khóa thẻ không đồng nghĩa tài khoản đã đóng ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "tinh_huong_diem": 0.75,
+        "tinh_huong_cach_chon": "vector",
+        "tinh_huong_chon_ms": 119.76,
+        "tinh_huong_tu_cau_day_du": true,
+        "filler_ms": 122,
+        "filler_xong_luc": 22574.0729632,
+        "filler_text": "Dạ vâng, em nói luôn ạ,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+        "bang_diem": 0.774,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "noi_dem_bo_mo_dau_lap": true,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_manual_ede0a3d6bff0446a958fadcbb03c6833",
+          "source_path": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_manual_ede0a3d6bff0446a958fadcbb03c6833_noi_dem",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "noi_dem_nghi_ms": 80.0,
+        "ttfa_ms": 493,
+        "tts_first_ms": 0,
+        "tts_first_chars": 57,
+        "total_ms": 510,
+        "turn": 1,
+        "timestamp": 1790843552.533543
+      },
+      "audio_bytes": 431564,
+      "selected_pack_answer": true
+    }
+  ],
+  "passed": true,
+  "transport": "WebSocket text and cached F5 voice; no physical phone call",
+  "conversational_checks": [
+    {
+      "kind": "text_soi",
+      "session_id": "315a6fcb",
+      "question": "Anh đang bận, lúc khác nói nhé",
+      "transcript": "Anh đang bận, lúc khác nói nhé",
+      "answer": "Dạ em xin lỗi đã gọi không đúng lúc ạ. Em xin phép gọi lại, khoảng mấy giờ thì tiện cho anh chị ạ?",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "luot_thuong_gap": "dang_ban",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "answer_route": {
+          "mode": "rule",
+          "model": "",
+          "answer_id": "",
+          "source_path": "",
+          "reason": "dang_ban",
+          "selector_model": ""
+        },
+        "tieng_san": "ltg_dang_ban",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 1,
+        "turn": 1,
+        "timestamp": 1790843552.6628711
+      },
+      "audio_bytes": 0
+    },
+    {
+      "kind": "text_soi",
+      "session_id": "7898b1f1",
+      "question": "Giải thích đơn giản hơn giúp tôi",
+      "transcript": "Giải thích đơn giản hơn giúp tôi",
+      "answer": "Dạ, em có thể nói dễ hiểu hơn. Mình muốn em giải thích lại phần nào ạ?",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_manual_093e0af328b04fc99a50e4c3ec813dfd",
+        "bang_diem": 0.783,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_093e0af328b04fc99a50e4c3ec813dfd",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_manual_093e0af328b04fc99a50e4c3ec813dfd",
+          "source_path": "shinhan/nghiep_vu_co_ban_va_loi_thoai.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_manual_093e0af328b04fc99a50e4c3ec813dfd",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 366,
+        "turn": 1,
+        "timestamp": 1790843553.0315208
+      },
+      "audio_bytes": 0
+    }
+  ]
+}

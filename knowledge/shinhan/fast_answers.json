@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "activate_card",
+      "source_file": "shinhan_card_user_guide_vi.md",
+      "source_file_sha256": "a2dd6a0ec76add80da4049529c129e93aba4b325cd7db46b2f559a16624303d6",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+      "fact": "Sau khi nhận thẻ, khách có thể kích hoạt trong SOL/Internet Banking tại Thẻ > Kích hoạt thẻ hoặc gọi 1900 1577.",
+      "answer": "Dạ, sau khi nhận thẻ, mình vào SOL hoặc Internet Banking, chọn Thẻ > Kích hoạt thẻ ạ. Mình cũng có thể gọi 1900 1577."
+    },
+    {
+      "id": "lost_card",
+      "source_file": "shinhan_card_user_guide_vi.md",
+      "source_file_sha256": "a2dd6a0ec76add80da4049529c129e93aba4b325cd7db46b2f559a16624303d6",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+      "fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ.",
+      "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ."
+    },
+    {
+      "id": "register_digital_card",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+      "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực ạ."
+    },
+    {
+      "id": "activate_digital_card",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Sau khi đăng ký chức năng thẻ điện tử, khách yêu cầu mã xác thực qua SMS và nhập mã để kích hoạt.",
+      "answer": "Dạ, ở bước kích hoạt thẻ điện tử trong SOL, mình yêu cầu mã xác thực qua SMS rồi nhập mã theo hướng dẫn ạ. Mình đừng đọc mã đó cho người khác nhé."
+    },
+    {
+      "id": "register_and_activate_digital_card",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực. Sau khi đăng ký chức năng thẻ điện tử, khách yêu cầu mã xác thực qua SMS và nhập mã để kích hoạt.",
+      "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử và xác nhận thỏa thuận. Sau đó mình yêu cầu mã xác thực qua SMS, nhập mã theo hướng dẫn để kích hoạt ạ. Mình không đọc mã cho người khác nhé."
+    },
+    {
+      "id": "digital_card_fee_unknown",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Kho fact card hiện chưa có dữ kiện về phí hoặc so sánh thẻ vật lý.",
+      "answer": "Dạ, tài liệu hiện có hướng dẫn đăng ký thẻ điện tử trên SOL và kích hoạt bằng mã SMS. Em chưa có căn cứ để xác nhận thẻ có mất phí hay không ạ."
+    },
+    {
+      "id": "digital_card_comparison_unknown",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Kho fact card hiện chưa có dữ kiện về phí hoặc so sánh thẻ vật lý.",
+      "answer": "Dạ, tài liệu hiện có hướng dẫn đăng ký thẻ điện tử trên SOL và kích hoạt bằng mã SMS. Em chưa có căn cứ để so sánh với thẻ vật lý ạ."
+    },
+    {
+      "id": "digital_card_fee_comparison_unknown",
+      "source_file": "shinhan_digital_card_guide.md",
+      "source_file_sha256": "a70b54080386b3297095346dadcece9efd2e857af3f29a39e801d658e71a2c8c",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+      "fact": "Kho fact card hiện chưa có dữ kiện về phí hoặc so sánh thẻ vật lý.",
+      "answer": "Dạ, tài liệu hiện có hướng dẫn đăng ký thẻ điện tử trên SOL và kích hoạt bằng mã SMS. Em chưa có căn cứ để so sánh với thẻ vật lý hoặc xác nhận phí ạ."
+    },
+    {
+      "id": "activation_status_unknown",
+      "source_file": "shinhan_card_user_guide_vi.md",
+      "source_file_sha256": "a2dd6a0ec76add80da4049529c129e93aba4b325cd7db46b2f559a16624303d6",
+      "source_pdf_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+      "fact": "Trạng thái thẻ riêng của khách không có trong kho tài liệu chung.",
+      "answer": "Em chưa xác nhận được trạng thái kích hoạt thẻ của anh/chị qua cuộc trò chuyện này. Anh/chị có thể kiểm tra trên SOL hoặc gọi 1900 1577 để được hỗ trợ ạ."
+    }
+  ]
+}

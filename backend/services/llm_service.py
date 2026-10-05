@@ -1,4 +1,7 @@
+import asyncio
+import json
 import logging
+import time
 from collections.abc import AsyncGenerator
 import httpx
 import ollama
@@ -71,12 +74,19 @@ CORE_RULES = """NGUYÊN TẮC TRẢ LỜI:
    và không hỏi lại thứ vừa nghe.
 5. Lời khách là bản ghi tự động, có thể sai một vài chữ. Dựa vào mạch để hiểu;
    nếu vẫn không rõ thì hỏi lại một ý, không tự bịa câu trả lời.
-6. Xưng "em", gọi khách là "anh/chị", chỉ nói tiếng Việt. Giữ chữ số để hệ
-   thống đọc. Chỉ hỏi tiếp khi thật sự cần cho câu trả lời.
+6. Xưng "em"; gọi khách theo cách họ yêu cầu, nếu chưa rõ thì dùng "anh/chị".
+   Chỉ nói tiếng Việt. Giữ chữ số để hệ thống đọc. Chỉ hỏi tiếp khi thật sự cần.
 7. Nếu khách đang hỏi đúng sản phẩm đang tư vấn thì tiếp tục trả lời hoặc hỏi
    đúng dữ kiện còn thiếu; KHÔNG tự chuyển chuyên viên hay hứa sẽ liên hệ lại.
    Chỉ khi thật sự ngoài phạm vi mới nói: "Dạ em sẽ ghi nhận và có chuyên viên
-   liên hệ lại ạ". Khách từ chối thì cảm ơn lịch sự và kết thúc."""
+   liên hệ lại ạ". Khách từ chối thì cảm ơn lịch sự và kết thúc.
+8. Khi khách cho biết một dữ kiện có thể so với điều kiện trong tài liệu (như
+   thu nhập, tuổi, thời hạn), hãy đối chiếu rồi nói rõ điều kiện đó đã đạt hay
+   chưa đạt. Nếu đã biết là chưa đạt, đừng nói mơ hồ "chưa có thông tin".
+   Nếu tài liệu chỉ ghi "có thể xem xét", giữ nguyên mức chắc chắn đó; không
+   hứa sẽ tự kiểm tra hoặc hồ sơ sẽ được duyệt khi chưa có kết quả tra cứu.
+9. Nếu khách hỏi nhiều ý, trả lời ý nào có căn cứ rồi nói rõ ý nào chưa có căn
+   cứ. Đừng nói thiếu thông tin về toàn bộ sản phẩm khi tài liệu có một phần."""
 
 # Vì sao phải nhắc lại: mô hình 3B quên ràng buộc độ dài khi prompt dài. Đặt sát
 # lượt của khách nên nó "nhớ" hơn là luật số 2 nằm tận đầu prompt.
@@ -86,7 +96,8 @@ CORE_RULES = """NGUYÊN TẮC TRẢ LỜI:
 # gấp đôi mọi lỗi khác. Nhắc độ dài trước thì mô hình dồn sức cắt chữ và càng né
 # câu hỏi.
 CORE_REMINDER = ('TRẢ LỜI THẲNG, tự nhiên trong 1-2 câu. Không có nguồn thì '
-                 'không khẳng định. mở đầu bằng "Dạ", xưng "em".')
+                 'không khẳng định. Xưng "em", mở đầu lịch sự theo cách khách chọn; '
+                 'không lặp "Dạ" ở mọi lượt.')
 
 # Bản dùng khi lượt này ĐÃ phát câu đệm. Hai khác biệt, cả hai đều cần:
 #
@@ -119,6 +130,10 @@ _FALLBACK_EXAMPLES: list[dict] = []
 class LLMService:
     """Ollama streaming client for LLM inference."""
 
+    _INVENTORY_TTL_S = 30.0
+    _INVENTORY_TIMEOUT_S = 2.0
+    _CAPABILITY_TIMEOUT_S = 2.0
+
     def __init__(self):
         self.model = settings.ollama_model
         # httpx mặc định đóng kết nối nhàn rỗi sau 5 giây. Khách nói cách nhau lâu
@@ -131,14 +146,169 @@ class LLMService:
         # Model có khai năng lực "thinking" không (qwen3.x có, qwen2.5 không).
         # None = chưa hỏi Ollama; lúc đó đoán theo tên. Xem `_nen_think`.
         self._ho_tro_think: bool | None = None
+        self._production_model = self.model
+        self._routing_state = self._new_routing_state()
+        self._routing_state["services"][self._normalize_model(self.model)] = self
+
+    @staticmethod
+    def _new_routing_state() -> dict:
+        """State dùng chung giữa service gốc và các service đã định tuyến."""
+        return {
+            "lock": asyncio.Lock(),
+            "cached": False,
+            "models": None,
+            "expires_at": 0.0,
+            "service_lock": asyncio.Lock(),
+            "services": {},
+            "capabilities": {},
+        }
+
+    def _get_routing_state(self) -> dict:
+        # Một số test cũ dựng service bằng __new__, không chạy __init__.
+        state = getattr(self, "_routing_state", None)
+        if state is None:
+            state = self._new_routing_state()
+            self._routing_state = state
+            normalized = self._normalize_model(getattr(self, "model", ""))
+            if normalized:
+                state["services"][normalized] = self
+        return state
+
+    @staticmethod
+    def _normalize_model(name: str) -> str:
+        """Chuẩn hoá duy nhất tag ngầm `latest`, vẫn so khớp tên chính xác."""
+        name = (name or "").strip()
+        return name if not name or ":" in name else f"{name}:latest"
+
+    @staticmethod
+    def _models_from_inventory(result) -> frozenset[str]:
+        models = result.get("models", []) if isinstance(result, dict) else getattr(result, "models", [])
+        names: set[str] = set()
+        for item in models or []:
+            if isinstance(item, dict):
+                name = item.get("model") or item.get("name") or ""
+            else:
+                name = getattr(item, "model", None) or getattr(item, "name", "")
+            normalized = LLMService._normalize_model(str(name or ""))
+            if normalized:
+                names.add(normalized)
+        return frozenset(names)
+
+    async def _installed_models(self) -> frozenset[str] | None:
+        """Đọc inventory có cache; None nghĩa là không đọc được Ollama."""
+        state = self._get_routing_state()
+        now = time.monotonic()
+        if state["cached"] and now < state["expires_at"]:
+            return state["models"]
+
+        async with state["lock"]:
+            now = time.monotonic()
+            if state["cached"] and now < state["expires_at"]:
+                return state["models"]
+            try:
+                result = await asyncio.wait_for(
+                    self.client.list(), timeout=self._INVENTORY_TIMEOUT_S
+                )
+                installed: frozenset[str] | None = self._models_from_inventory(result)
+            except Exception as exc:
+                # Không có inventory thì giữ nguyên đường production. Lỗi gọi
+                # model cụ thể vẫn do đường sinh hiện hữu báo như trước.
+                logger.warning("Không đọc được danh sách model Ollama: %s", exc)
+                installed = None
+
+            state["cached"] = True
+            state["models"] = installed
+            state["expires_at"] = time.monotonic() + self._INVENTORY_TTL_S
+            return installed
+
+    @staticmethod
+    def _thinking_capability(info) -> bool:
+        caps = (
+            info.get("capabilities")
+            if isinstance(info, dict)
+            else getattr(info, "capabilities", None)
+        ) or []
+        return "thinking" in [str(capability).lower() for capability in caps]
+
+    async def _service_for_model(self, model: str) -> "LLMService":
+        if self._normalize_model(model) == self._normalize_model(self.model):
+            return self
+
+        state = self._get_routing_state()
+        normalized = self._normalize_model(model)
+        async with state["service_lock"]:
+            cached = state["services"].get(normalized)
+            if cached is not None:
+                return cached
+
+            try:
+                info = await asyncio.wait_for(
+                    self.client.show(model), timeout=self._CAPABILITY_TIMEOUT_S
+                )
+                supports_thinking: bool | None = self._thinking_capability(info)
+            except Exception as exc:
+                # None giữ đúng fallback hiện hữu của `_nen_think`: chỉ đoán
+                # theo tên khi Ollama không cho biết năng lực model.
+                logger.warning(
+                    "Không đọc được năng lực model định tuyến %s (%s) - đoán theo tên",
+                    model,
+                    exc,
+                )
+                supports_thinking = None
+
+            routed = LLMService.__new__(LLMService)
+            routed.model = model
+            routed.client = self.client
+            routed._ho_tro_think = supports_thinking
+            routed._production_model = getattr(self, "_production_model", self.model)
+            routed._routing_state = state
+            state["capabilities"][normalized] = supports_thinking
+            state["services"][normalized] = routed
+            return routed
+
+    async def route_for(self, task: str) -> "LLMService":
+        """Chọn một service model-bound cho `answer_selection` hoặc `response`.
+
+        Thứ tự là model của vai trò, model production, rồi các fallback được
+        cấu hình rõ ràng. Inventory chỉ dùng để xác nhận các ứng viên này; mọi
+        model khác tình cờ có trên máy đều bị bỏ qua.
+        """
+        if task not in {"answer_selection", "response"}:
+            raise ValueError(f"Unsupported LLM routing task: {task}")
+        if not settings.llm_auto_routing:
+            return self
+
+        production = getattr(self, "_production_model", self.model)
+        role_model = (
+            settings.llm_selector_model
+            if task == "answer_selection"
+            else (settings.llm_response_model or production)
+        )
+        configured = [role_model, production]
+        configured.extend(settings.llm_fallback_models.split(","))
+
+        candidates: list[str] = []
+        seen: set[str] = set()
+        for candidate in configured:
+            candidate = (candidate or "").strip()
+            normalized = self._normalize_model(candidate)
+            if candidate and normalized not in seen:
+                seen.add(normalized)
+                candidates.append(candidate)
+
+        installed = await self._installed_models()
+        if installed is None:
+            return self
+        for candidate in candidates:
+            if self._normalize_model(candidate) in installed:
+                return await self._service_for_model(candidate)
+        return self
 
     async def kiem_nang_luc(self) -> None:
         """Hỏi Ollama model có biết suy nghĩ không. Gọi một lần lúc khởi động."""
         try:
             info = await self.client.show(self.model)
-            caps = (info.get("capabilities") if isinstance(info, dict)
-                    else getattr(info, "capabilities", None)) or []
-            self._ho_tro_think = "thinking" in [str(c).lower() for c in caps]
+            self._ho_tro_think = self._thinking_capability(info)
             logger.info("LLM %s: %s", self.model,
                         "biết suy nghĩ" if self._ho_tro_think else "không có thinking")
         except Exception as e:
@@ -193,11 +363,13 @@ class LLMService:
         org_name = scenarios_db.ten_to_chuc(sc)
         agent_name = scenarios_db.ten_nhan_vien(sc)
 
+        from backend.core.conversation_style import STYLE_GUIDE
         parts = [
             f"Bạn là nhân viên tư vấn của {org_name}, tên là {agent_name}, "
             "đang gọi điện thoại cho khách.",
             "",
             CORE_RULES,
+            STYLE_GUIDE,
         ]
 
         # Luật riêng của ngành, đánh số tiếp theo core để mô hình không thấy hai
@@ -330,6 +502,47 @@ class LLMService:
             ra.append({"name": ten or "", "arguments": args or {}})
         return ra
 
+    @staticmethod
+    def _la_bankvn(model: str) -> bool:
+        return "bankvn" in (model or "").lower()
+
+    @staticmethod
+    def _doc_bankvn_tool_calls(text: str) -> list[dict]:
+        """Đọc protocol tool-call của model BankVN tự train.
+
+        BankVN không dựa vào tool parser riêng của Ollama. Model học sinh chuỗi
+        `<|bankvn_tool_call|>{...}`; backend chuẩn hoá nó về cùng shape với
+        native `message.tool_calls` để phần pipeline phía trên không cần biết
+        model nào đang chạy.
+        """
+        marker = "<|bankvn_tool_call|>"
+        if marker not in (text or ""):
+            return []
+        payload = text.split(marker, 1)[1]
+        payload = payload.split("<|bankvn_end|>", 1)[0].strip()
+        try:
+            obj = json.loads(payload)
+        except (json.JSONDecodeError, TypeError):
+            logger.warning("BankVN tool-call JSON không hợp lệ: %r", payload[:300])
+            return []
+
+        items = obj if isinstance(obj, list) else [obj]
+        ra = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            ten = str(item.get("name") or "").strip()
+            args = item.get("arguments") or {}
+            if ten and isinstance(args, dict):
+                ra.append({"name": ten, "arguments": args})
+        return ra
+
+    @staticmethod
+    def _prompt_tool_bankvn(system_prompt: str, tools: list[dict]) -> str:
+        """Nhét schema tool vào prompt cho BankVN mà không phụ thuộc template Ollama."""
+        from backend.pipeline.cong_cu_llm import prompt_tool_bankvn
+        return prompt_tool_bankvn(system_prompt, tools)
+
     async def stream_response(
         self,
         messages: list[dict],
@@ -349,6 +562,25 @@ class LLMService:
         rồi kết thúc generator này. Phần chạy hàm và stream lượt hai nằm ở
         `streaming_pipeline` - chỗ đó mới cầm được phiên gọi và RAG.
         """
+        bankvn_tools = bool(tools and on_tool_calls is not None and self._la_bankvn(self.model))
+        if bankvn_tools:
+            system_prompt = self._prompt_tool_bankvn(system_prompt, tools or [])
+        from backend.core.banking_fact_precheck import banking_fact_precheck, direct_condition_answer
+        direct = direct_condition_answer(messages, system_prompt, prefill)
+        if direct:
+            logger.info("Trả lời điều kiện đã đối chiếu trực tiếp từ nguồn")
+            yield direct
+            return
+        checked = banking_fact_precheck(messages, system_prompt)
+        if checked:
+            system_prompt += "\n\nĐỐI CHIẾU ĐIỀU KIỆN VỪA TÍNH TỪ NGUỒN VÀ LỜI KHÁCH:\n" + checked
+        from backend.core.conversation_style import requested_region_note, requested_address_note
+        region_note = requested_region_note(messages)
+        if region_note:
+            system_prompt += "\n\n" + region_note
+        address_note = requested_address_note(messages)
+        if address_note:
+            system_prompt += "\n\n" + address_note
         full_messages = [{"role": "system", "content": system_prompt}] + messages
         # PREFILL: đặt chữ khách VỪA NGHE (câu đệm) vào miệng mô hình, nó viết
         # TIẾP thay vì mở đầu lại. Ollama 0.33.2 hỗ trợ - thử trên máy thật:
@@ -369,7 +601,10 @@ class LLMService:
         # Prefill không phải một lời dặn nên không có gì đè được nó.
         if (prefill or "").strip():
             full_messages = full_messages + [{"role": "assistant", "content": prefill}]
-        kw = {"tools": tools} if tools else {}
+        # BankVN dùng protocol text riêng để model from-scratch không phụ thuộc
+        # tool parser/template của Ollama. Các model hiện tại vẫn đi native path.
+        kw = {"tools": tools} if tools and not bankvn_tools else {}
+        bankvn_buffer: list[str] = []
 
         with Timer("LLM-TTFT", logger):
             first_token = True
@@ -380,7 +615,7 @@ class LLMService:
                 think=self._nen_think(prefill),
                 options={
                     "num_predict": settings.llm_max_tokens,
-                    "temperature": settings.llm_temperature,
+                    "temperature": 0.0 if bankvn_tools else settings.llm_temperature,
                     "num_ctx": settings.llm_num_ctx,
                     "stop": CHUOI_DUNG,
                 },
@@ -398,10 +633,13 @@ class LLMService:
 
                 token = self._extract_content(msg)
                 if token:
-                    if first_token:
-                        first_token = False
-                        logger.info("LLM first token received")
-                    yield token
+                    if bankvn_tools:
+                        bankvn_buffer.append(token)
+                    else:
+                        if first_token:
+                            first_token = False
+                            logger.info("LLM first token received")
+                        yield token
 
                 # Chunk cuối mang số token THẬT của lời dặn + lịch sử. Không
                 # đọc thì việc Ollama cắt bớt hội thoại là bẫy im lặng hoàn
@@ -409,6 +647,18 @@ class LLMService:
                 n_prompt = doc_so_token(chunk)
                 if n_prompt is not None:
                     self._soat_cua_so(n_prompt)
+
+            if bankvn_tools:
+                text = "".join(bankvn_buffer)
+                goi = self._doc_bankvn_tool_calls(text)
+                if goi:
+                    logger.info("BankVN xin gọi hàm: %s", [g["name"] for g in goi])
+                    on_tool_calls(goi)
+                    return
+                # Giữ contract của stream_response cho caller khác; lượt router
+                # hiện tại bỏ phần chữ này, nhưng không nên biến hàm thành im lặng.
+                if text:
+                    yield text
 
     def _soat_cua_so(self, prompt_tokens: int) -> None:
         """Kêu lên khi cửa sổ không đủ cho một cuộc tư vấn thật.
@@ -450,7 +700,6 @@ class LLMService:
     async def health_check(self) -> bool:
         try:
             result = await self.client.list()
-            models = result.get("models", []) if isinstance(result, dict) else getattr(result, "models", [])
             # Ollama trả model local không ghi tag dưới dạng ``name:latest`` ở
             # mọi phiên bản client, còn cấu hình có thể ghi ``name`` hoặc
             # ``name:latest``. Chuẩn hoá đúng hai dạng đó rồi so KHỚP CHÍNH XÁC.
@@ -459,17 +708,10 @@ class LLMService:
             # cấu hình ``qwen3.5:9b`` vẫn báo health OK nếu máy chỉ có
             # ``qwen3.5:4b``. Startup nhìn xanh nhưng lượt đầu mới vỡ vì model
             # cần dùng thực ra chưa được tải.
-            def _chuan(ten: str) -> str:
-                ten = (ten or "").strip()
-                return ten if ":" in ten else f"{ten}:latest"
-
-            can = _chuan(self.model)
-            for m in models:
-                name = m.get("model", "") if isinstance(m, dict) else getattr(m, "model", "")
-                if _chuan(name) == can:
-                    if getattr(self, "_ho_tro_think", None) is None:
-                        await self.kiem_nang_luc()
-                    return True
-            return False
+            if self._normalize_model(self.model) not in self._models_from_inventory(result):
+                return False
+            if getattr(self, "_ho_tro_think", None) is None:
+                await self.kiem_nang_luc()
+            return True
         except Exception:
             return False

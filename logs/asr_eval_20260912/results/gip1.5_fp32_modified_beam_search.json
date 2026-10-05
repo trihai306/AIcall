@@ -1,0 +1,575 @@
+{
+  "name": "gip1.5_fp32_modified_beam_search",
+  "model": {
+    "repo": "g-group-ai-lab/gipformer1.5-65M-rnnt",
+    "revision": "65b6b319ecd0fe5875b5afa701eeae84f6f608fa",
+    "precision": "fp32",
+    "provider": "cpu",
+    "threads": 4,
+    "decoding": "modified_beam_search",
+    "files": {
+      "encoder": {
+        "path": "C:\\duan\\chat-ai\\logs\\asr_eval_20260912\\models\\gipformer1.5-65M-rnnt\\encoder.onnx",
+        "sha256": "96b3c83c9c39afc4421f8fd2914d26b53ae837e56788a7bd5aece61580937c36"
+      },
+      "decoder": {
+        "path": "C:\\duan\\chat-ai\\logs\\asr_eval_20260912\\models\\gipformer1.5-65M-rnnt\\decoder.onnx",
+        "sha256": "ea584ee86d6f74191f934f8b950013adcb2c33483785aa8b1b44fff3a7b30069"
+      },
+      "joiner": {
+        "path": "C:\\duan\\chat-ai\\logs\\asr_eval_20260912\\models\\gipformer1.5-65M-rnnt\\joiner.onnx",
+        "sha256": "d146a1cff4a0060d7031e5eb91295773661bc52c356c952dd1e2759e60ffa94d"
+      },
+      "tokens": {
+        "path": "C:\\duan\\chat-ai\\logs\\asr_eval_20260912\\models\\gipformer1.5-65M-rnnt\\tokens.txt",
+        "sha256": "f536d03c2e95ebd2930cf0abec88e823bd17d3c1933da7ae6a82db3b80605e15"
+      }
+    }
+  },
+  "completed": true,
+  "summary": {
+    "samples": 25,
+    "audio_s": 107.10000000000001,
+    "repeats": 2,
+    "mean_ms": 52.639415997546166,
+    "p50_ms": 34.38519994961098,
+    "p95_ms": 170.0674799853002,
+    "rtf": 0.01228744537757847,
+    "empty": 0,
+    "repeat_disagreements": 0,
+    "reference_scores": {
+      "verified_samples": 0,
+      "wer": null,
+      "cer": null,
+      "reason": "No human-verified reference; model outputs are not ground truth"
+    },
+    "latency_scope": "offline full-excerpt decode; warmup/download excluded; not phone response time"
+  },
+  "samples": [
+    {
+      "sample_id": "d9b57f0b_01",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_01.wav",
+      "start_s": 1.86,
+      "end_s": 3.48,
+      "duration_s": 1.62,
+      "sha256": "0228afca7d5bc090602c7357010cfbecda99827f88f44cf29d2062fde4109244",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 27.76530000846833
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 22.885599988512695
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 25.325449998490512
+    },
+    {
+      "sample_id": "d9b57f0b_02",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_02.wav",
+      "start_s": 5.38,
+      "end_s": 6.28,
+      "duration_s": 0.9,
+      "sha256": "1c132f50651e595b0356baf52e2a3c3f55561bcfe83864a596ece779b6cb4352",
+      "runs": [
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 19.202800001949072
+        },
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 18.07999995071441
+        }
+      ],
+      "text": "A LÔ",
+      "median_ms": 18.64139997633174
+    },
+    {
+      "sample_id": "d9b57f0b_03",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_03.wav",
+      "start_s": 10.44,
+      "end_s": 13.14,
+      "duration_s": 2.7,
+      "sha256": "42deabf89349ea4f01e1d0604bc8cf82477b2e89f2a7429a218d40a4d20ec706",
+      "runs": [
+        {
+          "text": "Ừ ANH MUỐN TƯ VẤN VỀ KHOẢN VAY BÊN MÌNH",
+          "elapsed_ms": 37.05010004341602
+        },
+        {
+          "text": "Ừ ANH MUỐN TƯ VẤN VỀ KHOẢN VAY BÊN MÌNH",
+          "elapsed_ms": 44.14419992826879
+        }
+      ],
+      "text": "Ừ ANH MUỐN TƯ VẤN VỀ KHOẢN VAY BÊN MÌNH",
+      "median_ms": 40.59714998584241
+    },
+    {
+      "sample_id": "d9b57f0b_04",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_04.wav",
+      "start_s": 19.5,
+      "end_s": 23.66,
+      "duration_s": 4.16,
+      "sha256": "0e78da10fa4e97806da273eacebf3bdc897a61149244d426ae10df0ad9c78188",
+      "runs": [
+        {
+          "text": "Ừ ANH MUỐN VAY TÍN CHẤP HẠN MỨC BÊN MÌNH LÀ BAO NHIÊU",
+          "elapsed_ms": 44.700699974782765
+        },
+        {
+          "text": "Ừ ANH MUỐN VAY TÍN CHẤP HẠN MỨC BÊN MÌNH LÀ BAO NHIÊU",
+          "elapsed_ms": 45.403299969621
+        }
+      ],
+      "text": "Ừ ANH MUỐN VAY TÍN CHẤP HẠN MỨC BÊN MÌNH LÀ BAO NHIÊU",
+      "median_ms": 45.051999972201884
+    },
+    {
+      "sample_id": "d9b57f0b_05",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_05.wav",
+      "start_s": 31.88,
+      "end_s": 34.06,
+      "duration_s": 2.18,
+      "sha256": "a968a29b129997dfe073a25138cdd3ecb82f6ea4a7dce695a66f60f6c3f8ea69",
+      "runs": [
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM",
+          "elapsed_ms": 31.449200003407896
+        },
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM",
+          "elapsed_ms": 31.15080005954951
+        }
+      ],
+      "text": "ANH MUỐN VAY BỐN TRĂM",
+      "median_ms": 31.300000031478703
+    },
+    {
+      "sample_id": "d9b57f0b_06",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_06.wav",
+      "start_s": 41.54,
+      "end_s": 43.18,
+      "duration_s": 1.64,
+      "sha256": "b5bc98aa0fc4e8f929558ed0ad229c2012396abdfcafa5a47f2fd67243e367c8",
+      "runs": [
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM",
+          "elapsed_ms": 25.459100026637316
+        },
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM",
+          "elapsed_ms": 27.684399974532425
+        }
+      ],
+      "text": "ANH MUỐN VAY BỐN TRĂM",
+      "median_ms": 26.57175000058487
+    },
+    {
+      "sample_id": "d9b57f0b_07",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_07.wav",
+      "start_s": 56.8,
+      "end_s": 58.6,
+      "duration_s": 1.8,
+      "sha256": "6d59ec34bee472d61451e53ec33d31d9c0f1708730363b8757178c391122ac3e",
+      "runs": [
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM TRIỆU",
+          "elapsed_ms": 27.976699988357723
+        },
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM TRIỆU",
+          "elapsed_ms": 26.0140000609681
+        }
+      ],
+      "text": "ANH MUỐN VAY BỐN TRĂM TRIỆU",
+      "median_ms": 26.995350024662912
+    },
+    {
+      "sample_id": "d9b57f0b_08",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_08.wav",
+      "start_s": 67.16,
+      "end_s": 69.6,
+      "duration_s": 2.44,
+      "sha256": "cd7a14a37002e7b48ce5bf7f1f10fc1d976732286dfcedd8bda7503237c41e0c",
+      "runs": [
+        {
+          "text": "EM MUỐN VAY BỐN TRĂM TRIỆU THÌ THỦ TỤC NHƯ THẾ NÀO",
+          "elapsed_ms": 32.668699976056814
+        },
+        {
+          "text": "EM MUỐN VAY BỐN TRĂM TRIỆU THÌ THỦ TỤC NHƯ THẾ NÀO",
+          "elapsed_ms": 29.0664000203833
+        }
+      ],
+      "text": "EM MUỐN VAY BỐN TRĂM TRIỆU THÌ THỦ TỤC NHƯ THẾ NÀO",
+      "median_ms": 30.867549998220056
+    },
+    {
+      "sample_id": "d9b57f0b_09",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_09.wav",
+      "start_s": 78.34,
+      "end_s": 79.3,
+      "duration_s": 0.96,
+      "sha256": "2dcadf0f9eba46eb8c73fdc249be3e46b8759c369306eeda6ffcd157540585ed",
+      "runs": [
+        {
+          "text": "OK",
+          "elapsed_ms": 18.953099963255227
+        },
+        {
+          "text": "OK",
+          "elapsed_ms": 18.868800019845366
+        }
+      ],
+      "text": "OK",
+      "median_ms": 18.910949991550297
+    },
+    {
+      "sample_id": "fe5a9697_01",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_01.wav",
+      "start_s": 1.2,
+      "end_s": 2.82,
+      "duration_s": 1.62,
+      "sha256": "291ecde7bb8d48ad0b8a1bd4e5e671ecf748433e50ece28161a3e5d42aaceff1",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 26.04230004362762
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 25.76380001846701
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 25.903050031047314
+    },
+    {
+      "sample_id": "fe5a9697_02",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_02.wav",
+      "start_s": 6.58,
+      "end_s": 9.88,
+      "duration_s": 3.3,
+      "sha256": "4907501ff5f2c7b7ad67710c1df5ea2b2ecc9abd6d3b0150bbf49e4d11fa2ca3",
+      "runs": [
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 38.336100056767464
+        },
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 38.355300086550415
+        }
+      ],
+      "text": "A LÔ",
+      "median_ms": 38.34570007165894
+    },
+    {
+      "sample_id": "fe5a9697_03",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_03.wav",
+      "start_s": 11.02,
+      "end_s": 13.44,
+      "duration_s": 2.42,
+      "sha256": "a53db081ef42cc98d86456a4eabd21b93b26e18c120e644ce397a144ce4ec211",
+      "runs": [
+        {
+          "text": "Ờ TƯ VẤN CHO ANH KHOẢN VAY BÊN MÌNH",
+          "elapsed_ms": 35.01809993758798
+        },
+        {
+          "text": "Ờ TƯ VẤN CHO ANH KHOẢN VAY BÊN MÌNH",
+          "elapsed_ms": 33.75229996163398
+        }
+      ],
+      "text": "Ờ TƯ VẤN CHO ANH KHOẢN VAY BÊN MÌNH",
+      "median_ms": 34.38519994961098
+    },
+    {
+      "sample_id": "fe5a9697_04",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_04.wav",
+      "start_s": 15.8,
+      "end_s": 29.4,
+      "duration_s": 13.6,
+      "sha256": "953a93e4ced2eef4c4f716bfd0658da29d48627d95a4ee49c28330e7d05e3e23",
+      "runs": [
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM TRONG MƯỜI HAI THÁNG THÌ ĐÓNG LÃI BAO NHIÊU EM",
+          "elapsed_ms": 166.63180000614375
+        },
+        {
+          "text": "ANH MUỐN VAY BỐN TRĂM TRONG MƯỜI HAI THÁNG THÌ ĐÓNG LÃI BAO NHIÊU EM",
+          "elapsed_ms": 208.30269996076822
+        }
+      ],
+      "text": "ANH MUỐN VAY BỐN TRĂM TRONG MƯỜI HAI THÁNG THÌ ĐÓNG LÃI BAO NHIÊU EM",
+      "median_ms": 187.46724998345599
+    },
+    {
+      "sample_id": "fe5a9697_05",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_05.wav",
+      "start_s": 30.44,
+      "end_s": 49.62,
+      "duration_s": 19.18,
+      "sha256": "3ce6893c63771d896ee4697a28e8479013b5825a560c4e4df111ec38d6f5a903",
+      "runs": [
+        {
+          "text": "Ừ TÌNH",
+          "elapsed_ms": 187.1090999338776
+        },
+        {
+          "text": "Ừ TÌNH",
+          "elapsed_ms": 265.1999000227079
+        }
+      ],
+      "text": "Ừ TÌNH",
+      "median_ms": 226.15449997829273
+    },
+    {
+      "sample_id": "bc4d83e7_01",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_01.wav",
+      "start_s": 0.58,
+      "end_s": 2.2,
+      "duration_s": 1.62,
+      "sha256": "61a6f999a40edb1cd489fc28af321d48a6a974515af9157c3bbc183084408cd6",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 25.308099924586713
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 22.664800053462386
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 23.98644998902455
+    },
+    {
+      "sample_id": "bc4d83e7_02",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_02.wav",
+      "start_s": 5.58,
+      "end_s": 7.2,
+      "duration_s": 1.62,
+      "sha256": "0ade4776c0b5178c36e198f619e5561be732576e52b8d8341abd814fb100dc5c",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 25.65830003004521
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 23.824299918487668
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 24.74129997426644
+    },
+    {
+      "sample_id": "bc4d83e7_03",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_03.wav",
+      "start_s": 10.88,
+      "end_s": 18.62,
+      "duration_s": 7.74,
+      "sha256": "17157a77a214b259a8378de5266aabb802330701faab7770f79bc03e41b4b33c",
+      "runs": [
+        {
+          "text": "A LÔ Ừ TƯ VẤN GIÚP ANH KHOẢN VAY BÊN MÌNH VỚI",
+          "elapsed_ms": 77.12130004074425
+        },
+        {
+          "text": "A LÔ Ừ TƯ VẤN GIÚP ANH KHOẢN VAY BÊN MÌNH VỚI",
+          "elapsed_ms": 83.03570002317429
+        }
+      ],
+      "text": "A LÔ Ừ TƯ VẤN GIÚP ANH KHOẢN VAY BÊN MÌNH VỚI",
+      "median_ms": 80.07850003195927
+    },
+    {
+      "sample_id": "bc4d83e7_04",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_04.wav",
+      "start_s": 20.02,
+      "end_s": 26.1,
+      "duration_s": 6.08,
+      "sha256": "7cee2f3c307a45ee7023f8f1948f0fbc3f2695a14ec25dd2fc99e69b55de50ff",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 63.282599905505776
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 58.787700021639466
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 61.03514996357262
+    },
+    {
+      "sample_id": "bc4d83e7_05",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_05.wav",
+      "start_s": 28.5,
+      "end_s": 34.36,
+      "duration_s": 5.86,
+      "sha256": "384f62febe1d636063f612aba4cd10ad75f920e97b13f01e756f17c01ac1e621",
+      "runs": [
+        {
+          "text": "ANH MUỐN VAY TẦM BỐN TRĂM TRIỆU TRONG VÒNG MƯỜI HAI THÁNG",
+          "elapsed_ms": 59.72640006802976
+        },
+        {
+          "text": "ANH MUỐN VAY TẦM BỐN TRĂM TRIỆU TRONG VÒNG MƯỜI HAI THÁNG",
+          "elapsed_ms": 56.77670007571578
+        }
+      ],
+      "text": "ANH MUỐN VAY TẦM BỐN TRĂM TRIỆU TRONG VÒNG MƯỜI HAI THÁNG",
+      "median_ms": 58.25155007187277
+    },
+    {
+      "sample_id": "bc4d83e7_06",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_06.wav",
+      "start_s": 37.1,
+      "end_s": 38.1,
+      "duration_s": 1.0,
+      "sha256": "bbc4f772baa9baf2cb416b2d8f8cda16d45d60592aaf67b6ef09e9fa65343ada",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 21.235399995930493
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 18.74680002219975
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 19.99110000906512
+    },
+    {
+      "sample_id": "bc4d83e7_07",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_07.wav",
+      "start_s": 43.18,
+      "end_s": 53.44,
+      "duration_s": 10.26,
+      "sha256": "62810b445be654eba6bb8bf30ccd219b81051707a318a91c28dbcd0536e35e27",
+      "runs": [
+        {
+          "text": "Ừ THẾ TƯ VẤN GIÚP ANH VỀ KHOẢN VAY NẾU ANH VAY SÁU MƯƠI THÁNG THÌ MỘT THÁNG ĐÓNG BAO NHIÊU",
+          "elapsed_ms": 98.54809998068959
+        },
+        {
+          "text": "Ừ THẾ TƯ VẤN GIÚP ANH VỀ KHOẢN VAY NẾU ANH VAY SÁU MƯƠI THÁNG THÌ MỘT THÁNG ĐÓNG BAO NHIÊU",
+          "elapsed_ms": 102.38870000466704
+        }
+      ],
+      "text": "Ừ THẾ TƯ VẤN GIÚP ANH VỀ KHOẢN VAY NẾU ANH VAY SÁU MƯƠI THÁNG THÌ MỘT THÁNG ĐÓNG BAO NHIÊU",
+      "median_ms": 100.46839999267831
+    },
+    {
+      "sample_id": "bc4d83e7_08",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_08.wav",
+      "start_s": 53.76,
+      "end_s": 54.64,
+      "duration_s": 0.88,
+      "sha256": "8c02583f4a96a6d6d2d091c21fc7f8e1dfce58eac48374ef9103e413aa408b12",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 19.1168999299407
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 17.35119998920709
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 18.234049959573895
+    },
+    {
+      "sample_id": "bc4d83e7_09",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_09.wav",
+      "start_s": 56.26,
+      "end_s": 60.12,
+      "duration_s": 3.86,
+      "sha256": "2a1e7dd19d6c073b8b6b54f3738ec945c1a8340262168d71d98c775b1ba48896",
+      "runs": [
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 41.58249997999519
+        },
+        {
+          "text": "A LÔ",
+          "elapsed_ms": 43.01069991197437
+        }
+      ],
+      "text": "A LÔ",
+      "median_ms": 42.29659994598478
+    },
+    {
+      "sample_id": "bc4d83e7_10",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_10.wav",
+      "start_s": 60.58,
+      "end_s": 66.26,
+      "duration_s": 5.68,
+      "sha256": "4f6cd6b0ef1d16b018ebdf54876595e88a16d870467021d73d48eb0c84be4982",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 64.34120004996657
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 55.97850005142391
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 60.15985005069524
+    },
+    {
+      "sample_id": "bc4d83e7_11",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_11.wav",
+      "start_s": 68.6,
+      "end_s": 72.58,
+      "duration_s": 3.98,
+      "sha256": "ac51456daa06d2c810335efe238fa30b75d224871f3a8dc57e4ec4fbe3f7c616",
+      "runs": [
+        {
+          "text": "Ừ",
+          "elapsed_ms": 52.32719995547086
+        },
+        {
+          "text": "Ừ",
+          "elapsed_ms": 48.123099957592785
+        }
+      ],
+      "text": "Ừ",
+      "median_ms": 50.22514995653182
+    }
+  ]
+}

@@ -39,7 +39,8 @@ cách làm khác quy trình.
   thông tin để em kiểm tra giúp ạ."
 
 ## Xử lí tình huống khi khách chê
-- Chê lãi cao: Lãi này bên em đã là ưu đãi thuộc tốp tốt nhất thị trường rồi ạ,
-  do vay không tài sản thế chấp nên lãi sẽ hơi cao chút
-- Chê hạn mức thấp: Hạn mức này bên em thuộc tốp cao trên thị trường rồi đó ạ,
-  vay tín chấp nên không ngân hàng nào dám cho vay quá nhiều ạ
+- Chê lãi cao: Dạ, mức lãi này có thể khiến mình cân nhắc. Mình nên xem tổng
+  tiền phải trả theo kỳ hạn và các khoản phí đã xác nhận trước khi quyết định ạ.
+- Chê hạn mức thấp: Dạ, hạn mức này có thể chưa phù hợp với nhu cầu của mình.
+  Mình cần đối chiếu số tiền cần vay, kỳ hạn và điều kiện xét duyệt theo hồ sơ
+  cụ thể ạ.

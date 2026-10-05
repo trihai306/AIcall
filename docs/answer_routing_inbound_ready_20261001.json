@@ -1,0 +1,69 @@
+{
+  "adb": {
+    "devices": [],
+    "error": "",
+    "adb_installed": true
+  },
+  "inbound": {
+    "devices": [
+      {
+        "device_id": "dev_643aeac5",
+        "name": "samsung SM-G965F",
+        "serial": "21f10e44220c7ece",
+        "dang_nghe": true,
+        "da_nhan": 0,
+        "cuoc_hien_tai": null,
+        "loi": "adb.exe: device '21f10e44220c7ece' not found"
+      }
+    ]
+  },
+  "voice": {
+    "calls": []
+  },
+  "devices": {
+    "devices": [
+      {
+        "device_id": "dev_643aeac5",
+        "name": "samsung SM-G965F",
+        "kind": "adb",
+        "address": "21f10e44220c7ece",
+        "dial_url": "",
+        "phone_number": "",
+        "status": "unknown",
+        "is_default": true,
+        "note": "Phone farm - Android 9",
+        "last_error": "",
+        "last_seen": 1789900194.7467666,
+        "created_at": 1785731055.6964712,
+        "inbound_enabled": 1,
+        "inbound_scenario_id": "sc_cfa532b8",
+        "inbound_delay_s": 2.0
+      },
+      {
+        "device_id": "dev_ca6dc847",
+        "name": "S9+ máy 2 (SIM Viettel)",
+        "kind": "adb",
+        "address": "228b1b68920b7ece",
+        "dial_url": "",
+        "phone_number": "",
+        "status": "unknown",
+        "is_default": false,
+        "note": "root+vbridge 2026-09-05",
+        "last_error": "",
+        "last_seen": 1789900194.948556,
+        "created_at": 1788604953.7216036,
+        "inbound_enabled": 0,
+        "inbound_scenario_id": "",
+        "inbound_delay_s": 2.0
+      }
+    ],
+    "kinds": [
+      "adb",
+      "phone_link",
+      "usb_modem",
+      "sip",
+      "audio"
+    ],
+    "online": 0
+  }
+}

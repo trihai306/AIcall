@@ -1,5 +1,7 @@
+import hashlib
 import logging
 import re
+import time
 import unicodedata
 from pathlib import Path, PurePath
 import chromadb
@@ -7,17 +9,44 @@ from backend.config import settings
 from backend.core.logging_config import Timer
 
 logger = logging.getLogger(__name__)
+CHUNKER_VERSION = "markdown-sections-v2"
 
 
 def cat_manh(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    """Cắt văn bản thành mảnh chồng lấn theo SỐ KÝ TỰ.
+    """Giữ từng mục Markdown nguyên vẹn khi có tiêu đề cấp hai.
 
-    Đây là cách cắt duy nhất của hệ thống - RAG nạp tài liệu bằng nó, và khung
-    xem trước trong hộp soạn tài liệu cũng gọi chính nó. Cắt theo ký tự nên
-    không biết gì về cấu trúc markdown: bảng lãi suất dài sẽ bị chặt mất dòng
-    tiêu đề, câu bị bẻ giữa từ. Muốn đổi thì đổi ở ĐÂY, cả hai nơi cùng theo.
+    Mỗi dữ kiện dưới ``##`` thành một mảnh có tên tài liệu và tên mục. Mục quá
+    dài vẫn cắt nhỏ; tài liệu thường giữ đường cắt cũ. Khung xem trước và lúc
+    nạp Chroma gọi cùng hàm này nên số mảnh không lệch nhau.
     """
     text = text.strip()
+    headings = list(re.finditer(r"(?m)^##\s+.+$", text))
+    if headings:
+        title = next((line.strip() for line in text.splitlines()
+                      if re.match(r"^#\s+", line)), "")
+        result = []
+        preface = text[:headings[0].start()].strip()
+        # Giữ lời dẫn/định nghĩa ở đầu tài liệu. Riêng khối nguồn PDF + hash
+        # chỉ là provenance, không có dữ kiện để mô hình trả lời.
+        useful_lines = [line for line in preface.splitlines()
+                        if line.strip() and line.strip() != title
+                        and not line.startswith(("Nguồn PDF", "SHA-256 PDF", "Phạm vi:"))]
+        if useful_lines:
+            result.extend(_cat_theo_ky_tu(preface, chunk_size, overlap))
+        for i, heading in enumerate(headings):
+            end = headings[i + 1].start() if i + 1 < len(headings) else len(text)
+            section = text[heading.start():end].strip()
+            block = (title + "\n" + section).strip() if title else section
+            if len(block) <= chunk_size:
+                result.append(block)
+            else:
+                result.extend(_cat_theo_ky_tu(block, chunk_size, overlap))
+        return result
+    return _cat_theo_ky_tu(text, chunk_size, overlap)
+
+
+def _cat_theo_ky_tu(text: str, chunk_size: int, overlap: int) -> list[str]:
+    """Đường dự phòng cho mục dài hoặc văn bản không có cấu trúc Markdown."""
     if len(text) <= chunk_size:
         return [text] if text else []
 
@@ -28,6 +57,8 @@ def cat_manh(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
         chunk = text[start:end]
         if chunk.strip():
             chunks.append(chunk.strip())
+        if end >= len(text):
+            break
         start = end - overlap
 
     return chunks
@@ -148,13 +179,34 @@ class RAGService:
 
         import asyncio
 
+        # Tài liệu Shinhan có nguồn đã đối chiếu; các file products đi kèm bản
+        # demo là số giả. Khi khách hỏi rõ Shinhan, chỉ tra đúng ngân hàng này.
+        # Lọc ở Chroma trước khi xếp hạng để top_k không bị tài liệu mẫu chiếm.
+        shinhan_query = "shinhan" in (query or "").casefold()
+        digital_card_query = shinhan_query and any(
+            phrase in (query or "").casefold()
+            for phrase in ("thẻ điện tử", "thẻ ảo")
+        )
+
         def _query():
             embedding = self._embedder.encode([query])[0].tolist()
-            return self._collection.query(
+            kwargs = dict(
                 query_embeddings=[embedding],
                 n_results=min(top_k, self._collection.count()),
                 include=["documents", "distances", "metadatas"],
             )
+            if shinhan_query:
+                kwargs["where"] = {"bank": "shinhan"}
+            if digital_card_query:
+                # Cùng một ngân hàng vẫn có thẻ vật lý và thẻ điện tử. Câu
+                # hỏi về thẻ điện tử từng lấy toàn mảnh mất thẻ vật lý, khiến
+                # Qwen nói không có tài liệu dù mục thẻ điện tử đã lập chỉ mục.
+                kwargs["where_document"] = {"$contains": "thẻ điện tử"}
+            result = self._collection.query(**kwargs)
+            if digital_card_query and not (result.get("documents") or [[]])[0]:
+                kwargs.pop("where_document")
+                result = self._collection.query(**kwargs)
+            return result
 
         with Timer("RAG", logger):
             results = await asyncio.to_thread(_query)
@@ -224,7 +276,7 @@ class RAGService:
         # Đặt LÊN ĐẦU: đây là câu trả lời cho "sản phẩm này là gì", phải đứng
         # trước mọi con số. Chỉ làm khi ĐÃ neo sản phẩm - chưa neo mà tự kéo
         # định nghĩa vào là chọn hộ khách sản phẩm họ chưa nói.
-        if san_pham:
+        if san_pham and not shinhan_query:
             ma_neo = self._ma_san_pham(san_pham)
             mo_dau = self._manh_mo_dau(ma_neo)
             dau = (mo_dau or "")[:60]
@@ -520,7 +572,14 @@ class RAGService:
                         ", ".join(sorted({s for s in ma if s and s != moc})), moc)
         return giu
 
-    def ingest_text(self, content: str, doc_id: str, metadata: dict | None = None):
+    def ingest_text(
+        self,
+        content: str,
+        doc_id: str,
+        metadata: dict | None = None,
+        *,
+        _existing_ids: list[str] | None = None,
+    ):
         """Add a document to the knowledge base."""
         if not self._is_loaded:
             self.load()
@@ -531,7 +590,14 @@ class RAGService:
 
         embeddings = self._embedder.encode(chunks).tolist()
         ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
-        metadatas = [metadata or {} for _ in chunks]
+        meta = dict(metadata or {})
+        # Hash nằm ngay trong từng mảnh để lần khởi động sau có thể biết file
+        # trên đĩa còn y hệt hay đã đổi mà không phải nhúng lại toàn bộ tài liệu.
+        # `setdefault` cho phép nguồn dữ liệu đặc biệt tự mang hash riêng nếu cần.
+        meta.setdefault("content_sha256", hashlib.sha256(content.encode("utf-8")).hexdigest())
+        meta.setdefault("chunker_version", CHUNKER_VERSION)
+        meta.setdefault("indexed_at", time.time())
+        metadatas = [meta for _ in chunks]
 
         # XOÁ mảnh cũ của CHÍNH tài liệu này trước đã. Chroma `add` gặp id trùng
         # thì BỎ QUA IM LẶNG chứ không ghi đè, nên thiếu bước này là sửa tài liệu
@@ -551,8 +617,13 @@ class RAGService:
         # vừa dựng - bản cũ có thể NHIỀU mảnh hơn bản mới, xoá thiếu thì mảnh
         # thừa sống sót và vẫn được RAG lôi ra.
         try:
-            cu = [i for i in (self._collection.get().get("ids") or [])
-                  if isinstance(i, str) and i.startswith(f"{doc_id}_chunk_")]
+            # `ingest_directory` đã snapshot toàn kho một lần nên truyền thẳng
+            # danh sách cũ vào đây. Các caller khác vẫn dùng đường cũ để giữ API
+            # và hành vi ghi đè hiện tại.
+            cu = _existing_ids
+            if cu is None:
+                cu = [i for i in (self._collection.get(include=[]).get("ids") or [])
+                      if isinstance(i, str) and i.startswith(f"{doc_id}_chunk_")]
             if cu:
                 self._collection.delete(ids=cu)
                 logger.info("Nạp lại %r: bỏ %d mảnh cũ", doc_id, len(cu))
@@ -574,20 +645,153 @@ class RAGService:
         logger.info(f"Ingested {len(chunks)} chunks from '{doc_id}'")
 
     def ingest_directory(self, directory: str):
-        """Ingest all .md and .txt files from a directory."""
+        """Đồng bộ .md/.txt vào Chroma, chỉ nhúng file mới hoặc đã thay đổi.
+
+        Trước đây mỗi lần backend khởi động đều đọc, chunk, encode và xoá/nạp
+        lại TOÀN BỘ kho. Với vài file thì khó thấy, nhưng khi kho tăng lên hàng
+        trăm/hàng nghìn tài liệu thì thời gian mở app tăng gần tuyến tính theo
+        tổng dung lượng tài liệu dù không có gì thay đổi.
+
+        Ta snapshot metadata một lần, so SHA-256 của từng file, và chỉ gọi
+        `ingest_text` cho file mới/sửa. File đã xoá khỏi thư mục cũng được xoá
+        khỏi Chroma để tránh RAG tiếp tục đọc tri thức cũ.
+        """
+        if not self._is_loaded:
+            self.load()
+
         dir_path = Path(directory)
         if not dir_path.exists():
             logger.warning(f"Knowledge directory not found: {directory}")
-            return
+            return {"files": 0, "changed": 0, "skipped": 0, "stale_chunks": 0}
 
-        count = 0
-        for file_path in sorted(dir_path.rglob("*.md")) + sorted(dir_path.rglob("*.txt")):
+        try:
+            hien_co = self._collection.get(include=["metadatas"]) or {}
+            old_ids = hien_co.get("ids") or []
+            old_metas = hien_co.get("metadatas") or []
+        except Exception as e:
+            logger.warning("Không đọc được metadata RAG để nạp tăng dần (%s) - "
+                           "sẽ nạp lại tài liệu như trước", e)
+            old_ids, old_metas = [], []
+
+        # Cùng một source có nhiều chunk; gom một lần để mỗi file không phải
+        # quét toàn collection. `source` cũ vẫn được hỗ trợ để lần nâng cấp đầu
+        # tiên tự chuyển sang metadata mới mà không để mảnh rác sống sót.
+        theo_source: dict[str, list[tuple[str, dict]]] = {}
+        theo_rel: dict[tuple[str, str], list[tuple[str, dict]]] = {}
+        theo_doc_id: dict[str, list[tuple[str, dict]]] = {}
+        root_abs = str(dir_path.resolve())
+        managed_old_ids: set[str] = set()
+        for i, chunk_id in enumerate(old_ids):
+            meta = old_metas[i] if i < len(old_metas) and isinstance(old_metas[i], dict) else {}
+            source = str(meta.get("source") or "")
+            if source:
+                theo_source.setdefault(source, []).append((chunk_id, meta))
+            root = str(meta.get("knowledge_root") or "")
+            rel = str(meta.get("knowledge_relpath") or "")
+            if root and rel:
+                theo_rel.setdefault((root, rel), []).append((chunk_id, meta))
+            if root == root_abs:
+                managed_old_ids.add(chunk_id)
+            elif source:
+                # Chuyển tiếp từ bản cũ chưa có `knowledge_root`: nhận ra các
+                # source .md/.txt thực sự nằm dưới thư mục đang đồng bộ. Nhờ đó
+                # file đã bị xoá trước lần nâng cấp đầu tiên cũng được dọn sạch.
+                try:
+                    source_path = Path(source)
+                    if (source_path.suffix.lower() in {".md", ".txt"}
+                            and source_path.resolve().is_relative_to(dir_path.resolve())):
+                        managed_old_ids.add(chunk_id)
+                except (OSError, ValueError):
+                    pass
+            if isinstance(chunk_id, str):
+                m = re.match(r"^(.+)_chunk_\d+$", chunk_id)
+                if m:
+                    theo_doc_id.setdefault(m.group(1), []).append((chunk_id, meta))
+
+        files = sorted(dir_path.rglob("*.md")) + sorted(dir_path.rglob("*.txt"))
+        # Cảnh báo va chạm thay vì âm thầm ghi đè. Đổi ID toàn bộ ngay tại đây
+        # sẽ phá `_manh_mo_dau`, vốn dùng `<ma_san_pham>_chunk_0` để mang theo
+        # định nghĩa sản phẩm. Ta giữ ID cũ và chỉ báo rõ để xử lý có chủ đích.
+        stems: dict[str, list[str]] = {}
+        for p in files:
+            stems.setdefault(p.stem, []).append(p.relative_to(dir_path).as_posix())
+        for stem, rels in stems.items():
+            if len(rels) > 1:
+                logger.warning("RAG: trùng tên file %r trong knowledge: %s; các file "
+                               "này đang dùng chung doc_id và có thể ghi đè nhau",
+                               stem, ", ".join(rels))
+
+        changed = 0
+        skipped = 0
+        seen_old_ids: set[str] = set()
+
+        for file_path in files:
             content = file_path.read_text(encoding="utf-8")
-            if content.strip():
-                self.ingest_text(content, doc_id=file_path.stem, metadata={"source": str(file_path)})
-                count += 1
+            source = str(file_path)
+            rel = file_path.relative_to(dir_path).as_posix()
+            digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
-        logger.info(f"Ingested {count} files from {directory}")
+            # Match theo doc_id là lớp cuối cùng rất quan trọng: UI quản lý tri
+            # thức từng lưu `source` tuyệt đối, còn startup có thể dùng đường dẫn
+            # tương đối. Chroma vẫn nhận ra trùng ID và `add()` sẽ bỏ qua bản mới
+            # nếu ta không xóa những ID cũ đó trước.
+            old = (theo_rel.get((root_abs, rel)) or theo_source.get(source)
+                   or theo_doc_id.get(file_path.stem) or [])
+            old_file_ids = [chunk_id for chunk_id, _ in old]
+            seen_old_ids.update(old_file_ids)
+
+            # Tất cả chunk của file phải cùng hash. Nếu metadata cũ chưa có hash
+            # thì nạp lại đúng một lần để chuyển sang định dạng mới.
+            old_hashes = {str(meta.get("content_sha256") or "") for _, meta in old}
+            old_chunkers = {str(meta.get("chunker_version") or "") for _, meta in old}
+            is_shinhan = rel.startswith("shinhan/")
+            old_banks = {str(meta.get("bank") or "") for _, meta in old}
+            if (content.strip() and old and old_hashes == {digest}
+                    and old_chunkers == {CHUNKER_VERSION}
+                    and (not is_shinhan or old_banks == {"shinhan"})):
+                skipped += 1
+                continue
+
+            # File trở thành rỗng: xoá tri thức cũ nhưng không tạo chunk rỗng.
+            if not content.strip():
+                if old_file_ids:
+                    self._collection.delete(ids=old_file_ids)
+                    self._quen_danh_muc()
+                    changed += 1
+                continue
+
+            self.ingest_text(
+                content,
+                doc_id=file_path.stem,
+                metadata={
+                    "source": source,
+                    "knowledge_root": root_abs,
+                    "knowledge_relpath": rel,
+                    "content_sha256": digest,
+                    **({"bank": "shinhan"} if is_shinhan else {}),
+                },
+                _existing_ids=old_file_ids,
+            )
+            changed += 1
+
+        # Dọn file đã bị xoá khỏi thư mục. Chỉ xóa record do chính root này quản
+        # lý; dữ liệu ngoài (`ds:...`, Excel/API, v.v.) dùng cùng collection vẫn
+        # được giữ nguyên.
+        stale_ids = sorted(managed_old_ids - seen_old_ids)
+        if stale_ids:
+            self._collection.delete(ids=stale_ids)
+            self._quen_danh_muc()
+            logger.info("RAG: xoá %d mảnh của tài liệu đã bị xoá khỏi %s",
+                        len(stale_ids), directory)
+
+        logger.info("Knowledge sync %s: %d file đổi/mới, %d file giữ nguyên, "
+                    "%d chunk cũ bị dọn", directory, changed, skipped, len(stale_ids))
+        return {
+            "files": len(files),
+            "changed": changed,
+            "skipped": skipped,
+            "stale_chunks": len(stale_ids),
+        }
 
     def _chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
         """Split text into overlapping chunks by character count.
@@ -630,6 +834,47 @@ class RAGService:
             return len((self._collection.get(where={"source": source}, include=[]) or {}).get("ids") or [])
         except Exception:
             return 0
+
+    def thong_tin_nguon(self, sources: list[str]) -> dict:
+        """Thông tin chỉ mục của một tài liệu theo mọi dạng `source` có thể có.
+
+        UI quản lý tri thức cần phân biệt ba trạng thái: chưa có vector, vector
+        đang khớp file trên đĩa, và file đã đổi nhưng vector còn là bản cũ. Hash
+        đã được lưu trong metadata từng chunk nên đọc trạng thái này không cần
+        chạy embedding hay gọi Qwen.
+        """
+        if not self._is_loaded:
+            self.load()
+
+        ids: set[str] = set()
+        hashes: set[str] = set()
+        indexed_at = 0.0
+        for source in dict.fromkeys(s for s in sources if s):
+            try:
+                co = self._collection.get(
+                    where={"source": source}, include=["metadatas"]
+                ) or {}
+            except Exception:
+                continue
+            row_ids = co.get("ids") or []
+            metas = co.get("metadatas") or []
+            for i, chunk_id in enumerate(row_ids):
+                if isinstance(chunk_id, str):
+                    ids.add(chunk_id)
+                meta = metas[i] if i < len(metas) and isinstance(metas[i], dict) else {}
+                digest = str(meta.get("content_sha256") or "")
+                if digest:
+                    hashes.add(digest)
+                try:
+                    indexed_at = max(indexed_at, float(meta.get("indexed_at") or 0.0))
+                except (TypeError, ValueError):
+                    pass
+
+        return {
+            "so_manh": len(ids),
+            "hashes": sorted(hashes),
+            "indexed_at": indexed_at or None,
+        }
 
     def lay_theo_nguon(self, source: str) -> list[str]:
         """Nội dung các mảnh kho ĐANG giữ cho nguồn này, theo đúng thứ tự tài liệu.

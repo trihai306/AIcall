@@ -157,6 +157,8 @@ class CallSession:
         self.spec_transcript: str = ""
         self.spec_rag: str = ""
         self.spec_answer: str = ""    # câu trả lời LLM đã soạn sẵn (CHƯA thành tiếng)
+        self.spec_model: str = ""
+        self.answer_route: dict = {}
         # Câu đệm LLM soạn trong lúc khách nói, dùng khi kho tình huống không
         # khớp. Đã qua `filler_pick.loc_cau_dem_llm` nên chuỗi ở đây là chuỗi
         # SẴN SÀNG ĐỌC - nơi dùng không phải lọc lại.
@@ -169,6 +171,7 @@ class CallSession:
         # không thiếu chữ nào. Đây là thứ DUY NHẤT cắt được STT khỏi đường găng:
         # `process_turn` vốn luôn phiên âm lại từ đầu, tốn 212-502ms mỗi lượt.
         self.spec_stt: tuple[int, str] | None = None
+        self.spec_vector: tuple[str, object] | None = None
         # Tình huống đoán được từ phiên âm dở: (số byte đã thấy, id, điểm).
         # `_send_filler` đọc ô này để chọn mẩu mở đầu. Số byte để biết đoán này
         # phủ được bao nhiêu phần câu - đoán trên câu cụt thì dễ trượt.
@@ -271,10 +274,37 @@ class CallSession:
         self.spec_transcript = ""
         self.spec_rag = ""
         self.spec_answer = ""
+        self.spec_model = ""
         self.spec_cau_dem = ""
         self.spec_bytes = 0
         self.spec_stt = None
+        self.spec_vector = None
         self.tinh_huong = None
+
+    def set_scenario(self, scenario: dict):
+        """Start a clean conversation when the operator changes its authority."""
+        if self.scenario == scenario:
+            return
+        self.clear_speculation()
+        self.scenario = dict(scenario)
+        self.scenario_id = scenario.get("scenario_id", "")
+        self.history.clear()
+        self.latency_log.clear()
+        self.da_tu_van.clear()
+        self.turn_count = 0
+        self.so_can_cu = SoCanCu()
+        self.cau_bi_cat = self.cau_ai_con_do = ""
+        self.giay_ai_con_do = 0.0
+        self.luot_chan_cuoi = None
+        self.so_lan_chan_lien_tiep = 0
+        self.so_lan_ngoai_pham_vi = self.so_lan_rag_trong = 0
+        self.khach_doi_gap_nguoi = False
+        self.transferred_to = self.transfer_reason = ""
+        self.da_doc_not = False
+        self.answer_route = {}
+        self.dem_filler.clear()
+        for key in ("_answer_bank_provenance", "_answer_bank_vector"):
+            self.__dict__.pop(key, None)
 
     def add_turn(self, role: str, content: str):
         self.history.append({"role": role, "content": content})
@@ -365,6 +395,7 @@ class CallSession:
         return {
             "type": "connected",
             "session_id": self.session_id,
+            "session": {"scenario_id": self.scenario_id, "product": self.product},
             "noi_lai": noi_lai,
             "history": (self.history[-self.TOI_DA_LUOT_VE_LAI:]
                         if noi_lai else []),
@@ -392,6 +423,7 @@ class CallSession:
             "campaign_id": self.campaign_id,
             "contact_id": self.contact_id,
             "scenario_id": self.scenario_id,
+            "answer_route": self.answer_route,
             "phone": self.phone,
             "direction": self.direction,
             "caller_number": self.caller_number,

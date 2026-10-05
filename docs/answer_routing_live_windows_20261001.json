@@ -1,0 +1,212 @@
+{
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "61 docs"
+    }
+  },
+  "scenario_id": "sc_cfa532b8",
+  "transport": "loopback WebSocket, telephone-band audio; no physical call",
+  "results": [
+    {
+      "kind": "text_soi",
+      "session_id": "09b358c3",
+      "question": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "transcript": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "answer": "Dạ, anh chị vào Internet Banking chọn mục Thẻ để bật hoặc tắt giao dịch thẻ ở nước ngoài ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "bang_diem": 0.992,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+          "source_path": "shinhan/shinhan_card_user_guide_vi.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 503,
+        "turn": 1,
+        "timestamp": 1790841328.8296802
+      },
+      "audio_bytes": 0,
+      "selected_source_answer": true,
+      "qwen_selected": true,
+      "passed": true
+    },
+    {
+      "kind": "text_soi",
+      "session_id": "c618e81e",
+      "question": "Tôi muốn bật giao dịch thẻ ở nước ngoài, phải vào đâu?",
+      "transcript": "Tôi muốn bật giao dịch thẻ ở nước ngoài, phải vào đâu?",
+      "answer": "Dạ, anh chị vào Internet Banking chọn mục Thẻ để bật hoặc tắt giao dịch thẻ ở nước ngoài ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "bang_diem": 0.818,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+          "source_path": "shinhan/shinhan_card_user_guide_vi.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 378,
+        "turn": 1,
+        "timestamp": 1790841329.2109604
+      },
+      "audio_bytes": 0,
+      "selected_source_answer": true,
+      "qwen_selected": true,
+      "passed": true
+    },
+    {
+      "kind": "audio",
+      "session_id": "b6b1ed8b",
+      "question": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "transcript": "cách bật hoặc tắt giao dịch thẻ quốc tế trên xi nhan",
+      "answer": "anh chị vào Internet Banking chọn mục Thẻ để bật hoặc tắt giao dịch thẻ ở nước ngoài ạ.",
+      "metrics": {
+        "la_thoai": true,
+        "filler_ms": 2,
+        "filler_xong_luc": 20351.4908088,
+        "filler_text": "Dạ vâng, em nói luôn ạ,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "stt_doan_truoc": false,
+        "stt_ms": 37,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "bang_diem": 0.891,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "noi_dem_bo_mo_dau_lap": true,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+          "source_path": "shinhan/shinhan_card_user_guide_vi.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165_noi_dem",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "noi_dem_nghi_ms": 80.0,
+        "ttfa_ms": 433,
+        "tts_first_ms": 0,
+        "tts_first_chars": 87,
+        "total_ms": 440,
+        "turn": 1,
+        "timestamp": 1790841330.0013375
+      },
+      "audio_bytes": 186764,
+      "selected_source_answer": true,
+      "qwen_selected": true,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

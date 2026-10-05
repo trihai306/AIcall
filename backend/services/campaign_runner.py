@@ -81,6 +81,9 @@ class CampaignRunner:
         if self.task and not self.task.done():
             return False, "Chiến dịch này đang chạy rồi"
 
+        from backend.core.service_priority import prepare_customer_service
+        await prepare_customer_service()
+
         campaign = await contacts_db.get_campaign(self.campaign_id)
         if campaign is None:
             return False, "Chiến dịch không tồn tại"

@@ -1,0 +1,117 @@
+[
+  {
+    "id": 63,
+    "question": "Trả nợ trước hạn có cần sự chấp thuận của ngân hàng Shinhan Bank không?",
+    "decision": "approved"
+  },
+  {
+    "id": 64,
+    "question": "Mình muốn trả khoản vay sớm thì phí sẽ tính theo hợp đồng đúng không?",
+    "decision": "approved"
+  },
+  {
+    "id": 68,
+    "question": "Chị có thể mở thẻ điện tử trong ứng dụng SOL không?",
+    "decision": "approved"
+  },
+  {
+    "id": 76,
+    "question": "Chị nhận email lạ yêu cầu tiết lộ mật khẩu nên báo Shinhan không?",
+    "decision": "approved"
+  },
+  {
+    "id": 77,
+    "question": "Em vừa nhận thư lạ đòi PIN thì phải làm gì ngay lập tức?",
+    "decision": "approved"
+  },
+  {
+    "id": 80,
+    "question": "Tôi cần đặt PIN cho thẻ sau khi kích hoạt như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 84,
+    "question": "Chị bị mất thẻ Shinhan thì báo khóa qua số nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 86,
+    "question": "Anh bị thất lạc thẻ Shinhan, làm sao khóa nhanh nhất vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 88,
+    "question": "Tôi phát hiện sao kê sai thì làm sao ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 91,
+    "question": "Khi thấy sai lệch sao kê tôi nên xử lý ra sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 95,
+    "question": "Tôi cần kích hoạt thẻ như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 101,
+    "question": "Trong sao kê ghi rõ ngày đến hạn thanh toán là khi nào vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 102,
+    "question": "Em hỏi sao kê có đầy đủ thông tin giao dịch trong tháng này không?",
+    "decision": "approved"
+  },
+  {
+    "id": 106,
+    "question": "Anh có thể giải thích cách tính lãi khi ứng tiền mặt không?",
+    "decision": "approved"
+  },
+  {
+    "id": 107,
+    "question": "Em lỡ rơi thẻ ra đường, có cách nào khóa thẻ không chị?",
+    "decision": "approved"
+  },
+  {
+    "id": 116,
+    "question": "Email yêu cầu PIN này có phải là lừa đảo qua email không?",
+    "decision": "approved"
+  },
+  {
+    "id": 123,
+    "question": "Mình muốn hỏi trả tối thiểu kỳ này nằm ở đâu trong sao kê?",
+    "decision": "approved"
+  },
+  {
+    "id": 126,
+    "question": "Em muốn biết lãi tính thế nào khi ứng tiền mặt qua thẻ?",
+    "decision": "approved"
+  },
+  {
+    "id": 128,
+    "question": "Chị ơi nếu phát hiện sao kê không đúng thì liên hệ số nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 130,
+    "question": "Bảng sao kê có hiển thị ngày đến hạn thanh toán không?",
+    "decision": "approved"
+  },
+  {
+    "id": 136,
+    "question": "Rút tiền mặt từ thẻ tín dụng áp dụng miễn lãi mấy ngày?",
+    "decision": "approved"
+  },
+  {
+    "id": 137,
+    "question": "Lãi rút tiền mặt được tính từ ngày nào đến khi trả?",
+    "decision": "approved"
+  },
+  {
+    "id": 138,
+    "question": "Tôi làm thế nào để đăng ký thẻ điện tử trên SOL?",
+    "decision": "approved"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "name": "bankvn-350m-rtx5070-continual",
+  "hidden_size": 1024,
+  "intermediate_size": 2816,
+  "num_hidden_layers": 24,
+  "num_attention_heads": 16,
+  "num_key_value_heads": 8,
+  "max_position_embeddings": 4096,
+  "rope_theta": 10000.0,
+  "block_size": 512,
+  "batch_size": 4,
+  "gradient_accumulation_steps": 2,
+  "gradient_checkpointing": false,
+  "ignore_data_skip_on_resume": true,
+  "learning_rate": 0.00001,
+  "warmup_steps": 0,
+  "weight_decay": 0.01,
+  "save_steps": 500,
+  "logging_steps": 10,
+  "optim": "adamw_bnb_8bit"
+}

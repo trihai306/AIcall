@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-01",
+  "windows_python": "3.11.15",
+  "gpu": "NVIDIA RTX 5070",
+  "pytest": {
+    "passed": 107,
+    "failed": 0,
+    "deselected": 1,
+    "deselected_case": "tests/test_spec_vector_cache.py::test_phan_loai_dong_bo_dung_lai_vector_spec",
+    "reason": "Known pre-existing baseline",
+    "notes": "Long-answer fixture fixes context at 8192; deployment remains at 4096 with fail-closed budget guard."
+  },
+  "paths": [
+    "tests/test_chat_phone_answer_routing.py",
+    "tests/test_answer_bank_selector.py",
+    "tests/test_llm_auto_routing.py",
+    "tests/test_llm_health_check.py",
+    "tests/test_llm_prefill_qwen3.py",
+    "tests/test_doan_truoc_ket_co.py",
+    "tests/test_tieng_san.py",
+    "tests/test_hoi_lai_khi_khong_ra_chu.py",
+    "tests/test_llm_rong_khong_im_lang.py",
+    "tests/test_spec_vector_cache.py"
+  ],
+  "live_validation": {
+    "passed": true,
+    "cases": 3,
+    "model": "qwen3.5:9b",
+    "stt": "gipformer",
+    "tts": "F5 cached voice",
+    "answer_id": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+    "audio_bytes": 186764,
+    "transport": "loopback WebSocket, telephone-band audio; no physical call",
+    "report": "answer_routing_live_windows_20261001.json"
+  },
+  "physical_call": {
+    "tested": false,
+    "reason": "No handset visible over ADB",
+    "inbound_enabled": true,
+    "device_id": "dev_643aeac5",
+    "scenario_id": "sc_cfa532b8",
+    "report": "answer_routing_inbound_ready_20261001.json"
+  }
+}

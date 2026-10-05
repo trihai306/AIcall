@@ -241,6 +241,9 @@ class QuanLyGoiVao:
         return [b.trang_thai() for b in self._bo.values()]
 
     async def bat(self, device_id: str, app_state) -> tuple[bool, str]:
+        from backend.core.service_priority import prepare_customer_service
+        await prepare_customer_service()
+
         device = await devices_db.get_device(device_id)
         if device is None:
             return False, "Thiết bị không tồn tại"

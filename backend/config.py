@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Literal
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -30,12 +31,30 @@ class Settings(BaseSettings):
     # Ollama LLM - Qwen 3.5 9B (Vietnamese-capable, runs fully on a 12 GB GPU)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3.5:9b"
+    # Chọn model theo vai trò chỉ trong số model đã cấu hình rõ ràng. Bộ định
+    # tuyến không tải model và không tự lấy một model khác đang có trên máy.
+    llm_auto_routing: bool = True
+    llm_selector_model: str = "qwen3.5:9b"
+    # Để trống = dùng `ollama_model` cho câu trả lời trực tiếp với khách.
+    llm_response_model: str = ""
+    # Danh sách model dự phòng được duyệt, phân cách bằng dấu phẩy.
+    llm_fallback_models: str = ""
     # Đo 2026-09-02 (qwen2.5:7b, prompt_eval_count thật): lời dặn + tri thức
     # đã ăn 1414 token. Ở 2048 thì hội thoại chỉ còn 484 token ~ 6 lượt, rồi
     # Ollama cắt bỏ phần đầu KHÔNG BÁO GÌ - đó là lỗi "nói chuyện một lúc là
     # bot quên". 8192 cho ~88 lượt, tốn thêm ~340MB VRAM (bộ nhớ đệm khoá-giá
     # trị của qwen2.5-7B ~56KB/token). Xem `services/cua_so_nho`.
     llm_num_ctx: int = 8192
+
+    # Thư viện Q&A chuẩn bị nền. Giá trị thực tế do giao diện lưu trong SQLite;
+    # các số này là mặc định cho lần chạy đầu và giới hạn thời gian từng lượt.
+    answer_bank_enabled: bool = True
+    answer_bank_questions_per_document: int = 120
+    answer_bank_variants_per_answer: int = 4
+    answer_bank_learn_history: bool = True
+    answer_bank_llm_timeout_s: float = 90.0
+    answer_bank_tts_timeout_s: float = 120.0
+    answer_bank_scan_interval_s: float = 60.0
 
     # F5-TTS
     f5tts_ckpt_path: str = "./models/tts/F5-TTS-Vietnamese-ViVoice/model_last.pt"
@@ -474,6 +493,25 @@ class Settings(BaseSettings):
     def recordings_dir(self) -> Path:
         p = Path(self.recordings_path)
         return p if p.is_absolute() else self.project_dir / p
+
+    @field_validator("bank_name", "agent_name")
+    @classmethod
+    def _chua_chu_loi_ma(cls, value: str) -> str:
+        """Chữa tên tiếng Việt bị lưu hai lần UTF-8 ("NgÃ¢n hÃ ng").
+
+        `.env` trên máy Win mang `BANK_NAME` hỏng như vậy từ 08-2026. Tên hỏng
+        không khớp `scenarios.org_name` nên `_product_context_for` coi mọi cuộc
+        gọi là kịch bản khác và tắt tài liệu sản phẩm: câu "gửi tiết kiệm 12
+        tháng lãi bao nhiêu" rơi vào luật khoản vay (đo 02-10-2026).
+        """
+        if not any(ch in value for ch in "ÃÄÆáº»"):
+            return value
+        for enc in ("cp1252", "latin-1"):
+            try:
+                return value.encode(enc).decode("utf-8")
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                continue
+        return value
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

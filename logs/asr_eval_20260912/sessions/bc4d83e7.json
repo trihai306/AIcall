@@ -1,0 +1,99 @@
+{
+  "session_id": "bc4d83e7",
+  "customer_name": "Khách thử",
+  "product": "vay tín chấp",
+  "voice_name": "default",
+  "status": "ended",
+  "turn_count": 4,
+  "created_at": 1789136614.6888027,
+  "ended_at": 1789136698.7858617,
+  "duration_seconds": 84.1,
+  "campaign_id": "",
+  "contact_id": "ct_b496cd7e",
+  "scenario_id": "sc_nganhang",
+  "phone": "0396130621",
+  "direction": "outbound",
+  "caller_number": "",
+  "outcome": "done",
+  "quality": "co_phan_hoi",
+  "label": "",
+  "gender": "male",
+  "recording_path": "C:\\duan\\chat-ai\\data\\recordings\\2026-09-11\\bc4d83e7.opus",
+  "recording_size": 375446,
+  "summary": "Khách hàng tư vấn về khoản vay 400 triệu đồng trong 60 tháng, với mỗi tháng phải trả khoảng 7.4 triệu đồng.",
+  "suggested_label": "quan_tam",
+  "transferred_to": "",
+  "transfer_reason": "",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "Dạ em chào anh/chị, em là Lan bên Ngân hàng Quân đội ạ."
+    },
+    {
+      "role": "user",
+      "content": "tư vấn cho anh khoản vay với mình"
+    },
+    {
+      "role": "assistant",
+      "content": "Hiện tại hạn mức vay tín chấp lên đến 500 triệu đồng ạ. Anh chị có thể vay trong thời gian từ 12 đến 60 tháng."
+    },
+    {
+      "role": "user",
+      "content": "anh vốn vay tầm bốn trăm triệu trong vòng mười hai tạng"
+    },
+    {
+      "role": "assistant",
+      "content": "Hạn mức vay là 300 triệu đồng ạ. Với 400 triệu đồng, anh chị có thể xem xét vay mua nhà."
+    },
+    {
+      "role": "user",
+      "content": "ừ thế tư vấn với anh về khoản vay nếu anh vay sáu mươi tháng thì một tháng độc đã nhiều"
+    },
+    {
+      "role": "assistant",
+      "content": "Với 400 triệu đồng vay trong 60 tháng, mỗi tháng anh chị cần trả khoảng 7.4 triệu đồng ạ."
+    },
+    {
+      "role": "user",
+      "content": "đầu"
+    },
+    {
+      "role": "assistant",
+      "content": "Với 400 triệu đồng vay trong 60 tháng, mỗi tháng anh chị cần trả khoảng 7.4 triệu đồng ạ."
+    }
+  ],
+  "latency_log": [
+    {
+      "turn": 1,
+      "timestamp": 1789136639.038728,
+      "stt_ms": 0,
+      "rag_ms": 0,
+      "ttfa_ms": 895,
+      "total_ms": 1380
+    },
+    {
+      "turn": 2,
+      "timestamp": 1789136653.4695728,
+      "stt_ms": 0,
+      "rag_ms": 0,
+      "ttfa_ms": 1925,
+      "total_ms": 2190
+    },
+    {
+      "turn": 3,
+      "timestamp": 1789136671.98986,
+      "stt_ms": 1291,
+      "rag_ms": 0,
+      "ttfa_ms": 1943,
+      "total_ms": 2151
+    },
+    {
+      "turn": 4,
+      "timestamp": 1789136679.3191152,
+      "stt_ms": 0,
+      "rag_ms": 0,
+      "ttfa_ms": 901,
+      "total_ms": 1016
+    }
+  ]
+}

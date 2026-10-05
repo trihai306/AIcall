@@ -1,0 +1,77 @@
+{
+  "requested_via_ui": 8,
+  "added": 4,
+  "before_count": 1,
+  "after_count": 5,
+  "manual_preserved": true,
+  "all_voices_ready": true,
+  "after_response": {
+    "nhom": "chinh_sach",
+    "ten": "kiem_thu_answer_first_20261001",
+    "so_dong": 5,
+    "items": [
+      {
+        "id": "ab_auto_chinh_sach_kiem_thu_answer_first_20_06caaf4cff_36e339260e75",
+        "cau_hoi": [
+          "Làm thế nào để gửi yêu cầu hỗ trợ kiểm thử?"
+        ],
+        "tra_loi": "Dạ anh chị vào mục Hỗ trợ, chọn loại sự cố, mô tả vấn đề rồi bấm Gửi ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790831460.2569854,
+        "nguon": "tu_dong",
+        "voice_ready": true
+      },
+      {
+        "id": "ab_auto_chinh_sach_kiem_thu_answer_first_20_06caaf4cff_4f34cb211203",
+        "cau_hoi": [
+          "Thời gian làm việc của bộ phận hỗ trợ là bao nhiêu?"
+        ],
+        "tra_loi": "Dạ anh chị lưu ý bộ phận hỗ trợ làm việc từ 9 giờ đến 17 giờ, thứ Hai đến thứ Sáu ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790831460.2569854,
+        "nguon": "tu_dong",
+        "voice_ready": true
+      },
+      {
+        "id": "ab_auto_chinh_sach_kiem_thu_answer_first_20_06caaf4cff_59ce5bfead33",
+        "cau_hoi": [
+          "Làm thế nào để khách hàng đánh giá chất lượng hỗ trợ?"
+        ],
+        "tra_loi": "Dạ anh chị vào mục Đánh giá của yêu cầu để thực hiện ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790831460.2569854,
+        "nguon": "tu_dong",
+        "voice_ready": true
+      },
+      {
+        "id": "ab_auto_chinh_sach_kiem_thu_answer_first_20_06caaf4cff_5bbcb9334925",
+        "cau_hoi": [
+          "Làm thế nào để khách hàng bổ sung mô tả cho yêu cầu hỗ trợ kiểm thử?"
+        ],
+        "tra_loi": "Dạ anh chị thực hiện bằng cách trả lời ngay trong yêu cầu đã gửi ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790831460.2569854,
+        "nguon": "tu_dong",
+        "voice_ready": true
+      },
+      {
+        "id": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "cau_hoi": [],
+        "tra_loi": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790831177.0766118,
+        "nguon": "nhap_tay",
+        "voice_ready": true
+      }
+    ],
+    "voice": {
+      "status": "ready"
+    }
+  },
+  "passed": true
+}

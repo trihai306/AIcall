@@ -1,0 +1,226 @@
+[
+  {
+    "id": "activate_card",
+    "source": "card_user_guide_vi",
+    "fact": "Sau khi nhận thẻ, khách có thể kích hoạt trong SOL/Internet Banking tại Thẻ > Kích hoạt thẻ hoặc gọi 1900 1577.",
+    "intent": "kích hoạt thẻ|mở thẻ mới nhận|dùng thẻ mới",
+    "answer": "Dạ, sau khi nhận thẻ, mình vào SOL hoặc Internet Banking, chọn Thẻ > Kích hoạt thẻ ạ. Mình cũng có thể gọi 1900 1577."
+  },
+  {
+    "id": "set_pin",
+    "source": "card_user_guide_vi",
+    "fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan.",
+    "intent": "đặt PIN|thiết lập PIN|mã PIN",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ."
+  },
+  {
+    "id": "lost_card",
+    "source": "card_user_guide_vi",
+    "fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ.",
+    "intent": "mất thẻ|rơi thẻ|thất lạc thẻ|bị lấy thẻ|khóa thẻ",
+    "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ."
+  },
+  {
+    "id": "minimum_payment",
+    "source": "card_user_guide_vi",
+    "fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê.",
+    "intent": "thanh toán tối thiểu|trả tối thiểu|số tiền tối thiểu",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ."
+  },
+  {
+    "id": "statement_contents",
+    "source": "card_user_guide_vi",
+    "fact": "Sao kê thẻ ghi giao dịch, phí, lãi nếu có trong chu kỳ và ngày đến hạn thanh toán.",
+    "intent": "sao kê ghi|sao kê có|trong sao kê|bảng sao kê",
+    "answer": "Dạ, sao kê ghi các giao dịch, phí và lãi nếu có trong kỳ, cùng ngày đến hạn thanh toán ạ."
+  },
+  {
+    "id": "register_digital_card",
+    "source": "digital_card_guide",
+    "fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "intent": "đăng ký thẻ điện tử|mở thẻ điện tử|thẻ ảo trên SOL",
+    "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực ạ."
+  },
+  {
+    "id": "activate_digital_card",
+    "source": "digital_card_guide",
+    "fact": "Sau khi đăng ký chức năng thẻ điện tử, khách yêu cầu mã xác thực qua SMS và nhập mã để kích hoạt.",
+    "intent": "kích hoạt thẻ điện tử|kích hoạt thẻ ảo|mã xác thực thẻ điện tử",
+    "answer": "Dạ, ở bước kích hoạt thẻ điện tử trong SOL, mình yêu cầu mã xác thực qua SMS rồi nhập mã theo hướng dẫn ạ. Mình đừng đọc mã đó cho người khác nhé."
+  },
+  {
+    "id": "suspicious_email",
+    "source": "card_user_guide_vi",
+    "fact": "Shinhan không gửi email yêu cầu khách tiết lộ chi tiết tài khoản, mật khẩu hay PIN; khách cần cẩn trọng và báo Shinhan khi nhận yêu cầu đáng ngờ.",
+    "intent": "email lạ|thư lạ|email yêu cầu|thư yêu cầu|lừa đảo qua email",
+    "answer": "Dạ, mình đừng cung cấp mật khẩu, PIN hay thông tin tài khoản qua email đó. Shinhan không yêu cầu các thông tin ấy qua thư; mình nên báo ngân hàng để kiểm tra ạ."
+  },
+  {
+    "id": "early_repayment",
+    "source": "individual_loan_terms",
+    "fact": "Trả nợ gốc trước hạn cần đáp ứng điều kiện của hợp đồng và được ngân hàng chấp thuận; phí trả nợ trước hạn nếu có theo hợp đồng, không có một mức cố định trong đoạn nguồn này.",
+    "intent": "trả nợ trước hạn|tất toán trước hạn|trả khoản vay sớm",
+    "answer": "Dạ, mình có thể đề nghị trả nợ trước hạn. Shinhan sẽ đối chiếu điều kiện và khoản phí nếu có theo hợp đồng của mình rồi xác nhận ạ."
+  },
+  {
+    "id": "cash_advance_interest",
+    "source": "consumer_credit_terms_2025",
+    "fact": "Giao dịch ứng trước tiền mặt bằng thẻ tín dụng không áp dụng thời gian miễn lãi; lãi tính từ ngày tiếp theo của giao dịch đến ngày thanh toán thực tế.",
+    "intent": "ứng tiền mặt|rút tiền mặt từ thẻ tín dụng|lãi rút tiền mặt",
+    "answer": "Dạ, ứng trước tiền mặt bằng thẻ tín dụng không thuộc thời gian miễn lãi. Lãi được tính từ ngày tiếp theo của giao dịch đến khi mình thanh toán ạ."
+  },
+  {
+    "id": "statement_discrepancy",
+    "source": "card_user_guide_vi",
+    "fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577.",
+    "intent": "sao kê sai|sai lệch sao kê|giao dịch lạ trên sao kê|sao kê không đúng",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ."
+  },
+  {
+    "id": "pay_card_sol",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan mô tả hai cách thanh toán thẻ tín dụng qua SOL/Internet Banking: chức năng Thanh toán thẻ và Chuyển khoản nội bộ.",
+    "intent": "thanh toán thẻ trên SOL|trả thẻ qua SOL|trả dư nợ trên SOL",
+    "answer": "Dạ, theo hướng dẫn Shinhan, mình có thể thanh toán thẻ tín dụng trong SOL hoặc Internet Banking bằng chức năng Thanh toán thẻ hay Chuyển khoản nội bộ ạ."
+  },
+  {
+    "id": "pay_card_auto",
+    "source": "card_user_guide_vi",
+    "fact": "Thanh toán tự động áp dụng khi khách có tài khoản thanh toán Shinhan và đã đăng ký dịch vụ; ngân hàng trích nợ từ tài khoản vào ngày đến hạn theo tỷ lệ thanh toán khách đăng ký.",
+    "intent": "thanh toán tự động|trích nợ tự động|tự động trả thẻ",
+    "answer": "Dạ, nếu mình đã đăng ký thanh toán tự động và có tài khoản thanh toán Shinhan, ngân hàng sẽ trích nợ theo tỷ lệ mình đăng ký vào ngày đến hạn. Mình nhớ duy trì đủ số dư nhé ạ."
+  },
+  {
+    "id": "pay_card_branch",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan cho phép nộp tiền thanh toán thẻ tín dụng tại quầy giao dịch Shinhan trong giờ làm việc của chi nhánh/phòng giao dịch.",
+    "intent": "trả thẻ tại quầy|thanh toán thẻ tại chi nhánh|nộp tiền trả thẻ",
+    "answer": "Dạ, mình có thể đến quầy giao dịch Shinhan trong giờ làm việc để nộp tiền thanh toán thẻ tín dụng ạ."
+  },
+  {
+    "id": "statement_online_lookup",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi khách có thể tra cứu chi tiết sao kê, danh sách thẻ và lịch sử giao dịch qua Internet Banking.",
+    "intent": "xem sao kê online|tra cứu sao kê|xem sao kê thẻ|lịch sử giao dịch thẻ",
+    "answer": "Dạ, mình có thể vào Internet Banking để xem sao kê thẻ và lịch sử giao dịch. Em chưa truy cập được tài khoản của mình trong cuộc trò chuyện này ạ."
+  },
+  {
+    "id": "manage_card_limits",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi Internet Banking có chức năng thiết lập hạn mức giao dịch thẻ mỗi ngày và hạn mức thanh toán thẻ trực tuyến mỗi ngày.",
+    "intent": "đặt hạn mức thẻ|điều chỉnh hạn mức giao dịch|hạn mức thanh toán online",
+    "answer": "Dạ, theo hướng dẫn Shinhan, mình có thể thiết lập hạn mức giao dịch mỗi ngày và hạn mức thanh toán trực tuyến mỗi ngày trong Internet Banking ạ."
+  },
+  {
+    "id": "toggle_online_card",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi Internet Banking có tùy chọn cho phép hoặc không cho phép giao dịch thẻ trực tuyến.",
+    "intent": "bật giao dịch trực tuyến|tắt giao dịch trực tuyến|khóa thanh toán online|mở thanh toán online",
+    "answer": "Dạ, mình có thể kiểm tra tùy chọn cho phép hoặc không cho phép giao dịch thẻ trực tuyến trong Internet Banking ạ."
+  },
+  {
+    "id": "toggle_foreign_card",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi Internet Banking có tùy chọn cho phép hoặc không cho phép giao dịch thẻ ở nước ngoài, ngoại trừ giao dịch trực tuyến.",
+    "intent": "giao dịch thẻ ở nước ngoài|bật giao dịch nước ngoài|tắt giao dịch nước ngoài",
+    "answer": "Dạ, theo hướng dẫn Shinhan, mình có thể bật hoặc tắt giao dịch thẻ ở nước ngoài trong Internet Banking. Tùy chọn này không bao gồm giao dịch trực tuyến ạ."
+  },
+  {
+    "id": "cash_withdrawal_vs_advance",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan phân biệt rút tiền mặt từ tài khoản thanh toán đã liên kết với thẻ tín dụng và ứng trước tiền mặt từ hạn mức thẻ tín dụng.",
+    "intent": "rút tiền mặt và ứng tiền|khác nhau giữa rút và ứng|rút từ hạn mức tín dụng",
+    "answer": "Dạ, rút tiền mặt là lấy tiền từ tài khoản thanh toán đã liên kết; còn ứng trước tiền mặt là dùng hạn mức thẻ tín dụng. Hai giao dịch này khác nhau ạ."
+  },
+  {
+    "id": "internal_transfer_pay_other_card",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi chức năng Chuyển khoản nội bộ có thể dùng để thanh toán vào số thẻ tín dụng của khách hoặc của chủ thẻ khác.",
+    "intent": "trả thẻ cho người khác|thanh toán thẻ người khác|chuyển khoản vào thẻ khác",
+    "answer": "Dạ, theo hướng dẫn Shinhan, mình có thể dùng Chuyển khoản nội bộ để thanh toán vào số thẻ tín dụng của mình hoặc của chủ thẻ khác ạ."
+  },
+  {
+    "id": "card_online_security",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan nêu dịch vụ Thanh toán An Toàn Trực Tuyến (Verified By Visa và Mastercard SecureCode) để tăng cường bảo mật cho giao dịch thẻ trực tuyến.",
+    "intent": "bảo mật thanh toán online|an toàn khi thanh toán trực tuyến|Verified By Visa|Mastercard SecureCode",
+    "answer": "Dạ, theo hướng dẫn thẻ Shinhan, dịch vụ Thanh toán An Toàn Trực Tuyến giúp tăng cường bảo mật cho giao dịch thẻ online ạ."
+  },
+  {
+    "id": "card_online_otp",
+    "source": "card_user_guide_vi",
+    "fact": "Theo hướng dẫn thẻ Shinhan, khi thanh toán tại trang có biểu tượng Verified by Visa hoặc Mastercard SecureCode, chủ thẻ cần nhập OTP để xác thực giao dịch.",
+    "intent": "OTP thanh toán online|mã xác thực khi thanh toán trực tuyến|Verified by Visa.*OTP|Mastercard SecureCode.*OTP",
+    "answer": "Dạ, ở trang có biểu tượng Verified by Visa hoặc Mastercard SecureCode, mình cần nhập OTP để xác thực giao dịch theo hướng dẫn của Shinhan. Mình chỉ nhập mã trên trang thanh toán tin cậy, không đọc mã cho người khác ạ."
+  },
+  {
+    "id": "pay_card_own_function",
+    "source": "card_user_guide_vi",
+    "fact": "Hướng dẫn thẻ Shinhan ghi chức năng Thanh toán thẻ chỉ dùng để thanh toán cho thẻ tín dụng của chính khách hàng; chức năng Chuyển khoản nội bộ có thể trả thẻ của chủ thẻ khác.",
+    "intent": "chức năng Thanh toán thẻ.*thẻ người khác|Thanh toán thẻ.*chính mình|trả thẻ người khác.*Thanh toán thẻ",
+    "answer": "Dạ, chức năng Thanh toán thẻ chỉ dùng cho thẻ tín dụng của mình. Nếu muốn trả thẻ của chủ thẻ khác, mình có thể dùng Chuyển khoản nội bộ theo hướng dẫn Shinhan ạ."
+  },
+  {
+    "id": "partial_early_repayment_allocation",
+    "source": "loan_household_terms",
+    "fact": "Điều khoản vay hộ gia đình Shinhan ghi số tiền trả nợ gốc trước hạn một phần được dùng để thanh toán các kỳ trả nợ gốc tiếp theo của khoản vay.",
+    "intent": "trả nợ trước hạn một phần|trả trước một phần khoản vay|trả bớt gốc trước hạn",
+    "answer": "Dạ, theo điều khoản vay hộ gia đình, phần gốc mình trả trước hạn sẽ được tính vào các kỳ trả nợ gốc tiếp theo. Mình nên đối chiếu lịch trả nợ cụ thể trong hợp đồng của mình ạ."
+  },
+  {
+    "id": "loan_repayment_obligation",
+    "source": "individual_loan_terms",
+    "fact": "Điều khoản vay cá nhân Shinhan yêu cầu khách chủ động thanh toán nợ gốc, lãi vay và phí đúng hạn.",
+    "intent": "trả gốc lãi đúng hạn|nghĩa vụ trả nợ|thanh toán khoản vay đúng hạn",
+    "answer": "Dạ, theo điều khoản vay, mình cần chủ động thanh toán gốc, lãi và phí đúng hạn. Số tiền và ngày đến hạn cụ thể mình xem trong hợp đồng hoặc lịch trả nợ ạ."
+  },
+  {
+    "id": "loan_documents_truthful",
+    "source": "individual_loan_terms",
+    "fact": "Điều khoản vay cá nhân Shinhan yêu cầu khách cung cấp thông tin, tài liệu liên quan đầy đủ, kịp thời và trung thực khi ngân hàng yêu cầu.",
+    "intent": "cung cấp giấy tờ vay|bổ sung hồ sơ vay|thông tin hồ sơ vay",
+    "answer": "Dạ, khi Shinhan yêu cầu bổ sung hồ sơ vay, mình cần cung cấp thông tin và tài liệu liên quan đầy đủ, kịp thời, trung thực ạ."
+  },
+  {
+    "id": "corporate_credit_sign_card",
+    "source": "corporate_credit_card_terms",
+    "fact": "Điều khoản thẻ tín dụng doanh nghiệp Shinhan yêu cầu người sử dụng ký vào mặt sau thẻ tương ứng ngay khi nhận thẻ.",
+    "intent": "ký mặt sau thẻ tín dụng doanh nghiệp|ký tên trên thẻ doanh nghiệp|thẻ doanh nghiệp.*ký tên",
+    "answer": "Dạ, theo điều khoản thẻ tín dụng doanh nghiệp, người sử dụng cần ký vào mặt sau thẻ ngay khi nhận ạ."
+  },
+  {
+    "id": "corporate_credit_limit_not_guarantee",
+    "source": "corporate_credit_card_terms",
+    "fact": "Điều khoản thẻ tín dụng doanh nghiệp Shinhan ghi ngân hàng có thể từ chối hoặc chấp thuận một giao dịch ngay cả khi giao dịch nằm trong hạn mức tín dụng thẻ.",
+    "intent": "còn hạn mức.*giao dịch bị từ chối|thẻ doanh nghiệp.*trong hạn mức.*từ chối|hạn mức thẻ.*giao dịch không được chấp nhận",
+    "answer": "Dạ, theo điều khoản thẻ tín dụng doanh nghiệp, giao dịch trong hạn mức vẫn có thể bị từ chối. Em chưa xem được lý do của giao dịch cụ thể; mình liên hệ Shinhan để kiểm tra giúp ạ."
+  },
+  {
+    "id": "corporate_debit_pay_from_account",
+    "source": "corporate_debit_card_terms",
+    "fact": "Điều khoản thẻ ghi nợ doanh nghiệp Shinhan cho phép người sử dụng thanh toán hàng hóa, dịch vụ từ tài khoản thanh toán bằng thẻ.",
+    "intent": "thẻ ghi nợ doanh nghiệp.*thanh toán hàng hóa|thẻ doanh nghiệp.*trừ tài khoản thanh toán|thẻ ghi nợ doanh nghiệp.*dịch vụ",
+    "answer": "Dạ, thẻ ghi nợ doanh nghiệp có thể dùng để thanh toán hàng hóa, dịch vụ từ tài khoản thanh toán theo điều khoản Shinhan ạ."
+  },
+  {
+    "id": "minimum_payment_due",
+    "source": "card_user_guide_vi",
+    "fact": "Theo hướng dẫn thẻ Shinhan, thanh toán ít nhất số tiền tối thiểu ghi trên sao kê trước hoặc vào ngày đến hạn giúp tránh phí phát sinh do thanh toán trễ; số tiền cụ thể tùy sao kê của khách.",
+    "intent": "thanh toán tối thiểu.*tránh phí|trả tối thiểu.*trễ hạn|thanh toán tối thiểu.*ngày đến hạn|trả tối thiểu.*ngày đến hạn|phí trả chậm.*tối thiểu",
+    "answer": "Dạ, để tránh phí do thanh toán trễ, mình trả ít nhất số tiền tối thiểu ghi trên sao kê trước hoặc đúng ngày đến hạn nhé. Em chưa xem được số tiền cụ thể của mình trong cuộc trò chuyện này ạ."
+  },
+  {
+    "id": "card_auto_payment_registration",
+    "source": "card_user_guide_vi",
+    "fact": "Dịch vụ thanh toán thẻ tự động áp dụng khi khách có tài khoản thanh toán Shinhan và đã đăng ký; nếu chưa đăng ký, khách liên hệ chi nhánh/phòng giao dịch Shinhan để được hướng dẫn.",
+    "intent": "đăng ký thanh toán tự động|đăng ký tự động trả thẻ|điều kiện thanh toán tự động|mở thanh toán tự động",
+    "answer": "Dạ, để dùng thanh toán thẻ tự động, mình cần có tài khoản thanh toán Shinhan và đăng ký dịch vụ. Nếu chưa đăng ký, mình liên hệ chi nhánh hoặc phòng giao dịch Shinhan để được hướng dẫn ạ."
+  },
+  {
+    "id": "loan_auto_debit_due",
+    "source": "loan_household_terms",
+    "fact": "Theo điều khoản vay hộ gia đình, vào ngày đến hạn trả nợ, Shinhan có quyền tự động trích tiền từ các tài khoản của khách mở tại ngân hàng để thu nợ.",
+    "intent": "tự động trích.*trả nợ|tự động trừ.*khoản vay|trích tiền.*ngày đến hạn|trừ tiền.*ngày đến hạn.*vay",
+    "answer": "Dạ, theo điều khoản vay hộ gia đình, vào ngày đến hạn Shinhan có thể tự động trích tiền từ tài khoản của mình mở tại ngân hàng để thu nợ. Mình nên đối chiếu khoản đến hạn trong hợp đồng ạ."
+  }
+]

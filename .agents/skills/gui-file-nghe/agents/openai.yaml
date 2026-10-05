@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gửi file nghe"
+  short_description: "Gửi và so sánh audio trên điện thoại"
+  default_prompt: "Dùng $gui-file-nghe để gửi các bản audio này cho tôi nghe và so sánh."

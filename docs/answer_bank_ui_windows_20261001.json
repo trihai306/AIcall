@@ -1,0 +1,233 @@
+{
+  "environment": "Windows/CUDA via SSH localhost:8100",
+  "saved_manual": {
+    "nhom": "chinh_sach",
+    "ten": "kiem_thu_giao_dien_20261001",
+    "so_dong": 1,
+    "items": [
+      {
+        "id": "ab_manual_9d45ddecad374c7b800a974b3eff72b0",
+        "cau_hoi": [],
+        "tra_loi": "Dạ anh chị vào mục Yêu cầu của tôi trong ứng dụng để theo dõi tiến độ xử lý yêu cầu hỗ trợ ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790833593.1772976,
+        "nguon": "nhap_tay",
+        "voice_ready": true
+      }
+    ],
+    "voice": {
+      "status": "ready"
+    }
+  },
+  "ui_verified": [
+    "empty library",
+    "add with zero examples",
+    "edit same answer ID",
+    "disable/re-enable",
+    "pending/manual/disabled filters",
+    "search without Vietnamese diacritics",
+    "empty search and clear filters",
+    "Ctrl/Cmd+S save",
+    "1280px two-column editor",
+    "Windows Electron connected",
+    "custom in-page discard prompt",
+    "keep draft preserves text",
+    "Escape and confirm discard returns list",
+    "generation preset 100 updates count",
+    "actual Qwen append via new Bắt đầu tạo button",
+    "generation result 8/8 retained during voice polling",
+    "all 9 F5 voices ready",
+    "pagination 29 answers page 1/2 to 2/2",
+    "source selection restored when reopening",
+    "restore automatic learning via Windows checkbox",
+    "375px editor form-only layout and back to list",
+    "375px no horizontal overflow (353px scroll/client body, 315px editor)",
+    "browser recovered, selected Shinhan retained after close/reopen",
+    "final browser connected, session e930a4fb, no console errors"
+  ],
+  "pending_ui": [],
+  "browser_issue": "Native confirm from pre-update tab blocked subsequent input; new custom in-page prompt deployed. Remaining checks continued on real Windows Electron via nhin-man-win. Recovered tab 3; final responsive and connection checks completed there.",
+  "generation": {
+    "requested": 8,
+    "added": 8,
+    "manual_preserved": true,
+    "result": {
+      "nhom": "chinh_sach",
+      "ten": "kiem_thu_giao_dien_20261001",
+      "so_dong": 9,
+      "items": [
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_0da70b2af4f6",
+          "cau_hoi": [
+            "Anh chị cần làm gì để bổ sung mô tả sự cố?"
+          ],
+          "tra_loi": "Dạ anh chị hãy trả lời trực tiếp ngay trong yêu cầu hỗ trợ đã gửi ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_2609b55626f8",
+          "cau_hoi": [
+            "Anh chị thấy thông báo gì khi gửi yêu cầu hỗ trợ?"
+          ],
+          "tra_loi": "Dạ anh chị sẽ nhận được thông báo phản hồi hiển thị ngay trong ứng dụng ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_3d690ab81db0",
+          "cau_hoi": [
+            "Làm sao để theo dõi tiến độ yêu cầu hỗ trợ?"
+          ],
+          "tra_loi": "Dạ anh chị vào mục Yêu cầu của tôi trong ứng dụng để xem tiến độ xử lý ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_95d2d674d7a8",
+          "cau_hoi": [
+            "Làm thế nào để liên hệ bộ phận hỗ trợ kiểm thử?"
+          ],
+          "tra_loi": "Dạ anh chị vào mục Yêu cầu của tôi trong ứng dụng để gửi yêu cầu hỗ trợ ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_b04e4a6cb635",
+          "cau_hoi": [
+            "Anh chị muốn đánh giá chất lượng dịch vụ hỗ trợ như thế nào?"
+          ],
+          "tra_loi": "Dạ anh chị vào mục Đánh giá để phản hồi sau khi được hỗ trợ ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_bcb405726bf8",
+          "cau_hoi": [
+            "Cách gửi yêu cầu hỗ trợ kiểm thử như thế nào?"
+          ],
+          "tra_loi": "Dạ anh chị vào mục Hỗ trợ, chọn loại sự cố, mô tả vấn đề rồi bấm Gửi ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_d44d40c60076",
+          "cau_hoi": [
+            "Anh chị cần làm gì khi muốn gửi ảnh chụp màn hình báo lỗi?"
+          ],
+          "tra_loi": "Dạ anh chị có thể đính kèm ảnh chụp màn hình để mô tả sự cố ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_auto_chinh_sach_kiem_thu_giao_dien_20261_0a2dbf2a93_fe07372e5d2c",
+          "cau_hoi": [
+            "Thời gian bộ phận hỗ trợ làm việc như thế nào?"
+          ],
+          "tra_loi": "Dạ anh chị lưu ý bộ phận hỗ trợ làm việc từ 9 giờ đến 17 giờ, thứ Hai đến thứ Sáu ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790835129.54093,
+          "nguon": "tu_dong",
+          "voice_ready": true
+        },
+        {
+          "id": "ab_manual_9d45ddecad374c7b800a974b3eff72b0",
+          "cau_hoi": [],
+          "tra_loi": "Dạ anh chị vào mục Yêu cầu của tôi trong ứng dụng để theo dõi tiến độ xử lý yêu cầu hỗ trợ ạ.",
+          "san_pham": "",
+          "bat": true,
+          "updated_at": 1790833593.1772976,
+          "nguon": "nhap_tay",
+          "voice_ready": true
+        }
+      ],
+      "voice": {
+        "status": "ready"
+      }
+    }
+  },
+  "deployed_sha256": {
+    "app.js": "1a2114c9bb8f50cab24edcd461445f13b699d9d54002993dc627bd6643bc29db",
+    "index.html": "9ec2b84f241510d93f3be2fd485d7aa5836be6efcb2d90070c8f82864cfef5c8",
+    "style.css": "3a15013d3a8387b96376bbd0eddaaea06ba7d67940b6bdbf3864a92519badbc9"
+  },
+  "fixture_cleaned": {
+    "source": "chinh_sach/kiem_thu_giao_dien_20261001.md",
+    "bank_rows": 9,
+    "own_sessions": 0
+  },
+  "final_automation": {
+    "enabled": true,
+    "model": "qwen3.5:9b",
+    "config": {
+      "questions_per_document": 300,
+      "variants_per_answer": 1,
+      "learn_history": true
+    },
+    "stats": {
+      "answers": 346,
+      "questions": 650,
+      "memory_questions": 478,
+      "voice_ready": 345,
+      "voice_total": 346
+    },
+    "job": {
+      "id": "answer_bank_1790835934346",
+      "status": "running",
+      "phase": "history",
+      "current_document": "",
+      "documents_done": 0,
+      "documents_total": 0,
+      "answers_added": 0,
+      "voice_done": 6,
+      "voice_total": 6,
+      "logs": [],
+      "error": ""
+    },
+    "last_run": 1790835934.3465009
+  },
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "61 docs"
+    }
+  },
+  "observed_background_model_issue": "History builder produced intermittent JSON format errors earlier; latest status retained in final_automation."
+}

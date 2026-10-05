@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test app VoiceBank"
+  short_description: "Smoke test Electron, backend và WebSocket"
+  default_prompt: "Dùng $test-app-flow để chạy và kiểm tra luồng ứng dụng VoiceBank AI."

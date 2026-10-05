@@ -1,0 +1,9 @@
+[mcp_servers.electron]
+command = "npx"
+args = [
+    "-y",
+    "@laststance/electron-mcp-server@latest",
+]
+
+[mcp_servers.electron.env]
+SECURITY_LEVEL = "balanced"

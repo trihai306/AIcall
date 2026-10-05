@@ -32,6 +32,7 @@ class AppState:
         # Bảng hỏi-đáp: {id: dòng} và {id: ma trận đã chuẩn hoá}.
         self.hoi_dap: dict = {}
         self.hoi_dap_vector: dict = {}
+        self.hoi_dap_provenance: dict = {}
 
 
 async def _ham_hinh_dang_tts(state: AppState):
@@ -42,6 +43,68 @@ async def _ham_hinh_dang_tts(state: AppState):
                     ket["hinh_dang"], ket["ms"])
     except Exception as e:
         logger.warning("  TTS: hâm hình dạng không được (%s) - lượt đầu sẽ chậm hơn", e)
+
+
+def _nhung_theo_nhom(rag, nhom):
+    """Nhúng nhiều nhóm văn bản bằng đúng một lần gọi model.
+
+    Trả ``{id: ma_tran_da_chuan_hoa}``, giữ nguyên thứ tự ví dụ trong từng nhóm.
+    BGE-M3 có overhead đáng kể cho mỗi lần ``encode``; lúc startup ta đã có sẵn
+    toàn bộ văn bản nên gom batch sẽ rẻ hơn nhiều so với gọi từng tình huống.
+    """
+    from backend.services.filler_situation import chuan_hoa
+
+    van_ban = []
+    lat_cat = []
+    for ma, ds in nhom:
+        ds = list(ds or ())
+        if not ds:
+            continue
+        bat_dau = len(van_ban)
+        van_ban.extend(ds)
+        lat_cat.append((ma, bat_dau, len(van_ban)))
+
+    if not van_ban:
+        return {}
+
+    vector = chuan_hoa(rag.embed(van_ban))
+    if vector.shape[0] != len(van_ban):
+        raise ValueError(
+            f"Embedding trả {vector.shape[0]} vector cho {len(van_ban)} văn bản"
+        )
+    return {ma: vector[bat_dau:ket_thuc]
+            for ma, bat_dau, ket_thuc in lat_cat}
+
+
+async def _nhung_cpu(rag, nhom):
+    """Keep the caller's serialization scope until native encoding ends."""
+    task = asyncio.create_task(asyncio.to_thread(_nhung_theo_nhom, rag, nhom))
+    try:
+        return await asyncio.shield(task)
+    except asyncio.CancelledError:
+        # Repeated cancellation must not cancel the asyncio wrapper either:
+        # the native thread would continue after its serialization lock exits.
+        while not task.done():
+            try:
+                await asyncio.shield(task)
+            except asyncio.CancelledError:
+                continue
+        task.result()
+        raise
+
+
+async def _nhung_bang_hoi_dap(state, dong):
+    from backend.services.bang_hoi_dap import retrieval_texts, RETRIEVAL_LAYOUT_VERSION
+
+    rag = state.rag
+    groups = [(row["id"], retrieval_texts(row)) for row in dong]
+    if str(settings.embedding_device).lower() == "cpu":
+        vectors = await _nhung_cpu(rag, groups)
+    else:
+        vectors = _nhung_theo_nhom(rag, groups)
+    state.hoi_dap_vector = vectors
+    state._hoi_dap_vector_rag = rag
+    state._hoi_dap_vector_layout = RETRIEVAL_LAYOUT_VERSION
 
 
 async def startup(state: AppState):
@@ -59,6 +122,13 @@ async def startup(state: AppState):
     # 1. Call history database (fast, local)
     logger.info("[1/6] Initializing SQLite database...")
     await init_db(settings.db_file)
+    # Quarantine generated answers whose knowledge file changed while the app
+    # was stopped, before the existing Q&A vector snapshot is constructed.
+    try:
+        from backend.services.answer_bank_learning import prepare_sources
+        prepare_sources()
+    except Exception as e:
+        logger.warning("Không kiểm tra được độ mới thư viện trả lời: %s", e)
     # An install upgraded from before scenarios existed has none at all, and a
     # campaign with no scenario would lose the worked examples that used to be
     # hard-coded in the prompt. Seed the shipped one from .env, once.
@@ -77,7 +147,6 @@ async def startup(state: AppState):
     # Nhúng sẵn ví dụ của mọi tình huống. Làm một lần ở đây chứ không mỗi lượt:
     # lúc khách đang nói ta chỉ được nhúng ĐÚNG MỘT chuỗi (phiên âm dở), so với
     # ma trận đã có sẵn.
-    from backend.services.filler_situation import chuan_hoa
     from backend.services.filler_store import MA_NHOM_CHUNG, lay_kho
     try:
         kho = lay_kho()
@@ -85,13 +154,14 @@ async def startup(state: AppState):
         # đường rơi cuối chứ không phải một chủ đề để tranh điểm. Hai chỗ nhúng
         # PHẢI cùng luật - sót một chỗ thì lần khởi động sau nó lại vào bộ chấm
         # và mọi thứ âm thầm quay về như cũ.
-        state.kho_vector = {
-            t.id: chuan_hoa(state.rag.embed(list(t.vi_du)))
-            for t in kho.tinh_huong if t.vi_du and t.id != MA_NHOM_CHUNG
-        }
+        state.kho_vector = _nhung_theo_nhom(
+            state.rag,
+            ((t.id, t.vi_du) for t in kho.tinh_huong
+             if t.vi_du and t.id != MA_NHOM_CHUNG),
+        )
         logger.info("Đã nhúng ví dụ của %d tình huống", len(state.kho_vector))
 
-        # Bảng hỏi-đáp: nhúng các cách hỏi để tra trước khi hỏi tri thức.
+        # Managed answers are retrieval evidence; question examples are optional.
         # Hỏng thì bỏ qua, KHÔNG chặn khởi động - bảng rỗng nghĩa là chạy y như
         # trước khi có nó.
         try:
@@ -103,10 +173,12 @@ async def startup(state: AppState):
             dong = []
             logger.warning("Không đọc được bảng hỏi-đáp: %s", e)
         state.hoi_dap = {d["id"]: d for d in dong}
-        state.hoi_dap_vector = {
-            d["id"]: chuan_hoa(state.rag.embed(list(d["cau_hoi"])))
-            for d in dong if d["cau_hoi"]
-        }
+        try:
+            from backend.services.answer_bank_learning import active_provenance
+            state.hoi_dap_provenance = active_provenance()
+        except Exception:
+            state.hoi_dap_provenance = {}
+        await _nhung_bang_hoi_dap(state, dong)
         if dong:
             logger.info("Đã nhúng %d dòng bảng hỏi-đáp", len(state.hoi_dap_vector))
     except Exception as e:
@@ -145,16 +217,42 @@ async def startup(state: AppState):
         # qua, lượt vẫn đi F5 như trước.
         if settings.tieng_san_bat and state.hoi_dap:
             try:
+                from backend.services.answer_bank_learning import provenance_for_ids
                 from backend.services.tieng_san import kho_tieng_san
+                generated = set(provenance_for_ids(tuple(state.hoi_dap)))
+                legacy = {f"hd_{ma}": d.get("tra_loi", "")
+                          for ma, d in state.hoi_dap.items() if ma not in generated}
                 kq = await kho_tieng_san.dung_nhieu(
-                    state.tts,
-                    {f"hd_{ma}": d.get("tra_loi", "") for ma, d in state.hoi_dap.items()},
-                    state.tts.default_voice_name())
+                    state.tts, legacy, state.tts.default_voice_name())
                 logger.info("  Tiếng sẵn bảng hỏi-đáp: dựng %d, đã có %d, bỏ qua %d, "
                             "hỏng %d (%dms)", kq["dung"], kq["da_co"], kq["bo_qua"],
                             kq["hong"], kq["ms"])
             except Exception as e:
                 logger.warning("  Tiếng sẵn bảng hỏi-đáp hỏng, bỏ qua: %s", e)
+
+        # Đáp án Shinhan cố định đã có nguồn đối chiếu: dựng cả bản nói độc lập
+        # và bản nối sau câu đệm "Dạ" trước khi báo app sẵn sàng. Nếu bỏ qua,
+        # khách đầu tiên phải đợi F5 dù tra đáp án chỉ tốn vài mili giây.
+        if settings.tieng_san_bat:
+            try:
+                from backend.pipeline.noi_cau_dem import loi_sau_dem
+                from backend.pipeline.shinhan_fast_facts import dap_an_da_xac_minh
+                from backend.services.tieng_san import kho_tieng_san
+
+                cac = {}
+                for ma, answer in dap_an_da_xac_minh().items():
+                    key = f"ltg_shinhan_{ma}"
+                    cac[key] = answer
+                    continuation = loi_sau_dem("Dạ", answer)
+                    if continuation != answer:
+                        cac[key + "_noi_dem"] = continuation
+                if cac:
+                    kq = await kho_tieng_san.dung_nhieu(
+                        state.tts, cac, state.tts.default_voice_name())
+                    logger.info("  Tiếng sẵn Shinhan: dựng %d, đã có %d, hỏng %d (%dms)",
+                                kq["dung"], kq["da_co"], kq["hong"], kq["ms"])
+            except Exception as e:
+                logger.warning("  Tiếng sẵn Shinhan hỏng, lượt vẫn dùng F5: %s", e)
 
         # HÂM HÌNH DẠNG TTS. Cùng lý lẽ với phần hâm LLM ngay dưới đây.
         #
@@ -236,6 +334,14 @@ async def startup(state: AppState):
     except Exception as e:
         logger.warning(f"Không bật lại được tự nhận cuộc gọi: {e}")
 
+    # The worker starts only after LLM/TTS checks and the live pipeline exist.
+    # It immediately yields to customer turns/training and resumes checkpoints.
+    try:
+        from backend.services.answer_bank_learning import bo_hoc_tra_loi
+        bo_hoc_tra_loi.khoi_dong(state)
+    except Exception as e:
+        logger.warning("Không khởi động được bộ chuẩn bị thư viện trả lời: %s", e)
+
     logger.info("=" * 50)
     logger.info("System ready!")
     logger.info(f"  Open http://localhost:{settings.port} in your browser")
@@ -258,6 +364,7 @@ async def shutdown(state: AppState):
     except Exception as e:
         logger.warning(f"Không dừng gọn được bộ nhận cuộc gọi: {e}")
     for ten, dung in (
+        ("thư viện trả lời tự động", "backend.services.answer_bank_learning:bo_hoc_tra_loi"),
         ("tóm tắt", "backend.services.summarizer:bo_tom_tat"),
         ("hẹn giờ tổng hợp", "backend.services.notify_service:lich_tong_hop"),
     ):

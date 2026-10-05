@@ -63,6 +63,20 @@ def test_dong_dung_san_pham_khong_bi_loai():
     assert "lai_suat_vay" not in bo_qua_khac_san_pham(dk, "vay tín chấp")
 
 
+def test_ten_file_slug_khop_ten_san_pham_hien_thi():
+    """Q&A tự sinh gắn theo tên file, còn campaign thường dùng tên có dấu + hãng."""
+    dk = {"lai_suat_vay": "vay_tin_chap", "phi_the": "the_tin_dung"}
+    bo = bo_qua_khac_san_pham(dk, "Vay tín chấp Shinhan")
+    assert "lai_suat_vay" not in bo
+    assert "phi_the" in bo
+
+
+def test_ten_san_pham_mot_tu_khong_duoc_khop_long():
+    """Không để nhãn chung chung 'vay' ăn sang mọi sản phẩm vay khác."""
+    assert "vay_chung" in bo_qua_khac_san_pham(
+        {"vay_chung": "vay"}, "vay mua nhà Shinhan")
+
+
 def test_dong_khong_gan_san_pham_thi_luon_duoc_dung():
     # Câu hỏi chung ("bên em ở đâu") không thuộc sản phẩm nào.
     assert bo_qua_khac_san_pham({"dia_chi": ""}, "vay tín chấp") == frozenset()
@@ -201,5 +215,6 @@ def test_dong_che_trong_bang_mau_la_nguyen_van_kich_ban():
         assert ma in dong, f"bảng mẫu thiếu dòng {ma}"
         kiem_dong(dong[ma])
         assert dong[ma]["san_pham"] == "vay tín chấp"
+        assert "tốp" not in dong[ma]["tra_loi"].lower()
         assert _gon(dong[ma]["tra_loi"]) in tl, \
             f"{ma}: câu trả lời không có nguyên văn trong tài liệu"

@@ -1,0 +1,29 @@
+{
+  "status": "ok",
+  "model": "BAAI/bge-m3",
+  "device": "cpu",
+  "platform": "Windows-10-10.0.22621-SP0",
+  "python": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+  "answer": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+  "normalization": "backend.services.filler_situation.chuan_hoa(RAGService.embed(texts))",
+  "dimension": 1024,
+  "elapsed_s": 7.375,
+  "scores": [
+    {
+      "utterance": "Đã gửi yêu cầu hỗ trợ rồi, muốn biết họ đang xử lý đến đâu thì xem ở chỗ nào?",
+      "cosine": 0.7934963703155518
+    },
+    {
+      "utterance": "Muốn theo dõi tiến độ xử lý thì mở mục nào?",
+      "cosine": 0.763527512550354
+    },
+    {
+      "utterance": "Cần xem yêu cầu hỗ trợ đã được xử lý đến bước nào ở đâu?",
+      "cosine": 0.7846336364746094
+    },
+    {
+      "utterance": "Công thức nấu món canh chua là gì?",
+      "cosine": 0.27036604285240173
+    }
+  ]
+}

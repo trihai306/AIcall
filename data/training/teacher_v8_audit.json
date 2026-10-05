@@ -1,0 +1,130 @@
+[
+  {
+    "scenario": "card17",
+    "error": "HTTPError: HTTP Error 500: Internal Server Error"
+  },
+  {
+    "scenario": "card20",
+    "question": "Tôi đã 20 tuổi, có được mở thẻ tín dụng không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Với độ tuổi là 20, tôi có đủ điều kiện để làm hồ sơ xin thẻ tín dụng hay không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Liệu người 20 tuổi như tôi có thể đăng ký thành công thẻ tín dụng được không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Tôi mới tròn 20 năm nay thì có thể mở thẻ tín dụng ngay lập tức không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Điều kiện về độ tuổi để mở thẻ là bao nhiêu, và tôi 20 tuổi thì có nằm trong đó không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card20",
+    "question": "Nếu tôi chỉ vừa đủ 20 tuổi thì quy định có cho phép mở thẻ tín dụng không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Tôi bao nhiêu tuổi thì đủ điều kiện mở thẻ tín dụng?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Người từ 18 tuổi có được cấp thẻ tín dụng không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Điều kiện về độ tuổi để làm hồ sơ là gì, tôi cần phải 18 tuổi chứ?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Liệu người đã tròn 18 tuổi có thể đăng ký mở thẻ được không?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Tôi cần đạt mức tuổi nào thì mới đủ điều kiện nhận thẻ trong đợt này?",
+    "accepted": false
+  },
+  {
+    "scenario": "card18",
+    "question": "Quy định về giới hạn tuổi tối thiểu để mở thẻ là bao nhiêu, có bắt buộc phải 18 tuổi không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21",
+    "error": "HTTPError: HTTP Error 500: Internal Server Error"
+  },
+  {
+    "scenario": "home22",
+    "question": "Tôi mới 22 tuổi thì có được vay mua nhà không?",
+    "accepted": false
+  },
+  {
+    "scenario": "home22",
+    "question": "Với độ tuổi 22, tôi có đủ điều kiện để được ngân hàng chấp nhận cho vay hay không?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Ngân hàng có cho phép khách hàng ở độ tuổi 22 vay vốn mua nhà đất được không?",
+    "accepted": false
+  },
+  {
+    "scenario": "home22",
+    "question": "Nếu tôi chỉ vừa tròn 22 tuổi thì quy định về giới hạn tuổi tối thiểu để vay mua nhà là thế nào?",
+    "accepted": true
+  },
+  {
+    "scenario": "home22",
+    "question": "Khách hàng sinh năm 1998 (tức 22 tuổi) có thể đăng ký hồ sơ vay mua nhà ngay bây giờ được chưa?",
+    "accepted": false
+  },
+  {
+    "scenario": "home22",
+    "question": "Tôi đang ở độ tuổi 22, liệu đây có phải là rào cản khiến tôi không thể vay mua nhà được hay không?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Bổ sung thêm thu nhập 18 triệu thì giới hạn độ tuổi để vay được bao nhiêu?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Sau khi cộng lương mới, tôi cần đủ bao nhiêu tuổi thì hồ sơ mới khả thi?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Với mức thu nhập này, ngân hàng chấp nhận cho người nào đến tuổi?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Nếu có thêm 18 triệu, điều kiện về độ tuổi tối đa sẽ thay đổi ra sao?",
+    "accepted": false
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Bổ sung 18 triệu vào thu nhập thì ai trong độ tuổi bao nhiêu là đủ điều kiện?",
+    "accepted": true
+  },
+  {
+    "scenario": "home21-followup",
+    "question": "Khi đã cập nhật lương 18 triệu, khoảng độ tuổi nào còn được xem xét?",
+    "accepted": false
+  }
+]

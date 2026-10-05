@@ -1,0 +1,18 @@
+{
+  "id": "the_dien_tu",
+  "ten": "Khách hỏi đăng ký hoặc kích hoạt thẻ điện tử",
+  "vi_du": [
+    "Đăng ký và kích hoạt thẻ điện tử Shinhan như thế nào?",
+    "Tôi muốn mở thẻ điện tử trên ứng dụng SOL rồi kích hoạt",
+    "Cách đăng ký chức năng thẻ điện tử và xác thực mã SMS",
+    "Thẻ ảo trên SOL đăng ký và kích hoạt ra sao?",
+    "Kích hoạt thẻ điện tử sau khi đăng ký như thế nào?"
+  ],
+  "tu_khoa": ["thẻ điện tử", "thẻ ảo"],
+  "mo_dau": [
+    "Dạ về thẻ điện tử,",
+    "Dạ phần thẻ điện tử anh chị hỏi,"
+  ],
+  "speed": null,
+  "bat": true
+}

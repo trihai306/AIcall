@@ -5,6 +5,7 @@ Gọi ra theo chiến dịch, nhận cuộc gọi vào, chuyển tiếp cho ngư
 báo cáo. Kịch bản thay được từ giao diện nên mở sang ngành khác không cần sửa code.
 
 **Tài liệu:** [Hướng dẫn sử dụng](docs/HUONG_DAN_SU_DUNG.md) ·
+[Thư viện trả lời tự động](docs/THU_VIEN_TRA_LOI_TU_DONG.md) ·
 [Báo cáo thực hiện](docs/BAO_CAO_THUC_HIEN.md) ·
 [Đặc tả theo hợp đồng](docs/DAC_TA_TINH_NANG_CON_THIEU.md) ·
 [Kiến trúc](docs/ARCHITECTURE.md)

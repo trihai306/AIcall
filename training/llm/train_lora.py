@@ -12,10 +12,12 @@ Usage:
     python training/llm/train_lora.py --epochs 4 --lora-rank 32
 """
 import argparse
+import hashlib
 import json
 import random
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Console Windows là cp1252: in tiếng Việt giữa lúc train là chết cả job.
@@ -38,6 +40,16 @@ MAX_SEQ_LEN = 2048
 # Tiền tố để backend nhặt tiến độ ra khỏi log. Đọc thanh tqdm thay cho cái này
 # thì rất dễ vỡ: tqdm in ra stderr, kèm mã ANSI, và bị JobRunner gộp dòng.
 PROGRESS_PREFIX = "[PROGRESS] "
+
+
+def conversation_group_key(obj: dict) -> str:
+    """Keep prefixes of one call together without grouping an entire MD file."""
+    if obj.get("conversation_id"):
+        return str(obj["conversation_id"])
+    first_user = next((m.get("content") for m in obj["messages"]
+                       if m.get("role") == "user"), "")
+    return json.dumps([obj.get("source_id") or "", first_user],
+                      ensure_ascii=False, sort_keys=True)
 
 
 def make_progress_callback():
@@ -97,11 +109,36 @@ def main():
                         help="File .jsonl để train (mặc định merged_dataset.jsonl)")
     parser.add_argument("--max-samples", type=int, default=0,
                         help="Chỉ lấy N mẫu đầu - dùng để chạy thử nhanh, 0 = lấy hết")
+    parser.add_argument(
+        "--mode",
+        choices=("assistant", "router"),
+        default=None,
+        help="Chỉ train các record có mode tương ứng (BankVN cần tách assistant khỏi router).",
+    )
     parser.add_argument("--eval-ratio", type=float, default=0.1,
                         help="Tỷ lệ holdout để đo eval_loss (mặc định 0.1; 0 = tắt)")
     parser.add_argument("--base-model", default=BASE_MODEL,
                         help=f"Repo HuggingFace của model gốc (mặc định {BASE_MODEL})")
+    parser.add_argument("--candidate-name", default="",
+                        help="Tên candidate Ollama dự kiến để gắn log train với kết quả kiểm thử")
+    parser.add_argument(
+        "--output-dir",
+        default=str(OUTPUT_DIR),
+        help="Thư mục adapter/checkpoint; đặt riêng để không ghi đè candidate cũ.",
+    )
+    parser.add_argument(
+        "--gguf-dir",
+        default=str(GGUF_DIR / "tuvan-gguf"),
+        help="Đích export GGUF (Unsloth có thể tự thêm hậu tố _gguf).",
+    )
+    parser.add_argument("--max-seq-len", type=int, default=MAX_SEQ_LEN)
+    parser.add_argument("--load-in-16bit", action="store_true",
+                        help="LoRA bf16 cho Qwen3.5; Unsloth không khuyến nghị QLoRA 4-bit")
+    parser.add_argument("--dataset-num-proc", type=int, default=0,
+                        help="Số CPU worker tiền xử lý dataset; 0=tắt multiprocessing")
     args = parser.parse_args()
+    output_dir = Path(args.output_dir)
+    gguf_dir = Path(args.gguf_dir)
 
     dataset_path = Path(args.dataset)
     if not dataset_path.exists():
@@ -111,11 +148,13 @@ def main():
     from datasets import Dataset
     from trl import SFTConfig, SFTTrainer
 
-    print(f"Loading base model: {args.base_model} (4-bit)...")
+    print(f"Loading base model: {args.base_model} "
+          f"({'16-bit' if args.load_in_16bit else '4-bit'})...")
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=args.base_model,
-        max_seq_length=MAX_SEQ_LEN,
-        load_in_4bit=True,
+        max_seq_length=args.max_seq_len,
+        load_in_4bit=not args.load_in_16bit,
+        load_in_16bit=args.load_in_16bit,
     )
 
     model = FastLanguageModel.get_peft_model(
@@ -142,34 +181,58 @@ def main():
     # và lời khách cũng tiêu tốn gradient. Prompt-completion vẫn cho model nhìn
     # toàn bộ lịch sử nhưng chỉ dạy đúng câu cần trả lời ở lượt hiện tại.
     rows = []
-    groups: dict[str, list[dict]] = {}
     with open(dataset_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             obj = json.loads(line)
+            if args.mode and obj.get("mode") != args.mode:
+                continue
             messages = obj.get("messages") or []
             if not messages or messages[-1].get("role") != "assistant":
                 raise SystemExit(
                     "[ERROR] Mỗi mẫu phải kết thúc bằng role=assistant để tách "
                     "prompt/completion chính xác. Chạy lại make_dataset.py để kiểm tra."
                 )
+            # Qwen3.5 dùng Processor đa phương thức: chat template đòi content
+            # dạng list phần tử có type, kể cả khi toàn bộ dữ liệu chỉ là text.
+            if "qwen3.5" in args.base_model.lower():
+                messages = [
+                    {**message, "content": [{"type": "text", "text": message["content"]}]}
+                    if isinstance(message.get("content"), str) else message
+                    for message in messages
+                ]
             row = {
                 "prompt": messages[:-1],
                 "completion": [messages[-1]],
+                # source_id identifies a document, not one conversation. Group
+                # by the first customer turn so product-wide repairs cannot all
+                # fall into eval and leave that product unseen during training.
+                "_group_key": conversation_group_key(obj),
             }
             rows.append(row)
 
-            # Các prefix của CÙNG một transcript chia sẻ system + lượt user và
-            # assistant đầu tiên. Gom chúng thành một group để holdout không bị
-            # rò rỉ: nếu lượt 1 của cuộc gọi nằm ở train còn lượt 2-8 nằm ở eval
-            # thì eval_loss đẹp giả vì model đã thấy gần như cùng ngữ cảnh.
-            dau = messages[:3] if len(messages) >= 3 else messages
-            group_key = json.dumps(dau, ensure_ascii=False, sort_keys=True)
-            groups.setdefault(group_key, []).append(row)
-            if args.max_samples and len(rows) >= args.max_samples:
-                break
+    # Teacher data được append theo nguồn/chủ đề. Lấy N dòng đầu sẽ làm một
+    # candidate nhỏ bị lệch chủ đề, nên lấy mẫu ngẫu nhiên cố định trên toàn bộ
+    # file để vừa phủ đều vừa tái lập được.
+    if args.max_samples and len(rows) > args.max_samples:
+        random.Random(42).shuffle(rows)
+        rows = rows[:args.max_samples]
+
+    groups: dict[str, list[dict]] = {}
+    for row in rows:
+        messages = row["prompt"] + row["completion"]
+        # Các prefix của CÙNG một transcript chia sẻ system + lượt user và
+        # assistant đầu tiên. Gom chúng thành một group để holdout không bị
+        # rò rỉ: nếu lượt 1 của cuộc gọi nằm ở train còn lượt 2-8 nằm ở eval
+        # thì eval_loss đẹp giả vì model đã thấy gần như cùng ngữ cảnh.
+        group_key = row["_group_key"]
+        groups.setdefault(group_key, []).append(row)
+
+    # Metadata chỉ dùng để tách holdout theo hội thoại, không đưa cho SFTTrainer.
+    for row in rows:
+        row.pop("_group_key", None)
 
     print(f"Dataset: {len(rows)} mẫu từ {dataset_path.name}")
 
@@ -212,8 +275,8 @@ def main():
         train_dataset=dataset,
         eval_dataset=eval_dataset,
         args=SFTConfig(
-            output_dir=str(OUTPUT_DIR / "checkpoints"),
-            max_length=MAX_SEQ_LEN,
+            output_dir=str(output_dir / "checkpoints"),
+            max_length=args.max_seq_len,
             completion_only_loss=True,
             num_train_epochs=args.epochs,
             per_device_train_batch_size=args.batch_size,
@@ -233,45 +296,79 @@ def main():
             optim="adamw_8bit",
             seed=42,
             report_to="none",
+            dataset_num_proc=args.dataset_num_proc or None,
         ),
     )
 
     trainer.add_callback(make_progress_callback())
 
     print("Training...")
-    trainer.train()
+    train_result = trainer.train()
 
-    print(f"Saving LoRA adapter -> {OUTPUT_DIR}")
-    model.save_pretrained(str(OUTPUT_DIR))
-    tokenizer.save_pretrained(str(OUTPUT_DIR))
+    print(f"Saving LoRA adapter -> {output_dir}")
+    model.save_pretrained(str(output_dir))
+    tokenizer.save_pretrained(str(output_dir))
+
+    # Persist actual examples optimized, separate from generated/reviewed rows.
+    # Adapter saving marks a completed fine-tune even if a later GGUF export fails.
+    if "shinhan" in dataset_path.name.casefold():
+        ledger = PROJECT_DIR / "data/training/shinhan_train_runs.jsonl"
+        digest = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
+        record = {
+            "run_id": output_dir.name + "-" + str(int(time.time())),
+            "model": args.candidate_name or None,
+            "dataset": str(dataset_path.resolve().relative_to(PROJECT_DIR.resolve()))
+            if dataset_path.resolve().is_relative_to(PROJECT_DIR.resolve()) else str(dataset_path),
+            "dataset_sha256": digest,
+            "dataset_rows": len(rows),
+            "train_rows": len(dataset),
+            "holdout_rows": len(eval_dataset) if eval_dataset is not None else 0,
+            "epochs": args.epochs,
+            "base_model": args.base_model,
+            "adapter": str(output_dir),
+            "gguf_dir": str(gguf_dir.resolve()),
+            "train_loss": (train_result.metrics or {}).get("train_loss"),
+            "best_eval_loss": trainer.state.best_metric,
+            "status": "adapter_saved",
+            "quality_gate_passed": None,
+            "completed_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        with ledger.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+        print(f"[PROGRESS] train run saved to {ledger}", flush=True)
 
     if not args.skip_gguf:
         print("Exporting merged GGUF q4_k_m (mất vài phút)...")
         model.save_pretrained_gguf(
-            str(GGUF_DIR / "tuvan-gguf"),
+            str(gguf_dir),
             tokenizer,
             quantization_method="q4_k_m",
         )
         # Unsloth thêm hậu tố "_gguf" vào thư mục đích, nên file thật nằm ở
         # tuvan-gguf_gguf/ chứ không phải tuvan-gguf/. Nói đúng chỗ để người
         # đọc log khỏi đi tìm nhầm.
-        thuc_te = GGUF_DIR / "tuvan-gguf_gguf"
+        thuc_te = Path(str(gguf_dir) + "_gguf")
+        from deploy_ollama import tim_gguf
+        if tim_gguf(thuc_te) is None:
+            raise RuntimeError(
+                f"GGUF xuất ra không hợp lệ hoặc bị cụt tại {thuc_te}; "
+                "giữ adapter và xuất lại sau khi giải phóng dung lượng."
+            )
         print(f"""
 ============================================
  Train xong.
 
  File GGUF nằm ở: {thuc_te}
- (thư mục {GGUF_DIR / 'tuvan-gguf'} chỉ chứa bản 16-bit trung gian,
+ (thư mục {gguf_dir} chỉ chứa bản 16-bit trung gian,
   xoá được để lấy lại ~5.8GB)
 
- Nạp vào Ollama và chuyển .env sang model mới:
-   python training/llm/deploy_ollama.py --set-env
-
- Rồi khởi động lại dịch vụ.
+ Nạp thành candidate vào Ollama và chấm trên dữ liệu giữ riêng.
+ Chỉ đổi model đang dùng sau khi kết quả đã được kiểm tra.
 ============================================
 """)
     else:
-        print(f"[OK] LoRA adapter tại {OUTPUT_DIR} (chưa xuất GGUF, dùng --skip-gguf)")
+        print(f"[OK] LoRA adapter tại {output_dir} (chưa xuất GGUF, dùng --skip-gguf)")
 
 
 if __name__ == "__main__":

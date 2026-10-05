@@ -14,10 +14,34 @@ và vector do `rag.embed` sinh, nên tệp này chỉ lo dữ liệu và luật 
 được trên máy không GPU.
 """
 import json
+import re
+import unicodedata
 
 
 class LoiBang(ValueError):
     """Dữ liệu bảng sai. Nêu rõ dòng nào sai để còn sửa được."""
+
+
+# Changing this layout requires rebuilding cached matrices, even if the row's
+# examples have not changed. The same contract is used at startup and reload.
+RETRIEVAL_LAYOUT_VERSION = 2
+
+
+def managed_answer(row: dict) -> bool:
+    return str(row.get("id", "")).startswith("ab_")
+
+
+def retrieval_texts(row: dict) -> tuple[str, ...]:
+    """Optional examples plus the complete managed answer, in stable order.
+
+    Legacy scenario rows retain their question-only vector layout. Never trim
+    the stored answer here: its conditions are part of the retrieval evidence.
+    """
+    texts = [str(text) for text in (row.get("cau_hoi") or ()) if str(text).strip()]
+    answer = str(row.get("tra_loi") or "")
+    if managed_answer(row) and answer.strip():
+        texts.append(answer)
+    return tuple(texts)
 
 
 def kiem_dong(d: dict) -> None:
@@ -35,12 +59,33 @@ def kiem_dong(d: dict) -> None:
         raise LoiBang(
             f"dòng {ma!r}: câu đệm không kết bằng dấu phẩy: {cd!r} - thiếu phẩy "
             "thì F5 hạ giọng kết câu ngay giữa lượt")
-    if not [c for c in (d.get("cau_hoi") or []) if str(c).strip()]:
+    if not managed_answer(d) and not [c for c in (d.get("cau_hoi") or []) if str(c).strip()]:
         raise LoiBang(f"dòng {ma!r}: không có cách hỏi nào - dòng này sẽ không "
                       "bao giờ khớp với câu nào của khách")
     if not (d.get("tra_loi") or "").strip():
         raise LoiBang(f"dòng {ma!r}: nội dung trả lời rỗng - khách sẽ nghe câu "
                       "đệm rồi im bặt")
+
+
+def _khoa_san_pham(text: str) -> str:
+    text = (text or "").replace("_", " ").replace("-", " ")
+    text = text.replace("đ", "d").replace("Đ", "D")
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def _cung_san_pham(a: str, b: str) -> bool:
+    """Tên file slug và tên sản phẩm hiển thị vẫn được coi là cùng sản phẩm."""
+    ka, kb = _khoa_san_pham(a), _khoa_san_pham(b)
+    if not ka or not kb:
+        return False
+    if ka == kb:
+        return True
+    ngan, dai = (ka, kb) if len(ka) <= len(kb) else (kb, ka)
+    # Chỉ cho phép tên con khi nó đủ cụ thể. Một chữ "vay" không được phép
+    # khớp mọi sản phẩm vay, còn "vay tin chap" khớp "vay tin chap shinhan".
+    return len(ngan.split()) >= 2 and f" {ngan} " in f" {dai} "
 
 
 def bo_qua_khac_san_pham(dieu_kien: dict[str, str], san_pham: str) -> frozenset[str]:
@@ -52,11 +97,11 @@ def bo_qua_khac_san_pham(dieu_kien: dict[str, str], san_pham: str) -> frozenset[
     Chưa biết khách quan tâm gì (`san_pham` rỗng) thì KHÔNG loại gì: đầu cuộc
     gọi mà loại hết là mất trắng cả bảng đúng lúc cần nó nhất.
     """
-    sp = (san_pham or "").strip().lower()
+    sp = (san_pham or "").strip()
     if not sp:
         return frozenset()
     return frozenset(ma for ma, cua_dong in dieu_kien.items()
-                     if (cua_dong or "").strip().lower() not in ("", sp))
+                     if (cua_dong or "").strip() and not _cung_san_pham(cua_dong, sp))
 
 
 def doc_dong(conn) -> list[dict]:
@@ -137,4 +182,14 @@ def doc_nguyen_van(dong: dict) -> bool:
     Dòng đi theo tình huống thì luôn đọc: thứ xác nhận nó là bộ phân loại có
     cổng ngữ cảnh chứ không phải điểm cosine của câu hỏi. Còn lại theo ngưỡng cũ.
     """
+    # Dòng do Qwen chọn chỉ mang một quyền duy nhất: đọc nguyên văn dòng đã
+    # tồn tại. Qwen không được viết lại câu, và ID đã được selector kiểm tra
+    # membership trước khi cờ này xuất hiện.
+    if dong.get("qwen_chon"):
+        return True
+    # Lời khách trùng câu hỏi mẫu của dòng (answer_bank_selector.direct_by_example).
+    if dong.get("khop_vi_du"):
+        return True
+    if dong.get("can_chon_qwen"):
+        return False
     return bool(dong.get("theo_tinh_huong")) or doc_thang(dong.get("diem", 0.0))

@@ -1,0 +1,20 @@
+{
+  "name": "bankvn-3.2b",
+  "hidden_size": 3072,
+  "intermediate_size": 8192,
+  "num_hidden_layers": 28,
+  "num_attention_heads": 24,
+  "num_key_value_heads": 8,
+  "max_position_embeddings": 4096,
+  "rope_theta": 10000.0,
+  "block_size": 512,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 64,
+  "learning_rate": 0.00016,
+  "warmup_steps": 1000,
+  "weight_decay": 0.1,
+  "save_steps": 250,
+  "logging_steps": 5,
+  "optim": "adamw_bnb_8bit",
+  "requires_offload_or_multi_gpu": true
+}

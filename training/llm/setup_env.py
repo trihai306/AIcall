@@ -62,7 +62,8 @@ def kiem_tra(py: Path) -> bool:
         "        out['vram_total_gb'] = round(total / 1024**3, 1)\n"
         "except Exception as e:\n"
         "    out['torch_error'] = f'{type(e).__name__}: {e}'\n"
-        "for mod in ('unsloth', 'trl', 'datasets', 'transformers', 'peft'):\n"
+        "for mod in ('unsloth', 'trl', 'datasets', 'transformers', 'peft', "
+        "'accelerate', 'tokenizers', 'bitsandbytes', 'sentencepiece'):\n"
         "    try:\n"
         "        m = __import__(mod)\n"
         "        out[mod] = getattr(m, '__version__', 'ok')\n"
@@ -144,8 +145,9 @@ def main():
     # TRL/Unsloth cũ vì `pip install` không tự nâng gói đã thỏa dependency.
     # Unsloth cũng khuyến nghị nâng đồng thời unsloth + unsloth_zoo.
     if run([str(py), "-m", "pip", "install", "--upgrade",
-            "unsloth", "unsloth_zoo", "datasets", "trl", "transformers", "peft"],
-           "Cập nhật unsloth + trl + datasets"):
+            "unsloth", "unsloth_zoo", "datasets", "trl", "transformers", "peft",
+            "accelerate", "tokenizers", "bitsandbytes", "sentencepiece"],
+           "Cập nhật thư viện training LLM + BankVN"):
         sys.exit(1)
 
     print("\n" + "=" * 46)

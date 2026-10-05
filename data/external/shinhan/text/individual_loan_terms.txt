@@ -1,0 +1,1085 @@
+                         ĐIỀU KHOẢN VÀ ĐIỀU KIỆN CHUNG HỢP ĐỒNG TÍN DỤNG
+                        GENERAL TERMS AND CONDITIONS OF CREDIT AGREEMENT
+                                (Áp dụng cho Khách hàng cá nhân vay từng lần)
+                                (Applied to Individual Customer – One time loan)
+
+Điều 1.           Định Nghĩa
+Article 1.        Definitions
+
+Trong Hợp Đồng, trừ khi được quy định khác đi tại từng điều khoản cụ thể, các thuật ngữ được định nghĩa như sau:
+In the Agreement, unless the context requires otherwise, the definitions are interpreted as follows:
+
+1.1.     “Hợp Đồng” là Hợp đồng tín dụng, bao gồm nội dung trong Hợp đồng tín dụng, Điều khoản và Điều kiện chung
+         Hợp đồng tín dụng và các phụ lục và/hoặc bản sửa đổi/bổ sung/ điều chỉnh (nếu có).
+         “Agreement” is the Credit Agreement, includes contents of the Credit Agreement, General Terms and Conditions
+         of the Credit Agreement and its annex(es) and/or amendments/supplements/ adjustments thereof (if any).
+
+1.2.     “Hợp Đồng Bảo Đảm” là (các) thỏa thuận và/hoặc văn bản về việc cầm cố, thế chấp, bảo lãnh, ký quỹ,… được
+         ký kết bởi/giữa Ngân Hàng và/hoặc Khách Hàng và/hoặc bên thứ ba mà theo đó, Khách Hàng và/hoặc bên thứ ba
+         dùng quyền sở hữu/quyền sử dụng hợp pháp của mình đối với tài sản và/hoặc dùng uy tín, cam kết của mình để
+         bảo đảm cho các nghĩa vụ của Khách Hàng theo Hợp đồng và các văn bản, thỏa thuận khác kèm theo (nếu có).
+         “Sercurity Agreement(s)” means an agreement(s) and/or document(s) on pledged, mortgaged, guarantee,
+         deposit… signed by/between the Bank and/or the Customer and/or third party(ies), to which, the Customer and/or
+         third party(ies) use their legal ownership/use right over asset(s) and/or use their credit, commitment to secure the
+         Customer’s obligations under the Agreement and other attached agreement, documents thereof (if any).
+
+1.3.     “Khoản Vay” là tổng số tiền đã được Ngân Hàng giải ngân cho Khách Hàng theo các Đơn rút vốn vay kiêm Khế
+         ước nhận nợ căn cứ vào Hợp Đồng.
+         “Loan” means the total loan amount which is disbursed by the Bank to the Customer based on Drawdown
+         Application Cum Debt Acknowlegement belonged to the Agreement thereof.
+
+1.4.     “Khách Hàng” là bên được cấp tín dụng với thông tin tại phần đầu Hợp Đồng.
+         “Customer” means the debtor with information stipulated in begining of the Agreement therein.
+
+1.5.     “Ngày Làm Việc” là bất kỳ ngày nào, trừ thứ Bảy, Chủ nhật, ngày nghỉ lễ, tết theo quy định của pháp luật Việt
+         Nam và ngày mà Ngân Hàng được phép hoặc bắt buộc phải đóng cửa theo quyết định của người/cơ quan nhà nước
+         có thẩm quyền.
+         “Business Day” measn any day, excluded Saturday, Sunday, holidays, Tet holidays in accordance with the laws
+         of Vietnam and days which the Bank is allowed or required to close as decision of competent authority.
+
+1.6.     “Ngân Hàng” là bên cấp tín dụng với thông tin tại phần đầu của Hợp Đồng.
+         “Bank” means the creditor with information stipulated in beginning of the Agreement therein.
+
+1.7.     “Nợ Quá Hạn” là khoản nợ mà một phần hoặc toàn bộ nợ gốc và/hoặc lãi không được hoàn trả đầy đủ vào ngày
+         đến hạn.
+         “Overdue debt” means the debt which has a part or entire of its principal and/or interest has not been fully repaid
+         on due date.
+
+1.8.     “Thời Gian Ân Hạn” là khoảng thời gian mà Khách Hàng không phải trả nợ gốc, chỉ thanh toán nợ lãi.
+         “Grace Period” means the period, that the Customer shall not repay principal, only pay interest.
+
+1.9.     “Thời Hạn Cho Vay” là khoảng thời gian được tính từ ngày tiếp theo của ngày giải ngân vốn vay đầu tiên đến
+         thời điểm Khách Hàng phải trả hết nợ gốc và lãi tiền vay theo thỏa thuận giữa Khách Hàng và Ngân Hàng. Trường
+         hợp ngày cuối cùng của Thời Hạn Cho Vay không phải là Ngày Làm Việc, thì chuyển sang Ngày Làm Việc tiếp
+         theo.
+         “Loan Term” shall be the period that is counted from the next date of the first drawdown date to the date the
+         Customer fulfills all of principal and interest debts as agreed between the Customer and the Bank. When the final
+         day of the Loan Term is not a Business Day, it shall be adjourned to the next Business Day.
+
+1.10.    “Thời Hạn Rút Vốn Vay”: là khoảng thời gian mà Khách Hàng được phép rút vốn vay và được quy định tại Hợp
+         Đồng.
+
+Mẫu số: 040101R.1.1                                                                                           Trang 1 / 17
+Hiệu lực: 09/2023       Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                         (Ký tên)
+         “Loan Withdrawal Period” means the period that the Customer is allowed to withdraw the Loan and mentioned
+         in the Agreement.
+
+1.11.    “Thời Hạn Rút Vốn Vay Lần Đầu” là khoảng thời gian mà Khách Hàng được phép rút vốn vay lần đầu và được
+         quy định tại Mục I của Hợp Đồng này.
+         “First Loan Withdrawal Period” means the period that the Customer is allowed to firstly withdraw the Loan and
+         stipulated in Item I of the Agreement.
+
+1.12.    “Sự Kiện Vi Phạm” là các sự kiện được quy định tại Điều 10.1 của Hợp Đồng này.
+         “Event of Default” means events provided in the Article 10.1 of this Agreement.
+
+1.13.    “Văn Kiện Tín Dụng” là (các) thỏa thuận và/hoặc văn bản quy định về việc cấp và sử dụng Khoản Vay bao gồm
+         nhưng không giới hạn bởi Hợp Đồng, Đơn rút vốn vay kiêm Khế ước nhận nợ, Thông báo về việc chuyển nợ quá
+         hạn, chấm dứt cho vay và thu hồi nợ trước hạn,… cùng tất cả các phụ lục, sửa đổi, bổ sung, thay thế và các văn
+         bản kèm theo khác (nếu có) được ký kết bởi/giữa Ngân Hàng và/hoặc Khách Hàng.
+         “Credit Documents” means agreement(s) and/or document(s) on providing and using the Loan, including but
+         not limited by Agreement, Drawdown Application Cum Debt Acknowledgement, Notification letter on overdue
+         debt, termination of loan and collect debt before maturity, … and all annex(es), amendments, supplements,
+         replacements and other attached documents thereof (if any) signed by/between the Bank and/or the Customer.
+
+Điều 2.          Rút Vốn Vay
+Article 2.       Loan Withdrawal
+
+2.1.     Quá Thời Hạn Rút Vốn Vay Lần Đầu hoặc Thời Hạn Rút Vốn Vay, Khách Hàng đương nhiên bị mất quyền sử
+         dụng Khoản Vay hoặc giá trị Khoản Vay còn lại. Tuy nhiên, việc quyết định có tiếp tục giải ngân hay không sẽ
+         được Ngân Hàng quyết định căn cứ vào tình hình thị trường và khả năng thu xếp nguồn vốn của Ngân Hàng.
+         After the First Loan Withdrawal Period or the Loan Withdrawal Period, the Customer shall lose the right to
+         utilize the Loan or the remaining commitment amount of the Loan. However, the Bank reserves the right to decide
+         whether to continue granting credit or not based on the actual market situation and the fund availability of the
+         Bank.
+
+2.2.     Phương thức giải ngân:
+         Loan disbursement method:
+
+         Ngân Hàng sẽ giải ngân Khoản Vay cho Khách Hàng bằng việc giao cho Khách Hàng một khoản tiền thông qua
+         dịch vụ thanh toán không dùng tiền mặt và/hoặc bằng tiền mặt theo qui định của pháp luật để thanh toán cho
+         Bên thụ hưởng theo mục đích sử dụng vốn vay.
+         The Bank shall disburse the Loan to the Customer via transferring to the Customer a sum of money by non-cash
+         payment service and/or payment in cash in accordance with the law to pay to beneficiary in accordance with the
+         loan using purpose.
+
+Điều 3.          Lãi Trong Hạn
+Article 3.       Normal Interest
+
+3.1.     Phương pháp tính lãi trong hạn:
+         Normal Interest Calculation Method
+
+         Tiền lãi vay trong hạn bằng (=) dư nợ gốc thực tế nhân (x) với Lãi suất vay trong hạn nhân (x) với số ngày
+         vay thực tế rồi chia (:) cho 365 (ngày)
+         Normal Interest Amount shall be equal (=) to actual outstanding principal multiplied (x) by Normal Interest
+         Rate multiplied (x) by number of actual drawdown days then divided (:) by 365 (days)
+
+         Trong đó, số ngày vay thực tế của từng khoản rút vốn được tính từ ngày rút vốn vay trên Đơn rút vốn vay kiêm
+         Khế ước nhận nợ cho đến ngày trước ngày thực thanh toán nhưng không vượt quá ngày đến hạn.Trường hợp
+         Khách Hàng trả nợ ngay trong ngày rút vốn vay, số ngày vay thực tế sẽ được tính là một (01) ngày.
+         In which, the number of days of loan in actual of each drawdown shall be calculated from the drawdown date on
+         Drawdown Application Cum Debt Acknowledgement to the date before the actual repayment date but shall not
+         exceed the due date. In case, the Loan is repaid on the drawdown date, the number of actual drawdown days shall
+         be deemed as one (01) day.
+
+3.2.     Lãi suất tham chiếu:
+Mẫu số: 040101R.1.1                                                                                       Trang 2 / 17
+Hiệu lực: 09/2023      Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                        (Ký tên)
+         Base interest rate
+
+         Lãi suất tham chiếu được qui định tại Hợp Đồng là chi phí huy động vốn của Ngân Hàng được xác định hàng
+         tháng dựa trên bình quân lãi suất tiết kiệm của Ngân Hàng và các ngân hàng khác mà Ngân Hàng tham chiếu và
+         biên độ chi phí của Ngân hàng.
+         The base interest rate stipulated in the Agreement is cost of capital mobilization which monthy determined by the
+         Bank basing on the average term deposit rate of the Bank and other banks referred by the Bank and the Bank’s
+         expense margin.
+
+3.3.     Trường hợp Khách Hàng đề nghị hợp nhất các khoản rút vốn vay hiện hữu và được Ngân Hàng chấp thuận thì lãi
+         suất cho vay của tất cả các khoản rút vốn vay đề nghị hợp nhất này sẽ được ấn định lại theo mức lãi suất vào ngày
+         hợp nhất. Mức lãi suất được ấn định lại này được áp dụng cho toàn bộ dư nợ vay thực tế trong suốt Thời Hạn Cho
+         Vay còn lại. Tiền lãi vay phát sinh đến ngày liền trước ngày hợp nhất và các khoản lãi, phí khác (nếu có) của các
+         khoản rút vốn vay đề nghị hợp nhất này sẽ được thu trước khi thực hiện hợp nhất.
+         In case the Customer suggest to merge all existing drawdowns and get the approval from the Bank, the interest
+         rate of all drawdowns which suggest to merge, will be re-priced at the interest rate on the date of application for
+         merging. The repricing interest rate will be applied for whole actual outstanding balance which suggest to merge
+         during remaining Loan Term. The interest arising up to the day immediately preceding the merging date and
+         other interests and fees (if any) of all existing drawdowns suggested for merging will be collected before the
+         merging is performed.
+
+Điều 4.           Lãi Quá Hạn
+Article 4.        Overdue Interest
+
+4.1.     Lãi suất quá hạn:
+         Overdue interest rate:
+
+         (a)      Lãi suất quá hạn áp dụng đối với khoản nợ gốc được tính bằng 150% Lãi Suất Trong Hạn áp dụng tại
+                  thời điểm chuyển Nợ Quá Hạn (“Lãi Suất Quá Hạn”);
+                  The applied overdue interest rate for principal(s) shall be equal to 150% of the Normal Interest Rate
+                  applied at the time of Overdue Debt conversion (“Overdue Interest Rate”);
+
+         (b)      Lãi suất quá hạn áp dụng đối với khoản nợ lãi bằng với Lãi Suất Quá Hạn nhưng không vượt quá
+                  10%/năm;
+                  The applied overdue interest rate for interest(s) shall be equal to Overdue Interest Rate but not exceed
+                  10% per annum.
+
+4.2.     Phương pháp tính lãi quá hạn:
+         Overdue interest calculation method:
+
+         (a)      Tiền lãi trên nợ gốc quá hạn bằng (=) nợ gốc quá hạn nhân (x) với số ngày thực tế quá hạn, nhân (x) Lãi
+                  Suất Quá Hạn, rồi chia (:) cho 365 (ngày).
+                  Interest on overdue principal is equal (=) to overdue principal multiplied (x) by number of actual overdue
+                  days, multiplied (x) by Overdue Interest Rate, then divided (:) by 365 (days).
+
+         (b)      Tiền lãi trên nợ lãi quá hạn bằng (=) nợ lãi quá hạn nhân (x) với số ngày thực tế quá hạn, nhân (x) với
+                  Lãi Suất Quá Hạn (không quá 10%/năm), rồi chia (:) cho 365 (ngày).
+                  Interest on overdue interest is equal (=) to overdue interest multiplied (x) by number of actual overdue
+                  days, multiplied (x) by Overdue Interest Rate (not exceed 10%/year), then divided (:) by 365 (days).
+
+         Trong đó, số ngày thực tế quá hạn được tính từ ngày đến hạn trả nợ cho đến ngày trước ngày mà Khách Hàng
+         thực trả số nợ gốc hoặc nợ lãi quá hạn tương ứng.
+         In which, the number of actual overdue days is calculated from due date to the date before the date the Customer
+         repays corresponding overdue principal or interest.
+
+Điều 5.           Phí
+Article 5.        Fees and charges
+
+         Khách Hàng thanh toán các loại phí liên quan đến việc cấp tín dụng và thực hiện các giao dịch theo Hợp Đồng và
+         quy định của Ngân Hàng trong từng thời kỳ phù hợp với quy định của pháp luật.
+
+Mẫu số: 040101R.1.1                                                                                          Trang 3 / 17
+Hiệu lực: 09/2023       Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                         (Ký tên)
+         The Customer shall pay all fees and charges related to credit granting and transactions implementation under
+         the Agreement and the Bank’s policy from time to time in compliance with the laws.
+Điều 6.          Trả nợ
+Article 6.       Repayment
+
+6.1.    Trả nợ gốc:
+        Principal Repayment:
+
+        (a)      Khách Hàng phải trả nợ gốc của Khoản Vay cho Ngân Hàng vào các Ngày trả nợ gốc được qui định cụ
+                 thể trong các Đơn rút vốn vay kiêm Khế ước nhận nợ và/hoặc các văn bản liên quan.
+                 The Customer must repay principal of the Loan to the Bank as per the term stipulated on the Drawdown
+                 Application Cum Debt Acknowledge and/or other related documents.
+
+        (b)      Khách Hàng và/hoặc bên thứ ba bất kỳ (không phải Khách Hàng) có thể trả nợ gốc trước hạn khi đáp
+                 ứng các điều kiện sau:
+                 The Customer and/ or any else third party (not the Customer) could make early prepayment of the
+                 principals when satisfy all conditions as follow:
+
+                 (i)        Khách Hàng và/hoặc bên thứ ba đã trả hết các khoản nợ gốc và lãi đến hạn và quá hạn (nếu có);
+                            và
+                            All of the due and overdue (if any) principals and interests are fully repaid by the Customer
+                            and/ or third party; and
+
+                 (ii)       Khách Hàng và/hoặc bên thứ ba đã thanh toán đầy đủ cho Ngân Hàng phí trả nợ trước hạn, các
+                            khoản phí, lệ phí khác có liên quan, tiền phạt và bồi thường thiệt hại (nếu có); và
+                            The Customer and/ or third party has fully paid early repayment fee, other related fees, expenses,
+                            fines, damages (if any) to the Bank; and
+
+                 (iii)      Được Ngân Hàng chấp thuận dựa vào chính sách cho vay của Ngân Hàng trong từng thời kỳ.
+                            Agreed by the Bank in accordance with the Bank’s policy from time to time.
+
+6.2.    Nợ Quá Hạn
+        Overdue debt
+
+        (a)      Ngân Hàng được quyền đơn phương chuyển Nợ Quá Hạn khi xảy ra một trong các trường hợp sau (không
+                 áp dụng cho trường hợp Khách Hàng đã có văn bản đề nghị cơ cấu lại thời hạn trả nợ và đã được chấp
+                 thuận bởi Ngân Hàng như được đề cập cụ thể tại Điều 6.3):
+                 The Bank has the right to unilaterally convert Overdue Debt in any of the following situations (not
+                 applied for the case of Customer has the written request on debt restructuring has approved by the Bank
+                 as mentioned in the Article 6.3)
+
+                 (i)        Khi Khách Hàng không thanh toán hoặc thanh toán không đầy đủ bất kỳ khoản gốc và/hoặc lãi
+                            và/hoặc phí nào vào ngày đến hạn trả nợ; hoặc
+                            In case the Customer fails to fulfill or insufficiently fulfill any principal and/or interest and/or
+                            fee on the due date; or
+
+                 (ii)       Khi Ngân Hàng tuyên bố Sự Kiện Vi Phạm theo Điều 10;
+                            In cases the Bank declares the “Event of Default” under Article 10 of the Agreement.
+
+        (b)      Khi một khoản nợ bị quá hạn, Ngân Hàng sẽ áp dụng Lãi Suất Quá Hạn cho khoản nợ đó;
+                 When a debt is overdue, it shall be applied the overdue interest rate by the Bank;
+
+        (c)      Trong suốt thời gian phát sinh Nợ Quá Hạn, mọi yêu cầu giải ngân của Khách Hàng tại Ngân Hàng sẽ
+                 do Ngân Hàng toàn quyền xem xét quyết định đối với từng trường hợp.
+                 During the period that Overdue Debts are arising, all the Customer’s requests for disbursement shall be
+                 decided the Bank at its sole discretion on a case by case.
+
+6.3.    Cơ cấu lại thời hạn trả nợ:
+        Debt restructuring
+
+
+Mẫu số: 040101R.1.1                                                                                             Trang 4 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+        (a)      Trường hợp cần cơ cấu lại thời hạn trả nợ, thì chậm nhất 15 Ngày Làm Việc trước ngày đến hạn của Kỳ
+                 hạn trả nợ gốc và/hoặc lãi, Khách Hàng phải gửi văn bản đề nghị đến Ngân Hàng, trong đó nêu rõ lý do
+                 đề nghị cơ cấu lại thời hạn trả nợ, lịch trả nợ mới và các hồ sơ theo yêu cầu của Ngân Hàng.
+                 If arising the demand of debt restructuring, the Customer must sent written request which mentions the
+                 reason of requesting debt restructuring, new repayment schedule and other documents as the Bank’s
+                 requirement to the Bank prior at least fifteen (15) Business Day before due date;.
+
+        (b)      Ngân Hàng có toàn quyền quyết định chấp thuận hoặc từ chối cơ cấu lại thời hạn trả nợ. Việc cơ cấu lại
+                 thời hạn trả nợ chỉ được xem là đã được đồng ý khi Ngân Hàng phát hành văn bản chấp thuận về việc
+                 đó.
+                 The Bank, as its sole discretion, decides on acceptance or rejection of debt restructuring. Debt
+                 restructuring is only deemed as accepted when the Bank issues written acceptance for its.
+
+6.4.    Đồng tiền trả nợ vay:
+        Repayment currency
+
+        Đồng tiền Khách Hàng sử dụng để trả nợ vay (gốc, lãi) phải là Đồng tiền cho vay. Đồng tiền sử dụng để thanh
+        toán phí và các nghĩa vụ tài chính khác theo Hợp Đồng là đồng Việt Nam. Trường hợp Ngân Hàng tự động trích
+        tài khoản tiền gửi của Khách Hàng để thu nợ thì Ngân Hàng có quyền chuyển đổi số tiền thu nợ trên tài khoản đó
+        sang đồng tiền trả nợ theo tỷ giá niêm yết của Ngân Hàng tại thời điểm chuyển đổi phù hợp với quy định của
+        Ngân hàng Nhà nước Việt Nam.
+        The currency that the Customer uses to pay off the debts (principal, interest) is the Loan currency. The currency
+        used to pay fees and other financial obligations under the Agreement shall be in Vietnam Dong. In case the Bank
+        automatically debits the Customer’s deposit account with its currency is different repayment currency, the Bank
+        has the right to convert the corresponding amount on that account into the repayment currency at the exchange
+        rate announced by the Bank at the time of conversion and complying with regulations of State Bank of Vietnam.
+
+6.5.    Thứ tự thu nợ:
+        Debt collection order
+
+        (a)      Khoản nợ trong hạn sẽ được thu theo thứ tự như sau: các khoản chi phí, phí của Ngân Hàng, các khoản
+                 tiền phạt, tiền bồi thường thiệt hại (nếu có), tiền lãi trên dư nợ gốc trong hạn, các khoản nợ gốc đến hạn
+                 và các khoản có liên quan khác. Ngân Hàng bằng quyền tự quyết của mình có quyền thay đổi thứ tự ưu
+                 tiên này mà không cần được Khách Hàng đồng ý.
+                 The due debts shall be collected in order as follows: costs, banking fees and charges, penalties,
+                 compensation (if any), interest on due principals, due principals, fees and other relevant amounts. The
+                 Bank, at its sole discretion, may change such collection order without the Customer’s agreement.
+
+        (b)      Đối với Nợ Quá Hạn, thứ tự thu nợ được thực hiện như sau: chi phí để xử lý và thu hồi Nợ Quá Hạn, nợ
+                 gốc quá hạn, lãi quá hạn trên gốc, lãi quá hạn trên lãi, lãi đến hạn và các loại phí và các khoản có liên
+                 quan khác. Đối với khoản nợ vay có một hoặc một số kỳ hạn trả nợ bị quá hạn, Ngân Hàng thực hiện thu
+                 nợ theo thứ tự sau đây: (i) nợ gốc đã quá hạn, (ii) nợ lãi trên nợ gốc quá hạn chưa trả (bao gồm lãi đến
+                 hạn chưa thanh toán, lãi quá hạn trên gốc, lãi quá hạn trên lãi), (iii) nợ gốc đến hạn, (iv) nợ lãi trên nợ
+                 gốc mà đến hạn chưa trả.
+                 In case of overdue loan, debt collection order will be as follows: fees to settle and collect the Overdue
+                 Debt, overdue principal, overdue interest on principal, overdue interest on interest, due interest, other
+                 fees and relevant amounts. In case a loan with one or some installments are overdue, the bank shall
+                 collect according to this order: (i) overdue principal, (ii) unpaid interest on overdue principal (including
+                 unpaid due interest amount, overdue interest on principal, overdue interest on interest), (iii) due
+                 principal, (iv) due interest on unpaid due principal.
+
+        (c)      Trong trường hợp Khoản Vay được trả nợ trước hạn một phần, số tiền trả nợ trước hạn sẽ được dùng để
+                 thanh toán cho (các) kỳ trả nợ gốc tiếp theo của Khoản Vay, số tiền gốc của (các) kỳ trả nợ còn lại (nếu
+                 có) không thay đổi, trừ trường hợp được Ngân Hàng chấp thuận khác đi.
+                 In case of partial early prepayment, in principle, the prepayment amount is used to pay for next
+                 repayment period, the principal amount of remaining repayment period(s) (if any) remains unchanged,
+                 unless other approval of the Bank is required.
+
+        (d)      Vào ngày đến hạn trả nợ, Ngân Hàng được tự động trích tiền từ bất kỳ các tài khoản nào của Khách Hàng
+                 mở tại Ngân Hàng để thu nợ.
+
+Mẫu số: 040101R.1.1                                                                                           Trang 5 / 17
+Hiệu lực: 09/2023     Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                        (Ký tên)
+                  On the due date, the Bank shall automatically debit from any the Customer’s account which opened at
+                  the Bank to collect debt.
+
+Điều 7.           Tài Sản Bảo Đảm
+Article 7.        Collateral
+
+ (Không áp dụng trong trường hợp không có tài sản bảo đảm)
+(Not applied in case no collateral)
+
+7.1.     Thông tin chi tiết về (các) tài sản bảo đảm và việc bảo đảm cho các nghĩa vụ của Khách Hàng được quy định cụ
+         thể trong (các) Hợp Đồng Bảo Đảm có liên quan.
+         The detailed information on collateral(s) and security for the Customer’s obligations are provided in the related
+         Security Agreement(s).
+
+7.2.     Khách Hàng có trách nhiệm hoàn tất các thủ tục cần thiết để thế chấp, cầm cố, ký quỹ…tài sản bảo đảm cho Ngân
+         Hàng theo chỉ dẫn của Ngân Hàng và qui định pháp luật.
+         The Customer must finish all necessary procedures to mortgage, pledge, deposit … the collateral to the Bank as
+         the Bank’s guidline and regulation of law.
+
+7.3.     Ngân Hàng tiến hành thủ tục đăng ký giao dịch bảo đảm tại cơ quan Nhà nước có thẩm quyền đối với tài sản bảo
+         đảm theo quy định của pháp luật hiện hành.
+         The Bank carries out the procedure for registration of security transaction at competent authorities for the
+         collateral in accordance with the applicable law.
+
+7.4.     Đối với (các) tài sản bảo đảm phải mua bảo hiểm theo quy định của Ngân hàng trong từng thời điểm:
+         For collateral(s) required to buy insurance as per the Bank’s regulation from time to time:
+
+         (a)      Khách Hàng phải bảo đảm luôn duy trì bảo hiểm cho tài sản bảo đảm trong suốt thời gian từ trước khi
+                  giải ngân đến khi đã hoàn tất mọi nghĩa vụ trả nợ cho Ngân Hàng theo các điều kiện và yêu cầu của Ngân
+                  Hàng, trong đó, Ngân Hàng là Bên thụ hưởng đầu tiên và mọi thay đổi liên quan đến tài sản được bảo
+                  hiểm, Bên thụ hưởng và số tiền bảo hiểm (nếu có) phải được sự chấp thuận bằng văn bản của Ngân Hàng;
+                  The Customer must ensure to always have insurance for the collaterals during the time from prior to
+                  using the granted credit until all Customer’s repayment obligations have been fulfilled to the Bank in
+                  accordance with the Bank’s conditions and requirements, in which, the Bank is the first beneficiary and
+                  all changes relating to the insured collaterals, the beneficiary and insurance amount (if any) must be
+                  approved in writing by the Bank;
+
+         (b)      Các chứng từ chứng minh việc mua bảo hiểm tài sản phải được cung cấp cho Ngân Hàng để lưu giữ theo
+                  yêu cầu của Ngân Hàng. Số tiền bảo hiểm đối với tài sản bảo đảm sẽ được xem như một phần không tách
+                  rời của tài sản bảo đảm;
+                  Evidences of insurance purchasing shall be provided to the Bank for keeping purposes as the Bank’s
+                  requirement. The insurance amount with respect to the collaterals shall be considered as an integral
+                  part of the collaterals;
+
+         (c)      Thời hạn hiệu lực của bảo hiểm phải được duy trì trong suốt thời hạn từ trước khi giải ngân đến khi đã
+                  hoàn tất mọi nghĩa vụ trả nợ cho Ngân Hàng. Trong trường hợp thời hạn hiệu lực của bảo hiểm ngắn hơn
+                  thời hạn này, Khách Hàng có trách nhiệm gia hạn bảo hiểm và cung cấp giấy chứng nhận bảo hiểm mới
+                  cho Ngân Hàng ít nhất trong vòng 30 Ngày Làm Việc trước ngày hết hiệu lực của bảo hiểm. Nếu Khách
+                  Hàng không cung cấp giấy chứng nhận bảo hiểm mới theo quy định tại điều này thì Ngân Hàng có quyền
+                  nhưng không phải là nghĩa vụ:
+                  The validity period of insurance must be maintained during the period from prior to using the granted
+                  credit until all Customer’s repayment obligations has been fulfilled to the Bank.. In case the validity
+                  period of insuranceis shorter than such period, the Customer must extend the validity period of insurance
+                  and provides the new insurance certificate to the Bank at least within 30 Business Days prior to the
+                  insurance expiry date. In case the Customer doesn’t not provide the new insurance certificate in
+                  accordance with this term, the Bank is entitled but not obliated to:
+
+                  (i)      Lựa chọn công ty bảo hiểm và tự động trích tiền từ bất kỳ tài khoản nào của Khách Hàng tại
+                           Ngân Hàng để nhân danh Khách Hàng mua/gia hạn bảo hiểm với giá trị bảo hiểm tối thiểu bằng
+
+
+Mẫu số: 040101R.1.1                                                                                         Trang 6 / 17
+Hiệu lực: 09/2023       Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                         (Ký tên)
+                            với giá trị của tài sản bảo đảm hoặc nghĩa vụ được bảo đảm mà không cần Khách Hàng chấp
+                            thuận hay ký bất cứ hồ sơ/giấy tờ nào; và/hoặc
+                            Choose the insurance company and automatically debit from any account of the Customer at
+                            the Bank to buy/extend insurance in favor of the Customer with the minimum insurance value
+                            shall be equal to value of collaterals or secured obligations without the Customer’s acceptance
+                            or signing any document/paper; and/or
+
+                  (ii)      Đơn phương tuyên bố Sự Kiện Vi Phạm và tiến hành thu hồi nợ như quy định tại Hợp Đồng;
+                            Unilaterally declare the Event of Default and carry out debt recovery as mentioned in the
+                            Agreement;
+
+         (d)      Trong suốt thời hạn hiệu lực của Hợp Đồng, Khách Hàng đồng ý cho Ngân Hàng được quyền cung cấp
+                  thông tin Khách Hàng và tài sản bảo đảm cho công ty bảo hiểm mà Ngân Hàng lựa chọn để hỗ trợ Khách
+                  Hàng thực hiện mua/gia hạn bảo hiểm;
+                  During the effectiveness of the Agreement, the Customer agrees that the Bank can provide information
+                  on the Customer and collateral to the selected insurance company to buy/extend insurance;
+
+         (e)      Khách Hàng theo đây đồng ý không hủy ngang để Ngân Hàng với tư cách là bên thụ hưởng và/hoặc ủy
+                  quyền cho Ngân Hàng sẽ trực tiếp nhận các khoản bồi thường bảo hiểm khi có sự kiện bảo hiểm xảy ra.
+                  Ngân Hàng tùy theo quyết định của mình có thể sử dụng các khoản bồi thường bảo hiểm để khấu trừ các
+                  khoản chi phí cần thiết (nếu có) và thu nợ (kể cả việc thu nợ trước hạn) trừ trường hợp các bên có thỏa
+                  thuận khác. Nếu các khoản bồi thường bảo hiểm chưa đủ để trả nợ thì Khách Hàng có nghĩa vụ bổ sung
+                  tài sản hoặc biện pháp đảm bảo khác được Ngân Hàng chấp nhận. Nếu các khoản bồi thường bảo hiểm
+                  còn dư, Ngân Hàng sẽ hoàn trả lại phần còn dư đó cho Khách Hàng.
+                  The Customer hereby irrevocably agrees that the Bank as the beneficiary and/or authorizes to the Bank
+                  shall directly receive the insurance compensation amounts if any insurance event occurs. The Bank, at
+                  its sole discretion, can use the insurance compensation amounts to deduct necessary fees (if any) and
+                  recover debts (including early debt recovery) except for other agreement between both parties. In case
+                  that the insurance compensation amounts are not enough for repayment, the Customer is responsible to
+                  supplement other collaterals or security methods accepted by the Bank. The leftover of insurance
+                  compensation amounts (if any) shall be returned to the Customer by the Bank
+
+7.5.     Trong trường hợp, Ngân Hàng tuyên bố Sự Kiện Vi Phạm mà Khách Hàng không thực hiện nghĩa vụ trả nợ cho
+         Ngân Hàng, Ngân Hàng được toàn quyền và Khách Hàng đồng ý xử lý tài sản bảo đảm để thu hồi nợ theo các
+         phương thức được quy định cụ thể trong (các) Hợp Đồng Bảo Đảm có liên quan. Đồng thời, các khoản nợ khác
+         tuy chưa đến hạn cũng được coi là đến hạn và Ngân Hàng đương nhiên được quyền xử lý toàn bộ tài sản bảo đảm
+         để thu hồi toàn bộ nợ.
+         In case that, the Bank declared Event of Default and the Customer fails to repay for the Bank, the Bank is fully
+         entitle and the Customer agrees to settle collaterals for debt collection by the measures as stated in the relevant
+         Security Agreement(s). Also, other debts, which are not yet been due, shall be considered to become due debts
+         and the Bank shall have full rights to settle all collaterals to collect the whole debts.
+
+7.6.     Trong trường hợp nghĩa vụ trả nợ của Khách Hàng được bảo đảm bằng nhiều biện pháp bảo đảm thì Ngân Hàng
+         có quyền lựa chọn một hoặc các biện pháp bất kỳ nào trong số các biện pháp bảo đảm đó để xử lý theo thứ tự do
+         Ngân Hàng quyết định nhằm thu hồi nợ. Việc thay đổi một hoặc một số biện pháp bảo đảm, tài sản bảo đảm không
+         làm ảnh hưởng đến việc xử lý các biện pháp bảo đảm, tài sản bảo đảm khác.
+         In case the Customer’s repayment obligation is secured by various security measures, the Bank has right to choose
+         one or several of those security measures to settle in the order decided by the Bank for debt recovery. The change
+         of one or several security measures, collaterals shall have no effect on settlement of other security
+         measures/collaterals.
+
+7.7.     Trong trường hợp Khách Hàng không đồng thời là Bên bảo đảm, Khách Hàng mặc nhiên thừa nhận và đồng ý với
+         nội dung Hợp Đồng Bảo Đảm, biện pháp bảo đảm mà không phụ thuộc vào việc Khách Hàng có tham gia ký kết,
+         xác lập Hợp Đồng Bảo Đảm, biện pháp bảo đảm hay không.
+         In case, the Customer is not the securing party, the Customer automatically acknowleges and agrees with all
+         terms of the Security Agreement, security measures regardless of whether the Customer signs, makes such Security
+         Agreement, such security measures or not.
+
+Điều 8.           Quyền và Nghĩa Vụ của Ngân Hàng
+Article 8.        Rights and Obligations of the Bank
+
+Mẫu số: 040101R.1.1                                                                                          Trang 7 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+Ngoài các quyền và nghĩa vụ khác được quy định theo (các) Văn Kiện Tín Dụng, (các) Hợp Đồng Bảo Đảm và theo quy
+định của pháp luật, Ngân Hàng có các quyền và nghĩa vụ sau đây:
+In addition to the other rights and obligations under the Credit Documents, Security Agreement(s) and regulations of laws,
+the Bank has the following rights and obligations:
+
+8.1.     Quyền của Ngân Hàng:
+         Rights of the Bank:
+
+         (a)      Từ chối cho vay và/hoặc ngừng giải ngân tiền vay khi xảy ra một trong các trường hợp sau:
+                  To refuse the credit granting and/or terminate disbursement request in any of the following situations:
+
+                  (i)        Khách Hàng không đáp ứng đủ các điều kiện, thủ tục vay vốn/giải ngân theo yêu cầu của Ngân
+                             Hàng; hoặc
+                             The Customer fails to fully satisfy conditions, procedures on loan/disbursement as required by
+                             the Bank’s requirements;
+
+                  (ii)       Khách Hàng cung cấp thông tin sai sự thật, vi phạm quy định của Hợp Đồng, Hợp Đồng Bảo
+                             Đảm và các Văn Kiện Tín Dụng.
+                             The Customer supplies wrong information, violates regulation of the Agreement, Sercurity
+                             Agreement and Credit Documents.
+
+                  (iii)      Khách Hàng có phát sinh (i) thêm dư nợ và/hoặc phát sinh Nợ Quá Hạn tại bất kỳ Tổ chức tín
+                             dụng nào; hoặc (ii) xảy ra Sự kiện vi phạm mà Ngân Hàng đánh giá là có khả năng ảnh hưởng
+                             đến khả năng tài chính để trả nợ cho Ngân Hàng;
+                             The Customer has incurred (i) additional loan balances and/or Overdue Debts at any Credit
+                             Institution; or (ii) occurrence of an Event of Default which the Bank considers likely to affect
+                             the financial ability to repay loan at the Bank;
+
+                  Riêng đối với trường hợp Khách Hàng có các khoản cấp tín dụng liên quan đến các dự án đầu tư phải
+                  thực hiện quản lý rủi ro về môi trường theo quy định pháp luật hiện hành, Ngân Hàng có quyền (i) từ
+                  chối giải ngân và/hoặc tăng lãi suất cho vay nếu tại thời điểm giải ngân Dự án được đánh giá (lại) có rủi
+                  ro về môi trường và/hoặc nâng hạng rủi ro về môi trường, hoặc (ii) ghi nhận và xử lý Sự Kiện Vi Phạm
+                  theo Điều 10 dưới đây.
+                  Particularly for the case where the Customer has credits related to investment projects that must manage
+                  environmental risks in accordance with current laws, the Bank has the right to (i) refuse to disburse
+                  and/or increase the loan interest rate if at the time of disbursement the Project is re-evaluated to have
+                  environmental risks and/or environmental risk upgrade, or (ii) record and declare the Event of Default
+                  in accordance with Article 10 below.
+
+
+         (b)      Kiểm tra (định kỳ hoặc đột xuất) hoặc yêu cầu Khách Hàng thông báo, cung cấp các báo cáo, tài liệu
+                  chứng minh về việc sử dụng vốn vay, tình hình tài chính, tài sản, thu nhập của Khách Hàng, về tài sản
+                  bảo đảm, hoặc các thông tin khác liên quan đến Khoản Vay hoặc đến tình hình thực hiện nghĩa vụ trả nợ
+                  của Khách Hàng;
+                  To examine (regularly or irregularly) or request the Customer to report, provide all kinds of reports,
+                  materials for proving loan using purpose, status of finance, assets of the Customer, revenues, collaterals,
+                  and other information relating to the Loan or the performance of the Customer’s repayment obligations.
+
+
+
+
+Mẫu số: 040101R.1.1                                                                                           Trang 8 / 17
+Hiệu lực: 09/2023         Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                           (Ký tên)
+        (c)      Yêu cầu Khách Hàng sử dụng mọi tài sản, nguồn thu của Khách Hàng để thanh toán các khoản nợ cho
+                 Ngân Hàng đầy đủ, đúng hạn;
+                 To require the Customer to use all of their assets and revenues to pay all debts to the Bank in full and on
+                 time.
+
+        (d)      Trường hợp để thanh toán cho bất cứ khoản nợ gốc, nợ lãi, phí nào đã đến hạn mà chưa được Khách
+                 Hàng thanh toán, ngay khi Ngân Hàng tuyên bố Sự Kiện Vi Phạm, Ngân Hàng được quyền tự động:
+                 In case of payment for any principal, interest, fees which are due but have not been repaid by the
+                 Customer or when the Bank declares Event of Default, the Bank shall have the rights automatically:
+                 (i)     Phong tỏa bất kỳ tài khoản nào của Khách Hàng tại Ngân Hàng;
+                         To block any the accounts of Customer at the Bank.
+
+                 (ii)       Trích tiền ký quỹ, tiền trong tài khoản hoặc bất kỳ khoản tiền nào khác của Khách Hàng tại
+                            Ngân Hàng và/hoặc yêu cầu tổ chức tín dụng khác ngay lập tức trích và chuyển cho Ngân Hàng
+                            bất kỳ khoản tiền nào của Khách Hàng tại tổ chức tín dụng đó được dùng làm tài sản bảo đảm
+                            cho nghĩa vụ của Khách Hàng;
+                            To debit deposit, demand account or any money of the Customer at the Bank and/or to request
+                            other credit institutions immediately debit and transfer to the Bank any of the Cusotmer’s
+                            amount there which are collaterals for the Customer’s obligations.
+
+
+                 (iii)       Xử lý giấy tờ có giá của Khách Hàng tại Ngân Hàng và/hoặc yêu cầu tổ chức tín dụng khác
+                            ngay lập tức xử lý giấy tờ có giá của Khách Hàng tại tổ chức tín dụng đó được dùng làm tài sản
+                            bảo đảm cho nghĩa vụ của Khách Hàng.
+                            To settle valuable documents of the Customer at the Bank and/or immediately to request other
+                            credit institutions to settle of valuable documents of the Customer at that credit institutions
+                            which are collaterals for the Customer’s obligation.
+
+                 Nếu loại tiền trích hoặc thu được khác với loại tiền trả nợ thì áp dụng tỷ giá quy đổi ngoại tệ do Ngân
+                 Hàng xác định tại thời điểm trích hoặc thu được
+                 In case of different currency between the collected amount, the foreign currency exchange rate
+                 determined by the Bank at the time of debit or collection shall be applied;
+
+        (e)      Yêu cầu Khách Hàng thực hiện thay thế và/hoặc bổ sung tài sản bảo đảm và/hoặc (các) biện pháp bảo
+                 đảm khác trong trường hợp: (i) Khoản Vay có tài sản bảo đảm nhưng tài sản bảo đảm không còn, bị mất
+                 mát, bị thu hồi hoặc giá trị của tài sản bảo đảm tại từng thời điểm theo xác định của Ngân Hàng không
+                 đủ để bảo đảm cho nghĩa vụ trả nợ của Khách Hàng; hoặc (ii) Khách Hàng bị sụt giảm xếp hạng tín dụng
+                 theo kết quả đánh giá và quy định của Ngân Hàng;
+                 To request the Customer to replace and/or supplement additional collateral(s) and/or other security
+                 measure(s) in case: (i) the Loan is secured by collateral(s) but it is no longer available, lost, revoked or
+                 its/their value from time to time as the Bank’s determination is insufficient to secure for repayment
+                 payment obligation of the Customer; or (ii) the Customer’s credit rating downgrade under assessment
+                 result or regulation of the Bank;
+
+        (f)      Thay mặt Khách Hàng bổ sung các thông tin còn thiếu trên các Văn Kiện Tín Dụng, (các) Hợp Đồng
+                 Bảo Đảm và các chứng từ có liên quan để hoàn thiện các văn bản này nhằm mục đích phục vụ giao dịch.
+                 On behalf of the Customer to supplement insufficient information in the Credit Documents, Security
+                 Agreements and other related documents in order to make them fulfilled for transaction.
+
+        (g)      Đơn phương tuyên bố Sự Kiện Vi Phạm và tiến hành thu hồi nợ như quy định tại các Văn Kiện Tín Dụng
+                 và các Hợp Đồng Bảo Đảm.
+                 To unilaterally declare the Event of Default and carry out debt recovery as terms of the Credit Documents
+                 and Security Agreement(s).
+
+8.2.    Nghĩa vụ của Ngân Hàng:
+        The Bank’s obligations:
+
+        (a)      Trong khả năng của mình, thu xếp cấp tín dụng đầy đủ và kịp thời theo thỏa thuận khi Khách Hàng xuất
+                 trình đầy đủ các chứng từ hợp lệ theo yêu cầu của Ngân Hàng;
+                 Within the Bank’s capability, to provide credit fully and on time as committed when the Customer
+                 presents document sufficiently and legally as the Bank’s request;
+Mẫu số: 040101R.1.1                                                                                           Trang 9 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+        (b)      Lưu giữ hồ sơ tín dụng và bảo mật các thông tin có được từ Khách Hàng cho mục đích ký kết và thực
+                 hiện các Văn Kiện Tín Dụng, (các) Hợp Đồng Bảo Đảm, các tài liệu khác có liên quan và không được
+                 cung cấp cho bên thứ ba. Bằng việc ký kết Hợp đồng này, Khách Hàng đồng ý không hủy ngang và vô
+                 điều kiện để Ngân hàng toàn quyền cung cấp, xử lý thông tin có được từ Khách Hàng mà không cần phải
+                 thực hiện bổ sung bất kỳ thủ tục xin chấp thuận nào trước của Khách Hàng trong các trường hợp sau đây:
+                 To file the credit documents and to keep confidential the information received from the Customer for the
+                 purpose of signing and executing of the Credit Documents, Security Agreement(s), other related
+                 documents and do not provide such information to a third party. By signing this Agreement, the Customer
+                 irrevocably and unconditionally agrees the Bank has the full right to provide and process information
+                 obtained from the Customer without having prior consent of the Customer in the following cases:
+
+                 (i)         Theo yêu cầu pháp luật hoặc nhằm tuân thủ các yêu cầu của thủ tục tố tụng, giải quyết tranh
+                             chấp tại tòa án hoặc trọng tài thương mại;
+                             As requested by the laws or aiming to comply with the requirements under procedure, dispute
+                             settlement at the court or commercial arbitration;
+
+                 (ii)        Cung cấp thông tin cho Trung tâm Thông tin Tín dụng (CIC) của Ngân Hàng Nhà Nước Việt
+                             Nam, cho (các) công ty thông tin tín dụng, cho tổ chức tín dụng khác theo quy định pháp luật;
+                             To provide information to Credit Information Center (CIC) of State Bank of Vietnam, to credit
+                             information company(ies), to others credit institutions in accordance with the laws and
+                             regulations;
+
+                 (iii)       Cung cấp thông tin cho luật sư, bên tư vấn, kiểm toán độc lập, bên mua nợ hoặc bên nhận chuyển
+                             giao quyền, nghĩa vụ (nếu có) với điều kiện là bên nhận thông tin phải có cam kết bằng văn bản
+                             về việc bảo mật các thông tin nhận được và chỉ sử dụng thông tin cho mục đích công việc phù
+                             hợp với chức năng hoạt động của bên nhận thông tin;
+                             To provide information to lawyers, consultants, independent audits, loan buyers or the
+                             transferees of right and obligation (if any) provided that such receiver must keep information
+                             confidentiality and only use such information on suitable purposes of their operational function.
+
+                 (iv)        Cung cấp thông tin cho các đơn vị thành viên khác thuộc Tập Đoàn Tài Chính Shinhan;
+                             To provide information to other members of Shinhan Finance Group;
+
+                 (v)         Các trường hợp cung cấp thông tin theo quy định của pháp luật như cung cấp thông tin theo yêu
+                             cầu của Khách Hàng, cơ quan hải quan, cơ quan thuế (kể cả cơ quan thuế nước ngoài), cơ quan
+                             điều tra, tòa án, cơ quan thi hành án và thừa phát lại và cơ quan phòng chống rửa tiền (kể cả cơ
+                             quan phòng chống rửa tiền nước ngoài);
+                             Case of providing information in accordance with the laws such as supplying information at the
+                             request of the Customer, customs agencies, tax agencies (including the abroad tax agency),
+                             investigation authorities, courts, enforcement agencies, bailiff agencies and anti-money
+                             laundering agencies (including abroad anti-money laundering agencies);
+
+                 (vi)        Để thực hiện các Văn Kiện Tín Dụng, (các) Hợp Đồng Bảo Đảm và các hợp đồng khác có liên
+                             quan;
+                             In order to implement the Credit Documents, Security Agreement(s) and other related contracts;
+
+                 (vii)       Thông báo và cung cấp thông tin liên quan đến việc Khách Hàng vi phạm nghĩa vụ thanh toán
+                             cho bất kỳ cơ quan nhà nước có thẩm quyền nào và cho bất kỳ bên thứ ba nào phù hợp nhằm
+                             mục đích thu hồi nợ mà không cần phải thông báo hay phải đươc sự đồng ý trước của Khách
+                             Hàng.
+                             To inform and provide information regarding Customer’s breach of payment obligations to any
+                             competente governamental authority and to any third party for the purpose of debt revovery
+                             without notifying or obtaining prior consent of the Customer;
+
+                 (viii)      Các trường hợp khác mà không vi phạm quy định của pháp luật.
+                             Other cases which do not break the laws and regulations.
+
+        (c)      Ngân Hàng cũng thông báo cho Khách Hàng về việc chấm dứt cho vay và/hoặc chuyển Nợ Quá Hạn
+                 bằng một trong các hình thức thông báo theo quy định tại Hợp Đồng. Nội dung thông báo tối thiểu gồm:
+                 thời điểm chấm dứt cho vay, thu hồi nợ trước hạn; số dư nợ gốc bị quá hạn/ thu hồi trước hạn; thời hạn
+Mẫu số: 040101R.1.1                                                                                            Trang 10 / 17
+Hiệu lực: 09/2023         Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                           (Ký tên)
+                 hoàn trả số dư nợ gốc bị thu hồi trước hạn; thời điểm chuyển Nợ Quá Hạn và lãi suất áp dụng đối với số
+                 dư nợ gốc bị quá hạn/ thu hồi trước hạn.
+                 The Bank shall inform the Customer on cease of lending and/or conversion to Overdue Debt by one of
+                 the notice forms according to the Agreement. The minimum content of the notice includes: the time of
+                 loan termination; early debt recovery; the outstanding principal debt to be overdue/early recovered;
+                 deadline for repayment of early recovered outstanding principal; date of conversion to Overdue Debt
+                 and interest rate applied to the overdue outstanding principal/recovered before maturity.
+
+Điều 9.          Quyền và Nghĩa Vụ của Khách Hàng
+Article 9.       Rights an Obligations of the Customer
+
+Ngoài các quyền và nghĩa vụ khác được quy định theo (các) Văn Kiện Tín Dụng, (các) Hợp Đồng Bảo Đảm và theo quy
+định của pháp luật, Khách Hàng có các quyền và nghĩa vụ sau đây:
+In addition to the other rights and obligations under the Credit Documents, Security Agreement(s) and regulations of law,
+the Customer has the following rights and obligations:
+
+9.1.     Quyền của Khách Hàng:
+         Rights of the Customer;
+
+         (a)     Yêu cầu Ngân Hàng cấp vay theo thời hạn đã thỏa thuận;
+                 To request the Bank to grant credit in time as agreed;
+
+         (b)     Từ chối các yêu cầu của Ngân Hàng không đúng với các thỏa thuận trong Các Văn Kiện Tín Dụng hoặc
+                 trái với quy định của pháp luật.
+                 To refuse the requests of the Bank which are not complied with the Credit Documents or not complied
+                 with the legal regulations.
+
+9.2.     Nghĩa vụ của Khách Hàng:
+         Obligations of the Customer:
+
+         (a)     Sử dụng số tiền vay đúng mục đích, thực hiện đúng các điều khoản và điều kiện đã thỏa thuận trong các
+                 Văn Kiện Tín Dụng, (các) Hợp Đồng Bảo Đảm và phù hợp với quy định, pháp luật Việt Nam;
+                 To use loan amount in right purpose and in compliance with all the terms and conditions of the Credit
+                 Documents, Security Agreement(s) and the law and regulations of Vietnam.
+
+         (b)     Chủ động thanh toán nợ gốc, lãi tiền vay và phí đúng hạn cho Ngân Hàng;
+                 To positively repay the principals, interests and fees to the Bank on time;
+
+         (c)     Cung cấp đầy đủ, kịp thời, trung thực các thông tin, tài liệu liên quan theo yêu cầu của Ngân Hàng vào
+                 bất kỳ thời điểm nào và chịu trách nhiệm về tính chính xác, trung thực, đầy đủ, toàn vẹn của các thông
+                 tin, tài liệu đã cung cấp theo đúng mục đích vay vốn và/hoặc phương án vay vốn; tạo điều kiện cho Ngân
+                 Hàng kiểm tra định kỳ hoặc đột xuất tình hình sử dụng Hạn Mức Tín Dụng, mục đích sử dụng Hạn Mức
+                 Tín Dụng, tài sản bảo đảm cũng như khả năng trả nợ của Khách Hàng;
+                 To provide sufficient, timely and truthful information and related documents at the Bank’s request at any
+                 time and be responsible for the accuracy, truthfulness, completeness, integrity of provided information
+                 and documents in accordance with the loan purpose and/or the plan of business loan; to facilitate the
+                 Bank to check regularly or irregularly Credit Limit usage, the collaterals and the Customer’s repayment
+                 ability;
+
+         (d)     Trường hợp Khách Hàng có các khoản cấp tín dụng liên quan đến các Dự án đầu tư phải thực hiện quản
+                 lý rủi ro về môi trường theo quy định pháp luật hiện hành, Khách Hàng cam kết:
+                 In case the Customer has credits related to investment projects that must implement environmental risk
+                 management in accordance with current laws, the Customer commits to:
+                 (i)       Thực hiện các biện pháp nhằm hạn chế rủi ro về môi trường trong hoạt động cấp tín dụng;
+                           Take measures to limit environmental risks in credit extension activities;
+
+                 (ii)      Tuân thủ các yêu cầu, khuyến nghị về các biện pháp giảm thiểu, khắc phục rủi ro về môi trường
+                           của cơ quan nhà nước có thẩm quyền và/hoặc Ngân Hàng trong từng thời kỳ;
+                           Comply with the requirements and recommendations on measures to reduce and overcome
+                           environmental risks of competent state agencies and/or the Bank from time to time;
+
+Mẫu số: 040101R.1.1                                                                                        Trang 11 / 17
+Hiệu lực: 09/2023       Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                         (Ký tên)
+                 (iii)      Lập kế hoạch hành động và thời gian thực hiện cụ thể để giảm thiểu rủi ro về môi trường trước
+                            hoặc sau giải ngân theo cam kết hoặc yêu cầu của Ngân Hàng;
+                            Make action plan and specific implementation time to reduce environmental risks before or
+                            after disbursement according to commitments or requests of the Bank;
+
+                 (iv)       Phối hợp cùng Ngân Hàng trong công tác giám sát rủi ro về môi trường định kỳ hoặc đột xuất;
+                            Cooperate with the Bank in periodically or irregularly monitoring environmental risks;
+
+                 (v)        Thông báo và hoặc cung cấp đầy đủ và kịp thời theo yêu cầu của Ngân Hàng bao gồm nhưng
+                            không giới hạn: (a) các thông tin phục vụ công tác quản lý rủi ro về môi trường, (b) báo cáo về
+                            việc thực hiện các cam kết nhằm hạn chế rủi ro về môi trường trong hoạt động cấp tín dụng, (c)
+                            các quyết định thanh tra, xử phạt hoặc các kết luận của cơ quan có thẩm quyền về rủi ro môi
+                            trường của Dự án và chịu trách nhiệm về tính chính xác, trung thực của các thông tin đã cung
+                            cấp và/hoặc thông báo;
+                            Inform and provide completely and timely at the request of the Bank including but not limited
+                            to: (a) information for environmental risk management, (b) report on the implementation of
+                            commitments to limit environmental risks in credit extension activities, (c) inspection and
+                            sanctioning decisions or conclusions of competent authorities about the Project's environmental
+                            risks, and is responsible for responsibility for the accuracy and truthfulness of the information
+                            provided and/or informed.
+
+        (e)      Thanh toán đầy đủ cho Ngân Hàng các loại phí và chi phí liên quan đến việc cấp tín dụng, thu hồi nợ,
+                 quản lý Khoản Vay, chuyển đổi ngoại tệ, tư vấn tài chính và các khoản phí và chi phí khác phát sinh
+                 trong quá trình thực hiện các Văn Kiện Tín Dụng và (các) Hợp đồng bảo đảm nếu việc thu các loại phí
+                 này không trái với quy định của pháp luật có liên quan;
+                  To adequately pay to the Bank the fees and expenses related to credit granting, debt recovery, loan
+                 administration, currency conversion, financial consulting and other fees and expenses incurred during
+                 the performance of the Credit Documents and Security Agreement(s)if such fees collection is not
+                 contravened by the related regulations of law;
+
+        (f)      Thanh toán cho bên thứ ba các khoản phí và chi phí liên quan đến việc cấp tín dụng, bảo đảm bằng tài
+                 sản, bao gồm nhưng không giới hạn bởi phí và chi phí thẩm định giá/giám định/định giá tài sản, công
+                 chứng/chứng thực, đăng ký giao dịch bảo đảm. Các khoản phí và chi phí này do bên thứ ba quyết định.
+                 Khách Hàng theo đây đồng ý và xác nhận rằng Ngân Hàng có quyền tự động trích nợ từ bất kỳ tài khoản
+                 nào của Khách Hàng để thu các loại phí nói trên;
+                 To pay to third party the fees and expenses related to granting credit, security measures by asset,
+                 including but not limited to fees and expenses of asset evaluation/appraisal/price determination,
+                 notarization/authentication and security transaction registration. Those fees and expenses shall be
+                 decided by the third party. The Customer hereby agrees and confirms that the Bank has rights to
+                 automatically debit to any Customer’s accounts to collect the fees and expenses mentioned above;
+
+        (g)      Thanh toán các khoản phí và chi phí phát sinh trong quá trình bàn giao, xử lý tài sản bảo bảo đảm nhằm
+                 thu hồi nợ và/hoặc xử lý các khoản nợ (nếu có);
+                 To pay the fees and expenses arising during the process of handover, settling collateral(s) for the debt
+                 recovery and/or the settlement for the debt(s) (if any);
+
+        (h)      Không dùng tài sản bảo đảm nêu tại Hợp Đồng và hoặc (các) Hợp Đồng Bảo Đảm để bảo đảm cho nghĩa
+                 vụ của bất kỳ cá nhân, tổ chức nào khác khi chưa hoàn thành xong mọi nghĩa vụ cho Ngân Hàng hoặc
+                 khi chưa được sự đồng ý bằng văn bản của Ngân Hàng;
+                 Not use the collaterals mentioned in the Agreement and/or Security Agreement(s) for securing any
+                 obligations of any individual and/or other organization(s) if all the Customer’s obligations are not fully
+                 fulfilled to the Bank or without a prior written approval from the Bank;
+
+        (i)      Thanh toán khoản tiền còn lại cho Ngân Hàng trong trường hợp số tiền thu được từ việc xử lý các tài sản
+                 bảo đảm không đủ thanh toán tất cả các khoản nợ của Khách Hàng đối với Ngân Hàng;
+                 To pay the remaining amount to the Bank in case the proceeds fothe amounts received from settlement
+                 of collaterals are not enough to cover all Customer’s debts to the Bank;
+
+
+
+Mẫu số: 040101R.1.1                                                                                           Trang 12 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+         (j)      Gia hạn thời hạn hiệu lực của từng Thư bảo lãnh bảo đảm cho Khoản Vay (nếu có), chứng thư bảo hiểm
+                  cho (các) tài sản bảo đảm có liên quan (nếu có) ít nhất ba mươi (30) ngày trước ngày hết hạn hiệu lực
+                  của các văn bản đó.
+                  To extend the validity period of each Letter of guarantee secured for the Loan (if any) insurance
+                  certificate of related collateral(s) (if any) at least thirty (30) days before the expiry date of each such
+                  documents.
+
+Điều 10.          Sự Kiện Vi Phạm
+Article 10.       Event of Default
+
+10.1.    Tuyên bố Sự Kiện Vi Phạm:
+         Declaration of Event of Default:
+
+         Ngân Hàng có quyền đơn phương tuyên bố Sự Kiện Vi Phạm và thông báo cho Khách Hàng khi một trong các sự
+         kiện sau xảy ra:
+         The Bank shall have the right to unilaterally declare the Event of Default Status and inform to the Customer when
+         one of the following events occurs:
+
+         (a)      Khách Hàng không hoàn trả đầy đủ bất kỳ khoản nợ đến hạn nào theo các Văn Kiện Tín Dụng;
+                  The Customer fails to pay fully any due debt under Credit Documents;
+
+         (b)      Bất kỳ Thư bảo lãnh hoặc Thư tín dụng dự phòng bảo đảm cho Khoản vay hoặc chứng thư bảo hiểm cho
+                  (các) tài sản bảo đảm có liên quan nào không được gia hạn hiệu lực trước ngày hết hạn hiệu lực tối thiểu
+                  30 ngày (nếu có);
+                  The validity of any Letter of Guarantee or Standby Letter Credit secured for Loan or insurance certificate
+                  of security asset(s) are not extended at least 30 days before expiry date (if any);
+
+         (c)      Khách Hàng không cung cấp được tài liệu theo yêu cầu của Ngân Hàng để kiểm tra việc sử dụng Khoản
+                  Vay; hoặc cung cấp tài liệu, thông tin sai sự thật; hoặc phát sinh các sự kiện dẫn đến mục đích vay vốn
+                  của Khách Hàng không được thực hiện hoặc không thể tiếp tục thực hiện;
+                  The Customer does not provide the documents as requested by the Bank to check Loan using; or provide
+                  untrue documents, information; or arising events that lead to not or unable implement Loan using
+                  purpose of the Customer;
+
+         (d)      Khách Hàng sử dụng Khoản Vay sai mục đích, hoặc kinh doanh thua lỗ nhưng không khắc phục được,
+                  hoặc các tài sản bảo đảm bị mất, hư hỏng, giảm sút giá trị trầm trọng, bị thu hồi, bị quy hoạch hoặc liên
+                  quan đến các tranh chấp, khiếu nại, khiếu kiện, hoặc xảy ra sự kiện bảo hiểm đối với các tài sản bảo đảm
+                  phải mua bảo hiểm theo quy định của Ngân Hàng, mà Ngân Hàng, bằng quyền tự quyết của mình, nhận
+                  định rằng các sự kiện đó có khả năng ảnh hưởng đến việc thu hồi nợ của Ngân Hàng;
+                  The Customer uses the Loan for improper purposes, or business is in loss and unable to be recovered,
+                  or collaterals are lost, damaged, seriously devalued, revoked, zoned or in relation to dispute, claim,
+                  lawsuit, or in case of occurring the insurance event to collaterals required to be insured as the Bank’s
+                  regulations that the Bank at its discretion determines such events shall be possible to effect the Bank’s
+                  recovery of debts;
+
+         (e)      Khách Hàng bị liên quan tới vụ án hình sự (bị khởi tố, điều tra, truy tố, xét xử, áp dụng hình phạt …);
+                  hoặc Khách Hàng liên quan tới các tranh chấp, khiếu nại, khiếu kiện mà Ngân Hàng nhận định là có thể
+                  ảnh hưởng đến khả năng trả nợ của Khách Hàng;
+                  The Customer is related a criminal case (are accused, investigated, prosecuted, brought to trial, imposed
+                  a sentence …) or the Customer is related to the dispute, claim or lawsuit that the Bank at its discretion
+                  determines to effect the Customer’s payment ability to the Bank;
+
+         (f)      Khách Hàng thay đổi địa chỉ liên lạc mà không thông báo cho Ngân Hàng;
+                  The Customer changes the registered address, or contact address without any notice to the Bank;
+
+         (g)      Tình hình tài chính, thu nhập/doanh thu, tài sản của Khách Hàng giảm sút mà Ngân Hàng nhận định là
+                  có thể ảnh hưởng đến khả năng trả nợ của Khách Hàng; phần lớn tài sản của Khách Hàng bị kê biên,
+                  phong tỏa, cầm giữ hoặc bị tranh chấp;
+                  The Customer’s status of finance, income/turnover, assets are dropped down that the Bank at its
+                  discretion determines to effect the Customer’s payment ability to the Bank; the majority of Customer’s
+                  assets is subject to the distain, block, seize or disputes;
+Mẫu số: 040101R.1.1                                                                                           Trang 13 / 17
+Hiệu lực: 09/2023      Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                        (Ký tên)
+        (h)      Khách Hàng bị chết hoặc bị Tòa án tuyên bố là đã chết; bị mất tích hoặc bị Tòa án tuyên bố mất tích, bị
+                 mất năng lực hành vi; ly hôn; bỏ trốn hoặc không thông báo cho Ngân Hàng khi thay đổi nơi cư trú;
+                 The Customer is an individual who is dead or is declared to be dead by the court; lost or is declared by
+                 the court to be lost, lost the civil act capacity; divorces, flees or changes the residence address without
+                 any notice to the Bank;
+
+        (i)      Trường hợp các nghĩa vụ của Khách Hàng theo Hợp Đồng được bảo đảm bằng tài sản của Bên thứ ba
+                 mà xảy ra một trong các trường hợp sau:
+                 In case the Customer’s obligations under this Agreement are secured by the collaterals of the third party
+                 with the occurrence of the following case:
+
+                 (i)        Bên thứ ba là cá nhân hoặc hộ gia đình/hộ kinh doanh có thành viên là cá nhân bị chết hoặc bị
+                            Tòa án tuyên bố là đã chết; bị mất tích hoặc bị Tòa án tuyên bố mất tích, bị mất năng lực hành
+                            vi; ly hôn; bỏ trốn hoặc không thông báo cho Ngân Hàng khi thay đổi nơi cư trú; hoặc
+                            The third party is an individual or a household/business household which has a member who is
+                            dead or is declared by the court to be dead, lost or is declared by the court to be lost, or is lost
+                            the civil act capacity; divorces, flees or changes the residence address without any notice to the
+                            Bank; or
+
+                 (ii)       Bên thứ ba là doanh nghiệp hoặc tổ chức khác tự thực hiện hoặc bị yêu cầu thực hiện việc
+                            chuyển đổi, chia, tách, hợp nhất, sáp nhập, giải thể, phá sản; hoặc không thông báo cho Ngân
+                            Hàng khi có thay đổi về địa chỉ trụ sở, địa chỉ liên lạc, cơ cấu tổ chức mà Ngân Hàng nhận định
+                            là có thể ảnh hưởng đến khả năng thực hiện nghĩa vụ bảo đảm của Bên thứ ba;
+                            The third party is an enterprise or organisation which implements by itself or is required to
+                            implement the conversion, division, separation, consolidation, merger, dissolution, bankruptcy;
+                            changing the registered address, or contact address, organization structure without any notice
+                            to the Bank and the Bank at its discretion determines the aforesaid issues may effect the third
+                            party’s ability in secured obligations implement;
+
+                 (iii)      Bên thứ ba vi phạm bất cứ nghĩa vụ nào theo (các) Hợp Đồng Bảo Đảm;
+                            The third party fails any obligation under the Security Agreement(s);
+
+        (j)      Khách Hàng không thể thực hiện đúng hoặc vi phạm bất kỳ điều khoản nào của các Văn Kiện Tín Dụng
+                 và/hoặc các Hợp Đồng Bảo Đảm có liên quan;
+                 The Customer fails to carry out or breaks any terms and conditions of the Credit Documents and/or
+                 Security Agreements;
+
+        (k)      Bất cứ sự kiện nào phát sinh mà theo đánh giá hợp lý của Ngân Hàng có thể tác động xấu đến khả năng
+                 thực hiện một trong các nghĩa vụ của Khách Hàng như đề cập tại Hợp Đồng;
+                 Any event occurs which in the reasonable opinion of the Bank does or will prevent fulfillment by the
+                 Customer of their respective obligations under this Agreement;
+
+        (l)      Xảy ra Sự Kiện Vi Phạm đối với bất kỳ Hợp Đồng tín dụng nào khác đã ký giữa Khách Hàng và Ngân
+                 Hàng.
+                 There is any Event of Default to any other credit agreement signed by the Customer and the Bank.
+
+10.2.   Xử lý Sự Kiện Vi Phạm:
+        Settlement of the Event of Default:
+
+                 Ngay khi tuyên bố Sự Kiện Vi Phạm, tất cả khoản nợ của Khách Hàng tuy chưa đến hạn theo Hợp Đồng
+                 và các Hợp đồng tín dụng khác được ký giữa Ngân Hàng và Khách Hàng sẽ được coi là đến hạn. Ngay
+                 khi thông báo theo Điều 8.2 (c), Ngân Hàng có toàn quyền đơn phương lựa chọn tiến hành một hoặc các
+                 hành động sal:
+                 Upon declaration of the Event of Default, all the Customer’s debts that have not been due under the
+                 Agreement and other Credit Agreements signed by the Bank and the Customer shall be considered as
+                 being due. Right after the notice per Article 8.2.(c), the Bank shall, at its sole discretion, take one or
+                 several of the following actions:
+
+                 (i)        Chấm dứt việc cấp tín dụng và thu nợ một phần hoặc toàn bộ các khoản nợ còn tồn đọng của
+                            Khách Hàng;
+Mẫu số: 040101R.1.1                                                                                             Trang 14 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+                            To cease granting credit, and collect a part or the whole of Customer’s outstanding debt;
+
+                 (ii)       Yêu cầu bên bảo đảm (nếu có) thực hiện nghĩa vụ trả thay cho Khách Hàng;
+                            To request the securing party(ies) (if any) to fulfill the repayment obligations in place of the
+                            Customer;
+
+                 (iii)      Xử lý tài sản bảo đảm (nếu có) để thu hồi nợ theo quy định của pháp luật;
+                            To settle the collaterals (if any) in order to recover the debs in accordance with the laws and
+                            regulations;
+
+                 (iv)       Sử dụng các khoản bồi thường bảo hiểm khi xảy ra sự kiện bảo hiểm đối với tài sản bảo đảm
+                            của Khoản Vay để khấu trừ các khoản chi phí cần thiết (nếu có) và thu hồi nợ (kể cả việc thu
+                            hồi nợ trước hạn);
+                            To use the insurance compensation amounts when any insurance event for collaterals for the
+                            Loan occurs to deduct necessary fees (if any) and recover debts (including early debt recovery).
+
+                 (v)        Khởi kiện Khách Hàng và các bên có liên quan ra tòa án có thẩm quyền để thu hồi các khoản
+                            nợ.
+                            To initiate lawsuit against the Customer and involved parties to recover the debts.
+
+Điều 11. Thông Báo
+Article 11.     Notice
+
+11.1.   Bất kỳ thông báo, thư từ, xác nhận hoặc liên lạc nào khác từ Ngân Hàng đến Khách Hàng được thực hiện theo bất
+        kỳ hình thức nào quy định dưới đây đến địa chỉ, số điện thoại/fax hoặc email mà Khách Hàng đã đăng ký với
+        Ngân Hàng sẽ được xem là có hiệu lực vào thời gian được xác định như sau:
+        Any notification/announcement, mailing, confirmation or other communication from the Bank to the Customer
+        executed to the Customer’s registered address, phone/fax number or email by any following mode shall be
+        effective and valid on defined time as below:
+
+        (a)      Trong trường hợp được giao tận tay hoặc gửi thư chuyển phát nhanh: vào ngày giao;
+                 By hand or by EMS: on delivery date;
+
+        (b)      Trong trường hợp gửi thư thường: sau bốn (04) ngày làm việc kể từ ngày gửi đi;
+                 By post-mail: after four (04) working days from the sending date;
+
+        (c)      Trong trường hợp gửi bằng email, fax, tin nhắn hoặc các phương tiện điện tử khác: vào thời điểm gửi đi
+                 trừ khi Ngân Hàng nhận được thông báo “thư chưa gửi được”;
+                 By email, fax, SMS or electronic modes: at sending time unless the Bank received “unsent massage”;
+
+        (d)      Trong trường hợp bằng điện thoại có ghi âm: vào lúc kết thúc cuộc gọi đó;
+                 In case of by record phone call: at the end of such phone call;
+
+        (e)      Trong trường hợp niêm yết tại bất kỳ Chi nhánh, Phòng giao dịch hoặc văn phòng nào của Ngân Hàng
+                 tại Việt Nam: sau mười (10) ngày kể từ ngày niêm yết;
+                 In case of by publication at any Branch, Transaction Office or any office of the Bank in Vietnam: after
+                 ten (10) days from the published date;
+
+        (f)      Trong trường hợp đăng quảng cáo các phương tiện thông tin, truyền thông đại chúng hoặc công bố trên
+                 website của Ngân Hàng (shinhan.com.vn): sau hai (02) ngày kể từ ngày đăng.
+                 By advertisement on public media channels or announced on the Bank’s website (shinhan.com.vn): after
+                 02 days from posting/published date.
+
+        Các Bên đồng ý rằng địa chỉ, số điện thoại/fax và email của Khách Hàng được đề cập trong Điều 11.1 này là địa
+        chỉ, số điện thoại/fax và email của Khách Hàng được nêu tại phần đầu của Hợp Đồng hoặc được đăng ký thay đổi
+        với Ngân Hàng trong từng thời điểm. Việc đăng ký thay đổi phải được Khách Hàng gửi thông báo bằng văn bản
+        đến Ngân Hàng và sẽ chỉ có hiệu lực sau năm (05) Ngày Làm Việc (hoặc một thời hạn khác được Các Bên thỏa
+        thuận) kể từ ngày Ngân Hàng nhận được thông báo này. Khách Hàng mặc nhiên được xem là đã nhận được/đồng
+        ý mọi thông báo, thư từ, xác nhận hoặc liên lạc khác của Ngân Hàng nếu Ngân Hàng đã thực hiện đúng như được
+        qui định tại đây. Ngân Hàng không có nghĩa vụ phải xác minh việc Khách Hàng đã nhận được các thông báo, thư
+        từ, xác nhận hoặc liên lạc khác này hay chưa.
+Mẫu số: 040101R.1.1                                                                                          Trang 15 / 17
+Hiệu lực: 09/2023        Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                          (Ký tên)
+         The Parties agree that the Customer’s address, phone/fax number and email mentioned in this Article 11.1 herein
+         are the Customer’s address, phone/fax number and email in the first above written in this Agreement or registered
+         with the Bank for change from time to time.The register of change has been informed to the Bank in writen and
+         shall only be effective after five (05) Business Days (or another period agreed by Parties) from the date the Bank
+         receives this notice. The Customer is automatically deemed as it has received/agreed all the Bank’s
+         notifications/announcements, mailings, confirmations or other communications if they have been executed by the
+         Banks as stated herein. The Bank has no obligation to verify the receipt of the Customer for these
+         notifications/announcements, mailings, confirmations or other communications.
+
+11.2.    Khách Hàng phải thông báo bằng văn bản cho Ngân Hàng trong vòng 10 ngày khi xảy ra một trong những sự kiện
+         sau:
+         The Customer notices in written to the Bank within 10 Business Days upon occurrence of one of the following
+         events:
+         (a)     Một trong các trường hợp quy định tại Điều 9.2 (d), 10.1(d), (e), (f), (g), (h) và (i) tại Hợp Đồng;
+                 One of the cases stated under Article 9.2 (d), 10.1(d), (e), (f), (g), (h) and (i) of this Agreement.
+
+         (b)      Thay đổi về tên, địa chỉ, email, điện thoại và/hoặc các thay đổi khác của Khách Hàng ảnh hưởng đến
+                  thông tin, liên lạc giữa Các Bên;
+                  Changing the Customer’s name, address, email, telephone, and/or other changes that effect the
+                  information or communication between the Parties;
+
+         (c)      Thay đổi tình trạng hôn nhân, phát sinh phân chia tài sản chung trong thời kỳ hôn nhân;
+                  Changing the marital status, property division during marital period.
+
+         Thông báo của Khách Hàng được xem là có hiệu lực khi được gửi bằng bằng hình thức giao trực tiếp hoặc gửi
+         thư chuyển phát nhanh đến địa chỉ của Ngân Hàng, thời điểm có hiệu lực của thông báo được xác định vào ngày
+         giao.
+         The Customer’s notification shall be effective when sent directly or EMS to the Bank’s address, effective time of
+         notification is on sending date.
+
+Điều 12.         Chuyển Nhượng và Chuyển Giao
+Article 12.      Assignment and Transfer
+12.1.    Ngân Hàng, bằng quyền tự quyết của mình, có thể bán hoặc chuyển nhượng hoặc chuyển giao một phần hoặc toàn
+         bộ khoản nợ của Khách Hàng theo các Văn Kiện Tín Dụng này cho bên thứ ba.
+         The Bank, at its sole discretion, may sell or assign or transfer a part or whole of the Customer’s debts under the
+         Credit Documents to a third party(ies).
+
+12.2.    Khách Hàng không được chuyển nhượng hoặc chuyển giao Hợp Đồng cho bên thứ ba trong bất cứ trường hợp
+         nào nếu không được sự đồng ý của Ngân Hàng bằng văn bản.
+         The Customer is not allowed to transfer the Agreement to a third party(ies) in any case without written approval
+         of the Bank.
+
+12.3.    Trường hợp Hợp Đồng được chuyển giao cho một đơn vị khác trực thuộc Ngân Hàng TNHH Một Thành Viên
+         Shinhan Việt Nam hoặc Ngân Hàng TNHH Một Thành Viên Shinhan Việt Nam có bất cứ sự thay đổi nào về tên,
+         cấu trúc và hoạt động thì Các Bên không cần phải ký bất kỳ thỏa thuận nào để sửa đổi bổ sung Hợp Đồng cũng
+         như (các) Hợp Đồng Bảo Đảm có liên quan (nếu có). Tuy nhiên, Ngân Hàng TNHH Một Thành Viên Shinhan
+         Việt Nam hoặc Ngân Hàng hoặc đơn vị nhận chuyển giao phải thông báo bằng văn bản về việc chuyển giao và
+         hoặc thay đổi nêu tại Điều 12.3 này cho Khách Hàng.
+         In case the Agreement is transferred to another unit belonged to Shinhan Bank Vietnam Limited or there is any
+         change on name, structure or operation of the Bank or Shinhan Bank Vietnam Limited, the signing an agreement
+         to amend, supplement the Agreement and/or the related Security Agreement(s) (if any) is not required. However,
+         Shinhan Bank Vietnam Limited or the Bank or the receiving unit has to give a notice on this transfer and/or change
+         stated in this Artilce 12.3 herein to the Customer.
+
+
+Điều 13.         Luật Áp Dụng và Giải Quyết Tranh Chấp
+Article 13.      Applicable Law and Dispute Settlement
+13.1.    Hợp Đồng được điều chỉnh và giải thích theo pháp luật Việt Nam.
+         The Agreement is adjusted and understood according to Laws of Vietnam.
+
+
+Mẫu số: 040101R.1.1                                                                                         Trang 16 / 17
+Hiệu lực: 09/2023      Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                        (Ký tên)
+13.2.   Bất kỳ tranh chấp nào, kể cả mâu thuẫn về mặt ngôn ngữ, phát sinh trong quá trình thực hiện Hợp Đồng sẽ được
+        Các Bên thương lượng trên tinh thần tôn trọng, hiểu biết và tin cậy lẫn nhau. Nếu Các Bên không tự giải quyết
+        được thì tranh chấp đó sẽ được đưa ra giải quyết tại Tòa án có thẩm quyền.
+        Any dispute including language conflict during implementing the Agreement shall be negotiated by the Parties in
+        the spirit of mutual respect, understanding and trustworthiness. If it can not be resolved by the Parties, it will be
+        submitted to the competent Court for settlement.
+
+Điều 14.          Các Điều Khoản Khác
+Article 14.       Miscellaneous
+14.1.      Mọi thay đổi, bổ sung các điều khoản trong Hợp Đồng phải được Các Bên thỏa thuận và lập thành văn bản. Các
+           bản sửa đổi bổ sung, các phụ lục hợp đồng, và các văn bản liên quan khác là một bộ phận không tách rời của
+           Hợp Đồng.
+           Any amendment, supplement to the Agreement shall be agreed and made in writing by the both Parties. The
+           amendments, supplements, annex(es) and other related documents are integrated parts of the Agreement.
+
+14.2.     Trường hợp có điều khoản nào của Hợp Đồng bị vô hiệu theo quyết định của cơ quan giải quyết tranh chấp thì
+          các điều khoản còn lại vẫn giữ nguyên hiệu lực với Các Bên. Các Bên sẽ thương lượng và thỏa thuận để sửa đổi
+          và/hoặc bổ sung lại điều khoản đó theo quy định của pháp luật.
+          In case any provision of the Agreement is invalid under the decision of dispute settlement agencies, the validity
+          of the remaining provisions of the Agreement shall not in any way be affected. The Parties shall negotiate and
+          agree to amend and/or supplement such provisions under the law.
+
+14.3.     Trường hợp Hợp Đồng được lập thành song ngữ tiếng Anh và tiếng Việt, nếu có bất kỳ mâu thuẫn nào giữa bản
+          tiếng Anh và tiếng Việt thì bản tiếng Việt sẽ được ưu tiên áp dụng.
+          In case the Agreement is made in bilingual English and Vietnamese, if any conflict between English and
+          Vietnamese version, the Vietnamese version shall prevail.
+
+14.4.     Hợp Đồng có hiệu lực kể từ ngày ký cho đến khi Khách Hàng trả hết toàn bộ số nợ gồm nợ gốc, lãi, các khoản
+          tiền phạt và các khoản phí, chi phí khác (nếu có).
+          The Agreement shall be valid from the signing date until the date the Customer repays fully principal, interest,
+          fines and other fees, expenses (if any).
+
+14.5.     Hợp Đồng được lập thành ba (03) bản có giá trị như nhau; Khách Hàng giữ một (01) bản và Ngân Hàng giữ hai
+          (02) bản.
+          This Agreement is made in three (03) originals which are of equal authenticity. The Customer keeps one (01)
+          original, the Bank keeps two (02) originals.
+
+14.6.     Các Bên xác nhận rằng việc giao kết Hợp Đồng là hoàn toàn tự nguyện, không giả tạo, không bị ép buộc, lừa
+          dối, đe dọa, nhầm lẫn. Mỗi Bên một đã đọc lại, hiểu rõ, nhất trí và cùng ký tên vào Hợp Đồng.
+          The Parties hereby acknowledge that this Agreement has been voluntarily entered into without falsity,
+          coerciveness, deceptiveness, intimidation, or mistake. Each Party has reviewed, understood, agreed and signed
+          the Agreement.
+
+14.7.     Khách Hàng xác nhận rằng Ngân Hàng đã cung cấp, giải thích chi tiết, đầy đủ và Khách hàng đã hiểu rõ, đồng
+          ý với toàn bộ thông tin về khoản cấp tín dụng, nội dung Hợp Đồng này và các vấn đề khác có liên quan đến
+          khoản cấp tín dụng.
+          The Customer confirms that the Bank has provided and explained fully in detail and the Customer has fully
+          understood and agreed to all information about the credit granting, the content of this Agreement and other
+          matters related to the loan
+
+
+
+
+Mẫu số: 040101R.1.1                                                                                           Trang 17 / 17
+Hiệu lực: 09/2023      Khách hàng đã đọc, hiểu và đồng ý/ Customer read, understood and agreed
+
+                                                        (Ký tên)
+

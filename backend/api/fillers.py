@@ -395,15 +395,16 @@ def _trang_thai():
 
 @router.post("/thu")
 async def thu(than: dict = Body(...)):
-    """Gõ một câu khách nói, xem hệ thống chọn tình huống nào và mẩu nào sẽ phát.
+    """Thử lựa chọn câu đệm cho TOÀN BỘ câu chữ khách đã nói.
 
-    Đây là thứ khiến việc thêm tình huống kiểm được ngay thay vì đoán: cosine
-    chấm trên phiên âm CỤT lúc chạy thật, nên một tình huống nghe rất hợp lý vẫn
-    có thể không bao giờ đạt ngưỡng.
+    Ví dụ đã lưu duy nhất hoặc cụm chủ đề rõ được chọn ngay; câu mơ hồ dùng
+    đúng ngưỡng vector của đường chữ. Đường thoại dùng phiên âm tạm riêng.
     """
     cau = (than.get("cau") or "").strip()
     if not cau:
         return {"error": "Nhập một câu khách hay nói rồi bấm Thử"}
+    loi_ai_truoc = (than.get("loi_ai_truoc") or "").strip()
+    cau_khach_truoc = (than.get("cau_khach_truoc") or "").strip()
 
     st = _trang_thai()
     if getattr(st, "rag", None) is None:
@@ -415,14 +416,48 @@ async def thu(than: dict = Body(...)):
         return {"error": "Chưa nhúng ví dụ của tình huống nào. Lưu lại một tình "
                          "huống để nhúng lại, hoặc khởi động lại backend."}
 
-    from backend.services.filler_situation import chon_tinh_huong, chuan_hoa
+    from backend.services.filler_situation import (
+        DIEU_KIEN_NGU_CANH, chon_phan_hoi_ngan_theo_phien,
+        chon_tinh_huong_cau_day_du, chon_tinh_huong_tu_khoa_nhanh,
+        chon_tinh_huong_vi_du_nhanh, chuan_hoa, chu_de_da_noi,
+        loc_theo_ngu_canh,
+    )
     from backend.services.filler_store import lay_kho
+    from backend.services.filler_pick import DIEM_CHAC_CHU_DE
 
-    q = chuan_hoa(st.rag.embed([cau]))[0]
-    id_th, diem = chon_tinh_huong(q, kho_vec)
+    situations = lay_kho().tinh_huong
+    bo_qua = loc_theo_ngu_canh(
+        DIEU_KIEN_NGU_CANH, chu_de_da_noi(loi_ai_truoc))
+    history = []
+    if cau_khach_truoc:
+        history.append({"role": "user", "content": cau_khach_truoc})
+    if loi_ai_truoc:
+        history.append({"role": "assistant", "content": loi_ai_truoc})
+    id_th = chon_phan_hoi_ngan_theo_phien(cau, history, bo_qua=bo_qua)
+    cach_chon = "ngu_canh_phien" if id_th else None
+    vi_du_da_khop = False
+    if not id_th:
+        id_th, vi_du_da_khop = chon_tinh_huong_vi_du_nhanh(
+            cau, situations, bo_qua=bo_qua)
+        cach_chon = "vi_du_da_luu" if id_th else None
+    if not id_th and not vi_du_da_khop:
+        id_th = chon_tinh_huong_tu_khoa_nhanh(
+            cau, situations, bo_qua=bo_qua)
+        cach_chon = "tu_khoa_ro" if id_th else None
+    if vi_du_da_khop and id_th is None:
+        diem = None
+        cach_chon = "trung_vi_du"
+    elif id_th and id_th in kho_vec:
+        diem = None
+    else:
+        q = chuan_hoa(st.rag.embed([cau]))[0]
+        id_th, diem = chon_tinh_huong_cau_day_du(
+            cau, q, kho_vec, situations, nguong=DIEM_CHAC_CHU_DE,
+            bo_qua=bo_qua)
+        cach_chon = "vector"
 
     ten, mo_dau = "", []
-    for t in lay_kho().tinh_huong:
+    for t in situations:
         if t.id == id_th:
             ten, mo_dau = t.ten, list(t.mo_dau)
             break
@@ -431,8 +466,9 @@ async def thu(than: dict = Body(...)):
         "cau": cau,
         "id": id_th,
         "ten": ten,
-        "diem": round(float(diem), 3),
-        "nguong": _nguong(),
+        "diem": round(float(diem), 3) if diem is not None else None,
+        "nguong": DIEM_CHAC_CHU_DE,
+        "cach_chon": cach_chon,
         "dat_nguong": id_th is not None,
         "mo_dau": mo_dau,
     }

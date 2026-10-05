@@ -1,6 +1,9 @@
 """Chọn tình huống từ phiên âm dở bằng cosine. KHÔNG import torch - xem
 filler_store để biết vì sao cả ba tệp câu đệm phải chạy được không cần GPU.
 """
+import re
+import unicodedata
+
 import numpy as np
 
 # Điểm cosine tối thiểu để nhận một tình huống.
@@ -201,3 +204,155 @@ def chon_tinh_huong(q: np.ndarray, kho: dict[str, np.ndarray],
     if tot_id is not None and tot_diem >= nguong:
         return tot_id, tot_diem
     return None, tot_diem
+
+
+def chon_tinh_huong_tu_khoa_nhanh(
+    text: str, tinh_huong, bo_qua: frozenset[str] = frozenset(),
+) -> str | None:
+    """Chọn tức thì một chủ đề có mẩu nói trung tính và từ khóa không nhập nhằng.
+
+    Chỉ dùng khi đã có TOÀN BỘ câu hỏi. Các nhóm về lãi, phí, hồ sơ... cần
+    phân biệt hỏi/chê/trạng thái nên vẫn qua vector; hiện chỉ mẩu mở đầu về
+    thẻ điện tử được duyệt cho đường này.
+    """
+    normalized = unicodedata.normalize("NFD", (text or "").casefold())
+    normalized = "".join(c for c in normalized if unicodedata.category(c) != "Mn")
+    normalized = re.sub(r"[^a-z0-9]+", " ", normalized.replace("đ", "d")).strip()
+    words = f" {normalized} "
+    if any(f" {phrase} " in words for phrase in (
+        "khong hoi the dien tu", "khong phai the dien tu",
+        "khong quan tam the dien tu", "ngoai the dien tu",
+    )):
+        return None
+
+    matches = []
+    for item in tinh_huong:
+        if not item.bat or item.id in bo_qua:
+            continue
+        for keyword in item.tu_khoa:
+            phrase = unicodedata.normalize("NFD", keyword.casefold())
+            phrase = "".join(c for c in phrase if unicodedata.category(c) != "Mn")
+            phrase = re.sub(r"[^a-z0-9]+", " ", phrase.replace("đ", "d")).strip()
+            if len(phrase.split()) >= 2 and f" {phrase} " in words:
+                matches.append((len(phrase), item.id))
+    if not matches:
+        return None
+    longest = max(length for length, _ in matches)
+    winners = {id_th for length, id_th in matches if length == longest}
+    return "the_dien_tu" if winners == {"the_dien_tu"} else None
+
+
+def chon_tinh_huong_vi_du_nhanh(
+    text: str, tinh_huong, bo_qua: frozenset[str] = frozenset(),
+) -> tuple[str | None, bool]:
+    """Câu đầy đủ trùng một ví dụ đã lưu chỉ cần tra chữ, không cần nhúng lại.
+
+    Dữ liệu mới có hiệu lực ngay sau ``nap_lai``. Kết quả thứ hai cho biết câu
+    có trùng ví dụ nào không; nếu trùng HAI nhãn thì bỏ cả đường từ khóa và để
+    vector quyết định. Không áp dụng cho phiên âm dở của cuộc gọi.
+    """
+    def norm(value: str) -> str:
+        value = unicodedata.normalize("NFD", (value or "").casefold())
+        value = "".join(c for c in value if unicodedata.category(c) != "Mn")
+        return re.sub(r"[^a-z0-9]+", " ", value.replace("đ", "d")).strip()
+
+    cau = norm(text)
+    if not cau:
+        return None, False
+    matches = {
+        item.id for item in tinh_huong
+        if item.bat and item.id != "chung" and item.id not in bo_qua
+        and any(norm(example) == cau for example in getattr(item, "vi_du", ()))
+    }
+    return (next(iter(matches)), True) if len(matches) == 1 else (None, bool(matches))
+
+
+def vua_bao_lai_suat(history: list[dict]) -> bool:
+    """Lời AI vừa nói có thật sự báo lãi không, không dùng chủ đề tích lũy cũ."""
+    last_answer = ""
+    previous_user = ""
+    for turn in reversed(history):
+        if not last_answer:
+            if turn.get("role") == "assistant":
+                last_answer = turn.get("content") or ""
+        elif turn.get("role") == "user":
+            previous_user = turn.get("content") or ""
+            break
+    if not last_answer:
+        return False
+    answer = unicodedata.normalize("NFD", last_answer.casefold())
+    answer = "".join(c for c in answer if unicodedata.category(c) != "Mn")
+    answer = re.sub(r"[^a-z0-9%]+", " ", answer.replace("đ", "d"))
+    previous = unicodedata.normalize("NFD", previous_user.casefold())
+    previous = "".join(c for c in previous if unicodedata.category(c) != "Mn")
+    previous = re.sub(r"[^a-z0-9]+", " ", previous.replace("đ", "d"))
+    topics = chu_de_da_noi(last_answer)
+    if "phi" in topics or "lai_suat" not in topics:
+        return False
+    if any(cue in answer for cue in (
+        "chua co thong tin", "khong co thong tin", "chua xac nhan",
+        "can xac minh", "khong ro muc lai",
+    )):
+        return False
+    if not re.search(r"\d|%|\bphan tram\b", answer):
+        return False
+    return bool(re.search(r"\blai\b", answer)
+                or re.search(r"\blai\b", previous))
+
+
+def chon_phan_hoi_ngan_theo_phien(
+    text: str, history: list[dict], bo_qua: frozenset[str] = frozenset(),
+) -> str | None:
+    """Hiểu câu chê lãi rất ngắn từ lời AI NGAY TRƯỚC trong cùng phiên.
+
+    "Cao thế em" tự nó không chứa chủ đề; nhúng vector sẽ rơi về câu chung.
+    Chủ đề cũ ở nhiều lượt trước không đủ: khách có thể vừa chuyển sang phí.
+    """
+    if "che_lai_cao" in bo_qua:
+        return None
+    value = unicodedata.normalize("NFD", (text or "").casefold())
+    value = "".join(c for c in value if unicodedata.category(c) != "Mn")
+    value = re.sub(r"[^a-z0-9]+", " ", value.replace("đ", "d")).strip()
+    if not re.fullmatch(
+        r"(?:(?:da|oi|ui|troi|sao|ma|vay) )*(?:cao|dat)"
+        r" (?:qua|the|vay|nhi|ha)(?: (?:em|e|anh|chi|a))*", value,
+    ):
+        return None
+    return "che_lai_cao" if vua_bao_lai_suat(history) else None
+
+
+def chon_tinh_huong_cau_day_du(
+    text: str, q: np.ndarray, kho: dict[str, np.ndarray], tinh_huong,
+    nguong: float = 0.90, bo_qua: frozenset[str] = frozenset(),
+) -> tuple[str | None, float]:
+    """Câu đã có đủ chữ: vector quyết định, từ khóa rõ ràng cứu điểm sát ngưỡng.
+
+    Không áp dụng cho phiên âm dở: một từ khóa trong câu cụt dễ gán sai ý.
+    Từ khóa chỉ xác nhận ứng viên vector đứng đầu, không tự chọn chủ đề khác.
+    """
+    selected, score = chon_tinh_huong(q, kho, nguong=nguong, bo_qua=bo_qua)
+    if selected or score < 0.80:
+        return selected, score
+    candidate, _ = chon_tinh_huong(q, kho, nguong=0.80, bo_qua=bo_qua)
+    if not candidate:
+        return None, score
+
+    def norm(value: str) -> str:
+        value = unicodedata.normalize("NFD", value.casefold())
+        value = "".join(c for c in value if unicodedata.category(c) != "Mn")
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", value.replace("đ", "d"))).strip()
+
+    words = f" {norm(text)} "
+    matches = []
+    for item in tinh_huong:
+        if not item.bat or item.id in bo_qua or item.id not in kho:
+            continue
+        for keyword in item.tu_khoa:
+            phrase = norm(keyword)
+            if len(phrase.split()) >= 2 and f" {phrase} " in words:
+                matches.append((len(phrase), item.id))
+    if not matches:
+        return None, score
+    longest = max(length for length, _ in matches)
+    winners = {id_th for length, id_th in matches if length == longest}
+    return (candidate, score) if winners == {candidate} else (None, score)

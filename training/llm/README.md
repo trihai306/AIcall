@@ -1,8 +1,52 @@
 # Training LLM theo phong cách tư vấn riêng
 
-Fine-tune một base Qwen nhỏ bằng QLoRA để học **phong cách và cách dẫn dắt**.
+Fine-tune một base Qwen nhỏ bằng LoRA để học **phong cách và cách dẫn dắt**.
 Thông tin sản phẩm thay đổi như lãi suất, hạn mức, phí và điều kiện phải ở RAG,
 không train cứng vào LoRA.
+
+### Bộ hội thoại tiếng Việt tự nhiên
+
+`qwen35_2b_natural_v4.jsonl` được tạo từ bộ nghiệp vụ đã rà soát cộng 54 mẫu
+hội thoại viết tay và 108 mẫu sửa lỗi về xưng hô, điều kiện tuổi, ý định dừng
+cuộc gọi. Tái tạo bằng:
+
+```bash
+python training/llm/make_natural_dialogue_curriculum.py \
+  --base data/training/qwen35_2b_style_curriculum_v2.jsonl \
+  --output data/training/qwen35_2b_natural_v3.jsonl
+python training/llm/make_dialogue_repair_v4.py \
+  --base data/training/qwen35_2b_natural_v3.jsonl \
+  --output data/training/qwen35_2b_natural_v4.jsonl
+```
+
+Sau khi train, chạy `evaluate_natural_dialogue.py --model <candidate>` và
+`evaluate_banking_style.py --model <candidate>` trên Windows. Đọc cả nội dung
+câu trả lời: các biểu thức chấm tự động không đủ để phát hiện mọi lời hứa sai.
+Chỉ cân nhắc chuyển model phục vụ sau khi không còn lỗi nghiệp vụ hoặc xưng hô
+trong bộ kiểm tra độc lập; loss giảm không phải bằng chứng đó.
+
+### Vòng Qwen3.5 9B dạy Qwen3.5 2B
+
+`teacher_threshold_questions.py` dùng model 9B đặt câu hỏi theo các tình huống
+ngưỡng tuổi trong tài liệu MD. Chỉ nhận câu hỏi qua bộ lọc; đáp án được dựng
+từ ngưỡng trong nguồn, không lấy nguyên lời 9B làm sự thật. File audit ghi rõ
+câu bị loại. `make_multiturn_repair_v5.py`, `make_dialogue_repair_v6.py` và
+`make_composition_repair_v7.py` bổ sung ca nhiều lượt, phân biệt điều kiện,
+xưng hô và lời nói tiếng Việt. Dataset hiện tại là
+`qwen35_2b_natural_v7.jsonl` (453 mẫu), gồm 7 câu hỏi được nhận từ 36 đề xuất
+của 9B và 95 mẫu sửa lỗi ở hai vòng gần nhất.
+
+Vòng v8 thêm 2/26 câu hỏi 9B qua rà thủ công và 42 mẫu sửa cách nói về gửi
+tiết kiệm, thành `qwen35_2b_natural_v8.jsonl` (497 mẫu). Ứng viên v8 đạt
+9/10 ca hội thoại nhưng chỉ 6/7 ca nghiệp vụ: trả lời sai mốc nợ xấu 8 tháng
+so với điều kiện trên 1 năm, và chưa nói ra mức lãi cuối cùng ở một câu nhiều
+lượt. Vì vậy v8 chỉ để thử; model phục vụ vẫn là `qwen3.5:9b`. Xem báo cáo
+`data/training/banking_v8_eval.json` và `data/training/natural_v8_eval.json`.
+
+Train nhiều lần trên cùng một bộ mẫu không làm model tự hiểu hơn và dễ học thuộc.
+Vòng theo dõi chỉ train tiếp khi có mẫu mới đã đối chiếu MD, đủ dung lượng xuất
+GGUF và GPU sẵn sàng. Mỗi vòng tạo model thử riêng, đo trên câu chưa dùng làm
+đáp án train; `.env` vẫn giữ 9B cho tới khi model mới qua kiểm thử thực tế.
 
 ## Trước khi train — đọc kỹ
 
@@ -21,17 +65,35 @@ cuối của assistant. System prompt, lời khách và lịch sử trước đ�
 vào làm ngữ cảnh nhưng không bị học như target. Đồng thời giữ lại 10% làm
 holdout để theo dõi `eval_loss` thay vì chỉ nhìn `train_loss`.
 
-**Cực kỳ quan trọng về base model:** production hiện có thể đang chạy model lớn
-hơn (ví dụ `qwen3.5:9b`) trong khi cấu hình train mặc định là
-`Qwen/Qwen2.5-3B-Instruct` để vừa GPU 12GB. Fine-tune 3B xong rồi chuyển thẳng
-sang 3B là một lần **đổi model**, không phải chỉ "thêm kiến thức" cho 9B. Vì vậy
-phải A/B trước khi đổi production.
+**Cực kỳ quan trọng về base model:** production hiện dùng `qwen3.5:9b` trên
+Windows. Giao diện train hỗ trợ `Qwen/Qwen3.5-2B` (LoRA 16-bit) và
+`Qwen/Qwen2.5-3B-Instruct` (QLoRA 4-bit) trên RTX 5070 12GB. Fine-tune 2B/3B
+không biến 9B thành bản mới. Mỗi lần train tạo candidate riêng trong Ollama;
+production chỉ đổi sau khi A/B về độ đúng nghiệp vụ và hội thoại.
 
-Không đổi riêng `--base-model` thành `Qwen/Qwen3.5-9B` trong pipeline hiện tại.
-Qwen3.5-9B dùng kiến trúc `Qwen3_5ForConditionalGeneration` (multimodal), còn
-script này đang dùng `FastLanguageModel` và bước deploy đang dùng template
-Qwen2.5/ChatML. Muốn fine-tune đúng 9B phải làm profile train + export + template
-riêng và đo VRAM trên GPU đích.
+Không đổi riêng `--base-model` thành `Qwen/Qwen3.5-9B` trên GPU 12GB: chưa có
+profile train/export đã kiểm chứng cho 9B ở máy này. 9B hiện dùng làm model
+production và có thể kiểm tra câu trả lời của candidate, nhưng kết luận của 9B
+cũng phải đối chiếu với tài liệu.
+
+### Luồng hiện dùng trên Windows
+
+1. Đưa tài liệu nghiệp vụ `.md` vào `knowledge/` để RAG tìm nguồn. Chọn một
+   dataset đã duyệt trên tab **Training LLM**; file challenge, stress, audit và
+   log đánh giá không hiện trong danh sách chọn train.
+2. Chọn `Qwen3.5-2B`. Hệ thống chỉ gộp **file được chọn**, gắn cùng quy tắc
+   văn phong đang dùng khi trả lời, train và nạp một candidate riêng vào Ollama.
+   Bản đang nhận cuộc gọi vẫn là 9B.
+3. Kiểm tra bằng `evaluate_banking_style.py` với câu hỏi chưa dùng làm target,
+   nhất là mốc tuổi, nợ xấu, tài sản và hội thoại nhiều lượt. Loss giảm không
+   thay thế được bước này.
+
+Bộ `qwen35_2b_style_curated_v1.jsonl` có 110 mẫu và chỉ là bản thử nghiệm.
+Nó dạy cách nói trung tính, Bắc, Nam ở mức câu chữ khi khách yêu cầu; giọng
+âm thanh do mẫu TTS quyết định. Model 2B vẫn có thể suy sai ngưỡng số khi tự
+trả lời. `banking_fact_precheck.py` so trực tiếp các điều kiện rõ ràng trong
+MD với dữ kiện khách nói và trả lời thẳng ở một số trường hợp đã xác định;
+không kết luận phê duyệt khoản vay.
 
 ### Tài liệu dùng để chốt cú pháp
 
@@ -68,12 +130,22 @@ TV: Dạ em xin phép anh một phút, bên em đang có gói vay ưu đãi cho 
 2. Kịch bản tư vấn nội bộ chuyển thành hội thoại
 3. Hội thoại thật từ chính hệ thống này sau khi chạy thử — lấy các cuộc thành công, sửa những chỗ AI trả lời chưa đạt thành câu đúng ý bạn (đây là data quý nhất)
 
-Gom + kiểm tra:
+Gom + kiểm tra một nguồn cụ thể:
 ```bash
-python training/llm/make_dataset.py
+python training/llm/make_dataset.py --sources ten_dataset.jsonl \
+  --output data/training/ten_run_train.jsonl --conversation-style
 ```
 
+Nếu export GGUF hết dung lượng sau khi LoRA đã lưu, dọn file 16-bit trung gian
+(`models/llm/*-gguf/`) nhưng giữ adapter và `*-gguf_gguf/`; chạy
+`training/llm/export_adapter_gguf.py --adapter <thư mục adapter> --gguf-dir
+<thư mục gguf>` để xuất tiếp mà không train lại.
+
 ## Bước 2 — Train (máy RTX 5070)
+
+Trên Windows dùng tab **Training LLM** để chọn dataset và base model; job sẽ
+nhả GPU, train, xuất GGUF và nạp candidate. Các lệnh `train.sh` bên dưới chỉ là
+đường CLI cũ cho Qwen2.5 trên hệ có bash, không phải đường Windows đang dùng.
 
 ```bash
 # Tắt service để nhường VRAM

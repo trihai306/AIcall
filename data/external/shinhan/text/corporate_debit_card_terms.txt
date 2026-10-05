@@ -1,0 +1,823 @@
+REF.CARDTC-05-VN-202604
+
+
+
+
+   ĐIỀU KIỆN VÀ ĐIỀU KHOẢN THẺ GHI NỢ DOANH NGHIỆP
+
+       Điều Khoản và Điều Kiện Thẻ Ghi Nợ Quốc Tế Cho Khách Hàng Doanh Nghiệp (“ĐKĐK”) này quy định
+       các điều khoản mà trên cơ sở đó Ngân Hàng TNHH Một Thành Viên Shinhan Việt Nam (“Shinhan”) cung
+       cấp dịch vụ thẻ ghi nợ quốc tế cho khách hàng doanh nghiệp. Trước khi sử dụng Thẻ Ghi Nợ Quốc Tế,
+       Chủ Thẻ, Người Sử Dụng Thẻ và Người Quản Lý Thẻ nên đọc và hiểu rõ các điều khoản và điều kiện dưới
+       đây liên quan đến Thẻ Ghi Nợ Quốc Tế.
+
+       ĐKĐK này cùng với Giấy Đề Nghị Cấp Thẻ Shinhan Doanh Nghiệp Kiêm Hợp Đồng Phát Hành Và Sử
+       Dụng Thẻ hoặc văn bản tương tự để mở Thẻ Ghi Nợ Quốc Tế (“Giấy Đề Nghị Cấp Thẻ”), Biểu phí Thẻ
+       doanh nghiệp, và (các) Tiêu đề thư tạo thành một Hợp đồng phát hành và sử dụng Thẻ Ghi Nợ Quốc tế
+       Doanh nghiệp giữa Shinhan và Chủ Thẻ (sau đây gọi chung là “Hợp Đồng Thẻ Ghi Nợ”). Bằng việc ký kết
+       Hợp Đồng Thẻ Ghi Nợ, Doanh nghiệp đã đồng ý áp dụng và cam kết tuân thủ các ĐKĐK này.
+
+       Trừ những trường hợp đặc biệt được nêu rõ, nếu có bất kỳ mâu thuẫn nào giữa ĐKĐK này và các Điều
+       khoản và Điều kiện khác áp dụng cho Thẻ Ghi Nợ, ĐKĐK này sẽ được ưu tiên áp dụng.
+
+
+
+  1.     Định nghĩa
+
+  1.1. “Bảng Sao Kê” là bảng kê chi tiết hàng tháng tất cả các giao dịch Thẻ phát sinh trong chu kỳ sao kê,
+         các phí và lãi phát sinh (nếu có), Ngày Đến Hạn và các chi tiết khác được gửi đến Chủ Thẻ.
+
+  1.2. “CVV2” là một số gồm 3 chữ số được in trên mặt sau Thẻ vì mục đích bảo mật.
+
+  1.3. “Chủ Thẻ” là Doanh Nghiệp đứng tên trên Giấy Đề Nghị Cấp Thẻ và được Shinhan chấp thuận phát
+         hành Thẻ.
+
+  1.4. “Doanh Nghiệp” là pháp nhân được thành lập và hoạt động hợp pháp theo quy định của pháp luật Việt
+         Nam.
+
+  1.5. “Đơn Vị Chấp Nhận Thẻ” nghĩa là các bên cung cấp hàng hóa hoặc dịch vụ chấp nhận thanh toán bằng
+         Thẻ Ghi Nợ.
+1.6. “Dịch vụ Thanh toán An Toàn Trực Tuyến” (Verified by Visa hoặc Mastercard SecureCode) là
+     dịch vụ nhận diện Chủ thẻ trong các giao dịch thương mại điện tử được cung cấp bởi Shinhan và các Tổ
+     chức thẻ.
+
+1.7. “Mật khẩu sử dụng một lần cho dịch vụ Thanh toán An Toàn Trực Tuyến” (“OTP”) là mã gồm 6
+     chữ số mà Chủ thẻ nhận được qua tin nhắn đến số điện thoại hoặc email mà Chủ thẻ đã đăng ký khi thực
+     hiện các giao dịch. OTP có hiệu lực trong 180 giây kể từ thời gian nhận và chỉ được sử dụng một lần.
+
+1.8. “Giao Dịch” là bất kỳ giao dịch nào sử dụng Thẻ Ghi Nợ để thanh toán cho hàng hóa và/hoặc dịch vụ.
+
+1.9. “Ngày Đến Hạn” là ngày mà cho đến ngày đó (hoặc ngày làm việc tiếp theo nếu ngày đó rơi vào ngày
+     nghỉ), các khoản phí và các khoản phải thu khác (nếu có) liên quan đến Thẻ sẽ được tự động cấn trừ từ
+     Tài Khoản Thanh Toán của Chủ Thẻ.
+
+1.10. “Người Đại Diện” là cá nhân đại diện theo pháp luật hoặc đại diện theo ủy quyền hợp lệ của Doanh
+     nghiệp ký kết và thực hiện các hồ sơ liên quan đến Thẻ.
+
+1.11. “Người Quản Lý” là cá nhân được Chủ Thẻ chỉ định, ủy quyền và đăng ký với Shinhan bằng văn bản
+     để quản lý thẻ được cấp cho Phòng Ban của mình quản lý, bao gồm nhưng không giới hạn việc truy vấn
+     thông tin và thông báo mất Thẻ, nhận (các) Bảng Sao Kê và kích hoạt bằng cách sử dụng dịch vụ kích
+     hoạt từ tin nhắn cho (các) Thẻ thuộc Phòng Ban của mình quản lý.
+
+1.12. “Chủ thẻ phụ” (hoặc “Người sử dụng”) là cá nhân được Chủ thẻ chính ủy quyền và đăng ký với
+     Shinhan bằng văn bản cho phép sử dụng thẻ của tổ chức. Chủ thẻ phụ phải là nhân viên hoặc là chủ sở
+     hữu của Tổ chức được phát hành Thẻ.
+
+1.13. “Phòng Ban” là các bộ phận nghiệp vụ trong Doanh Nghiệp và là đơn vị trực tiếp quản lý (các) Thẻ.
+
+1.14. “Mật Khẩu Thẻ” là mã số nhận diện của Thẻ Ghi Nợ (số PIN) được cấp bởi Shinhan hoặc được Người
+     Sử Dụng đăng ký tại Shinhan, gồm dãy số có 6 chữ số được Người Sử Dụng dùng để xác minh các Giao
+     Dịch yêu cầu mã số nhận diện.
+
+1.15. “Shinhan” là Ngân hàng TNHH MTV Shinhan Việt Nam và bất kỳ chi nhánh hoặc phòng giao dịch
+     nào của Shinhan tại Việt Nam.
+
+1.16. “Tài Khoản Thanh Toán” là tài khoản tiền gửi không kỳ hạn bằng ngoại tệ hoặc nội tệ theo quy định
+     bởi Shinhan của Chủ Thẻ mở tại Shinhan, được Chủ Thẻ đăng ký kết nối với Thẻ để thực hiện các giao
+     dịch được cho phép của Thẻ và thu các phí phát sinh liên quan đến Thẻ.
+
+
+                                                     2
+1.17. “Thẻ” là Thẻ Ghi Nợ Quốc Tế mang thương hiệu Visa/Mastercard dành cho khách hàng doanh nghiệp
+      được Shinhan phát hành và/hoặc quản lý.
+
+1.18. “Tổ chức thẻ” là Tổ chức thẻ quốc tế Visa và/hoặc Mastercard.
+
+1.19. “Thời hạn thẻ” là thời hạn sử dụng của thẻ vật lý được in trên mặt trước/mặt sau của thẻ
+
+
+
+2.    Phát hành Thẻ Ghi Nợ
+
+2.1   Phụ thuộc vào việc Shinhan nhận được Giấy Đề Nghị Cấp Thẻ, hồ sơ tài liệu cần thiết và các điều kiện
+      khác được đáp ứng theo yêu cầu của Shinhan, Shinhan có thể cấp (các) Thẻ Ghi Nợ cho Chủ thẻ. Chủ
+      thẻ hiểu rằng Shinhan có quyền chấp thuận hoặc từ chối cấp mới, cấp lại, thay thế hoặc gia hạn Thẻ Ghi
+      Nợ cho Chủ Thẻ mà không cần phải thông báo trước cho Chủ Thẻ.
+2.2   Thẻ Ghi Nợ được phát hành sẽ có tên Doanh nghiệp và tên Người Sử Dụng được in trên bề mặt Thẻ Ghi
+      Nợ.
+2.3   Shinhan có quyền sửa đổi hoặc thay đổi số Thẻ Ghi Nợ và ngày hết hạn khi Thẻ Ghi Nợ được gia hạn
+      hoặc thay thế. Chủ Thẻ tự chịu trách nhiệm về việc thông báo các thay đổi này cho bất kỳ bên nào mà
+      Chủ Thẻ có thực hiện Giao Dịch hoặc có thỏa thuận thanh toán. Chủ Thẻ cam kết chịu trách nhiệm về
+      bất kỳ tổn thất hoặc thiệt hại nào mà Chủ Thẻ có thể phải chịu phát sinh từ việc sửa đổi hoặc thay đổi
+      này.
+
+
+
+3.    Quản lý Thẻ
+
+3.1   Chủ Thẻ chịu trách nhiệm đối với tất cả các hoạt động liên quan đến (các) Thẻ được phát hành và các
+      Giao Dịch sử dụng Thẻ bất kể Giao Dịch đó có thực sự do Người Sử Dụng hoặc được Chủ Thẻ/Người
+      Sử Dụng cho phép thực hiện hay không.
+3.2   Shinhan chỉ giao Thẻ cho Người Đại Diện hoặc người được uỷ quyền nhận Thẻ. Phụ thuộc vào đăng ký
+      của Chủ Thẻ, việc kích hoạt Thẻ có thể được thực hiện bởi (i) Người Đại Diện, hoặc (ii) Người được uỷ
+      quyền. Ủy quyền phải được thực hiện bằng văn bản, nêu rõ phạm vị/nội dung ủy quyền và được ký bởi
+      Người Đại Diện với chữ ký như đã đăng ký tại Shinhan, hoặc (iii) Người Quản lý (chỉ áp dụng cho (các)
+      Thẻ thuộc Phòng Ban của mình quản lý và bằng cách sử dụng dịch vụ kích hoạt từ tin nhắn theo số điện
+      thoại của Người Quản lý đã đăng ký). Chủ Thẻ cam kết tự chịu trách nhiệm về mọi rủi ro và tổn thất
+      phát sinh khi đăng ký lựa chọn các phương thức kích hoạt này.
+3.3   Chủ thẻ và Người Sử Dụng phải tuân thủ các quy định sau đây để bảo mật Thẻ:
+                                                       3
+     (a)     Người Sử Dụng ký tên vào mặt sau Thẻ ngay khi nhận được Thẻ;
+
+     (b)     Không cho bất kỳ người nào khác sử dụng Thẻ;
+
+     (c)     Cẩn trọng bảo vệ Thẻ không bị mất hoặc bị đánh cắp;
+
+     (d)     Không được cho mượn hoặc chuyển nhượng Thẻ cho bên thứ ba hoặc thế chấp;
+
+     (e)     Mật Khẩu Thẻ mà Shinhan cấp lần đầu và bất kỳ (các) Mật Khẩu Thẻ nào khác được Người Sử Dụng
+             cài đặt hoặc thay đổi sau đó phải được giữ bí mật tuyệt đối;
+
+     (f)     Đề phòng mọi rủi ro trong việc sử dụng và quản lý Thẻ, bao gồm cả việc không cung cấp hoặc ngăn
+             ngừa tiết lộ số Thẻ hoặc Mật Khẩu Thẻ hoặc CVV2 cho bất kỳ người nào khác;
+
+     (g)     Không nên lưu giữ hoặc ghi chú Mật Khẩu Thẻ hoặc CVV2 hoặc bất kỳ mật khẩu nào có liên quan
+             trên Thẻ hoặc bất kỳ ở đâu, hoặc bằng bất cứ cách thức nào mà có thể khiến bên thứ ba biết được
+             hoặc lạm dụng Thẻ;
+
+     (h)     Thông báo ngay cho Shinhan trong trường hợp nhận ra hoặc nghi ngờ bị mất/đánh cắp hoặc Thẻ được
+             sử dụng bởi người khác mà không được Chủ Thẻ cho phép theo như quy định tại Điều 13 dưới đây.
+
+     (i)     Nếu Thẻ có chíp điện tử thì Chủ Thẻ phải đảm bảo rằng chíp điện tử luôn được bảo vệ, không bị sử
+             dụng sai mục đích, bị hư hại, phá hủy hoặc được bảo vệ khỏi bất kỳ hình thức sử dụng trái phép nào.
+             Chủ Thẻ phải thông báo cho Shinhan ngay khi biết hoặc nghi ngờ chíp điện tử không còn an toàn
+             theo các phương thức được qui định tại Điều 14.2 của ĐKĐK này. Chủ Thẻ sẽ chịu trách nhiệm đối
+             với các tổn thất, thiệt hại phát sinh từ chíp điện tử trước thời điểm Shinhan nhận được thông báo của
+             Chủ Thẻ. Thẻ có thể bị thu hồi nếu chip điện tử bị bất kỳ một người nào khác sử dụng mà không phải
+             là Chủ Thẻ.
+
+3.4        Mọi thiệt hại phát sinh từ việc không tuân thủ các quy định bảo mật nêu tại điều này đều do Chủ Thẻ
+           hoàn toàn chịu trách nhiệm.
+3.5        Ngưởi Sử Dụng không được sử dụng Thẻ đã hết hạn hoặc Thẻ cũ sau khi Thẻ thay thế đã được phát
+           hành mà phải hủy Thẻ bằng cách cắt Thẻ theo đường chéo, kể cả chip bên trên (nếu có).
+
+
+4.         Sử dụng Thẻ
+
+4.1        Thẻ Ghi nợ chỉ được sử dụng để thực hiện các giao dịch bằng phương tiện điện tử khi người đại diện
+           hợp pháp của Doanh nghiệp đã hoàn thành các thủ tục đăng ký, cập nhật, xác thực thông tin sinh trắc
+           học theo quy định của Shinhan.
+
+                                                            4
+4.2    Người Sử Dụng có thể sử dụng Thẻ để thực hiện các giao dịch sau:
+      (a)   Thanh toán hàng hóa và dịch vụ từ Tài Khoản Thanh Toán:
+
+            i.    Tại các Đơn Vị Chấp Nhận Thẻ bằng cách xuất trình Thẻ hoặc thông qua ứng dụng điện tử
+                  tương thích cho Đơn Vị Chấp Nhận Thẻ. Tùy thuộc vào Đơn Vị Chấp Nhận Thẻ, Người Sử
+                  Dụng có thể được hoặc không được yêu cầu ký vào hóa đơn mua hàng để thực hiện Giao Dịch.
+                  Giao Dịch qua Thẻ sẽ phát sinh hiệu lực không phụ thuộc vào việc có hay không chữ ký của
+                  Người Sử Dụng trên hóa đơn mua hàng.
+            ii. Theo phương thức giao dịch trực tuyến tại các trang web hoặc các cổng thanh toán trực tuyến
+                  hoặc đặt hàng qua thư bằng cách cung cấp chi tiết Thẻ (mà không xuất trình Thẻ trực tiếp hoặc
+                  không quẹt Thẻ) cho Đơn Vị Chấp Nhận Thẻ hoặc bất kỳ bên nào khác để thanh toán, trực tiếp
+                  hoặc thông qua một bên thứ ba.
+      (b)   Các giao dịch khác cung cấp bởi Shinhan.
+
+4.3    Dịch vụ Thanh toán An Toàn Trực Tuyến
+      (a)   Khi Thẻ được sử dụng để thực hiện các giao dịch trực tuyến trên các trang web có hỗ trợ Dịch vụ
+            Thanh Toán An Toàn Trực Tuyến, mật khẩu OTP sẽ được gửi tự động đến số điện thoại hoặc email
+            mà Chủ thẻ đã đăng ký với Shinhan sau khi ấn vào nút "Generate OTP". Người Sử Dụng không
+            đóng trình duyệt khi chờ nhận OTP. Sau khi nhận OTP, Người Sử Dụng nhập OTP vào trường được
+            cung cấp và ấn vào nút “Submit”.
+
+      (b)   Một OTP có hiệu lực trong 180 giây và được phép nhập 3 lần. Nếu vượt quá khung thời gian này
+            hoặc nhập sai 3 lần, Ngưởi Sử Dụng phải nhận OTP mới bằng cách chọn “Generate OTP” trên giao
+            diện thanh toán.
+
+      (c)   Dịch vụ Thanh Toán An Toàn Trực Tuyến có thể bị ngưng hoặc bị hạn chế xuất hiện khi có những
+            lý do không thể tránh khỏi liên quan đến gián đoạn, phát triển dịch vụ hoặc kiểm tra hệ thống định
+            kỳ hoặc từ phía nhà cung cấp dịch vụ. Trong các trường hợp này, Shinhan hoặc Tổ chức thẻ sẽ
+            thông báo cho Chủ thẻ/Người Sử Dụng cùng với lý do và thời gian dự kiến bị ảnh hưởng.
+
+      (d)   Chủ thẻ tự chịu trách nhiệm về mất mát và/hoặc thiệt hại mà Chủ thẻ phải chịu vì một trong những
+            lý do sau đây:
+
+            i. Dịch vụ Thanh Toán An Toàn Trực Tuyến không được cung cấp hoặc bị trì hoãn cung cấp do
+                 bất cứ sự cố nào về thiết bị liên lạc, mạch, máy chủ hoặc số lượng giao dịch tăng mạnh;
+
+
+
+                                                          5
+            ii. Lỗi của Người Sử Dụng trong việc quản lý, thao tác máy tính, điện thoại hoặc các thiết bị kết
+              nối trực tuyến khác.
+4.4   Không được sử dụng Thẻ để (i) thanh toán cho bất kỳ mục đích bất hợp pháp nào bao gồm nhưng không
+      giới hạn giao dịch liên quan đến rửa tiền, tài trợ khủng bố, lừa đảo, gian lận, đánh bạc hoặc tổ chức đánh
+      bạc bất hợp pháp, mua hàng hoá hoặc dịch vụ bị cấm bởi luật pháp Việt Nam và quốc gia nơi cư trú của
+      Chủ Thẻ; các giao dịch mua bán, trao đổi tiền ảo; giao dịch vi phạm quy định pháp luật về ngoại hối;
+      thanh toán các trò chơi điện tử trên mạng chưa được cấp phép phát hành tại Việt Nam; các giao dịch
+      được lập khống/không có thật; hoặc các hành vi phạm pháp luật khác. Shinhan có quyền từ chối thực
+      hiện và/hoặc chi trả cho bất kỳ giao dịch nào (i) được xem là vi phạm theo cam kết tại Điều 4.4 này;
+      và/hoặc (ii) mà Shinhan có nghi ngờ về tính trung thực đối với các hành vi được nêu tại Điều 4.4 này.
+
+4.5   Khi Chủ Thẻ/Người Sử Dụng cho phép thực hiện một giao dịch nghĩa là Chủ Thẻ đồng ý thanh toán số
+      tiền của giao dịch đó. Chủ Thẻ cần bảo đảm có đủ số dư khả dụng trong Tài Khoản tương ứng của Chủ
+      Thẻ để thanh toán cho các giao dịch nêu trên. Người Sử Dụng không được thực hiện giao dịch vượt quá
+      số dư khả dụng trong Tài Khoản Thanh Toán của Chủ Thẻ.
+
+4.6   Chủ thẻ cam kết chịu trách nhiệm trong các trường hợp sau:
+
+      (a)    Nếu bất kỳ tổ chức tài chính hoặc Đơn Vị Chấp Nhận Thẻ nào có trưng bày biểu tượng thẻ của Tổ
+             chức Thẻ từ chối chấp nhận hoặc từ chối thanh toán bằng Thẻ;
+
+      (b)    Đối với chất lượng hàng hóa hoặc dịch vụ được mua bằng Thẻ; hay các tranh chấp phát sinh từ
+             hàng hoá hoặc dịch vụ giữa Chủ Thẻ/Người Sử Dụng và Đơn Vị Chấp Nhận Thẻ;
+
+      (c)    Nếu theo quy định của Đơn Vị Chấp Nhận Thẻ, số tiền khi thanh toán bằng Thẻ khác với số tiền
+             khi thanh toán bằng tiền mặt để mua cùng một loại hàng hóa, dịch vụ;
+
+      (d)    Shinhan không thực hiện hoặc chậm trễ trong việc thực hiện giao dịch trong trường hợp hệ thống
+             xử lý, hệ thống truyền tin, điện bị trục trặc, lỗi do bên thứ ba cung ứng dịch vụ hoặc vì bất kỳ lý
+             do gì ngoài khả năng kiểm soát của Shinhan;
+
+      (e)    Việc chịu trách nhiệm cho các trường hợp trên áp dụng cho tất cả các giao dịch trực tiếp hay giao
+             dịch điện tử.
+
+4.7   Đối với các giao dịch cần xác nhận mật khẩu, các giao dịch sẽ được Shinhan xử lý dựa trên thông tin
+      thao tác bởi Người Sử Dụng. Mật Khẩu Thẻ nhập vào phải trùng khớp với Mật Khẩu Thẻ đã được đăng
+      kí tại Shinhan hoặc được cấp bởi Shinhan. Shinhan được miễn trách nhiệm đối với những thiệt hại xảy
+      ra liên quan đến:
+                                                         6
+      (a)   Giao dịch được xử lý theo đúng thao tác và xác nhận với Mật Khẩu Thẻ trùng khớp với Mật Khẩu
+            Thẻ đã đăng ký tại Shinhan hoặc được cấp bởi Shinhan;
+
+      (b)   Giao dịch xảy ra trước khi Shinhan nhận được thông báo mất Thẻ từ Chủ thẻ/Người Đại
+            Diện/Người Quản Lý/Người Sử Dụng như quy định tại Điều 13.
+
+4.8   Shinhan có thể đưa ra giới hạn đối với việc sử dụng Thẻ bất chấp số dư hiện có trong Tài Khoản Thanh
+      Toán nếu Tài Khoản Thanh Toán đó rơi vào một trong các trường hợp sau:
+
+      (a)   Bị thông báo có sự cố;
+
+      (b)   Bị giới hạn về mặt pháp lý;
+
+      (c)   Không có đủ số dư (bao gồm số dư cho khoản vay);
+
+      (d)   Các tài khoản khác có liên quan bị giới hạn bởi các tổ chức tài chính.
+
+4.9   Đối với các giao dịch thanh toán trực tuyến bằng hình thức xác nhận EMV 3DS và có yêu cầu OTP, chủ
+      thẻ nhập mã OTP có hiệu lực trên cổng thanh toán theo quy định của Ngân Hàng và Tổ chức Thẻ về xác
+      thực giao dịch. Dựa vào kết quả xác nhận mã OTP đó của chủ thẻ, Ngân Hàng sẽ thực hiện xác nhận
+      giao dịch. Bên cạnh các giao dịch thanh toán trực tuyến bằng hình thức xác nhận EMV 3DS và có yêu
+      cầu OTP, nhằm đảm bảo giao dịch của chủ thẻ không bị gián đoạn, chủ thẻ sẽ ủy quyền cho Ngân Hàng
+      thay mặt chủ thẻ thực hiện xác nhận các giao dịch trực tuyến phát sinh trên Thẻ theo quy định của Ngân
+      Hàng và Tổ chức Thẻ về xác thực giao dịch.
+
+Tùy theo nhu cầu, chủ thẻ có thể đăng nhập ứng dụng SOL/ ngân hàng trực tuyến/ chi nhánh gần nhất để thay
+đổi lựa chọn tự thực hiện xác thực một phần hoặc tất cả giao dịch thanh toán trực tuyến sử dụng Thẻ
+
+
+
+5     Các trường hợp từ chối thanh toán thẻ/ chi trả
+
+5.1   Đối với các Giao Dịch thực hiện bằng Thẻ, Shinhan có quyền từ chối bất kỳ Giao Dịch nào trong các
+      trường hợp bao gồm nhưng không giới hạn:
+      (a)   Các Giao Dịch thẻ gian lận, giả mạo; giao dịch khống tại Đơn Vị Chấp Nhận Thẻ (không phát
+            sinh việc mua bán hàng hóa và cung ứng dịch vụ);
+      (b)   Các Giao Dịch sử dụng Thẻ để nhằm phục vụ cho mục đích rửa tiền, tài trợ khủng bố, lừa đảo,
+            gian lận, các hành vi phạm các cam kết quy định tại Điều 4.3 Điều khoản và Điều kiện này, và các
+            hành vi vi phạm pháp luật khác;
+
+
+                                                        7
+      (c)   Giao Dịch mà khi đó Thẻ bị khóa bởi Chủ Thẻ/Người Quản Lý/Người Sử Dụng hoặc Shinhan
+            hoặc Chủ Thẻ/Người Sử Dụng nhập sai các thông tin bảo mật hoặc đã nhập sai các thông tin này
+            quá số lần qui định;
+      (d)   Thẻ hết hạn sử dụng;
+      (e)   Shinhan có nghi ngờ về (i) tính trung thực, mục đích giao dịch của Chủ Thẻ theo quy định pháp
+            luật về phòng, chống rửa tiền hoặc (ii) các hành vi vi phạm các cam kết quy định tại Điều 4.3 Điều
+            khoản và Điều kiện này.
+5.2   Ngân hàng có quyền thực hiện tạm khóa thẻ hoặc từ chối giao dịch vào bất cứ lúc nào trong trường hợp
+      thẻ có dấu hiệu bị lợi dụng, đánh cắp thông tin hoặc thẻ có phát sinh giao dịch nhưng Ngân hàng không
+      thể liên hệ được với chủ thẻ theo thông tin liên hệ do chủ thẻ cung cấp
+
+5.3   Ngoài ra, các Giao Dịch thực hiện bằng Thẻ có thể bị từ chối theo quy định của Đơn Vị Chấp Nhận Thẻ
+      hoặc tổ chức thanh toán thẻ.
+
+
+
+6     Chỉ thị của Chủ Thẻ
+
+6.1   Bất kỳ yêu cầu hoặc chỉ thị nào của Chủ thẻ cho Shinhan phải được đưa ra bằng văn bản. Tuy nhiên
+      Shinhan có thể (nhưng không có nghĩa vụ) đồng ý hoặc thực hiện theo bất kỳ chỉ thị hoặc yêu cầu nào
+      qua điện thoại, email, tin nhắn hoặc bất kỳ phương tiện điện tử nào khác (sau đây gọi chung là "Phương
+      Thức Không Khuyến Khích") mà Shinhan tin rằng được đưa ra hoặc được thực hiện hoặc được cho phép
+      bởi Chủ Thẻ.
+
+6.2   Khi Phương Thức Không Khuyến Khích được đưa ra, Chủ Thẻ xác nhận và đồng ý rằng:
+
+      (a)   Chủ Thẻ hiểu rằng đây không phải là một phương thức an toàn để gửi các chỉ thị, và Chủ Thẻ sử
+            dụng Phương Thức Không Khuyến Khích vì lý do thuận tiện và vì lợi ích của Chủ Thẻ;
+
+      (b)   Chủ Thẻ chấp nhận bất kỳ rủi ro nào khi đưa ra và gửi chỉ thị đó thông qua Phương Thức Không
+            Khuyến Khích, bao gồm rủi ro về việc chỉ thị đó có thể không hoàn chỉnh hoặc không chính xác,
+            có thể được đưa ra với ý đồ gian lận hay do nhầm lẫn, hoặc bị thay đổi hoặc theo hình thức khác
+            không được Chủ Thẻ cho phép hoặc Shinhan không nhận được toàn bộ mà chỉ nhận được một
+            phần;
+
+      (c)   Shinhan không có nghĩa vụ thực hiện theo hoặc căn cứ vào bất kỳ chỉ thị nào như vậy; nhưng nếu
+            Shinhan quyết định (theo quyền quyết định của mình) hành động theo chỉ thị đó thì Shinhan có
+
+
+                                                        8
+             quyền (nhưng không có nghĩa vụ) thực hiện việc kiểm tra xác minh hoặc các biện pháp bảo mật
+             cần thiết khác (không xét đến bản chất của giao dịch hoặc thỏa thuận hoặc số tiền có liên quan);
+
+      (d)    Trường hợp Shinhan quyết định hành động theo chỉ thị đó, Shinhan có quyền xem là chỉ thị đó đã
+             được Chủ Thẻ cho phép hoàn toàn và mang tính ràng buộc đối với Chủ Thẻ (dù có thực hiện kiểm
+             tra xác minh hoặc biện pháp bảo mật khác hay không) như thể chỉ thị đó được đưa ra dưới hình
+             thức văn bản có chữ ký hợp lệ.
+
+6.3   Shinhan hoặc Chủ Thẻ có thể ghi âm lại bất kỳ cuộc gọi điện thoại nào giữa các bên nhằm kiểm soát
+      chất lượng, kiểm tra an ninh và tuân thủ pháp luật, quy định, và có thể trình các bản ghi âm thông tin
+      trao đổi này làm bằng chứng trong các thủ tục tố tụng được tiến hành liên quan đến việc phát hành, sử
+      dụng Thẻ.
+
+
+
+7     Hiệu lực của Thẻ và Hạn mức giao dịch
+
+7.1   Thẻ Ghi nợ được phát hành sẽ có tên Doanh nghiệp và tên Người được ủy quyền sử dụng thẻ được in
+      trên bề mặt Thẻ Tín Dụng. Thời hạn thẻ của Thẻ Ghi Nợ được xác định từ ngày được phát hành cho đến
+      ngày cuối cùng của tháng hết hạn như được in trên bề mặt Thẻ Ghi Nợ.
+
+      Bất kể Thời hạn thẻ nêu trên, Thẻ Ghi Nợ sẽ không được sử dụng khi: (i) bị chấm dứt sớm hơn bởi
+      Shinhan hoặc Chủ Thẻ; hoặc (ii) thuộc trường hợp hết Thời hạn hiệu lực thẻ quy định tại Điều 7.2 của
+      Điều khoản Điều kiện này.
+
+7.2   Thời hạn hiệu lực thẻ không vượt quá:
+
+      (a) Thời hạn hiệu lực còn lại của giấy tờ tùy thân hoặc thời hạn cư trú còn lại tại Việt Nam (đối với
+            người nước ngoài) của người đại diện pháp luật hoặc người đại diện theo ủy quyền của tổ chức (sau
+            đây gọi là Người đại diện hợp pháp), tùy thời hạn nào đến trước; và
+
+      (b) Thời hạn hiệu lực còn lại của giấy tờ tùy thân hoặc thời hạn cư trú còn lại tại Việt Nam (đối với
+            người nước ngoài) của Người sử dụng thẻ Doanh nghiệp, tùy thời hạn nào đến trước.
+
+7.3   Việc gia hạn Thẻ chỉ được thực hiện trong vòng 3 tháng trước khi Thẻ hết hạn và Tài Khoản Thanh
+      Toán kết nối với Thẻ còn hoạt động. Shinhan sẽ độc lập xem xét việc gia hạn Thẻ và cấp Thẻ mới trước
+      khi Thẻ đang sử dụng hết hạn.
+
+
+
+
+                                                        9
+7.4   Mỗi Thẻ sẽ kết nối tối đa một (01) Tài Khoản Thanh Toán. Nếu Tài Khoản này ngưng hoạt động vì bất
+      kỳ lí do gì thì các giao dịch Thẻ trên Tài khoản này sẽ không được thực hiện. Nếu Tài Khoản Thanh
+      Toán bị đóng thì Thẻ sẽ không còn giá trị sử dụng.
+
+7.5   Hạn mức sử dụng Thẻ Ghi Nợ:
+
+      (a)   Thẻ Ghi Nợ không được sử dụng cho các giao dịch rút/ứng trước tiền mặt dưới mọi hình thức.
+
+      (b)   Hạn mức thanh toán hàng hóa, dịch vụ bằng Thẻ Ghi Nợ được áp dụng như sau:
+
+            Số tiền giao dịch tối đa/ngày (VND)    50 triệu đồng
+
+      Hạn mức này có thể được sửa đổi, bổ sung, thay thế trong từng thời kỳ phù hợp với quy định pháp luật
+      và sẽ được công bố trên trang web chính thức của Shinhan tại www.shinhan.com.vn.
+
+7.6   Shinhan có thể quy định hạn mức đối với việc sử dụng Thẻ hoặc số tiền được sử dụng tại một Đơn Vị
+      Chấp Nhận Thẻ nhất định sau khi xem xét đánh giá tín dụng của Đơn Vị Chấp Nhận Thẻ đó, các luật
+      liên quan hoặc do nhận các chỉ thị từ một tổ chức giám sát.
+
+7.7   Shinhan không cấp bất kỳ khoản tín dụng nào đối với Thẻ. Tuy nhiên trong trường hợp phát sinh phí sử
+      dụng hoặc số tiền giao dịch ghi nhận nhiều hơn số tiền cấp phép làm số dư Tài Khoản Thanh Toán bị
+      thiếu hụt, Chủ Thẻ phải có trách nhiệm hoàn trả khoản thiếu hụt và thanh toán tiền lãi phát sinh từ việc
+      thiếu hụt đó.
+
+
+
+8     Tài Khoản Thanh Toán và Chấp nhận thanh toán Thẻ
+
+8.1   Tài Khoản Thanh Toán của Thẻ có thể là tài khoản bằng đồng nội tệ hoặc ngoại tệ do Chủ Thẻ lựa chọn
+      theo quy định của Shinhan. Việc thanh toán từ Tài khoản ngoại tệ sẽ được thực hiện sau khi đã chuyển
+      đổi sang đồng nội tệ theo tỷ giá Shinhan quy định tại thời điểm thanh toán.
+
+8.2   Shinhan có thể ghi nợ tự động Tài Khoản Thanh Toán của Chủ Thẻ khoản tiền tương ứng với số tiền
+      thu phí hay các giao dịch mua hàng khác được thực hiện bằng việc sử dụng Thẻ mà không cần chứng từ
+      xác nhận giao dịch từ Chủ Thẻ.
+
+8.3   Mọi giao dịch có hiệu lực vào ngày thực hiện giao dịch và sẽ được hạch toán vào Tài Khoản Thanh
+      Toán vào ngày Shinhan nhận được giao dịch theo quy trình chấp nhận thanh toán của Shinhan và/hoặc
+      Tổ chức thẻ.
+
+
+                                                       10
+8.4   Dựa trên việc sử dụng Thẻ của Chủ Thẻ/Người Sử Dụng, Tài Khoản Thanh Toán của Chủ Thẻ sẽ bị
+      phong tỏa đối với số tiền bao gồm khoản tiền đã sử dụng và các phí liên quan. Số tiền giao dịch này có
+      thể được điều chỉnh do việc thay đổi tỷ giá cộng thêm các phí liên quan sẽ được ghi nợ vào Tài Khoản
+      Thanh Toán của Chủ Thẻ vào ngày giao dịch được ghi nhận vào hệ thống và đưa vào Bảng Sao Kê.
+      Shinhan có thể phong tỏa số tiền giao dịch trong một khoảng thời gian do Shinhan quyết định, nếu hóa
+      đơn giao dịch không được yêu cầu thanh toán hoặc việc chấp thuận giao dịch không bị hủy bỏ.
+
+8.5   Trong trường hợp Tài Khoản Thanh Toán của Chủ Thẻ bị phong tỏa như được nêu ra ở điểm trên đây,
+      Shinhan có thể phong tỏa thêm một tỷ lệ phần trăm nhất định theo tiêu chuẩn của Shinhan.
+
+8.6   Trong trường hợp số tiền giao dịch thật sự vượt quá số tiền được phong toả, số tiền chênh lệch còn thiếu
+      sẽ được tự động ghi nợ vào Tài Khoản Thanh Toán.
+
+8.7   Đối với các giao dịch ở nước ngoài hoặc bằng ngoại tệ, Shinhan sẽ áp dụng tỷ giá được quyết định bởi
+      Tổ chức thẻ, cộng một khoản phí áp dụng cho giao dịch nước ngoài sau khi đã chuyển giao dịch qua
+      đồng Việt Nam, phí này được quy định bởi Shinhan tại Biểu phí thẻ công bố trên trang web chính thức
+      tại www.shinhan.com.vn.
+
+
+
+9     Thanh toán trễ hạn
+
+9.1   Chủ Thẻ được xem là thanh toán trễ hạn trong các trường hợp sau:
+
+      (a) Số dư khả dụng trong Tài Khoản Thanh Toán của Chủ Thẻ không đủ để thanh toán: (i) khoản chênh
+          lệch giữa số tiền giao dịch cộng thêm các phí liên quan được ghi nhận vào hệ thống Shinhan và số
+          tiền giao dịch ban đầu vào ngày thực hiện giao dịch; và/hoặc (ii) các khoản phí đã được đưa vào
+          Bảng Sao Kê cho Chủ Thẻ vào Ngày Đến Hạn;
+
+      (b) Tài khoản bị tạm khóa, ngưng hoạt động hoặc có bất kỳ sự kiện nào khác làm cản trở việc thanh
+          toán kịp thời các khoản phải trả của Thẻ.
+
+9.2   Trong các trường hợp thanh toán trễ hạn theo qui định tại Khoản 9.1 trên đây, Chủ Thẻ sẽ phải trả lãi
+      quá hạn trên số tiền thanh toán trễ hạn theo lãi suất quá hạn (được qui định tại biểu phí Thẻ Ghi Nợ công
+      bố trên trang web shinhan.com.vn) từ ngày bắt đầu quá hạn cho đến khi các khoản phải trả đó được
+      thanh toán đầy đủ.
+
+      Lãi quá hạn = Số tiền thanh toán trễ x Lãi suất quá hạn x Số ngày trễ / 365
+
+
+                                                       11
+9.3   Khi xảy ra việc thanh toán trễ hạn của Chủ Thẻ, Shinhan có thể tự động khấu trừ số tiền thanh toán trễ
+      hạn, lãi quá hạn và phí vào số dư trong Tài Khoản Thanh Toán hoặc bất kỳ tài khoản nào của Chủ Thẻ
+      mở tại Shinhan vào bất kỳ ngày làm việc nào sau ngày thanh toán định trước.
+
+9.4   Trong trường hợp Shinhan bắt buộc phải thu các chi phí khác như chi phí pháp lý hay chi phí nhờ thu
+      từ Chủ Thẻ hoặc các chi phí khác phát sinh từ việc Chủ Thẻ vi phạm Hợp Đồng Thẻ Ghi Nợ này thì
+      Chủ Thẻ phải bồi hoàn tất cả các chi phí này cho Shinhan ngay khi được Shinhan yêu cầu. Nếu việc bồi
+      hoàn bị chậm trễ, khoản bồi hoàn đó sẽ bị xem là khoản thanh toán trễ hạn và phải chịu lãi quá hạn theo
+      qui định tại Khoản 8.2 trên đây.
+
+9.5   Trường hợp Chủ Thẻ thanh toán trễ hạn hoặc có khoản nợ quá hạn đối với Shinhan hoặc các tổ chức tài
+      chính khác, Shinhan có quyền chủ động trích (i) bất kỳ số dư Có nào trong bất kỳ tài khoản hay tiền gửi
+      nào của Chủ Thẻ tại bất kỳ Chi nhánh/ Phòng giao dịch nào của Shinhan, và/ hoặc (ii) bất kỳ khoản tiền
+      nào thu được từ việc xử lý bất kỳ Tài sản bảo đảm nào được dùng để đảm bảo việc thanh toán tất cả các
+      nghĩa vụ của Chủ Thẻ liên quan đến bất kỳ hợp đồng, thỏa thuận nào đã ký kết giữa Chủ Thẻ và Shinhan
+      cho việc thanh toán khoản nợ đối với Shinhan và thực hiện bất kỳ hành động cần thiết nào (bao gồm cả
+      việc chuyển đổi tiền tệ hay thay mặt Chủ Thẻ ký kết bất kỳ văn bản nào) để thanh toán khoản nợ và
+      Shinhan sẽ thông báo cho Chủ Thẻ về việc trích tiền theo quy định này
+
+
+
+10    Các loại phí
+
+      Shinhan có quyền ghi nợ các khoản lệ phí, phí và chi phí liên quan đến Thẻ từ Tài Khoản Thanh Toán
+      của Chủ Thẻ theo Biểu phí thẻ công bố trên trang web của Shinhan tại www.shinhan.com.vn. Biểu phí
+      thẻ này có thể được thay đổi trong từng thời điểm nhưng những thay đổi này chỉ có hiệu lực sau ít nhất
+      7 ngày kể từ khi Shinhan thông báo đến Chủ Thẻ. Các loại phí bao gồm nhưng không giới hạn:
+
+      (a) Phí yêu cầu hóa đơn giao dịch Thẻ: Phí phải trả nếu Chủ Thẻ yêu cầu bản sao của hóa đơn giao
+          dịch;
+
+      (b) Phí khiếu nại và điều tra sự cố: Phí phải trả nếu Chủ thẻ yêu cầu Shinhan tra soát các vụ việc liên
+          quan tới sử dụng thẻ trong trường hợp lỗi thuộc về Chủ thẻ/Người Sử Dụng;
+
+      (c) Phí cấp lại thẻ: Phí phải trả nếu thẻ được phát hành lại do Thẻ bị mất, Thẻ bị hỏng hoặc theo yêu
+          cầu của Chủ Thẻ;
+
+      (d) Phí cấp lại Bảng Sao Kê: Phí phải trả nếu Chủ Thẻ yêu cầu in và cấp lại Bảng Sao Kê;
+
+                                                       12
+     (e) Phí giao dịch ngoại tệ (quốc tế): Phí phát sinh nếu các giao dịch xuất phát từ giao dịch nước ngoài
+           hoặc các giao dịch với đồng ngoại tệ. Mọi giao dịch và phí giao dịch sẽ được chuyển đổi thành tiền
+           Đồng Việt Nam theo các quy định của Shinhan;
+
+     (f) Phí dịch vụ tin nhắn SMS: phí phải trả khi Chủ Thẻ đăng ký dịch vụ này cho Thẻ;
+
+     (g) Phí dịch vụ đặc biệt: được tính khi Chủ Thẻ yêu cầu về công việc đặc biệt hoặc bổ sung thêm mà
+           Shinhan đồng ý thực hiện.
+
+
+
+11   Tạm ngừng/Hủy việc sử dụng Thẻ
+
+11.1 Shinhan có quyền tạm ngừng hoặc hủy bỏ Thẻ hoặc từ chối cho phép thực hiện thêm các Giao Dịch trên
+     Tài Khoản Thanh Toán tại bất kỳ thời điểm nào mà không cần thông báo trước nếu:
+
+     (a)    Shinhan, theo toàn quyền quyết định của mình, tin rằng việc sử dụng Thẻ có thể gây tổn thất cho
+            Chủ Thẻ hoặc cho Shinhan;
+
+     (b)    Nếu các thông tin điền trên Giấy Đề Nghị Cấp Thẻ bị phát hiện là không đúng sự thật;
+
+     (c)    Chủ Thẻ vi phạm các quy định của Hợp Đồng Thẻ Ghi Nợ;
+
+     (d)    Trong trường hợp Chủ Thẻ thanh toán trễ hạn hoặc có khoản nợ quá hạn đối với Shinhan hoặc các
+            tổ chức tài chính khác;
+
+     (e)    Khi có các lý do đáng kể dẫn đến các giao dịch bất thường hoặc giao dịch với thẻ giả mạo;
+
+     (f)    Theo quan điểm hợp lý của Shinhan, Chủ Thẻ đã sử dụng Thẻ cho các mục đích không được phép
+            như quy định tại Khoản 4.3;
+
+     (g)    Tài Khoản Thanh Toán bị đóng hoặc tạm ngừng hoạt động vì bất cứ lý do gì bao gồm cả trường
+            hợp Chủ Thẻ bị giải thể hoặc nộp đơn yêu cầu tuyên bố phá sản;
+
+     (h)    Theo quan điểm hợp lý của Shinhan, Chủ Thẻ/Người Sử Dụng đã can thiệp vào, sử dụng sai mục
+            đích hoặc cho phép người khác sử dụng Mật Khẩu Thẻ hoặc chip điện tử trên Thẻ;
+
+     (i)    Theo quyết định/yêu cầu bằng văn bản của cơ quan nhà nước có thẩm quyền hoặc quy định của
+            pháp luật.
+
+11.2 Trường hợp Chủ Thẻ đóng Tài Khoản Thanh Toán của Thẻ tại Shinhan thì toàn bộ các Thẻ đã phát hành
+     liên quan đến Tài Khoản Thanh Toán này cũng sẽ bị hủy bỏ.
+
+
+                                                       13
+11.3 Chủ Thẻ có thể yêu cầu Shinhan hủy bỏ bất kỳ Thẻ nào tại bất kỳ thời điểm nào bằng cách gửi yêu cầu
+      đến Shinhan bằng văn bản theo quy định của Shinhan. Chủ Thẻ phải có trách nhiệm về việc sử dụng,
+      thanh toán Thẻ và phí, lãi phát sinh (nếu có) cho đến khi Thẻ đã được Shinhan hủy bỏ.
+
+11.4 Khi Thẻ bị tạm ngừng hoặc hủy bỏ, Chủ Thẻ vẫn phải chịu trách nhiệm đối với mọi giao dịch khác liên
+      quan đến Tài Khoản Thanh Toán như các yêu cầu theo định kỳ, ủy nhiệm chi hiện hành hoặc bất kỳ liên
+      kết được phép nào khác đến Tài Khoản Thanh Toán.
+
+11.5 Chủ Thẻ có trách nhiệm hoàn trả cho Shinhan tất cả các khoản chưa thanh toán (nếu có) liên quan đến
+      Thẻ trong trường hợp hủy bỏ Thẻ.
+
+
+
+12    Các trường hợp thu hồi thẻ
+
+Shinhan có quyền thu hồi thẻ trong các trường hợp sau:
+
+     (a)    Thẻ giả;
+     (b)    Thẻ sử dụng trái phép;
+     (c)    Phục vụ công tác điều tra, xử lý tội phạm theo quy định của pháp luật;
+     (d)    Các trường hợp khác theo quy định của Shinhan trong từng thời kỳ;
+     (e)    Shinhan phát hiện Doanh nghiệp sử dụng giấy tờ giả, mạo danh để phát hành thẻ hoặc sử dụng thẻ
+            cho mục đính lừa đảo, gian lận hoặc các hoạt động bất hợp pháp khác và các trường hợp khác phù
+            hợp quy định pháp luật.
+
+
+13    Trách nhiệm của Chủ Thẻ liên quan đến việc báo mất Thẻ và bảo mật Thẻ
+
+13.1 Chủ Thẻ/Người Đại Diện/Người Quản Lý/Người Sử Dụng phải thông báo ngay lập tức cho Shinhan các
+      trường hợp sau:
+
+     (a) Thẻ bị mất hoặc bị trộm cắp;
+
+     (b) Biết hoặc nghi ngờ rằng thông tin Thẻ hoặc Mật Khẩu Thẻ hoặc CVV2 đã bị tiết lộ hoặc bị sử dụng
+           trái phép.
+
+13.2 Việc thông báo trên có thể được thực hiện bằng một trong các phương thức sau:
+
+     (a) Gọi tới Tổng đài chăm sóc khách hàng 1900 1577, nếu ở nước ngoài +84 28 3866 8830;
+
+
+
+                                                        14
+     (b) Đến trực tiếp Chi Nhánh/Phòng Giao Dịch Shinhan gần nhất trong giờ làm việc của Chi nhánh/Phòng
+         Giao Dịch;
+
+13.3 Chủ Thẻ/Người Sử Dụng không được tiếp tục sử dụng Thẻ/Mật Khẩu Thẻ/CVV2 cho bất kỳ giao dịch
+      hay mục đích nào kể từ khi Shinhan nhận được thông báo như đã đề cập tại Khoản 13.1. Shinhan sẽ tạm
+      khóa hoặc hủy bỏ Thẻ này và phát hành Thẻ mới theo yêu cầu của Chủ Thẻ.
+
+13.4 Chủ thẻ cam kết chịu trách nhiệm nào đối với bất kỳ các giao dịch nào được thực hiện trước khi Shinhan
+      nhận được thông báo như đã đề cập tại Khoản 13.1.
+
+13.5 Shinhan sẽ chịu trách nhiệm đối với bất kỳ giao dịch trên Thẻ nào phát sinh sau thời điểm thông báo trừ
+      những trường hợp dưới đây:
+
+     (a) Nếu Người Sử Dụng cố tình thực hiện những giao dịch gian lận bằng việc sử dụng Thẻ;
+
+     (b) Nếu có gian lận xảy ra bởi vì Thẻ đã không được ký, thiếu sự quản lý, cho mượn Thẻ, chuyển nhượng,
+         Thẻ được sử dụng làm tài sản thế chấp, cầm cố cho vay bất hợp pháp và những vi phạm sử dụng khác;
+
+     (c) Nếu Chủ Thẻ từ chối hợp tác khi Shinhan yêu cầu một cách hợp lý trong quá trình tra soát những
+         thiệt hại gây ra bởi sử dụng Thẻ gian lận, mà không có lý do chính đáng.
+
+
+
+14    Khiếu nại của Chủ Thẻ
+
+14.1 Đối với các khiếu nại liên quan đến Giao Dịch của Thẻ Ghi Nợ, Chủ thẻ có trách nhiệm thông báo cho
+      Shinhan trong thời hạn 60 (sáu mươi) ngày kể từ ngày Giao dịch được thực hiện.
+
+      Việc thông báo được thực hiện bằng cách nộp Đơn yêu cầu tra soát giao dịch thẻ quốc tế (theo mẫu)
+      trực tiếp tại Chi nhánh/Phòng giao dịch của Shinhan hoặc thông qua Trung tâm Hỗ trợ Khách hàng 24/7
+      theo tổng đài điện thoại 1900 1577 (cuộc gọi có ghi âm). Trường hợp khiếu nại được thực hiện qua
+      Trung tâm Hỗ trợ Khách hàng, Chủ thẻ phải gửi Đơn yêu cầu tra soát giao dịch thẻ quốc tế (bản điện tử
+      theo mẫu) từ địa chỉ thư điện tử đã đăng ký chính thức đến Shinhan trong thời hạn 07 (bảy) ngày làm
+      việc kể từ ngày thông báo qua Trung tâm Hỗ trợ Khách hàng để làm căn cứ xử lý.
+14.2 Kể từ ngày nhận được thông báo, Shinhan sẽ tiến hành tra soát vụ việc và xác định thiệt hại (nếu có)
+      căn cứ vào quy định của Tổ chức thẻ và thời hạn Shinhan trả lời các khiếu nại là từ 45 đến 100 ngày
+      làm việc. Trường hợp hết thời hạn xử lý tra soát mà vẫn chưa xác định được nguyên nhân, Shinhan và
+      Chủ Thẻ sẽ tiến hành thỏa thuận phương án xử lý tiếp theo.
+
+
+                                                      15
+14.3 Nếu kết quả điều tra xác nhận rằng lỗi không thuộc về Chủ Thẻ/Người Sử Dụng/Người Quản lý thì
+     Shinhan sẽ tiến hành bồi hoàn số tiền thiệt hại. Nếu việc điều tra xác nhận rằng Chủ Thẻ là người chịu
+     trách nhiệm, Shinhan có quyền ghi nợ khoản thanh toán bị chậm trễ, lãi suất và các loại phí phát sinh
+     trong khoảng thời gian điều tra vụ việc.
+
+14.4 Tổng số lượng Giao Dịch tra soát gian lận không được vượt quá 35 (ba mươi lăm) Giao Dịch cho mỗi
+     số thẻ.
+
+14.5 Shinhan được quyền từ chối tiếp nhận yêu cầu tra soát Giao Dịch trong các trường hợp sau:
+
+     (a) Giao Dịch có giá trị nhỏ hơn 25 (hai mươi lăm) Đô la Mỹ (USD) hoặc tương đương, phát sinh tại
+          Đơn vị chấp nhận thẻ thuộc loại hình Du lịch và Giải trí;
+
+     (b) Số lượng Giao Dịch tra soát vượt quá giới hạn quy định tại Điều 14.4;
+
+     (c) Yêu cầu tra soát được thực hiện sau thời hạn quy định tại Điều 14.1.
+
+
+
+15   Dịch vụ tin nhắn cho Thẻ
+
+15.1 Chủ Thẻ có thể lựa chọn sử dụng dịch vụ tin nhắn trên điện thoại di động cho Thẻ do Shinhan cung cấp.
+     Bằng việc đăng ký dịch vụ này, Chủ Thẻ đồng ý và xác nhận cho phép Shinhan thông qua việc gửi các
+     tin nhắn SMS đến số điện thoại di động mà Chủ Thẻ đã đăng ký, cung cấp cho Chủ Thẻ các thông tin
+     liên quan đến Thẻ bao gồm nhưng không giới hạn:
+
+     (a) Chi tiết về việc chấp thuận/từ chối cấp phép giao dịch đối với Thẻ;
+
+     (b) Các thông tin khác bao gồm nhưng không giới hạn các thông tin quảng cáo hoặc các thông báo cần
+          thiết từ Shinhan.
+
+15.2 Chủ Thẻ có trách nhiệm cung cấp số điện thoại di động chính xác theo yêu cầu của Shinhan và phải
+     thông báo cho Shinhan về thay đổi (hoặc hủy) số điện thoại di động mà Chủ Thẻ sử dụng để nhận dịch
+     vụ. Chủ Thẻ sẽ chịu trách nhiệm cho những hậu quả xảy ra do không cung cấp thông tin hoặc cung cấp
+     thông tin chậm trễ.
+
+15.3 Chủ Thẻ đồng ý để Shinhan cung cấp thông tin về số điện thoại của Chủ Thẻ cho các công ty cung cấp
+     dịch vụ thuê ngoài cũng như các nhà cung cấp viễn thông di động sử dụng nhằm các mục đích thực hiện
+     dịch vụ này. Trách nhiệm không tiết lộ, cung cấp và sử dụng thông tin Chủ Thẻ cho các mục đích không
+
+
+
+                                                      16
+      liên quan đến dịch vụ này sẽ được ràng buộc chặt chẽ trong Hợp Đồng giữa Shinhan và các công ty
+      cung cấp dịch vụ nói trên.
+
+15.4 Chủ Thẻ cam kết chịu trách nhiệm trong trường hợp Chủ Thẻ không nhận được tin nhắn do:
+
+      (a) Số điện thoại đăng ký không ở chế độ sử dụng hoặc không nằm trong khu vực cung cấp dịch vụ
+          hoặc do lỗi phần mềm của điện thoại;
+
+      (b) Trường hợp bất khả kháng được đề cập trong Điều 18 của ĐKĐK này (Sự Kiện Bất Khả Kháng).
+
+
+
+16    Cập nhật thông tin
+
+16.1 Chủ Thẻ sẽ thông báo ngay lập tức cho Shinhan bất kỳ sự thay đổi nào về thông tin của Chủ Thẻ và/hoặc
+      thông tin phòng ban và Người Sử Dụng Thẻ cũng như về bất kỳ phương thức nào mà Chủ Thẻ muốn sử
+      dụng để liên lạc giữa Chủ Thẻ và Shinhan. Chủ Thẻ phải chịu trách nhiệm đối với những thiệt hại do sự
+      trì hoãn thông báo đó hoặc hồ sơ thông báo những thông tin như trên được lập cẩu thả và các hiệu lực
+      pháp lý tương ứng liên quan đến sự chậm trễ đó.
+
+16.2 Chủ Thẻ có thể liên lạc với Shinhan để truy vấn hoặc chỉ thị thay đổi thông tin bằng cách yêu cầu bằng
+      văn bản tại quầy giao dịch của Chi nhánh/Phòng giao dịch của Shinhan.
+
+16.3 Bất kỳ thông báo, thư từ hoặc trao đổi liên lạc nào khác từ Shinhan đến Chủ Thẻ liên quan đến Thẻ có
+      thể được thực hiện thông qua gửi đến địa chỉ, số điện thoại hoặc email ghi trong Giấy Đề Nghị Cấp Thẻ
+      hoặc trong thông báo của Chủ Thẻ gửi Shinhan (dù là bằng văn bản hay qua Phương Thức Không
+      Khuyến Khích), và sẽ được xem là Chủ Thẻ đã nhận được căn cứ vào:
+
+     (a) Ngày giao văn bản, ngày giao thư hoặc ngày cố gắng giao thư trong trường hợp văn bản thông báo
+         được giao tận tay, gửi chuyển phát nhanh hoặc gửi bằng thư;
+
+     (b) Vào ngày gửi đi trong trường hợp gửi bằng email, tin nhắn hoặc gửi qua các phương tiện điện tử
+         khác;
+
+     (c) Vào ngày được thể hiện trong trường hợp thay đổi được thể hiện trên Bảng Sao Kê của Chủ Thẻ;
+
+     (d) Vào ngày công bố, trong trường hợp công bố trên trang web của Shinhan tại địa chỉ
+         www.shinhan.com.vn hoặc trong trường hợp niêm yết tại bất kỳ Chi nhánh/Phòng giao dịch nào của
+         Shinhan.
+
+
+
+                                                        17
+     Shinhan sẽ không có nghĩa vụ phải đảm bảo việc Chủ Thẻ có hay không nhận được thông báo/thư từ/trao
+     đổi liên lạc đó trên thực tế.
+
+
+
+17   Việc xử lý dữ liệu cá nhân, cung cấp và sử dụng các thông tin tín dụng
+
+17.1 Thông tin tín dụng bao gồm các thông tin nhận dạng doanh nghiệp, các thông tin giao dịch tín dụng,
+     thông tin về nghĩa vụ thanh toán các khoản nợ chậm thanh toán, thông tin về năng lực tín dụng và toàn
+     bộ các thông tin khác có thể được sử dụng để xác định tình trạng tín dụng của Chủ Thẻ.
+17.2 Chủ Thẻ đồng ý để Shinhan thực hiện tra cứu thông tin từ tổ chức cung cấp thông tin tín dụng hoặc từ
+     các trung tâm/cục thông tin tín dụng (như Trung tâm thông tin tín dụng (CIC), Cục thông tin tín dụng
+     Hàn Quốc (KCB), Cục thông tin tín dụng Nice, Cục thông tin tín dụng KIS và v.v... dành cho các Chủ
+     Thẻ Hàn Quốc) để xác định tình trạng tín dụng hoặc duy trì giao dịch và cũng đồng ý cho Shinhan cung
+     cấp các thông tin tín dụng của mình cho các tổ chức thông tin tín dụng nói trên.
+
+17.3 Chủ Thẻ đồng ý và xác nhận rằng Shinhan được phép tiết lộ bất kỳ thông tin nào (bao gồm cả thông tin
+     tín dụng) liên quan đến Chủ Thẻ bao gồm cả thông tin của các bên liên quan cho bất kỳ hoặc tất cả
+     những chủ thể sau:
+
+     (a) Trụ sở, văn phòng, chi nhánh, công ty con, công ty thành viên hoặc công ty liên kết của Shinhan
+          (“Thành Viên Tập Đoàn Shinhan”), nhân viên hoặc đại lý nào của Shinhan;
+
+     (b) Bất kỳ kiểm toán viên hoặc cố vấn chuyên môn nào của Shinhan hoặc của bất kỳ Thành Viên Tập
+          Đoàn Shinhan nào có nghĩa vụ bảo mật đối với Shinhan/bất kỳ Thành Viên Tập Đoàn Shinhan nào;
+
+     (c) Bất kỳ đại lý hoặc đơn vị cung cấp dịch vụ nào của Shinhan hoặc của bất kỳ Thành Viên Tập Đoàn
+          Shinhan nào có nghĩa vụ bảo mật đối với Shinhan/bất kỳ Thành Viên Tập Đoàn Shinhan nào;
+
+     (d) Bất kỳ cơ quan có thẩm quyền nào hoặc chủ thể khác có thẩm quyền về mặt pháp lý hoặc luật định
+          mà Shinhan có toàn quyền cho là cần thiết hoặc phải thực hiện tại từng thời điểm;
+
+     (e) Bất kỳ chủ thể nào khi Shinhan được yêu cầu phải tiết lộ thông tin theo giấy gọi ra tòa hoặc thủ tục
+          tố tụng khác được đưa ra bởi tòa án của bất kỳ quốc gia nào;
+
+     (f) Bất kỳ chủ thể nào khi Shinhan được yêu cầu phải tiết lộ thông tin theo pháp luật của bất kỳ quốc
+          gia nào (bao gồm tổ chức thông tin tín dụng ...); và
+
+     (g) Bất kỳ cơ quan có thẩm quyền trong nước hoặc nước ngoài nào mà Shinhan hoặc bất kỳ Thành
+          Viên Tập Đoàn Shinhan có thoả thuận hay thu xếp, theo đó, yêu cầu tiết lộ thông tin khách hàng
+                                                       18
+         hoặc thông tin tài khoản khách hàng, cho dù việc tiết lộ này được thực hiện bởi Shinhan hoặc thông
+         qua Thành Viên Tập Đoàn Shinhan.
+
+17.4 Việc xử lý dữ liệu cá nhân (bao gồm cả người có liên quan của Chủ Thẻ, nếu có) do Chủ Thẻ cung cấp
+     được thực hiện theo Thư chấp thuận về xử lý dữ liệu cá nhân và (các) tài liệu kèm theo mà Chủ Thẻ ký
+     kết với Shinhan. Để làm rõ, Thư chấp thuận về xử lý dữ liệu cá nhân và (các) tài liệu kèm theo là một
+     phần không tách rời của ĐKĐK này.
+
+17.5 Chủ Thẻ cũng đồng ý và xác nhận rằng bất kỳ Thành Viên Tập Đoàn Shinhan nào đều có thể chuyển
+     bất kỳ thông tin nào nói trên cho bất kỳ bên nào nêu trên mà Thành Viên Tập Đoàn Shinhan đó được
+     phép tiết lộ thông tin cho bên đó dù địa điểm kinh doanh chính của bên đó nằm ngoài quốc gia của Chủ
+     Thẻ hoặc toàn bộ hoặc một phần thông tin đó sau khi tiết lộ sẽ được bên đó tập hợp, giữ, xử lý hoặc sử
+     dụng bên ngoài quốc gia của Chủ Thẻ.
+
+
+
+18   Sự kiện bất khả kháng
+
+     Không bên nào phải chịu trách nhiệm về bất kỳ tổn thất nào mà Chủ Thẻ phải trả hoặc phải chịu do Sự
+     Kiện Bất Khả Kháng. Sự Kiện Bất Khả Kháng theo đây là bất kỳ sự kiện nào vượt ngoài khả năng kiểm
+     soát hợp lý của Shinhan, bao gồm hỏa hoạn, lũ lụt, động đất, bão hoặc sự kiện tự nhiên khác; đình công
+     hoặc tranh chấp lao động khác; chiến tranh, khởi nghĩa, khủng bố hoặc bạo loạn; việc hành động hoặc
+     không hành động của bất kỳ cơ quan có thẩm quyền nào; thay đổi pháp luật hoặc bất kỳ lệnh nào của
+     bất kỳ cơ quan có thẩm quyền nào; bất kỳ hư hỏng, tình trạng gián đoạn hoặc sự cố bị nhiễu nào của hệ
+     thống viễn thông, nguồn cấp điện và các hệ thống phụ trợ khác; bất kỳ sự cố kỹ thuật, tình trạng gián
+     đoạn hoặc sự cố bị nhiễu nào của bất kỳ hệ thống máy tính hay thiết bị nào hoặc của bất kỳ phương thức
+     giao dịch nào (dù do phần cứng hay phần mềm gây ra); và bất kỳ hư hỏng, tình trạng gián đoạn hoặc sự
+     cố bị nhiễu nào về hệ thống; thay đổi đột ngột môi trường tài chính, khủng hoảng kinh doanh tại các tổ
+     chức tín dụng hoặc thay đổi không thể tránh được vì lý do tương tự khác.
+
+
+
+19   Phòng chống rửa tiền
+
+19.1 Chủ Thẻ đồng ý thực thi các quyền và thực hiện các nghĩa vụ của mình theo Hợp Đồng Thẻ phù hợp
+     với tất cả các luật hoặc quy định hiện hành về chống rửa tiền.
+
+
+
+                                                      19
+     Chủ Thẻ phải cung cấp ngay lập tức cho Shinhan tất cả mọi thông tin và tài liệu mà Chủ Thẻ đang giữ,
+     bảo quản hoặc kiểm soát theo yêu cầu hợp lý của Shinhan để Shinhan tuân thủ bất kỳ luật hoặc quy định
+     nào về phòng chống rửa tiền.
+
+19.2 Chủ Thẻ đồng ý rằng Shinhan có thể tiết lộ bất kỳ thông tin nào liên quan đến Chủ Thẻ cho bất kỳ cơ
+     quan thi hành luật, cơ quan quản lý hoặc tòa án nào trong trường hợp pháp luật áp dụng có yêu cầu.
+
+19.3 Dù có bất kỳ quy định trái ngược nào khác trong Hợp Đồng Thẻ Ghi Nợ, Shinhan không có nghĩa vụ
+     thực hiện hoặc bỏ qua không thực hiện bất kỳ việc gì nếu việc đó sẽ hoặc có thể, theo ý kiến hợp lý của
+     Shinhan, tạo thành hành vi vi phạm bất kỳ luật hoặc quy định nào về chống rửa tiền.
+
+
+
+20   Các quy định khác
+
+20.1 Chủ Thẻ đồng ý rằng Shinhan có thể, vào bất kỳ lúc nào, sửa đổi các quy định trong ĐKĐK này, phí và
+     lãi liên quan, Điều Khoản và Điều Kiện Chung, ĐKĐK dịch vụ kèm theo Thẻ. Shinhan sẽ thông báo
+     đến Chủ Thẻ những sửa đổi và bổ sung này theo phương thức phù hợp do Shinhan lựa chọn. Các sửa
+     đổi sẽ có hiệu lực như trong thông báo của Shinhan nhưng không sớm hơn 07 ngày kể từ ngày Shinhan
+     gửi thông báo. Nếu Chủ Thẻ không đồng ý với những sửa đổi này, Chủ Thẻ có thể hủy Thẻ như quy
+     định tại Khoản 11.3 trong vòng 07 ngày kể từ ngày nhận thông báo. Trường hợp, Chủ Thẻ không hủy
+     Thẻ trong khoảng thời gian trên, Chủ Thẻ xác nhận và đồng ý rằng Chủ Thẻ được xem như đã chấp
+     nhận các sửa đổi.
+
+20.2 Nếu bất kỳ điều mục nào trong ĐKĐK này bị tuyên bố là không có hiệu lực hoặc không thể cưỡng chế
+     thi hành, tất cả các điều mục khác sẽ vẫn giữ nguyên toàn bộ hiệu lực miễn là mục đích của các điều
+     mục không được chứng minh một cách khách quan và rõ ràng là không thể thực hiện được.
+
+20.3 ĐKĐK này được điều chỉnh và diễn giải theo quy định của Pháp luật Việt Nam. ĐKĐK này được lập
+     thành hai ngôn ngữ là Tiếng Việt và Tiếng Anh. Trong trường hợp có sự khác biệt giữa Bản Tiếng Việt
+     và Bản Tiếng Anh thì bản Tiếng Việt sẽ được ưu tiên áp dụng.
+
+20.4 Trong trường hợp có bất kỳ tranh chấp nào mà các bên không thể giải quyết được bằng thương lượng
+     trên tinh thần thiện chí, thì tranh chấp đó sẽ được đưa ra Tòa án có thẩm quyền để giải quyết theo luật
+     pháp nước Cộng Hoà Xã Hội Chủ Nghĩa Việt Nam.
+
+20.5 Các vấn đề không được quy định trong ĐKĐK này sẽ tuân theo các quy định Điều khoản Điều kiện
+     chung của Shinhan hoặc các tập quán được chấp nhận chung.
+
+                                                      20
+

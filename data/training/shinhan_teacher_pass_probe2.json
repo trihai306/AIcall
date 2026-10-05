@@ -1,0 +1,272 @@
+[
+  {
+    "id": 5,
+    "fact_id": "set_pin",
+    "question": "Anh có thể hướng dẫn đặt PIN qua ứng dụng Shinhan Mobile Banking không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 7,
+    "fact_id": "set_pin",
+    "question": "Anh ơi, sau khi kích hoạt thẻ thì mình làm sao để thiết lập PIN?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 8,
+    "fact_id": "set_pin",
+    "question": "Chị có thể hướng dẫn em đặt mã PIN qua Internet Banking không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 15,
+    "fact_id": "minimum_payment",
+    "question": "Em cần biết số tiền tối thiểu phải trả hôm nay.",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 18,
+    "fact_id": "minimum_payment",
+    "question": "Cô cho em biết số tiền tối thiểu trong sao kê.",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 24,
+    "fact_id": "lost_card",
+    "question": "Thẻ rơi xuống nước bị mất, số điện thoại khóa thẻ là bao nhiêu?",
+    "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ."
+  },
+  {
+    "id": 26,
+    "fact_id": "minimum_payment",
+    "question": "Em cần biết số tiền trả tối thiểu để tránh phí trễ hạn nhé.",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 28,
+    "fact_id": "minimum_payment",
+    "question": "Bác có thể hướng dẫn cháu về yêu cầu trả tối thiểu không ạ?",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 29,
+    "fact_id": "minimum_payment",
+    "question": "Cô ơi, mình muốn hỏi về quy định của khoản trả tối thiểu.",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 30,
+    "fact_id": "minimum_payment",
+    "question": "Số tiền thanh toán tối thiểu trong sao kê nằm ở đâu thế cô?",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 31,
+    "fact_id": "minimum_payment",
+    "question": "Làm sao để biết chính xác số tiền trả tối thiểu cần nộp đây bác?",
+    "answer": "Dạ, mình xem số tiền thanh toán tối thiểu và ngày đến hạn trên sao kê thẻ nhé. Em chưa xem được sao kê của mình trong cuộc trò chuyện này ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Thanh toán tối thiểu là số tiền cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; số tiền của kỳ này nằm trên sao kê."
+  },
+  {
+    "id": 34,
+    "fact_id": "early_repayment",
+    "question": "Em hỏi xem có được chấp thuận trả khoản vay sớm ngay không bác?",
+    "answer": "Dạ, mình có thể đề nghị trả nợ trước hạn. Shinhan sẽ đối chiếu điều kiện và khoản phí nếu có theo hợp đồng của mình rồi xác nhận ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2024/Personal/CPD/040101R.1.1_%20Credit%20agreement_IND_one-time_loan_EN%28T%26C%29.pdf",
+    "persona": "khách nói kiểu miền Bắc",
+    "verified_fact": "Trả nợ gốc trước hạn cần đáp ứng điều kiện của hợp đồng và được ngân hàng chấp thuận; phí trả nợ trước hạn nếu có theo hợp đồng, không có một mức cố định trong đoạn nguồn này."
+  },
+  {
+    "id": 51,
+    "fact_id": "statement_discrepancy",
+    "question": "Giao dịch lạ trên sao kê Shinhan Bank thì sao?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách bận, hỏi vội",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 52,
+    "fact_id": "statement_discrepancy",
+    "question": "Sao kê không đúng những khoản trừ tiền này?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách bận, hỏi vội",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 59,
+    "fact_id": "register_digital_card",
+    "question": "Chị có hướng dẫn cách đăng ký thẻ ảo trên SOL không?",
+    "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực."
+  },
+  {
+    "id": 62,
+    "fact_id": "lost_card",
+    "question": "Chị đang cần khóa thẻ vì đã bị mất thì làm thế nào?",
+    "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ."
+  },
+  {
+    "id": 66,
+    "fact_id": "early_repayment",
+    "question": "Anh cho em hỏi về điều kiện cần thiết để trả khoản vay sớm tại ngân hàng này?",
+    "answer": "Dạ, mình có thể đề nghị trả nợ trước hạn. Shinhan sẽ đối chiếu điều kiện và khoản phí nếu có theo hợp đồng của mình rồi xác nhận ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2024/Personal/CPD/040101R.1.1_%20Credit%20agreement_IND_one-time_loan_EN%28T%26C%29.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Trả nợ gốc trước hạn cần đáp ứng điều kiện của hợp đồng và được ngân hàng chấp thuận; phí trả nợ trước hạn nếu có theo hợp đồng, không có một mức cố định trong đoạn nguồn này."
+  },
+  {
+    "id": 67,
+    "fact_id": "register_digital_card",
+    "question": "Bác muốn biết làm sao để đăng ký thẻ điện tử cho mình?",
+    "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "persona": "khách lớn tuổi",
+    "verified_fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực."
+  },
+  {
+    "id": 69,
+    "fact_id": "register_digital_card",
+    "question": "Anh ơi, làm thế nào để tạo thẻ ảo trên SOL được?",
+    "answer": "Dạ, mình mở SOL, chọn Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "persona": "khách lớn tuổi",
+    "verified_fact": "Đăng ký chức năng thẻ điện tử trong ứng dụng SOL tại Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực."
+  },
+  {
+    "id": 70,
+    "fact_id": "statement_discrepancy",
+    "question": "Sao kê sai giao dịch lạ trên thẻ của tôi?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 71,
+    "fact_id": "statement_discrepancy",
+    "question": "Em làm sao khi sao kê không đúng số tiền?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 72,
+    "fact_id": "statement_discrepancy",
+    "question": "Anh có thể giúp khi phát hiện sai lệch sao kê không?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 74,
+    "fact_id": "statement_discrepancy",
+    "question": "Mình cần gọi đâu vì sao kê sai hằng tháng?",
+    "answer": "Dạ, mình gọi Shinhan qua 1900 1577 để báo khoản sai lệch trên sao kê và được hướng dẫn kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Nếu phát hiện sai lệch khi kiểm tra sao kê thẻ tín dụng hằng tháng, khách gọi Shinhan 1900 1577."
+  },
+  {
+    "id": 75,
+    "fact_id": "cash_advance_interest",
+    "question": "Chị hỏi thử xem giao dịch ứng tiền mặt áp dụng lãi chưa?",
+    "answer": "Dạ, ứng trước tiền mặt bằng thẻ tín dụng không thuộc thời gian miễn lãi. Lãi được tính từ ngày tiếp theo của giao dịch đến khi mình thanh toán ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/TnC/2020_M1-%C4%90I%E1%BB%80U%20KI%E1%BB%86N%20V%C3%80%20%C4%90I%E1%BB%80U%20KHO%E1%BA%A2N%20TH%E1%BA%BA%20T%C3%8DN%20D%E1%BB%A4NG%20C%C3%81%20NH%C3%82N.pdf",
+    "persona": "khách nói kiểu miền Nam",
+    "verified_fact": "Giao dịch ứng trước tiền mặt bằng thẻ tín dụng không áp dụng thời gian miễn lãi; lãi tính từ ngày tiếp theo của giao dịch đến ngày thanh toán thực tế."
+  },
+  {
+    "id": 78,
+    "fact_id": "suspicious_email",
+    "question": "Anh nhận email yêu cầu chi tiết tài khoản lạ, có là lừa đảo qua email?",
+    "answer": "Dạ, mình đừng cung cấp mật khẩu, PIN hay thông tin tài khoản qua email đó. Shinhan không yêu cầu các thông tin ấy qua thư; mình nên báo ngân hàng để kiểm tra ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách bận, hỏi vội",
+    "verified_fact": "Shinhan không gửi email yêu cầu khách tiết lộ chi tiết tài khoản, mật khẩu hay PIN; khách cần cẩn trọng và báo Shinhan khi nhận yêu cầu đáng ngờ."
+  },
+  {
+    "id": 81,
+    "fact_id": "set_pin",
+    "question": "Em có thể thiết lập mã PIN qua internet banking được không chị?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách đang lo lắng",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 83,
+    "fact_id": "set_pin",
+    "question": "Tôi muốn hỏi xem mình có thể tự thay đổi mã PIN tại chi nhánh không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách đang lo lắng",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 85,
+    "fact_id": "lost_card",
+    "question": "Em có rơi thẻ ở đây và muốn biết cách khóa ngay không?",
+    "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách nói kiểu miền Nam",
+    "verified_fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ."
+  },
+  {
+    "id": 87,
+    "fact_id": "lost_card",
+    "question": "Chú thấy mất thẻ của mình thì báo khóa qua internet Banking được không?",
+    "answer": "Dạ, mình nên khóa thẻ ngay ạ. Mình gọi 1900 1577 hoặc vào SOL, chọn Thẻ > Mở/Khóa Thẻ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách nói kiểu miền Nam",
+    "verified_fact": "Nếu thẻ bị mất hoặc đánh cắp, báo Shinhan để khóa ngay qua 1900 1577 hoặc SOL/Internet Banking > Thẻ > Mở/Khóa Thẻ."
+  },
+  {
+    "id": 92,
+    "fact_id": "early_repayment",
+    "question": "Mình muốn tất toán trước hạn thì có phí nào không bác?",
+    "answer": "Dạ, mình có thể đề nghị trả nợ trước hạn. Shinhan sẽ đối chiếu điều kiện và khoản phí nếu có theo hợp đồng của mình rồi xác nhận ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2024/Personal/CPD/040101R.1.1_%20Credit%20agreement_IND_one-time_loan_EN%28T%26C%29.pdf",
+    "persona": "khách nói kiểu miền Bắc",
+    "verified_fact": "Trả nợ gốc trước hạn cần đáp ứng điều kiện của hợp đồng và được ngân hàng chấp thuận; phí trả nợ trước hạn nếu có theo hợp đồng, không có một mức cố định trong đoạn nguồn này."
+  }
+]

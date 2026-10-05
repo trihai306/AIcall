@@ -46,3 +46,7 @@ logs/**/*.mp3
 
 # Thu muc nghe thu tren dien thoai (file audio test, khong dua vao git)
 nghe/
+
+# File tạm của SQLite (WAL)
+*.db-shm
+*.db-wal

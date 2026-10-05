@@ -1,0 +1,61 @@
+{
+  "model": "qwen3.5:9b",
+  "passed": 6,
+  "total": 6,
+  "results": [
+    {
+      "scenario": "activate",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tôi vừa nhận thẻ Shinhan, cần làm gì trước khi dùng?",
+      "answer": "Chào bạn, sau khi nhận thẻ, bạn có thể kích hoạt ngay tại mục Thẻ > Kích hoạt thẻ trên SOL/Internet Banking hoặc gọi tổng đài 1900 1577 để hoàn tất.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "pin",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Mình đang ở xa chi nhánh, đặt PIN cho thẻ mới qua đâu?",
+      "answer": "Chào bạn, sau khi kích hoạt thẻ, bạn hoàn toàn có thể thiết lập PIN ngay qua Internet Banking hoặc Mobile Banking của Shinhan Bank mà không cần ra chi nhánh. Nếu chưa đăng nhập được, bạn cũng có thể liên hệ tổng đài để được hướng dẫn cụ thể nhé.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "lost",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Thẻ tôi bị rơi ở ngoài đường, cần làm gì ngay bây giờ?",
+      "answer": "Chào anh/chị, khi mất thẻ, anh/chị vui lòng gọi ngay đến tổng đài 1900 1577 hoặc đăng nhập vào SOL/Internet Banking để khóa thẻ ngay lập tức. Xin lỗi vì không thể kiểm tra chi tiết tài khoản của anh/chị nhưng Shinhan Bank luôn sẵn sàng hỗ trợ bảo vệ thông tin khách hàng.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "minimum",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Tháng này tôi chỉ trả mức tối thiểu được không, xem số tiền ở đâu?",
+      "answer": "Chào anh/chị, anh/chị có thể thanh toán mức tối thiểu mỗi tháng để tránh phí phạt, số tiền cụ thể sẽ được ghi rõ trên sao kê của mình. Xin lưu ý đây là thông tin chung và tôi chưa xem được tài khoản chi tiết của anh/chị ạ.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "statement",
+      "source": "card_user_guide_vi.pdf",
+      "prompt": "Bảng sao kê thẻ thể hiện những gì vậy em?",
+      "answer": "Chào bạn, bảng sao kê thẻ của Shinhan Bank sẽ hiển thị chi tiết các giao dịch, khoản phí và lãi suất (nếu có) trong chu kỳ cùng ngày đến hạn thanh toán. Bạn có thể dựa vào đó để theo dõi chính xác dòng tiền ra vào tài khoản của mình.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    },
+    {
+      "scenario": "digital",
+      "source": "digital_card_guide.pdf",
+      "prompt": "Muốn đăng ký thẻ điện tử trên SOL thì bắt đầu từ chỗ nào?",
+      "answer": "Chào anh/chị, để đăng ký thẻ điện tử trên ứng dụng SOL, anh/chị vui lòng truy cập mục \"Đăng ký thẻ điện tử\", xác nhận thỏa thuận và làm theo các bước xác thực/kích hoạt. Xin lưu ý rằng tôi chưa xem được tài khoản của anh/chị nên không thể hỗ trợ thêm về biểu phí hay lãi suất cụ thể.",
+      "fact_pattern": true,
+      "safe": true,
+      "concise": true
+    }
+  ]
+}

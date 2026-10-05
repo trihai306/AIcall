@@ -214,6 +214,63 @@ def test_thu_cau_khop_thi_bao_tinh_huong_va_diem(db, monkeypatch):
     assert d["mo_dau"] == ["Dạ về phí,"]
 
 
+def test_vi_du_moi_luu_chon_ngay_khong_nhung_cau_hoi(db, monkeypatch):
+    asyncio.run(fl.luu_tinh_huong(_th(tu_khoa=[])))
+    gia = _gan_rag(monkeypatch, _RagGia())
+
+    class _KhongDuocNhung:
+        def embed(self, _):
+            raise AssertionError("câu đã có trong ví dụ không cần nhúng")
+
+    gia.rag = _KhongDuocNhung()
+    d = asyncio.run(fl.thu({"cau": "  CÓ TỐN PHÍ KHÔNG? "}))
+    assert d["id"] == "hoi_phi"
+    assert d["cach_chon"] == "vi_du_da_luu"
+    assert d["diem"] is None
+
+
+def test_vi_du_trung_hai_tinh_huong_khong_doan_bua(db, monkeypatch):
+    asyncio.run(fl.luu_tinh_huong(_th(tu_khoa=[])))
+    asyncio.run(fl.luu_tinh_huong(_th(
+        id="hoi_han_muc", ten="Khách hỏi hạn mức",
+        vi_du=["Có tốn phí không?", "Hạn mức bao nhiêu?"],
+        tu_khoa=[], mo_dau=["Dạ về hạn mức,"])))
+    gia = _gan_rag(monkeypatch, _RagGia())
+
+    class _KhongDuocNhung:
+        def embed(self, _):
+            raise AssertionError("ví dụ mâu thuẫn phải dừng, không đoán bằng vector")
+
+    gia.rag = _KhongDuocNhung()
+    d = asyncio.run(fl.thu({"cau": "có tốn phí không"}))
+    assert d["id"] is None
+    assert d["cach_chon"] == "trung_vi_du"
+    assert d["dat_nguong"] is False
+
+
+def test_thu_cau_che_ngan_co_loi_ai_vua_noi(db, monkeypatch):
+    asyncio.run(fl.luu_tinh_huong(_th(
+        id="che_lai_cao", ten="Khách chê lãi cao",
+        vi_du=["lãi cao quá", "cao thế em"], tu_khoa=[],
+        mo_dau=["Dạ em hiểu băn khoăn của mình,"])))
+    gia = _gan_rag(monkeypatch, _RagGia())
+    assert asyncio.run(fl.thu({"cau": "cao thế em"}))["id"] is None
+
+    class _KhongDuocNhung:
+        def embed(self, _):
+            raise AssertionError("ngữ cảnh phiên đã đủ rõ, không cần nhúng")
+
+    gia.rag = _KhongDuocNhung()
+    d = asyncio.run(fl.thu({
+        "cau": "Cao thế em.",
+        "cau_khach_truoc": "Lãi suất vay bao nhiêu?",
+        "loi_ai_truoc": "Dạ lãi suất của gói vay là từ 7.9%/năm ạ.",
+    }))
+    assert d["id"] == "che_lai_cao"
+    assert d["cach_chon"] == "ngu_canh_phien"
+    assert d["diem"] is None
+
+
 def test_thu_cau_khong_khop_thi_noi_ro_se_roi_ve_ro_duoi(db, monkeypatch):
     """Dưới ngưỡng KHÔNG phải lỗi - đó là hành vi cố ý, vì nói sai chủ đề tệ hơn
     nói 'Dạ' trung tính. Nhưng phải nói ra, không thì người dùng tưởng hỏng."""

@@ -1,0 +1,139 @@
+HƯỚNG DẪN ĐĂNG KÝ
+CHỨC NĂNG THẺ ĐIỆN TỬ
+QUA ỨNG DỤNG SOL VIETNAM
+NỘI DUNG
+1. Giới thiệu chung
+2. Các bước đăng ký Chức năng thẻ điện tử thông qua ứng dụng
+SOL Vietnam
+GIỚI THIỆU CHUNG
+   Giới thiệu Chức năng thẻ điện tử
+   Chức năng thẻ điện tử được cung cấp thông qua ứng dụng SOL Vietnam,
+     áp dụng cho cả thẻ tín dụng và thẻ ghi nợ (Visa/ MasterCard);
+   Sau khi kích hoạt chức năng này, chủ thẻ có thể xem các thông tin thẻ, bao gồm:
+     Số thẻ, ngày hết hạn, mã bảo mật (CVC) để thực hiện thanh toán trực tuyến hoặc
+     tích hợp thông tin thẻ vào ứng dụng SamsungPay để sử dụng tại các điểm chấp
+     nhận thẻ có chấp nhận thanh toán bằng SamsungPay.
+
+
+   Các sản phẩm được tích hợp chức năng thẻ điện tử
+               Thẻ Tín dụng                               Thẻ Ghi nợ
+  • VISA Cash-back Classic Credit Card            • VISA Classic Debit Card
+  • VISA Cash-back Gold Credit Card               • PWM VISA Debit Card
+  • VISA Cash-back Platinum Credit Card           • Shinhan My SOL Debit Card
+  • VISA Travel Platinum Credit Card              • Shinhan Be-SAFE Debit Card
+  • PWM VISA Platinum Credit Card
+  • VISA Hi-Point Classic Credit Card
+  • VISA Hi-Point Gold Credit Card
+  • VISA Hi-Point Platinum Credit Card
+  • Lotte Mart Credit Card
+  • Korean Air Shinhan Consumer Credit Card
+  • Shinhan Visa Signature Consumer Credit Card
+
+    Chủ thẻ là người nước ngoài chỉ có thể đăng ký chức năng Thẻ điện tử cho các sản
+ phẩm thẻ ghi nợ .
+CÁC BƯỚC ĐĂNG KÝ
+CHỨC NĂNG THẺ ĐIỆN TỬ
+
+   1. Chọn “Đăng ký thẻ điện tử”
+   - Đăng nhập ứng dụng SOL;
+   - Chọn chức năng “Đăng ký thẻ điện tử”.
+
+
+   2. Cam kết của khách hàng
+     Khách hàng xác nhận đồng ý với
+   “Thỏa thuận sử dụng chức năng thẻ điện tử”
+
+   3. Cài đặt
+   - Hạn mức sử dụng thẻ/ ngày;
+   - Mã số bí mật của Thẻ điện tử.
+
+
+   4. Xác nhận yêu cầu
+   - Kiểm tra thông tin;
+   - Yêu cầu gửi mã xác nhận qua SMS.
+
+
+
+   5. Kích hoạt chức năng Thẻ điện tử
+     Kích hoạt Thẻ điện tử vừa tạo.
+
+
+   6. Xem thông tin thẻ
+   - Xem thông tin thẻ trên ứng dụng SOL;
+   - Sử dụng thông tin thẻ cho giao dịch
+   trực tuyến.
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 1: Chọn chức năng “Đăng ký Thẻ điện tử”
+
+- Chọn Đăng nhập và đăng nhập vào ứng dụng SOL với thông tin đã đăng ký tại
+  Shinhan (tên đăng nhập, mật khẩu) ;
+- Chọn Thẻ  Đăng ký thẻ điện tử để bắt đầu.
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 2: Cam kết của khách hàng
+
+- Chọn thẻ muốn đăng ký chức năng thẻ điện tử  chọn “Đăng ký thẻ điện tử”
+bên dưới thẻ đã chọn;
+- Vui lòng đánh dấu  đồng ý với “Thỏa thuận sử dụng thẻ điện tử”, sau đó bấm
+“Tiếp tục”.
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 3: Cài đặt hạn mức sử dụng & Mã PIN thẻ
+
+- Cài đặt “Hạn mức ngày”: số tiền tối đa có thể sử dụng của thẻ/ ngày;
+- Cài đặt Mã bảo mật cho thẻ điện tử của bạn bằng cách nhập và xác nhận mã số
+  bảo mật.
+
+
+
+
+          Vui lòng ghi nhớ
+         Mã bảo mật của thẻ
+          để sử dụng nhé!
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 4: Xác nhận đề nghị tạo Chức năng thẻ điện tử
+
+- Xem lại và nhấn chọn “Xác nhận” nếu thông tin đã chính xác;
+- Bấm “Yêu cầu mã xác thực” để nhận mã xác thực qua SMS;
+- Nhập mã xác thực vừa nhận được, Chức năng thẻ điện tử đã được tạo thành công.
+
+
+
+
+      Trường hợp muốn thay đổi “Hạn mức ngày”:
+      vui lòng nhấn mũi tên quay lại để cài đặt lại
+      hạn mức mong muốn.
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 5: Kích hoạt Chức năng thẻ điện tử
+
+- Kiểm tra lại thông tin và nhấn “Tiếp tục”
+- Bấm “Yêu cầu mã xác thực” để nhận mã xác thực qua SMS;
+- Nhập mã xác thực, Chức năng thẻ điện tử được kích hoạt thành công.
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 6: Xem thông tin thẻ điện tử trên ứng dụng SOL
+
+- Để xem thông tin thẻ, vui lòng trở lại màn hình chính -> chọn dịch vụ
+  “Thẻ”  chọn “Quản lý thẻ/ Mã PIN thẻ”;
+- Thẻ điện tử của bạn sẽ hiển thị như hình bên dưới
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 6: Xem thông tin thẻ điện tử trên ứng dụng SOL (tiếp theo)
+
+- Để xem thông tin chi tiết, vui lòng nhấn vào biểu tượng      bên dưới;
+- Nhập Mã PIN của thẻ điện tử  Thông tin thẻ (bao gồm số thẻ, ngày hết hạn,
+  mã bảo mật CVC) sẽ hiển thị để bạn có thể sử dụng tại các cửa hàng dịch trực tuyến.
+(chỉ sử dụng được cho giao dịch trực tuyến).
+ĐĂNG KÝ CHỨC NĂNG THẺ ĐIỆN TỬ
+Bước 6: Xem thông tin thẻ điện tử trên ứng dụng SOL (tiếp theo)
+
+    Trường hợp muốn ẩn thông tin thẻ điện tử: vui lòng bấm vào biểu tượng
+trên thẻ, các thông tin thẻ điện tử sẽ được ẩn đi như hình bên dưới.
+         Let’s go with
+
+
+
+
+     Chúc quý khách có trải nghiệm tốt hơn
+khi giao dịch trực tuyến với Chức năng thẻ điện tử
+        của Ngân hàng Shinhan Việt Nam!
+       CÁM ƠN QUÝ KHÁCH
+ ĐÃ TIN TƯỞNG SỬ DỤNG DỊCH VỤ
+CỦA NGÂN HÀNG SHINHAN VIỆT NAM
+

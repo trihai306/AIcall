@@ -11,6 +11,7 @@ lệch, và lệch ở đây nghĩa là một trong hai đường train âm th�
 import asyncio
 import logging
 import subprocess
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,11 @@ logger = logging.getLogger(__name__)
 # thu gom rác có thể huỷ task theo dõi giữa chừng, và dịch vụ sẽ không bao giờ
 # được nạp lại sau khi train xong.
 _tasks_nen: set = set()
+_latest_service_ready_task: asyncio.Task | None = None
+
+
+def latest_service_ready_task() -> asyncio.Task | None:
+    return _latest_service_ready_task
 
 
 def _vram_trong_mib() -> int | None:
@@ -81,6 +87,27 @@ async def nap_lai_tts(job) -> None:
         logger.exception("nạp lại TTS sau train hỏng")
 
 
+async def ham_lai_llm(job) -> None:
+    """Load the production model before the first customer arrives after train."""
+    from backend.main import app_state
+    from backend.config import settings
+
+    try:
+        start = time.perf_counter()
+        await app_state.llm.client.chat(
+            model=app_state.llm.model,
+            messages=[{"role": "user", "content": "xin chào"}],
+            think=False,
+            keep_alive=-1,
+            options={"num_ctx": settings.llm_num_ctx, "num_predict": 8},
+        )
+        job.log(f"Đã hâm lại LLM phục vụ '{app_state.llm.model}' "
+                f"({round((time.perf_counter() - start) * 1000)} ms)")
+    except Exception as e:
+        job.log(f"[WARN] Không hâm lại được LLM phục vụ: {e}")
+        logger.exception("hâm lại LLM sau train hỏng")
+
+
 def theo_doi_roi_don(job, xong=None):
     """Tạo task chờ job kết thúc rồi nạp lại dịch vụ.
 
@@ -102,8 +129,12 @@ def theo_doi_roi_don(job, xong=None):
             except Exception:
                 logger.exception("bước dọn riêng hỏng")
         await nap_lai_tts(job)
+        await ham_lai_llm(job)
 
+    global _latest_service_ready_task
     t = asyncio.create_task(_chay())
+    job.service_ready_task = t
+    _latest_service_ready_task = t
     _tasks_nen.add(t)
     t.add_done_callback(_tasks_nen.discard)
     return t

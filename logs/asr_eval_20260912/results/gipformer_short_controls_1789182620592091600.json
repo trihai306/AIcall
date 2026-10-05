@@ -1,0 +1,65 @@
+{
+  "scope": "synthetic local TTS; not human speech",
+  "results": [
+    {
+      "prompt": "Ừ.",
+      "gain": 1.0,
+      "text": "ừ"
+    },
+    {
+      "prompt": "Ừ.",
+      "gain": 0.2,
+      "text": "ừ"
+    },
+    {
+      "prompt": "Vâng.",
+      "gain": 1.0,
+      "text": "vâng"
+    },
+    {
+      "prompt": "Vâng.",
+      "gain": 0.2,
+      "text": "vâng"
+    },
+    {
+      "prompt": "Không.",
+      "gain": 1.0,
+      "text": "không"
+    },
+    {
+      "prompt": "Không.",
+      "gain": 0.2,
+      "text": "không"
+    },
+    {
+      "prompt": "A lô.",
+      "gain": 1.0,
+      "text": "a lô"
+    },
+    {
+      "prompt": "A lô.",
+      "gain": 0.2,
+      "text": "a lô"
+    },
+    {
+      "prompt": "Bốn trăm.",
+      "gain": 1.0,
+      "text": "bốn trăm"
+    },
+    {
+      "prompt": "Bốn trăm.",
+      "gain": 0.2,
+      "text": "bốn trăm"
+    },
+    {
+      "prompt": "Không vay nữa.",
+      "gain": 1.0,
+      "text": "không vay nữa"
+    },
+    {
+      "prompt": "Không vay nữa.",
+      "gain": 0.2,
+      "text": "không vay nữa"
+    }
+  ]
+}

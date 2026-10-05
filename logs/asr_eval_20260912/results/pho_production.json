@@ -1,0 +1,808 @@
+{
+  "name": "pho_production",
+  "model": {
+    "status": "ok",
+    "engine": "faster-whisper",
+    "loaded": true,
+    "model": "PhoWhisper-medium-ct2",
+    "model_path": "C:\\duan\\chat-ai\\models\\phowhisper\\PhoWhisper-medium-ct2",
+    "beam_size": 5,
+    "vad_filter": false
+  },
+  "completed": true,
+  "summary": {
+    "samples": 25,
+    "audio_s": 107.10000000000001,
+    "repeats": 2,
+    "mean_ms": 264.129781993106,
+    "p50_ms": 252.48919997829944,
+    "p95_ms": 398.14324000617484,
+    "rtf": 0.061654944442835195,
+    "empty": 0,
+    "repeat_disagreements": 0,
+    "reference_scores": {
+      "verified_samples": 0,
+      "wer": null,
+      "cer": null,
+      "reason": "No human-verified reference; model outputs are not ground truth"
+    },
+    "latency_scope": "offline full-excerpt decode; warmup/download excluded; not phone response time"
+  },
+  "samples": [
+    {
+      "sample_id": "d9b57f0b_01",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_01.wav",
+      "start_s": 1.86,
+      "end_s": 3.48,
+      "duration_s": 1.62,
+      "sha256": "0228afca7d5bc090602c7357010cfbecda99827f88f44cf29d2062fde4109244",
+      "runs": [
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.19645181794961294,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 172.7744999807328
+        },
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.19645181794961294,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 171.42770008649677
+        }
+      ],
+      "text": "điện",
+      "median_ms": 172.10110003361478
+    },
+    {
+      "sample_id": "d9b57f0b_02",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_02.wav",
+      "start_s": 5.38,
+      "end_s": 6.28,
+      "duration_s": 0.9,
+      "sha256": "1c132f50651e595b0356baf52e2a3c3f55561bcfe83864a596ece779b6cb4352",
+      "runs": [
+        {
+          "text": "a lô",
+          "raw_text": "a lô.",
+          "logprob": -0.00219573974609375,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 162.56059997249395
+        },
+        {
+          "text": "a lô",
+          "raw_text": "a lô.",
+          "logprob": -0.00219573974609375,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 168.88100001960993
+        }
+      ],
+      "text": "a lô",
+      "median_ms": 165.72079999605194
+    },
+    {
+      "sample_id": "d9b57f0b_03",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_03.wav",
+      "start_s": 10.44,
+      "end_s": 13.14,
+      "duration_s": 2.7,
+      "sha256": "42deabf89349ea4f01e1d0604bc8cf82477b2e89f2a7429a218d40a4d20ec706",
+      "runs": [
+        {
+          "text": "anh muốn tư vấn về khoảng cách liên minh",
+          "raw_text": "anh muốn tư vấn về khoảng cách liên minh.",
+          "logprob": -0.07146139705882353,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 282.56719990167767
+        },
+        {
+          "text": "anh muốn tư vấn về khoảng cách liên minh",
+          "raw_text": "anh muốn tư vấn về khoảng cách liên minh.",
+          "logprob": -0.07146139705882353,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 273.56260002125055
+        }
+      ],
+      "text": "anh muốn tư vấn về khoảng cách liên minh",
+      "median_ms": 278.0648999614641
+    },
+    {
+      "sample_id": "d9b57f0b_04",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_04.wav",
+      "start_s": 19.5,
+      "end_s": 23.66,
+      "duration_s": 4.16,
+      "sha256": "0e78da10fa4e97806da273eacebf3bdc897a61149244d426ae10df0ad9c78188",
+      "runs": [
+        {
+          "text": "nghề ngồi ngay kín chép hạm nước bên mình và bên kia",
+          "raw_text": "nghề ngồi ngay kín chép hạm nước bên mình và bên kia.",
+          "logprob": -0.31657608436501544,
+          "filter_rejection": "avg_logprob -0.32 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 320.3714999835938
+        },
+        {
+          "text": "nghề ngồi ngay kín chép hạm nước bên mình và bên kia",
+          "raw_text": "nghề ngồi ngay kín chép hạm nước bên mình và bên kia.",
+          "logprob": -0.31657608436501544,
+          "filter_rejection": "avg_logprob -0.32 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 334.05420009512454
+        }
+      ],
+      "text": "nghề ngồi ngay kín chép hạm nước bên mình và bên kia",
+      "median_ms": 327.2128500393592
+    },
+    {
+      "sample_id": "d9b57f0b_05",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_05.wav",
+      "start_s": 31.88,
+      "end_s": 34.06,
+      "duration_s": 2.18,
+      "sha256": "a968a29b129997dfe073a25138cdd3ecb82f6ea4a7dce695a66f60f6c3f8ea69",
+      "runs": [
+        {
+          "text": "đại vua đã vay bốn trăm",
+          "raw_text": "đại vua đã vay bốn trăm.",
+          "logprob": -0.18749999403953552,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 241.502899909392
+        },
+        {
+          "text": "đại vua đã vay bốn trăm",
+          "raw_text": "đại vua đã vay bốn trăm.",
+          "logprob": -0.18749999403953552,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 238.08200005441904
+        }
+      ],
+      "text": "đại vua đã vay bốn trăm",
+      "median_ms": 239.79244998190552
+    },
+    {
+      "sample_id": "d9b57f0b_06",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_06.wav",
+      "start_s": 41.54,
+      "end_s": 43.18,
+      "duration_s": 1.64,
+      "sha256": "b5bc98aa0fc4e8f929558ed0ad229c2012396abdfcafa5a47f2fd67243e367c8",
+      "runs": [
+        {
+          "text": "đây muốn vay bốn trăm",
+          "raw_text": "đây muốn vay bốn trăm.",
+          "logprob": -0.13746995192307693,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 241.60129996016622
+        },
+        {
+          "text": "đây muốn vay bốn trăm",
+          "raw_text": "đây muốn vay bốn trăm.",
+          "logprob": -0.13746995192307693,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 227.15359996072948
+        }
+      ],
+      "text": "đây muốn vay bốn trăm",
+      "median_ms": 234.37744996044785
+    },
+    {
+      "sample_id": "d9b57f0b_07",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_07.wav",
+      "start_s": 56.8,
+      "end_s": 58.6,
+      "duration_s": 1.8,
+      "sha256": "6d59ec34bee472d61451e53ec33d31d9c0f1708730363b8757178c391122ac3e",
+      "runs": [
+        {
+          "text": "đường anh mướn ngay cùng trăm triệu",
+          "raw_text": "đường anh mướn ngay cùng trăm triệu.",
+          "logprob": -0.19418174028396606,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 272.73650001734495
+        },
+        {
+          "text": "đường anh mướn ngay cùng trăm triệu",
+          "raw_text": "đường anh mướn ngay cùng trăm triệu.",
+          "logprob": -0.19418174028396606,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 265.1342999888584
+        }
+      ],
+      "text": "đường anh mướn ngay cùng trăm triệu",
+      "median_ms": 268.9354000031017
+    },
+    {
+      "sample_id": "d9b57f0b_08",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_08.wav",
+      "start_s": 67.16,
+      "end_s": 69.6,
+      "duration_s": 2.44,
+      "sha256": "cd7a14a37002e7b48ce5bf7f1f10fc1d976732286dfcedd8bda7503237c41e0c",
+      "runs": [
+        {
+          "text": "em vay vốn trăm triệu tỷ thủ tục nhiều lắm",
+          "raw_text": "em vay vốn trăm triệu tỷ thủ tục nhiều lắm.",
+          "logprob": -0.12745949625968933,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 325.15119994059205
+        },
+        {
+          "text": "em vay vốn trăm triệu tỷ thủ tục nhiều lắm",
+          "raw_text": "em vay vốn trăm triệu tỷ thủ tục nhiều lắm.",
+          "logprob": -0.12745949625968933,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 326.3346999883652
+        }
+      ],
+      "text": "em vay vốn trăm triệu tỷ thủ tục nhiều lắm",
+      "median_ms": 325.7429499644786
+    },
+    {
+      "sample_id": "d9b57f0b_09",
+      "session_id": "d9b57f0b",
+      "path": "samples\\d9b57f0b_09.wav",
+      "start_s": 78.34,
+      "end_s": 79.3,
+      "duration_s": 0.96,
+      "sha256": "2dcadf0f9eba46eb8c73fdc249be3e46b8759c369306eeda6ffcd157540585ed",
+      "runs": [
+        {
+          "text": "ô kê",
+          "raw_text": "ô kê.",
+          "logprob": -0.44609375,
+          "filter_rejection": "cụm ngắn lạ + avg_logprob -0.45",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 175.0863998895511
+        },
+        {
+          "text": "ô kê",
+          "raw_text": "ô kê.",
+          "logprob": -0.44609375,
+          "filter_rejection": "cụm ngắn lạ + avg_logprob -0.45",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 169.97829999309033
+        }
+      ],
+      "text": "ô kê",
+      "median_ms": 172.53234994132072
+    },
+    {
+      "sample_id": "fe5a9697_01",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_01.wav",
+      "start_s": 1.2,
+      "end_s": 2.82,
+      "duration_s": 1.62,
+      "sha256": "291ecde7bb8d48ad0b8a1bd4e5e671ecf748433e50ece28161a3e5d42aaceff1",
+      "runs": [
+        {
+          "text": "đi",
+          "raw_text": "đi.",
+          "logprob": -0.4765625,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 162.58799994830042
+        },
+        {
+          "text": "đi",
+          "raw_text": "đi.",
+          "logprob": -0.4765625,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 165.35380005370826
+        }
+      ],
+      "text": "đi",
+      "median_ms": 163.97090000100434
+    },
+    {
+      "sample_id": "fe5a9697_02",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_02.wav",
+      "start_s": 6.58,
+      "end_s": 9.88,
+      "duration_s": 3.3,
+      "sha256": "4907501ff5f2c7b7ad67710c1df5ea2b2ecc9abd6d3b0150bbf49e4d11fa2ca3",
+      "runs": [
+        {
+          "text": "a lô",
+          "raw_text": "a lô.",
+          "logprob": -0.1158203125,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 165.7992999535054
+        },
+        {
+          "text": "a lô",
+          "raw_text": "a lô.",
+          "logprob": -0.1158203125,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 170.622400008142
+        }
+      ],
+      "text": "a lô",
+      "median_ms": 168.2108499808237
+    },
+    {
+      "sample_id": "fe5a9697_03",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_03.wav",
+      "start_s": 11.02,
+      "end_s": 13.44,
+      "duration_s": 2.42,
+      "sha256": "a53db081ef42cc98d86456a4eabd21b93b26e18c120e644ce397a144ce4ec211",
+      "runs": [
+        {
+          "text": "ờ tư vấn cho anh khoản vay bên mình",
+          "raw_text": "ờ tư vấn cho anh khoản vay bên mình.",
+          "logprob": -0.004470825078897178,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 253.69789998512715
+        },
+        {
+          "text": "ờ tư vấn cho anh khoản vay bên mình",
+          "raw_text": "ờ tư vấn cho anh khoản vay bên mình.",
+          "logprob": -0.004470825078897178,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 251.28049997147173
+        }
+      ],
+      "text": "ờ tư vấn cho anh khoản vay bên mình",
+      "median_ms": 252.48919997829944
+    },
+    {
+      "sample_id": "fe5a9697_04",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_04.wav",
+      "start_s": 15.8,
+      "end_s": 29.4,
+      "duration_s": 13.6,
+      "sha256": "953a93e4ced2eef4c4f716bfd0658da29d48627d95a4ee49c28330e7d05e3e23",
+      "runs": [
+        {
+          "text": "anh muốn vay bốn trăm trong mười hai tháng thì đồng loại coi nhiều em",
+          "raw_text": "anh muốn vay bốn trăm trong mười hai tháng thì đồng loại coi nhiều em.",
+          "logprob": -0.04719002112265556,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 356.7979000508785
+        },
+        {
+          "text": "anh muốn vay bốn trăm trong mười hai tháng thì đồng loại coi nhiều em",
+          "raw_text": "anh muốn vay bốn trăm trong mười hai tháng thì đồng loại coi nhiều em.",
+          "logprob": -0.04719002112265556,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 365.74390006717294
+        }
+      ],
+      "text": "anh muốn vay bốn trăm trong mười hai tháng thì đồng loại coi nhiều em",
+      "median_ms": 361.27090005902573
+    },
+    {
+      "sample_id": "fe5a9697_05",
+      "session_id": "fe5a9697",
+      "path": "samples\\fe5a9697_05.wav",
+      "start_s": 30.44,
+      "end_s": 49.62,
+      "duration_s": 19.18,
+      "sha256": "3ce6893c63771d896ee4697a28e8479013b5825a560c4e4df111ec38d6f5a903",
+      "runs": [
+        {
+          "text": "ừ tinh ý",
+          "raw_text": "ừ tinh ý.",
+          "logprob": -0.27050780398505075,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 192.94219999574125
+        },
+        {
+          "text": "ừ tinh ý",
+          "raw_text": "ừ tinh ý.",
+          "logprob": -0.27050780398505075,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 200.01839997712523
+        }
+      ],
+      "text": "ừ tinh ý",
+      "median_ms": 196.48029998643324
+    },
+    {
+      "sample_id": "bc4d83e7_01",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_01.wav",
+      "start_s": 0.58,
+      "end_s": 2.2,
+      "duration_s": 1.62,
+      "sha256": "61a6f999a40edb1cd489fc28af321d48a6a974515af9157c3bbc183084408cd6",
+      "runs": [
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.1951497420668602,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 170.48329999670386
+        },
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.1951497420668602,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 184.99060010071844
+        }
+      ],
+      "text": "điện",
+      "median_ms": 177.73695004871115
+    },
+    {
+      "sample_id": "bc4d83e7_02",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_02.wav",
+      "start_s": 5.58,
+      "end_s": 7.2,
+      "duration_s": 1.62,
+      "sha256": "0ade4776c0b5178c36e198f619e5561be732576e52b8d8341abd814fb100dc5c",
+      "runs": [
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.3063150991996129,
+          "filter_rejection": "cụm ngắn lạ + avg_logprob -0.31",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 184.55459992401302
+        },
+        {
+          "text": "điện",
+          "raw_text": "điện.",
+          "logprob": -0.3063150991996129,
+          "filter_rejection": "cụm ngắn lạ + avg_logprob -0.31",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 169.38430001027882
+        }
+      ],
+      "text": "điện",
+      "median_ms": 176.96944996714592
+    },
+    {
+      "sample_id": "bc4d83e7_03",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_03.wav",
+      "start_s": 10.88,
+      "end_s": 18.62,
+      "duration_s": 7.74,
+      "sha256": "17157a77a214b259a8378de5266aabb802330701faab7770f79bc03e41b4b33c",
+      "runs": [
+        {
+          "text": "a lô tư vấn cho anh khoảng vai bên mình ạ",
+          "raw_text": "a lô tư vấn cho anh khoảng vai bên mình ạ.",
+          "logprob": -0.09375000235281493,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 276.09830000437796
+        },
+        {
+          "text": "a lô tư vấn cho anh khoảng vai bên mình ạ",
+          "raw_text": "a lô tư vấn cho anh khoảng vai bên mình ạ.",
+          "logprob": -0.09375000235281493,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 294.17459992691875
+        }
+      ],
+      "text": "a lô tư vấn cho anh khoảng vai bên mình ạ",
+      "median_ms": 285.13644996564835
+    },
+    {
+      "sample_id": "bc4d83e7_04",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_04.wav",
+      "start_s": 20.02,
+      "end_s": 26.1,
+      "duration_s": 6.08,
+      "sha256": "7cee2f3c307a45ee7023f8f1948f0fbc3f2695a14ec25dd2fc99e69b55de50ff",
+      "runs": [
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.30007101595401764,
+          "filter_rejection": "avg_logprob -0.30 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 352.79790009371936
+        },
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.30007101595401764,
+          "filter_rejection": "avg_logprob -0.30 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 384.2492999974638
+        }
+      ],
+      "text": "đó là năm một nghìn chín trăm hai mười tám",
+      "median_ms": 368.5236000455916
+    },
+    {
+      "sample_id": "bc4d83e7_05",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_05.wav",
+      "start_s": 28.5,
+      "end_s": 34.36,
+      "duration_s": 5.86,
+      "sha256": "384f62febe1d636063f612aba4cd10ad75f920e97b13f01e756f17c01ac1e621",
+      "runs": [
+        {
+          "text": "hãi nguồn vay tầm bốn trăm triệu cho vòng mười hai tháng",
+          "raw_text": "hãi nguồn vay tầm bốn trăm triệu cho vòng mười hai tháng.",
+          "logprob": -0.11694335611537099,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 402.4792000418529
+        },
+        {
+          "text": "hãi nguồn vay tầm bốn trăm triệu cho vòng mười hai tháng",
+          "raw_text": "hãi nguồn vay tầm bốn trăm triệu cho vòng mười hai tháng.",
+          "logprob": -0.11694335611537099,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 397.9744999669492
+        }
+      ],
+      "text": "hãi nguồn vay tầm bốn trăm triệu cho vòng mười hai tháng",
+      "median_ms": 400.22685000440106
+    },
+    {
+      "sample_id": "bc4d83e7_06",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_06.wav",
+      "start_s": 37.1,
+      "end_s": 38.1,
+      "duration_s": 1.0,
+      "sha256": "bbc4f772baa9baf2cb416b2d8f8cda16d45d60592aaf67b6ef09e9fa65343ada",
+      "runs": [
+        {
+          "text": "được",
+          "raw_text": "được.",
+          "logprob": -0.401953125,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 197.69910001195967
+        },
+        {
+          "text": "được",
+          "raw_text": "được.",
+          "logprob": -0.401953125,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 187.45029997080564
+        }
+      ],
+      "text": "được",
+      "median_ms": 192.57469999138266
+    },
+    {
+      "sample_id": "bc4d83e7_07",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_07.wav",
+      "start_s": 43.18,
+      "end_s": 53.44,
+      "duration_s": 10.26,
+      "sha256": "62810b445be654eba6bb8bf30ccd219b81051707a318a91c28dbcd0536e35e27",
+      "runs": [
+        {
+          "text": "ừ thế tư vấn cho anh về khoản vay nếu anh vay sáu mươi tháng thì một tràng đông tăng nhiệm",
+          "raw_text": "ừ thế tư vấn cho anh về khoản vay nếu anh vay sáu mươi tháng thì một tràng đông tăng nhiệm.",
+          "logprob": -0.13979387790598768,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 491.5775000117719
+        },
+        {
+          "text": "ừ thế tư vấn cho anh về khoản vay nếu anh vay sáu mươi tháng thì một tràng đông tăng nhiệm",
+          "raw_text": "ừ thế tư vấn cho anh về khoản vay nếu anh vay sáu mươi tháng thì một tràng đông tăng nhiệm.",
+          "logprob": -0.13979387790598768,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 487.0098999235779
+        }
+      ],
+      "text": "ừ thế tư vấn cho anh về khoản vay nếu anh vay sáu mươi tháng thì một tràng đông tăng nhiệm",
+      "median_ms": 489.2936999676749
+    },
+    {
+      "sample_id": "bc4d83e7_08",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_08.wav",
+      "start_s": 53.76,
+      "end_s": 54.64,
+      "duration_s": 0.88,
+      "sha256": "8c02583f4a96a6d6d2d091c21fc7f8e1dfce58eac48374ef9103e413aa408b12",
+      "runs": [
+        {
+          "text": "cảm giác",
+          "raw_text": "cảm giác.",
+          "logprob": -0.7371651956013271,
+          "filter_rejection": "avg_logprob -0.74 <= -0.55",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 176.76199995912611
+        },
+        {
+          "text": "cảm giác",
+          "raw_text": "cảm giác.",
+          "logprob": -0.7371651956013271,
+          "filter_rejection": "avg_logprob -0.74 <= -0.55",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 177.3344000102952
+        }
+      ],
+      "text": "cảm giác",
+      "median_ms": 177.04819998471066
+    },
+    {
+      "sample_id": "bc4d83e7_09",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_09.wav",
+      "start_s": 56.26,
+      "end_s": 60.12,
+      "duration_s": 3.86,
+      "sha256": "2a1e7dd19d6c073b8b6b54f3738ec945c1a8340262168d71d98c775b1ba48896",
+      "runs": [
+        {
+          "text": "đề bài được truyền bình luận là đề có thể là một đề có thể rất đẹp",
+          "raw_text": "đề bài được truyền bình luận là đề có thể là một đề có thể rất đẹp.",
+          "logprob": -0.3906249875823657,
+          "filter_rejection": "avg_logprob -0.39 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 392.08729995880276
+        },
+        {
+          "text": "đề bài được truyền bình luận là đề có thể là một đề có thể rất đẹp",
+          "raw_text": "đề bài được truyền bình luận là đề có thể là một đề có thể rất đẹp.",
+          "logprob": -0.3906249875823657,
+          "filter_rejection": "avg_logprob -0.39 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 387.5303000677377
+        }
+      ],
+      "text": "đề bài được truyền bình luận là đề có thể là một đề có thể rất đẹp",
+      "median_ms": 389.80880001327023
+    },
+    {
+      "sample_id": "bc4d83e7_10",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_10.wav",
+      "start_s": 60.58,
+      "end_s": 66.26,
+      "duration_s": 5.68,
+      "sha256": "4f6cd6b0ef1d16b018ebdf54876595e88a16d870467021d73d48eb0c84be4982",
+      "runs": [
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.3057528409090909,
+          "filter_rejection": "avg_logprob -0.31 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 303.40860004071146
+        },
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.3057528409090909,
+          "filter_rejection": "avg_logprob -0.31 <= -0.3",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 308.2830999046564
+        }
+      ],
+      "text": "đó là năm một nghìn chín trăm hai mười tám",
+      "median_ms": 305.84584997268394
+    },
+    {
+      "sample_id": "bc4d83e7_11",
+      "session_id": "bc4d83e7",
+      "path": "samples\\bc4d83e7_11.wav",
+      "start_s": 68.6,
+      "end_s": 72.58,
+      "duration_s": 3.98,
+      "sha256": "ac51456daa06d2c810335efe238fa30b75d224871f3a8dc57e4ec4fbe3f7c616",
+      "runs": [
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.2926136295903813,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 312.96869996003807
+        },
+        {
+          "text": "đó là năm một nghìn chín trăm hai mười tám",
+          "raw_text": "đó là năm một nghìn chín trăm hai mươi tám.",
+          "logprob": -0.2926136295903813,
+          "filter_rejection": "",
+          "no_speech_prob": 0.0,
+          "production_retry_replayed": false,
+          "elapsed_ms": 313.3864999981597
+        }
+      ],
+      "text": "đó là năm một nghìn chín trăm hai mười tám",
+      "median_ms": 313.1775999790989
+    }
+  ]
+}

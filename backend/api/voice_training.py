@@ -25,6 +25,7 @@ from backend.config import settings
 from backend.core.device import get_system_info
 from backend.core.jobs import JobRunner, Step
 from backend.core.vram import giai_phong_vram, theo_doi_roi_don
+from backend.core.training_guard import live_service_busy_reason
 from backend.services.audio_utils import pcm_to_wav
 
 logger = logging.getLogger(__name__)
@@ -484,6 +485,13 @@ async def train(body: TrainRequest):
         return {"error": "Thiếu tên giọng"}
     if runner.is_busy():
         return {"error": "Đang có tiến trình khác chạy.", "job_id": runner.running_job_id}
+    from backend.api.training import runner as llm_runner
+    if llm_runner.is_busy():
+        return {"error": "Đang train LLM trên cùng GPU.",
+                "job_id": llm_runner.running_job_id}
+    busy_reason = live_service_busy_reason()
+    if busy_reason:
+        return {"error": busy_reason + " Train giọng khi dịch vụ rảnh."}
 
     device = get_system_info().get("device", "cpu")
     if not str(device).startswith("cuda"):

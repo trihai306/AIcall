@@ -12,7 +12,8 @@ bị chấm CHÊ với biên 0.026 - lật. Nên chữ không tự cứu đượ
 hiệu ĐỘC LẬP với tai máy. Tín hiệu đó là: bot đã tư vấn chủ đề ấy chưa.
 """
 from backend.services.filler_situation import (
-    chon_tinh_huong, chu_de_da_noi, loc_theo_ngu_canh,
+    chon_tinh_huong, chon_phan_hoi_ngan_theo_phien, chu_de_da_noi,
+    loc_theo_ngu_canh, vua_bao_lai_suat,
 )
 import numpy as np
 
@@ -192,6 +193,51 @@ def test_da_tu_van_cong_don_qua_nhieu_luot():
     s.add_turn("user", "thế vay được bao nhiêu")
     s.add_turn("assistant", "Dạ hạn mức tối đa 500 triệu ạ.")
     assert s.da_tu_van == {"lai_suat", "han_muc"}
+
+
+def test_cao_the_em_lay_chu_de_lai_ngay_truoc_trong_phien():
+    s = _phien()
+    s.add_turn("user", "Lãi suất vay tín chấp bao nhiêu?")
+    s.add_turn("assistant", "Dạ lãi suất của gói vay là từ 7.9%/năm ạ.")
+    assert vua_bao_lai_suat(s.history)
+    bo_qua = loc_theo_ngu_canh(
+        {"che_lai_cao": "lai_suat"}, s.da_tu_van)
+    assert chon_phan_hoi_ngan_theo_phien(
+        "Cao thế em.", s.history, bo_qua) == "che_lai_cao"
+    assert chon_phan_hoi_ngan_theo_phien(
+        "cao thế e", s.history, bo_qua) == "che_lai_cao"
+
+
+def test_cao_the_khong_duoc_lay_lai_cu_sau_khi_da_doi_chu_de():
+    s = _phien()
+    s.add_turn("user", "lãi suất bao nhiêu")
+    s.add_turn("assistant", "Lãi suất từ 7.9%/năm ạ.")
+    s.add_turn("user", "phí bao nhiêu")
+    s.add_turn("assistant", "Phí theo biểu phí đã công bố ạ.")
+    assert not vua_bao_lai_suat(s.history)
+    assert chon_phan_hoi_ngan_theo_phien("cao thế em", s.history) is None
+    assert chon_phan_hoi_ngan_theo_phien(
+        "không cao thế đâu", s.history) is None
+
+
+def test_chua_bao_lai_hoac_dang_hoi_thi_khong_tu_chon_che():
+    s = _phien()
+    s.add_turn("user", "lãi suất bao nhiêu")
+    assert chon_phan_hoi_ngan_theo_phien("cao thế em", s.history) is None
+    s.add_turn("assistant", "Em chưa có thông tin xác nhận về mức lãi ạ.")
+    assert chon_phan_hoi_ngan_theo_phien("cao thế em", s.history) is None
+    s.danh_dau_bi_cat()
+    assert chon_phan_hoi_ngan_theo_phien(
+        "cao thế em", s.history,
+        bo_qua=frozenset({"che_lai_cao"})) is None
+
+
+def test_chi_noi_lai_tuy_ho_so_chua_du_de_hieu_cao_the():
+    s = _phien()
+    s.add_turn("user", "lãi suất bao nhiêu")
+    s.add_turn("assistant", "Lãi suất tùy hồ sơ của mình ạ.")
+    assert not vua_bao_lai_suat(s.history)
+    assert chon_phan_hoi_ngan_theo_phien("cao thế em", s.history) is None
 
 
 def test_bi_cat_loi_thi_bo_luon_chu_de_cua_luot_do():

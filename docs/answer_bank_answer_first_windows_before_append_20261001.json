@@ -1,0 +1,20 @@
+{
+  "nhom": "chinh_sach",
+  "ten": "kiem_thu_answer_first_20261001",
+  "so_dong": 1,
+  "items": [
+    {
+      "id": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+      "cau_hoi": [],
+      "tra_loi": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+      "san_pham": "",
+      "bat": true,
+      "updated_at": 1790831177.0766118,
+      "nguon": "nhap_tay",
+      "voice_ready": true
+    }
+  ],
+  "voice": {
+    "status": "ready"
+  }
+}

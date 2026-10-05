@@ -1,0 +1,111 @@
+{
+  "status": {
+    "enabled": true,
+    "model": "qwen3.5:9b",
+    "config": {
+      "questions_per_document": 300,
+      "variants_per_answer": 1,
+      "learn_history": true
+    },
+    "stats": {
+      "answers": 240,
+      "questions": 882,
+      "memory_questions": 408,
+      "voice_ready": 240,
+      "voice_total": 240
+    },
+    "job": {
+      "id": "answer_bank_1790831706630",
+      "status": "running",
+      "phase": "answers",
+      "current_document": "faq/faq_banking.md",
+      "documents_done": 0,
+      "documents_total": 12,
+      "answers_added": 0,
+      "voice_done": 0,
+      "voice_total": 0,
+      "logs": [
+        "Chờ khách yên lặng thêm 14 giây.",
+        "Chờ khách yên lặng thêm 13 giây.",
+        "Chờ khách yên lặng thêm 12 giây.",
+        "Chờ khách yên lặng thêm 11 giây.",
+        "Chờ khách yên lặng thêm 10 giây.",
+        "Chờ khách yên lặng thêm 9 giây.",
+        "Chờ khách yên lặng thêm 8 giây.",
+        "Chờ khách yên lặng thêm 7 giây.",
+        "Chờ khách yên lặng thêm 6 giây.",
+        "Chờ khách yên lặng thêm 5 giây.",
+        "Chờ khách yên lặng thêm 4 giây.",
+        "Chờ khách yên lặng thêm 3 giây.",
+        "Chờ khách yên lặng thêm 2 giây.",
+        "Chờ khách yên lặng thêm 1 giây."
+      ],
+      "error": ""
+    },
+    "last_run": 1790831706.6306343
+  },
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "61 docs"
+    }
+  },
+  "pytest": {
+    "passed": 245,
+    "deselected": 1,
+    "deselected_case": "tests/test_spec_vector_cache.py::test_phan_loai_dong_bo_dung_lai_vector_spec",
+    "elapsed_s": 4.31
+  },
+  "reviews": {
+    "generation_runtime": "PASS",
+    "runtime_generation": "PASS",
+    "ui": "PASS"
+  },
+  "disposable_fixture_removed": true,
+  "deployed_files_verified": true,
+  "sha256": {
+    "backend/api/knowledge.py": "550f474ae4f1e52dae8b2e2c10310b932cbfddeb60d83c354fe0981c216bf11a",
+    "backend/services/answer_bank_editor.py": "70d96819df3b530c824f3aa767ccdb05289253d55f76462147d2e61c667a2735",
+    "backend/services/answer_bank_learning.py": "bf466d1526f80e33be71c9875be2a052ebb244da19c85205308849e09d49519f",
+    "backend/services/answer_bank_selector.py": "b0d884015f8c7cf13fc1186e2731a768fdc22a2b423f6bbc14c7c67f5b3ff9b2",
+    "backend/services/knowledge_qa_service.py": "a58d5b0ad7daaf9b3d7e3ea8c5895134b85f5dfc3c5371a6bbd1ae191149b400",
+    "backend/services/bang_hoi_dap.py": "686f85a6b8975d43c2c212ca574fa4da89f404be9826b111ab5b50af6f1ca871",
+    "backend/core/startup.py": "fa3278f67661c1fa6a203f91e01808d3809ab40011b17bdbb54b3a4df391ad02",
+    "frontend/app.js": "01fde02f262e7aca68cc9c8b195b6c827b6a227833c8173f5becc9e9455fdb52",
+    "frontend/index.html": "42a9cabd7648f8308e0f1a044fec5ad9a1727a28c645b6543ad149a719dd1e26",
+    "docs/THU_VIEN_TRA_LOI_TU_DONG.md": "c815a55245f1d52a89e08805f0a37233ba84e31d74247499f37f63e3a93d1106"
+  },
+  "ui": {
+    "server_status": "Đã kết nối",
+    "session_id": "b5d735e9",
+    "final_source": "shinhan/shinhan_card_user_guide_vi.md",
+    "final_visible_answers": 20,
+    "console_errors": [],
+    "screenshot": "answer_bank_answer_first_windows_20261001.png"
+  },
+  "live_checks": {
+    "answer_only_no_examples": true,
+    "novel_phrasings": 3,
+    "qwen_confirmed_choices": true,
+    "f5_cached_audio_bytes": 199244,
+    "unrelated_not_selected": true,
+    "passed_after_append": true,
+    "requested_append": 8,
+    "added_append": 4,
+    "manual_preserved": true
+  }
+}

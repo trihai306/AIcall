@@ -1,0 +1,59 @@
+{
+  "updated_utc": "2026-09-23T17:38:42+00:00",
+  "worker": {
+    "state": "running",
+    "phase": "creating_scoring_and_mining"
+  },
+  "questions": {
+    "generated_unique": 3863,
+    "remaining_to_configured_raw_cap_upper_bound": 2137,
+    "awaiting_9b_judge": 1810,
+    "passed_9b_awaiting_source_review": 1572,
+    "judge_failed_awaiting_manual_review": 5,
+    "approved_for_future_training": 40,
+    "teacher_rejected": 408,
+    "source_review_rejected": 28
+  },
+  "sources": {
+    "verified_fact_cards": 20,
+    "mined_chunks": 41,
+    "new_fact_candidates_awaiting_review": 8
+  },
+  "training": {
+    "completed_runs": 1,
+    "training_examples_seen_across_runs": 27,
+    "latest_run": {
+      "run_id": "job_1790179999894",
+      "model": "banking-qwen35-2b-style-20260923-231319",
+      "dataset_rows": 30,
+      "train_rows": 27,
+      "holdout_rows": 3,
+      "epochs": 1,
+      "status": "candidate_evaluated"
+    }
+  },
+  "learning_checks": {
+    "latest_candidate": "banking-qwen35-2b-style-20260923-231319",
+    "suites": {
+      "shinhan_heldout": {
+        "passed": 6,
+        "total": 6,
+        "report": "data/training/shinhan_style_v1_eval.json"
+      },
+      "natural_dialogue": {
+        "passed": 6,
+        "total": 10,
+        "report": "data/training/natural_shinhan_v1_eval.json"
+      },
+      "legacy_generic_banking": {
+        "passed": 4,
+        "total": 7,
+        "report": "data/training/banking_shinhan_v1_eval.json"
+      }
+    },
+    "passed_cases": 16,
+    "total_cases": 23,
+    "quality_gate_passed": false,
+    "meaning": "Số ca kiểm tra độc lập đạt; không phải số câu model đã nhớ hoặc đã học tốt trong mọi tình huống."
+  }
+}

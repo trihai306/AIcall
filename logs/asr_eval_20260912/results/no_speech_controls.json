@@ -1,0 +1,83 @@
+{
+  "created_at": 1789181380.724604,
+  "results": [
+    {
+      "engine": "pho_production",
+      "sample": "digital_silence_1s",
+      "text": "người tham gia phòng cháy ngay tại thị trường quốc hội",
+      "filter_rejection": "avg_logprob -0.53 <= -0.3",
+      "known_no_speech": true
+    },
+    {
+      "engine": "pho_production",
+      "sample": "digital_silence_4s",
+      "text": "đó là năm một nghìn chín trăm hai mười tám",
+      "filter_rejection": "",
+      "known_no_speech": true
+    },
+    {
+      "engine": "pho_production",
+      "sample": "white_noise_rms8_3s",
+      "text": "đó là năm một nghìn chín trăm hai mười tám",
+      "filter_rejection": "",
+      "known_no_speech": true
+    },
+    {
+      "engine": "pho_production",
+      "sample": "tone450hz_rms1000_2s",
+      "text": "những ngôi nhà tuyệt vời trước những ngôi nhà trước những ngôi nhà trước những ngôi nhà trước những ngôi nhà thứ nhất",
+      "filter_rejection": "kẹt vòng lặp: cụm 8 từ 'trước những ngôi nhà trước những ngôi nhà' lặp 3 lần",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_int8",
+      "sample": "digital_silence_1s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_int8",
+      "sample": "digital_silence_4s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_int8",
+      "sample": "white_noise_rms8_3s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_int8",
+      "sample": "tone450hz_rms1000_2s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_fp32",
+      "sample": "digital_silence_1s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_fp32",
+      "sample": "digital_silence_4s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_fp32",
+      "sample": "white_noise_rms8_3s",
+      "text": "Ừ",
+      "known_no_speech": true
+    },
+    {
+      "engine": "gip1.5_fp32",
+      "sample": "tone450hz_rms1000_2s",
+      "text": "Ừ",
+      "known_no_speech": true
+    }
+  ],
+  "scope": "synthetic known-no-speech only; bypasses production VAD",
+  "real_call_accuracy": null
+}

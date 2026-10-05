@@ -32,6 +32,8 @@ import logging
 import re
 import unicodedata
 
+from backend.pipeline import bankvn_router_runtime
+
 logger = logging.getLogger(__name__)
 
 # Mô tả cho mô hình đọc. Viết như nói với người mới: mô hình chọn hàm bằng chính
@@ -81,6 +83,19 @@ DINH_NGHIA = [
         },
     },
 ]
+
+
+def prompt_tool_bankvn(system_prompt: str, tools: list[dict]) -> str:
+    """Render protocol text cho BankVN bằng đúng schema tool của backend."""
+    schema = json.dumps(tools, ensure_ascii=False, separators=(",", ":"))
+    return (
+        system_prompt
+        + "\n\nCÔNG CỤ CÓ THỂ GỌI:\n"
+        + schema
+        + "\nNếu cần gọi công cụ, chỉ trả đúng dạng: "
+          "<|bankvn_tool_call|>{\"name\":\"ten_ham\",\"arguments\":{}}"
+          "<|bankvn_end|>. Nếu không cần công cụ thì trả lời bình thường bằng tiếng Việt."
+    )
 
 # Câu trả về khi không tra được. Phải là câu HOÀN CHỈNH bằng tiếng Việt: mô hình
 # hay chép nguyên kết quả công cụ vào câu nói, nên đây cũng là thứ khách nghe.
@@ -199,15 +214,53 @@ def _bo_dau(s: str) -> str:
 # liệu. Đối chứng 3 lần/ô: bỏ chuỗi đó thì đúng 6/6, giữ thì tụt còn 1/3.
 _RE_HO_SO = re.compile(
     r"(du no|con no|no bao nhieu|hop dong(?! lao dong)|den han|ky han con|tra xong|"
-    r"con may thang|so du|khoan vay.{0,12}(cua|voi) (toi|anh|chi|minh))"
+    r"con may thang|so du.{0,8}(du no|khoan vay|no vay)|"
+    r"khoan vay.{0,12}(cua|voi) (toi|anh|chi|minh))"
+)
+# Những ý rõ ràng KHÔNG cần tra dữ liệu. Đặt trước lưới sản phẩm để các câu từ
+# chối như "chưa muốn vay" không bị chữ "muốn vay" kéo nhầm sang tra sản phẩm.
+# Chỉ giữ các mẫu có độ chắc cao; câu mơ hồ vẫn để classifier/LLM xử lý.
+_RE_KHONG_CONG_CU = re.compile(
+    r"(cam on|xin cam on|chua muon|khong muon|khong can vay|tu choi|"
+    r"chua co nhu cau vay|chua co nhu cau|tam gac lai|"
+    r"tam thoi.{0,20}khong can|vay.{0,30}chua hop|"
+    r"suy nghi them|de (toi|anh|chi|minh) suy nghi|dang ban|dang hop|"
+    r"goi lai|hen goi|nghe ro|tam biet|em ten gi|thoi tiet|"
+    r"so du tai khoan|hom nay.{0,24}(mua|nang|lanh|nong)|"
+    r"^(alo|xin chao|chao)( bank| em| anh| chi)?[.! ]*$)"
 )
 # Số liệu SẢN PHẨM.
 _RE_SAN_PHAM = re.compile(
     r"(lai suat|han muc|bieu phi|phi thuong nien|phi tra no|dieu kien vay|"
+    r"phi duy tri|the ghi no|the tin dung|goi vay|tra no truoc han|phat.{0,20}tra no|"
     r"vay toi da|vay duoc bao nhieu|thoi han vay|ho so can|giay to|"
     r"muon vay|can vay|nhu cau vay|vay tam|vay khoang|vay trong|"
     r"moi thang.{0,16}bao nhieu|tra.{0,16}moi thang)"
 )
+
+KHONG_CONG_CU = "__bankvn_no_tool__"
+
+
+def quyet_dinh_nhanh(cau: str) -> str | None:
+    """Quyết định chắc chắn: tên tool, KHONG_CONG_CU, hoặc None nếu còn mơ hồ."""
+    t = _bo_dau(cau or "")
+    if _RE_HO_SO.search(t):
+        return "tra_ho_so_khach"
+    if _RE_KHONG_CONG_CU.search(t):
+        return KHONG_CONG_CU
+    if _RE_SAN_PHAM.search(t):
+        return "tra_thong_tin_san_pham"
+    return None
+
+
+def quyet_dinh_classifier(cau: str) -> tuple[str | None, dict | None]:
+    """Dùng classifier cực nhỏ khi regex chưa chắc; lỗi/missing model thì fallback LLM."""
+    pred = bankvn_router_runtime.classify(cau)
+    if not pred or not pred.get("confident"):
+        return None, pred
+    if pred.get("label") == "assistant":
+        return KHONG_CONG_CU, pred
+    return pred.get("tool"), pred
 
 
 def loc_nhanh(cau: str) -> str | None:
@@ -216,12 +269,8 @@ def loc_nhanh(cau: str) -> str | None:
     Hồ sơ xét TRƯỚC sản phẩm: "khoản vay của anh còn bao nhiêu" chứa cả "khoan
     vay" lẫn ý hỏi số, mà thứ khách muốn là hồ sơ của họ chứ không phải bảng giá.
     """
-    t = _bo_dau(cau or "")
-    if _RE_HO_SO.search(t):
-        return "tra_ho_so_khach"
-    if _RE_SAN_PHAM.search(t):
-        return "tra_thong_tin_san_pham"
-    return None
+    decision = quyet_dinh_nhanh(cau)
+    return None if decision == KHONG_CONG_CU else decision
 
 
 

@@ -1,6 +1,7 @@
 """Chọn tình huống bằng cosine. Thuần numpy, không GPU."""
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -8,7 +9,8 @@ import numpy as np
 import pytest
 
 from backend.services.filler_situation import (
-    NGUONG_DIEM, chon_tinh_huong, chuan_hoa,
+    NGUONG_DIEM, chon_tinh_huong, chon_tinh_huong_cau_day_du,
+    chon_tinh_huong_tu_khoa_nhanh, chon_tinh_huong_vi_du_nhanh, chuan_hoa,
 )
 
 
@@ -63,6 +65,76 @@ def test_nguong_tuy_chinh():
     q = chuan_hoa(v(0.8, 0.6, 0))[0]
     assert chon_tinh_huong(q, kho, nguong=0.9)[0] is None
     assert chon_tinh_huong(q, kho, nguong=0.5)[0] == "a"
+
+
+def test_cau_day_du_co_tu_khoa_ro_cuu_ung_vien_vector_sap_nguong():
+    kho = {"the_dien_tu": chuan_hoa(v(1, 0))}
+    q = chuan_hoa(v(0.85, 0.527))[0]
+    situations = [SimpleNamespace(id="the_dien_tu", bat=True,
+                                  tu_khoa=("thẻ điện tử", "thẻ ảo"))]
+    assert chon_tinh_huong_cau_day_du(
+        "Đăng ký thẻ điện tử Shinhan và mã SMS ở đâu?", q, kho, situations
+    )[0] == "the_dien_tu"
+    assert chon_tinh_huong_cau_day_du(
+        "Đăng ký tài khoản và mã SMS ở đâu?", q, kho, situations
+    )[0] is None
+
+
+def test_cau_day_du_khong_cuu_khi_tu_khoa_mo_ho_hoac_diem_yeu():
+    kho = {"the_dien_tu": chuan_hoa(v(1, 0)), "phi": chuan_hoa(v(0, 1))}
+    situations = [
+        SimpleNamespace(id="the_dien_tu", bat=True, tu_khoa=("thẻ điện tử",)),
+        SimpleNamespace(id="phi", bat=True, tu_khoa=("thẻ điện tử",)),
+    ]
+    q = chuan_hoa(v(0.85, 0.527))[0]
+    assert chon_tinh_huong_cau_day_du(
+        "Thẻ điện tử thế nào?", q, kho, situations
+    )[0] is None
+    assert chon_tinh_huong_cau_day_du(
+        "Thẻ điện tử thế nào?", chuan_hoa(v(0.70, 0.714))[0], kho,
+        situations[:1]
+    )[0] is None
+
+
+def test_tu_khoa_ro_chon_ngay_nhung_khong_cat_nham_cau_phu_dinh():
+    situations = [
+        SimpleNamespace(id="the_dien_tu", bat=True,
+                        tu_khoa=("thẻ điện tử", "thẻ ảo")),
+        SimpleNamespace(id="hoi_chi_nhanh", bat=True, tu_khoa=("ở đâu",)),
+        SimpleNamespace(id="khach_dong_y", bat=True, tu_khoa=("đăng ký",)),
+    ]
+    assert chon_tinh_huong_tu_khoa_nhanh(
+        "Đăng ký thẻ điện tử Shinhan và mã SMS dùng ở đâu?", situations
+    ) == "the_dien_tu"
+    assert chon_tinh_huong_tu_khoa_nhanh(
+        "Tôi không hỏi thẻ điện tử, tôi hỏi lãi suất", situations
+    ) is None
+    situations.append(SimpleNamespace(
+        id="doi_chieu_the", bat=True, tu_khoa=("thẻ điện tử",)))
+    assert chon_tinh_huong_tu_khoa_nhanh(
+        "Thẻ điện tử dùng ra sao?", situations
+    ) is None
+
+
+def test_vi_du_moi_duoc_chon_ngay_va_trung_nhan_phai_ve_vector():
+    situations = [
+        SimpleNamespace(id="chung", bat=True, vi_du=("A lô",)),
+        SimpleNamespace(id="hoi_phi", bat=True,
+                        vi_du=("Mất phí gì không?", "Có tốn phí không?")),
+    ]
+    assert chon_tinh_huong_vi_du_nhanh(
+        "  MAT PHI GI KHONG  ", situations) == ("hoi_phi", True)
+    situations.append(SimpleNamespace(id="che_phi_cao", bat=True,
+                                      vi_du=("mất phí gì không",)))
+    assert chon_tinh_huong_vi_du_nhanh(
+        "Mất phí gì không?", situations) == (None, True)
+    assert chon_tinh_huong_vi_du_nhanh("A lô", situations) == (None, False)
+    assert chon_tinh_huong_vi_du_nhanh(
+        "Mất phí gì không?", situations,
+        bo_qua=frozenset({"hoi_phi"})) == ("che_phi_cao", True)
+    situations[1].bat = False
+    assert chon_tinh_huong_vi_du_nhanh(
+        "Có tốn phí không?", situations) == (None, False)
 
 
 # --- Ngưỡng siết lên 0,90 ngày 05-09-2026 -------------------------------------

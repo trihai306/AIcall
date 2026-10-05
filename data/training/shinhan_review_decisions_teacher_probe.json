@@ -1,0 +1,26 @@
+[
+  {
+    "id": 2,
+    "question": "Chị cho biết cần làm gì để thiết lập PIN tại chi nhánh ngân hàng?",
+    "decision": "rejected",
+    "reason": "Lời hỏi máy móc, thiếu thủ tục cụ thể trong nguồn"
+  },
+  {
+    "id": 6,
+    "question": "Em xin hỏi làm sao để nhập mã PIN sau khi nhận thẻ Shinhan online?",
+    "decision": "rejected",
+    "reason": "Hỏi nhập PIN online, nguồn chỉ nói thiết lập PIN"
+  },
+  {
+    "id": 10,
+    "question": "Em cần đến chi nhánh Shinhan để thiết lập mã PIN như thế nào ạ?",
+    "decision": "rejected",
+    "reason": "Hỏi cách đến chi nhánh, nguồn không có thủ tục/đường đi"
+  },
+  {
+    "id": 11,
+    "question": "Chú ơi, mình có thể đổi PIN trực tuyến ngay sau khi kích hoạt thẻ không?",
+    "decision": "rejected",
+    "reason": "Hỏi đổi PIN, nguồn chỉ nói thiết lập PIN"
+  }
+]

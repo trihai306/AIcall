@@ -575,6 +575,36 @@ def _fmt_trieu(dong: float, uoc_tinh: bool = False) -> str:
     return value.replace(".", ",") + " triệu đồng"
 
 
+# Chủ đề hẹp khách nêu đích danh. Tài liệu đang dùng (sản phẩm + FAQ) không có
+# chữ nào của nhóm thì nói thật là chưa có thông tin. Đo 02-10-2026: "lãi suất
+# thấu chi" được luật lãi suất đọc thành "lãi suất gói vay 7,9%", còn "ứng tiền
+# mặt bằng thẻ có miễn lãi không" được mô hình đáp "mọi giao dịch miễn lãi 55
+# ngày" - ứng tiền mặt thật ra không được miễn lãi.
+_CHU_DE_HEP = (
+    ("ứng tiền mặt", ("ung tien", "ung truoc", "rut tien mat")),
+    ("thấu chi", ("thau chi",)),
+    ("trả nợ trước hạn", ("tra no truoc han", "tra truoc han", "tat toan truoc", "tat toan som")),
+    ("rút tiền trước hạn", ("rut truoc han", "rut tien truoc", "rut truoc ky han")),
+    ("bảo hiểm", ("bao hiem",)),
+)
+_TEN_SP = (("tiet_kiem", "tiet kiem"), ("the_tin_dung", "the tin dung"),
+           ("vay_mua_nha", "vay mua nha"), ("vay_tin_chap", "vay tin chap"))
+
+
+def _chu_de_khong_co(t: str, tai_lieu: str, ma_sp: str) -> str | None:
+    if not (tai_lieu or "").strip():
+        return None  # chưa biết sản phẩm: để RAG tra cả kho
+    # Câu nêu SẢN PHẨM KHÁC thì là đổi chủ đề, không phải hỏi trong tài liệu này.
+    if any(cum in t for ma, cum in _TEN_SP if ma != ma_sp):
+        return None
+    doc = _bo_dau(tai_lieu)
+    for ten, cac in _CHU_DE_HEP:
+        if (any(re.search(rf"\b{c}\b", t) for c in cac)
+                and not any(re.search(rf"\b{c}\b", doc) for c in cac)):
+            return ten
+    return None
+
+
 def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
             history: list[dict] | None = None, xung_ho: str = "anh chị",
             du_kien: LoanState | None = None) \
@@ -585,12 +615,23 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         return None
     ma_sp = _ma_san_pham(tai_lieu)
     sp_doc = _phan_san_pham(tai_lieu)
+    chu_de = _chu_de_khong_co(t, tai_lieu, ma_sp)
+    if chu_de:
+        return "chua_co_thong_tin_chu_de", (
+            f"Dạ phần {chu_de} hiện em chưa có thông tin chính xác, em xin phép kiểm tra "
+            f"lại và báo {xung_ho} sau ạ.")
     # Tiết kiệm và thẻ không phải khoản vay: KHÔNG chạy luật nhu cầu/trần/trả
     # góp bên dưới cho chúng, kể cả khi khách nói "gửi 100 triệu 12 tháng".
     if ma_sp == "tiet_kiem":
         return _tra_loi_tiet_kiem(text, t, sp_doc) or tra_loi_dieu_kien(text, ma_sp, sp_doc)
     if ma_sp == "the_tin_dung":
         return _tra_loi_the_tin_dung(t, sp_doc, text) or tra_loi_dieu_kien(text, ma_sp, sp_doc)
+    # Chưa có tài liệu sản phẩm (kịch bản riêng như Shinhan, hoặc chưa biết sản
+    # phẩm) mà khách nêu rõ thẻ/tiết kiệm: luật bên dưới là luật KHOẢN VAY.
+    # "thẻ tín dụng Shinhan miễn lãi bao nhiêu ngày" từng nhận "cho em biết số
+    # tiền muốn vay và thời hạn vay" (02-10-2026).
+    if not ma_sp and re.search(r"\b(the tin dung|tiet kiem)\b", t):
+        return None
     state = du_kien if du_kien is not None else resolve(history, text)
     if state.amount_updated and state.amount.status == "cancelled":
         return "huy_nhu_cau_vay", "Dạ em ghi nhận anh chị không tiếp tục nhu cầu vay này ạ."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test web Windows"
+  short_description: "Sync và kiểm thử web thật trên Windows"
+  default_prompt: "Dùng $test-web-win để đồng bộ thay đổi và kiểm thử web trên Windows."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nhìn màn hình Windows"
+  short_description: "Xem và thao tác desktop Windows từ xa"
+  default_prompt: "Dùng $nhin-man-win để xem màn hình Windows và thao tác giúp tôi."

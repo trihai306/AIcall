@@ -1,0 +1,81 @@
+{
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "61 docs"
+    }
+  },
+  "start": 1790823442.615886,
+  "generation_wall_s": 16.72,
+  "generation": {
+    "ok": true,
+    "items": [
+      {
+        "id": "ab_auto_faq_faq_banking_886618cd65_d4d5728c4828",
+        "cau_hoi": [
+          "Anh chị có thể hướng dẫn cách làm gì nếu muốn tăng hạn mức không?",
+          "Tôi cần liên hệ đâu để được hỗ trợ tăng hạn mức?",
+          "Làm thế nào để yêu cầu tăng hạn mức cho sản phẩm này?",
+          "Nếu muốn tăng hạn mức, tôi phải thực hiện các bước gì?"
+        ],
+        "tra_loi": "Dạ anh chị thực hiện gọi hotline hoặc đến chi nhánh để yêu cầu tăng hạn mức ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790823449.4554002,
+        "nguon": "tu_dong"
+      },
+      {
+        "id": "ab_auto_faq_faq_banking_886618cd65_ebcd2fbf044a",
+        "cau_hoi": [
+          "Cách nào để tăng hạn mức thẻ tín dụng?",
+          "Tôi cần làm gì để được xem xét tăng hạn mức thẻ?",
+          "Thời gian sử dụng thẻ đúng cách để tăng hạn mức là bao lâu?",
+          "Làm thế nào để yêu cầu tăng hạn mức sau khi đã thanh toán đúng hạn?"
+        ],
+        "tra_loi": "Anh chị thực hiện bằng cách sử dụng thẻ đều đặn và thanh toán đúng hạn trong 6 tháng, sau đó gọi hotline hoặc đến chi nhánh.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790823449.4554002,
+        "nguon": "tu_dong"
+      },
+      {
+        "id": "ab_auto_faq_faq_banking_886618cd65_ff523eff433c",
+        "cau_hoi": [
+          "Trả nợ trước hạn có mất phí không?",
+          "Khi nào vay mua nhà được miễn phí trả trước hạn?",
+          "Phí trả trước hạn của vay tín chấp như thế nào?",
+          "Vay mua nhà bị tính phí nếu trả trước 3 năm đầu?"
+        ],
+        "tra_loi": "Dạ, vay tín chấp miễn phí. Vay mua nhà miễn sau 3 năm; trước đó phí 1-2% số tiền trả trước ạ.",
+        "san_pham": "",
+        "bat": true,
+        "updated_at": 1790823449.4554002,
+        "nguon": "tu_dong"
+      }
+    ],
+    "so_dong": 3,
+    "loai": {
+      "chưa đủ 4 cách hỏi hữu ích": 1
+    },
+    "tu_dong": 3,
+    "nhan_vien": 0,
+    "runtime": {
+      "so_dong": 9,
+      "voice": null
+    }
+  }
+}

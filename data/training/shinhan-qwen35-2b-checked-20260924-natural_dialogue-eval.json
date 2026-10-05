@@ -1,0 +1,102 @@
+{
+  "model": "shinhan-qwen35-2b-checked-20260924",
+  "passed": 4,
+  "total": 10,
+  "results": [
+    {
+      "question": "Gọi tôi là cô. Nếu gửi kỳ hạn ba tháng thì lãi ra sao?",
+      "answer": "Dạ, kỳ hạn 3 tháng lãi suất 3.8%/năm. Gửi tại quầy hoặc online, không kỳ hạn là 0.5%/năm ạ.",
+      "ok": false,
+      "missing": [
+        "cô"
+      ],
+      "unwanted": [
+        "\\bonline\\b"
+      ],
+      "concise": true
+    },
+    {
+      "question": "Bác hỏi thẻ Gold, sang năm thứ hai phải trả phí bao nhiêu?",
+      "answer": "Dạ, phí thẻ Gold năm thứ hai là 400.000đ/năm.",
+      "ok": false,
+      "missing": [
+        "bác"
+      ],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Em 20 tuổi, cứ gọi em là em. Riêng tuổi mở thẻ có đạt chưa?",
+      "answer": "Dạ, mình cần CMND/CCCD và thu nhập từ 5 triệu/tháng ạ.",
+      "ok": false,
+      "missing": [
+        "18",
+        "đạt|đủ"
+      ],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Nói kiểu miền Bắc giúp cô nhé. Gửi trên ứng dụng có thêm lãi không?",
+      "answer": "Vâng, ạ. Gửi tiết kiệm trên ứng dụng có lãi suất cộng thêm 0.2%/năm so với gửi tại quầy ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Nói kiểu miền Nam giúp chú nhé. Gửi tiết kiệm có cần chứng minh thu nhập không?",
+      "answer": "Dạ, mình không cần chứng minh thu nhập ạ. Chỉ cần CMND còn hiệu lực, mình gửi được ngay.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Gửi ba tháng thì lãi suất tại quầy bao nhiêu?",
+      "answer": "Dạ, gửi 3 tháng tại quầy lãi 3.8%/năm ạ.",
+      "ok": false,
+      "missing": [
+        "cô"
+      ],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Tôi đang hỏi phí năm thứ hai, bao nhiêu?",
+      "answer": "Dạ, năm thứ hai thẻ Gold có phí thường niên là 400.000đ/năm ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Tôi không vay nữa, đừng hỏi thêm.",
+      "answer": "Dạ, mình không vay nữa ạ. Em xin dừng cuộc trò chuyện ạ.",
+      "ok": true,
+      "missing": [],
+      "unwanted": [],
+      "concise": true
+    },
+    {
+      "question": "Đừng quảng cáo. Lãi suất từ 7,9% là mức chắc chắn cho hồ sơ tôi à?",
+      "answer": "Dạ, mình không được quảng cáo lãi suất. Lãi suất 7,9% là mức chắc chắn cho hồ sơ mình ạ.",
+      "ok": false,
+      "missing": [],
+      "unwanted": [
+        "mức chắc chắn|chắc chắn cho hồ sơ|chắc chắn được|đảm bảo mức"
+      ],
+      "concise": true
+    },
+    {
+      "question": "Nếu chuyển qua ứng dụng thì mức cuối cùng là bao nhiêu?",
+      "answer": "Dạ, gửi online có lãi suất cộng thêm 0,2%/năm ạ. Với 12 tháng, lãi suất cuối cùng là 5,5% + 0,2% = 5,7%/năm ạ.",
+      "ok": false,
+      "missing": [],
+      "unwanted": [
+        "\\bonline\\b"
+      ],
+      "concise": true
+    }
+  ]
+}

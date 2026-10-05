@@ -1,0 +1,188 @@
+{
+  "engine": {
+    "engine": "gipformer",
+    "model": "Gipformer-1.5-65M-FP32",
+    "model_path": "C:\\duan\\chat-ai\\models\\stt\\gipformer1.5-fp32",
+    "loaded": true,
+    "precision": "fp32",
+    "provider": "cpu",
+    "threads": 4,
+    "decoding": "modified_beam_search",
+    "vad_filter": "presence_only"
+  },
+  "samples": [
+    {
+      "sample_id": "d9b57f0b_01",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 3.52
+    },
+    {
+      "sample_id": "d9b57f0b_02",
+      "previous": "a lô",
+      "text": "a lô",
+      "elapsed_ms": 35.65
+    },
+    {
+      "sample_id": "d9b57f0b_03",
+      "previous": "ừ anh muốn tư vấn về khoản vay bên mình",
+      "text": "ừ anh muốn tư vấn về khoản vay bên mình",
+      "elapsed_ms": 40.13
+    },
+    {
+      "sample_id": "d9b57f0b_04",
+      "previous": "ừ anh muốn vay tín chấp hạn mức bên mình là bao nhiêu",
+      "text": "ừ anh muốn vay tín chấp hạn mức bên mình là bao nhiêu",
+      "elapsed_ms": 57.84
+    },
+    {
+      "sample_id": "d9b57f0b_05",
+      "previous": "anh muốn vay bốn trăm",
+      "text": "anh muốn vay bốn trăm",
+      "elapsed_ms": 33.96
+    },
+    {
+      "sample_id": "d9b57f0b_06",
+      "previous": "anh muốn vay bốn trăm",
+      "text": "anh muốn vay bốn trăm",
+      "elapsed_ms": 26.5
+    },
+    {
+      "sample_id": "d9b57f0b_07",
+      "previous": "anh muốn vay bốn trăm triệu",
+      "text": "anh muốn vay bốn trăm triệu",
+      "elapsed_ms": 31.13
+    },
+    {
+      "sample_id": "d9b57f0b_08",
+      "previous": "em muốn vay bốn trăm triệu thì thủ tục như thế nào",
+      "text": "em muốn vay bốn trăm triệu thì thủ tục như thế nào",
+      "elapsed_ms": 36.69
+    },
+    {
+      "sample_id": "d9b57f0b_09",
+      "previous": "ok",
+      "text": "ok",
+      "elapsed_ms": 21.9
+    },
+    {
+      "sample_id": "fe5a9697_01",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 2.57
+    },
+    {
+      "sample_id": "fe5a9697_02",
+      "previous": "a lô",
+      "text": "a lô",
+      "elapsed_ms": 48.29
+    },
+    {
+      "sample_id": "fe5a9697_03",
+      "previous": "ờ tư vấn cho anh khoản vay bên mình",
+      "text": "ờ tư vấn cho anh khoản vay bên mình",
+      "elapsed_ms": 34.37
+    },
+    {
+      "sample_id": "fe5a9697_04",
+      "previous": "anh muốn vay bốn trăm trong mười hai tháng thì đóng lãi bao nhiêu em",
+      "text": "anh muốn vay bốn trăm trong mười hai tháng thì đóng lãi bao nhiêu em",
+      "elapsed_ms": 155.67
+    },
+    {
+      "sample_id": "fe5a9697_05",
+      "previous": "ừ tình",
+      "text": "ừ tình",
+      "elapsed_ms": 201.55
+    },
+    {
+      "sample_id": "bc4d83e7_01",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 2.75
+    },
+    {
+      "sample_id": "bc4d83e7_02",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 2.6
+    },
+    {
+      "sample_id": "bc4d83e7_03",
+      "previous": "a lô ừ tư vấn giúp anh khoản vay bên mình với",
+      "text": "a lô ừ tư vấn giúp anh khoản vay bên mình với",
+      "elapsed_ms": 80.92
+    },
+    {
+      "sample_id": "bc4d83e7_04",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 7.44
+    },
+    {
+      "sample_id": "bc4d83e7_05",
+      "previous": "anh muốn vay tầm bốn trăm triệu trong vòng mười hai tháng",
+      "text": "anh muốn vay tầm bốn trăm triệu trong vòng mười hai tháng",
+      "elapsed_ms": 65.02
+    },
+    {
+      "sample_id": "bc4d83e7_06",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 2.04
+    },
+    {
+      "sample_id": "bc4d83e7_07",
+      "previous": "ừ thế tư vấn giúp anh về khoản vay nếu anh vay sáu mươi tháng thì một tháng đóng bao nhiêu",
+      "text": "ừ thế tư vấn giúp anh về khoản vay nếu anh vay sáu mươi tháng thì một tháng đóng bao nhiêu",
+      "elapsed_ms": 103.62
+    },
+    {
+      "sample_id": "bc4d83e7_08",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 1.8
+    },
+    {
+      "sample_id": "bc4d83e7_09",
+      "previous": "a lô",
+      "text": "a lô",
+      "elapsed_ms": 48.42
+    },
+    {
+      "sample_id": "bc4d83e7_10",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 6.85
+    },
+    {
+      "sample_id": "bc4d83e7_11",
+      "previous": "ừ",
+      "text": "",
+      "elapsed_ms": 5.63
+    }
+  ],
+  "controls": {
+    "silence1": "",
+    "silence4": "",
+    "noise8": "",
+    "tone450": ""
+  },
+  "concurrent_isolation_passed": true,
+  "wer": null,
+  "human_verified_references": 0,
+  "latency_scope": "warm offline STTService incl gate; not phone end-to-end",
+  "empty_samples": [
+    "d9b57f0b_01",
+    "fe5a9697_01",
+    "bc4d83e7_01",
+    "bc4d83e7_02",
+    "bc4d83e7_04",
+    "bc4d83e7_06",
+    "bc4d83e7_08",
+    "bc4d83e7_10",
+    "bc4d83e7_11"
+  ],
+  "mean_ms": 42.27440000000001,
+  "p95_ms": 145.25999999999985
+}

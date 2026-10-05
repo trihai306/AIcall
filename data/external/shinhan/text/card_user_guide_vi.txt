@@ -1,0 +1,578 @@
+              HƯỚNG DẪN SỬ DỤNG THẺ TÍN DỤNG SHINHAN
+
+1. CHI TIẾT TRÊN THẺ TÍN DỤNG SHINHAN
+
+
+
+
+                                        1
+2. LỢI ÍCH CHÍNH CỦA THẺ TÍN DỤNG SHINHAN
+   Mua sắm trước, thanh toán sau, lên đến 45 ngày miễn lãi suất
+   Thanh toán thuận tiện, dễ dàng tại tại tất cả các điểm chấp nhận thẻ Visa trên toàn thế giới
+   Giao dịch trực tuyến nhanh chóng và bảo mật với dịch vụ Thanh toán An toàn Trực tuyến
+   Nhận ngay ưu đãi Hoàn tiền, Dặm thưởng hay Điểm thưởng hấp dẫn từ Shinhan
+   Tận hưởng ưu đãi lên đến 50% tại hơn 200 đối tác Shinhan Zone
+   Dễ dàng chuyển sang thanh toán trả góp 0% lãi suất khi mua sắm tại các đối tác Trả góp của
+    Shinhan
+   Vay tiền mặt qua thẻ nhanh chóng trên hạn mức tín dụng với mức lãi suất ưu đãi
+   Quản lý thẻ linh hoạt với các dịch vụ Ngân hàng điện tử tiện lợi
+   Thanh toán thẻ tín dụng linh hoạt chỉ từ 5% dư nợ mỗi tháng với nhiều phương thức thanh toán đa
+    dạng
+
+3. SỬ DỤNG THẺ TÍN DỤNG SHINHAN
+3.1. Kích hoạt thẻ:
+Sau khi nhận thẻ, Quý khách có thể lựa chọn một trong các cách sau để kích hoạt thẻ của mình:
+a. Đăng nhập Ngân hàng trực tuyến Internet Banking hoặc ứng dụng di động SOL
+    Mục: Thẻ > Kích hoạt thẻ
+b. Nhắn tin với cú pháp KHT<khoảng cách><4 số cuối của thẻ> gửi đến 6089
+c. Liên hệ trung tâm dịch vụ khách hàng 1900 1577
+d. Đến chi nhánh/Phòng giao dịch của ngân hàng Shinhan và xuất trình CCCD/Hộ chiếu
+
+
+3.2. Đổi PIN:
+Sau khi Quý khách nhận Thẻ và kích hoạt Thẻ, Quý khách có thể đăng nhập dịch vụ INTERNET
+BANKING/MOBILE BANKING để thiết lập mã PIN của riêng mình, hoặc Quý khách có thể đến các Chi
+nhánh/Phòng giao dịch của Ngân hàng Shinhan để được hỗ trợ.
+
+
+3.3. Tại các điểm chấp nhận thẻ:
+Khi Quý khách thanh toán bằng thẻ tín dụng Shinhan, thông tin giao dịch sẽ được gửi đến Ngân hàng
+Shinhan từ các điểm chấp nhận thẻ. Hạn mức tín dụng của Quý khách sẽ được giảm trừ tương ứng với
+giá trị giao dịch và thông tin này sẽ được thể hiện trong Sao kê thẻ.
+Quý khách vui lòng kiểm tra kỹ thông tin giao dịch và ký tên lên hoá đơn giao dịch được in ra từ thiết
+bị chấp nhận thẻ (POS). Vui lòng giữ lại một bản sao của hoá đơn giao dịch để cung cấp cho ngân hàng
+khi cần thiết.
+
+
+3.4. Giao dịch trực tuyến:
+
+
+
+
+                                                  2
+Quý khách có thể sử dụng thẻ để giao dịch mua hàng tại các website thương mại điện tử. Ngân hàng
+Shinhan Việt Nam cung cấp dịch vụ Thanh toán An Toàn Trực Tuyến (Verified By Visa và Mastercard
+SecureCode) để tăng cường tính bảo mật cho các giao dịch thẻ trực tuyến của Quý khách.
+Đối với các trang web có biểu tượng “Verified by Visa” hoặc “Mastercard Secured Code”, Chủ thẻ bắt
+buộc phải nhập mật khẩu OTP để thực hiện giao dịch. Tính năng này sẽ giúp hạn chế các giao dịch thẻ
+gian lận trên các trang web thương mại điện tử.
+Các bước chi tiết:
+a. Tại bước thanh toán ở trang thương mại điện tử, Quý khách chọn thanh toán bằng thẻ quốc tế và
+   điền các thông tin cá nhân.
+b. Tại bước xác thực Thẻ, Quý khách vui lòng nhập các thông tin: Số thẻ, ngày hết hạn, số CVC. Sau
+   đó, Quý khách vui lòng đồng ý với điều kiện, điều khoản của dịch vụ.
+c. Tại bước nhận mã OTP, Quý khách vui lòng chọn Phương thức xác thực “SMS” hoặc “Email” (Quý
+   khách vui lòng kiểm tra lại số điện thoại hoặc email hiện trên màn hình), sau đó Quý khách chọn
+   "Generate OTP". Trong vòng 20 giây, OTP sẽ tự động được gửi đến số điện thoại/Email đã đăng ký
+   của chủ thẻ. Sau đó, Quý khách chọn “Submit” để hoàn tất việc thanh toán.
+
+
+3.5. Tại ATM:
+Quý khách có thể sử dụng thẻ tín dụng Shinhan để thực hiện giao dịch rút tiền mặt/ứng trước tiền mặt
+tại ATM của ngân hàng Shinhan Việt Nam và các máy ATM mang biểu tượng Visa/Mastercard/Plus trên
+toàn thế giới.
+-    Giao dịch rút tiền: là giao dịch rút tiền mặt từ Tài khoản thanh toán Shinhan mà Quý khách đã đăng
+     ký liên kết với thẻ tín dụng Shinhan
+-    Giao dịch ứng trước tiền mặt: là giao dịch rút tiền mặt từ hạn mức thẻ tín dụng của Quý khách.
+Các bước thực hiện giao dịch tại ATM (*):
+a. Đưa thẻ ngân hàng vào khe nhận thẻ của máy ATM.
+b. Nhập số PIN (6 số) trên màn hình nhập Mật khẩu.
+c. Chọn chức năng “Rút tiền”.
+d. Chọn loại tài khoản:
+     - Giao dịch rút tiền: chọn “thanh toán”
+     - Giao dịch ứng trước tiền mặt: chọn “tín dụng” hoặc “mặc định”
+e. Nhập số tiền muốn rút/ứng trước.
+f.   Nhận tiền mặt từ máy và hoá đơn (nếu có).
+     (*) Cách thể hiện có thể thay đổi tuỳ theo từng máy ATM.
+
+
+4. CHƯƠNG TRÌNH TẶNG THƯỞNG SHINHAN
+4.1. Giới thiệu:
+
+                                                   3
+Chương trình tặng thưởng Shinhan (Shinhan Reward) là ưu đãi Hoàn tiền (Cash Back), Điểm Signature
+(Signature Points), Điểm thưởng (Shinhan Points), Dặm thưởng (Shinhan Miles) và ưu đãi Giảm giá
+(Shinhan Discount) sẽ được bút toán vào tài khoản Thẻ/tài khoản Điểm thưởng/tài khoản Dặm thưởng
+tương ứng của Chủ thẻ Chính hoặc giảm giá trên các ứng dụng đối tác dựa trên các chi tiêu thẻ hợp lệ
+trong các chu kỳ thời gian quy định cho từng chương trình và cho từng dòng sản phẩm thẻ.
+(*) Nội dung của từng Ưu đãi và điều kiện điều khoản tương ứng được quy định đối với từng sản phẩm
+và được công bố trên website www.shinhan.com.vn
+
+
+5. DỊCH VỤ QUA THẺ TÍN DỤNG SHINHAN
+5.1. Dịch vụ thanh toán qua di dộng Samsung Wallet
+Samsung Wallet là ứng dụng di động dành riêng cho các dòng smartphone của Samsung – giúp khách
+hàng tích hợp thông tin thẻ Shinhan vào điện thoại Samsung của mình và thanh toán nhanh chóng chỉ
+bằng cách chạm điện thoại Samsung lên máy POS tại cửa hàng.
+Việc thanh toán với Samsung Wallet giúp Quý khách tiết kiệm thời gian thay vì phải tìm kiếm thẻ hoặc
+mang nhiều thẻ trong ví. Ngoài ra việc thanh toán được tăng cường thêm lớp bảo mật so với thẻ thực
+thể.
+Samsung Wallet áp dụng với tất cả các loại thẻ tín dụng/ghi nợ quốc tế Shinhan VISA dành cho khách
+hàng cá nhân/doanh nghiệp.
+
+
+Cách sử dụng Samsung Pay:
+
+
+
+
+Cách cài đặt Samsung Wallet: vui lòng tham khảo chi tiết tại website www.shinhan.com.vn
+
+
+5.2. Google Wallet
+                                                 4
+Google Wallet là ứng dụng thông minh dành riêng cho các thiết bị di động hỗ trợ hệ điều hành Android,
+giúp người sử dụng có thể thanh toán trên thiết bị di động mà không cần phải đem theo tiền mặt hay
+quẹt thẻ.
+Google Wallet áp dụng với tất cả các loại thẻ tín dụng/ghi nợ quốc tế Shinhan VISA dành cho khách
+hàng cá nhân/doanh nghiệp.
+Quý khách chỉ cần thêm thẻ vào Google WalletTM để bắt đầu trải nghiệm dịch vụ.
+Cách sử dụng Google Pay:
+   Bước 1: Thêm thẻ ghi nợ/tín dụng Shinhan Visa vào Google Wallet để bắt đầu.
+   Bước 2: Khi cần thanh toán, người dùng chỉ cần mở khóa thiết bị di động. đưa thiết bị di động lại
+    gần máy POS, thông báo giao dịch thành công sẽ xuất hiện trên màn hình di động.
+
+Cách cài đặt Google Wallet: vui lòng tham khảo chi tiết tại website www.shinhan.com.vn
+
+
+5.3. Dịch vụ thanh toán hóa đơn qua thẻ tín dụng:
+Với dịch vụ thanh toán hóa đơn qua thẻ tín dụng Shinhan, việc chi trả cho nhiều loại hóa đơn hàng
+tháng trở nên thật dễ dàng và không còn là nỗi lo dịch vụ bị gián đoạn do chậm thanh toán. Quý khách
+có thể đăng ký thanh toán hóa đơn định kỳ hàng tháng hoặc từng lần tùy theo nhu cầu hoàn toàn miễn
+phí.
+Các giao dịch thanh toán hóa đơn sẽ không được tham gia chương trình tặng thưởng Shinhan.
+Để đăng ký dịch vụ, Quý khách vui lòng đến Chi nhánh/Phòng giao dịch Shinhan gần nhất và mang
+theo hóa đơn dịch vụ muốn thanh toán.
+Quý khách có thể đăng ký thanh toán hóa đơn cho nhiều loại dịch vụ đa dạng, chi tiết danh sách nhà
+cung cấp dịch vụ vui lòng tham khảo website www.shinhan.com.vn
+
+
+
+
+5.4. Ưu đãi Shinhan Zone
+Nhận ngay ưu đãi giảm giá lên đến 50% khi thanh toán với thẻ Shinhan tại hơn 200 đối tác của ngân
+hàng Shinhan trên toàn quốc.
+Để biết chi tiết ưu đãi, Quý khách vui lòng truy cập http://www.shinhan.com.vn/vi/shinhan-zone
+
+
+5.5. Ưu đãi trả góp
+Trả góp linh động tại bất kỳ thương hiệu yêu thích với lãi suất ưu đãi
+Với giao dịch thẻ từ 3 triệu VNĐ tại bất kỳ thương hiệu nào, Quý khách có thể chuyển đổi sang thanh
+toán trả góp lên đến 18 tháng với mức lãi suất ưu đãi và không phí chuyển đổi.
+
+                                                    5
+Quý khách có thể liên hệ tổng đài 1900 1577 hoặc đến Chi nhánh/Phòng giao dịch của Shinhan để yêu
+cầu chuyển sang trả góp.
+(*) Dịch vụ này không áp dụng cho các giao dịch rút tiền mặt, giao dịch mua vàng, bạc, đá quý. Yêu cầu
+chuyển sang trả góp phải được thực hiện trước tối thiểu 7 ngày trước ngày đến hạn thanh toán.
+Trả góp 0% lãi suất tại đối tác Shinhan
+Dễ dàng sở hữu sản phẩm yêu thích với ưu đãi trả góp 0% lãi suất kỳ hạn lên đến 12 tháng tại hơn 50
+đối tác với hơn 30 ngành hàng Điện Tử, Sức Khỏe, Thời Trang, Xe Gắn Máy, Nội Thất, Nhạc Cụ, Khóa
+Học…
+(*) Quy trình đăng ký trả góp:
+   Quý khách vui lòng thanh toán bằng thẻ tín dụng Shinhan và điền vào Đơn đăng ký trả góp khi
+    mua sắm tại cửa hàng đối tác hoặc chọn chức năng Thanh toán trả góp trên website thương mại
+    điện tử đối tác của Shinhan.
+   Sau khi nhận dữ liệu từ đối tác, Shinhan sẽ chuyển đổi khoản thanh toán thẻ của Quý khách sang
+    thanh toán trả góp với kỳ hạn mà Quý khách đã đăng ký. Sau khi giao dịch được chuyển đổi thành
+    công, tin nhắn SMS xác nhận sẽ được gửi đến số điện thoại di động của Quý khách hàng đăng ký
+    tại Shinhan.
+   Trong vòng 14 ngày làm việc kể từ khi mua hàng, nếu Quý khách hàng không nhận được SMS xác
+    nhận, Quý khách vui lòng liên hệ Tổng đài 1900 1577 để được hỗ trợ
+   Giao dịch chỉ có thể chuyển sang thanh toán trả góp trước ngày lập Bảng sao kê của giao dịch đó
+Để biết thêm chi tiết và Điều kiện, điều khoản của từng chương trình, Quý khách vui lòng truy cập
+http://shinhan.com.vn/vi/shinhan_card_category_service/uu-dai-tra-gop.html
+
+
+5.6. Tạm ứng tiền mặt linh hoạt
+Chủ Thẻ tín dụng Shinhan, có lịch sử tín dụng tốt, có thể tạm ứng tiền mặt nhanh chóng, dựa trên hạn
+mức tín dụng của mình.
+Dịch vụ này chỉ áp dụng cho khách hàng người Việt Nam
+Lãi suất và kỳ hạn tương ứng và điều kiện điều khoản dịch vụ được quy định trên website shinhan.com.vn
+Cách đăng ký dịch vụ:
+Quý khách có thể lựa chọn 1 trong các cách sau:
+
+    Soạn SHCARD-TM gửi 6089
+
+    Gọi 1900 1577
+
+    Đến chi nhánh Shinhan gần nhất
+    Để lại thông tin tại website www.shinhan.com.vn để được nhân viên Shinhan tư vấn
+Lưu ý: Phí đăng ký dịch vụ: 400.000 VNĐ/một giao dịch (không áp dụng thuế VAT. Mức phí này chỉ
+được tính sau khi tạm ứng tiền mặt thành công)
+Khách hàng nhận giải ngân tại Chi nhánh ngân hàng Shinhan
+Phí trả sớm Tiền mặt Linh hoạt: 2% trên dư nợ hiện tại (tối thiều 200.000 VNĐ)
+                                                  6
+Dịch vụ được áp dụng theo từng thời kỳ. Vui lòng liên hệ Contact Center 1900-1577 hoặc chi nhánh
+Shinhan gần nhất để biết thêm chi tiết.
+
+
+6. ĐẶC QUYỀN DÀNH CHO THẺ SHINHAN SIGNATURE & BẠCH KIM
+6.1. Đặc quyền thị thực khi đi du lịch Hàn Quốc
+Đến Hàn Quốc thật dễ dàng!
+Đặc quyền dành cho chủ thẻ tín dụng Shinhan Visa hạng Bạch Kim trở lên khi xin thị thực du lịch tại
+Hàn Quốc tại Đại sứ quán Hàn Quốc (Hà Nội) và Lãnh sự quán Hàn Quốc (TP. Hồ Chí Minh):
+   Miễn chứng mình tài chính
+   Đặc quyền xin thị thực nhập cảnh nhiều lần (multi-entry visa)
+   Đơn giản hóa các thủ tục khi xin thị thực
+Vui lòng liên hệ chi nhánh/phòng giao dịch của ngân hàng Shinhan để được cấp Chứng nhận Chủ thẻ
+hạng Signature/Bạch Kim và Sao kê lịch sử sử dụng Thẻ nếu quý khách có nhu cầu nộp hồ sơ xin thị
+thực Hàn Quốc.
+Lưu ý:
+Giấy chứng nhận chủ thẻ: được cấp sau 6 tháng kể từ thời điểm phát hành thẻ Signature/Bạch Kim
+thành công
+Sao kê thẻ: 6 tháng gần nhất kể từ thời điểm yêu cầu cấp giấy chứng nhận chủ thẻ (trong đó thể hiện
+có chi tiêu thẻ hàng tháng).
+Đại sứ/Lãnh sự Hàn Quốc giữ toàn quyền trong việc cấp thị thực.
+
+
+6.2. Bảo hiểm du lịch toàn cầu
+An tâm và thoải mái trên mỗi chuyến đi cùng Bảo Hiểm Du Lịch Quốc Tế của Bảo hiểm PVI được ngân
+hàng Shinhan dành tặng miễn phí cho Chủ thẻ Visa hạng Bạch Kim trở lên và người thân với những
+quyền lợi bảo hiểm như sau:
+   Quyền lợi 1 – Tai nạn và thương tật trong chuyến đi: tối đa 12.000.000 VNĐ
+   Quyền lợi 2 – Chuyến đi bị trì hoãn: tối đa 10.500.000 VNĐ
+   Quyền lợi 3 – Nhận hành lý chậm: tối đa 12.000.000 VNĐ
+   Quyền lợi 4 – Hành lý cá nhân: tối đa 42.000.000 VNĐ/người (tối đa 12.000.000 VNĐ cho đồ vật hay
+    bộ (nhóm) đồ vật, tối đa 21.000.000 VNĐ cho máy tính xách tay).
+Dịch vụ hỗ trợ toàn cầu 24/7: (84) 942 0678 09
+Bảo hiểm được áp dụng khi Chủ thẻ sử dụng thẻ Shinhan Visa Bạch Kim trở lên để thanh toán cho một
+trong các trường hợp sau:
+   Thanh toán cho toàn bộ tiền vé của phương tiện vận chuyển công cộng có lịch trình cụ thể trước
+    khi khởi hành theo lịch trình đó.
+   Hoặc thanh toán vho ít nhất 80% chi phí trọn gói của chuyến đi/tour du lịch trước khi bắt đầu
+    chuyến đi đó.
+   Hoặc thanh toán cho các chi phí phát sinh ở nước ngoài trong chuyến đi với số tiền tối thiểu là
+    11.000.000 VNĐ.
+                                                7
+Lưu ý:
+- Vui lòng tham khảo Giấy Chứng Nhận Bảo Hiểm và Quy Tắc Bảo Hiểm Toàn Cầu được cập nhật tại
+website www.shinhan.com
+- Quý khách vui lòng giữ lại các hóa đơn thanh toán thẻ, vé, thẻ lên máy bay, các giấy tờ liên quan đến
+chuyến đi, các giấy tờ chứng minh tổn thất từ hãng hàng không/công ty du lịch/sân bay/khách sạn/cảnh
+sát… và các giấy tờ liên quan khác để cung cấp cho công ty bảo hiểm khi được yêu cầu.
+- Khi phát sinh bồi thường, vui lòng liên hệ:
+Công ty Bảo hiểm PVI Đông Nam Bộ
+Người phụ trách: (ông) Trần Hải Đăng
+Email: dangth@pvi.com.vn
+Phone: (84) 942 0678 09
+
+
+6.3. Dịch vụ phòng chờ sân bay VIP:
+Dịch vụ này chỉ áp dụng cho Chủ thẻ tín dụng Shinhan Visa Signature, Shinhan PWM Platinum, Shinhan
+Travel Platinum, Korean Air – Shinhan (cá nhân)
+   Thức ăn và đồ uống miễn phí,
+   Internet/wifi tốc độ cao,
+   Báo và tạp chí phong phú,
+   Tiện ích giải trí thú vị,
+   Phòng họp sang trọng.
+Sau tối đa 7 ngày làm việc kể từ khi Quý khách được phát hành thẻ thành công, Shinhan sẽ gửi SMS
+bao gồm tên đăng nhập và mã kích hoạt ứng dụng DragonPass đến số điện thoại Quý khách đã đăng
+ký với ngân hàng.
+Chi tiết số lượt sử dụng miễn phí dành cho Quý khách (Chủ thẻ chính/Chủ thẻ phụ) được quy định cho
+từng loại sản phẩm. Quý khách vui lòng tham khảo trên trang sản phẩm thẻ của website shinhan.com.vn.
+Quý khách cũng có thể mua thêm lượt sử dụng trên ứng dụng DragonPass với mức giá ưu đãi 27
+USD/lượt/người được tính vào thẻ tín dụng Shinhan của Quý khách.
+
+
+7. THANH TOÁN DƯ NỢ THẺ TÍN DỤNG SHINHAN
+7.1. Hiểu về bảng sao kê
+
+
+
+
+                                                  8
+9
+    Tài khoản thanh toán thẻ: là Tài khoản tiền gửi thanh toán của Quý khách mở tại Shinhan và được
+đăng ký dịch vụ ghi nợ tự động.
+
+    Tỉ lệ thanh toán tự động: là tỉ lệ thanh toán mà Shinhan sẽ tự động trích nợ từ Tài khoản thanh toán
+thẻ của Quý khách.
+
+
+                                                  10
+    Dư có: là số tiền còn lại sao khi Quý khách thanh toán Dư nợ cuối kỳ. Số tiền này được dùng để
+thanh toán Dư nợ cho tháng kế tiếp (nếu có).
+
+   Chu kỳ sao kê: là khoảng thời gian mà tất cả giao dịch, phí & lãi (nếu có) của Quý khách được ghi
+nhận vào Tài khoản Thẻ và được thông báo đến Quý khách để thực hiện thanh toán.
+
+     Khoản quá hạn: là số tiền bao gồm các giao dịch, phí & lãi (nếu có) của Quý khách được ghi vào
+Tài khoản thẻ của kỳ trước chưa được thanh toán.
+
+    Dư nợ cuối kỳ: là số tiền của các giao dịch trong tháng cùng với Dư nợ tháng trước còn lại sau các
+khoản thanh toán (không bao gồm các giao dịch đã chuyển sang trả góp).
+
+    Thanh toán tối thiểu: là số tiền tối thiểu Quý khách phải trả trước hoặc vào Ngày Đến Hạn thanh
+toán để duy trì lịch sử tín dụng tốt và tránh các loại phí phát sinh do thanh toán trễ.
+
+     Ngày đến hạn thanh toán: là ngày Quý khách phải thanh toán (ít nhất là khoản Thanh toán tối
+thiểu) để duy trì lịch sử tín dụng tốt và tránh các loại phí phát sinh do thanh toán trễ.
+
+      Chương trình Điểm thưởng, Dặm thưởng, Hoàn tiền: là chi tiết các Ưu đâĩ mà Quý khách đã tích
+lũy, và những Ưu đãi chuẩn bị hết hạn.
+
+   Chi tiết giao dịch: là thông tin chi tiết về các khoản chi tiêu thẻ, rút/ứng trước tiền mặt, trả góp, tạm
+ứng linh hoạt, phí và lãi, và các khoản thanh toán phát sinh trong Chu kỳ sao kê
++ Ngày giao dịch: là ngày giao dịch được thực hiện
++ Ngày bút toán: là ngày giao dịch được ghi vào Tài khoản Thẻ của Quý khách
+
+
+7.2. Các phương thức thanh toán thẻ tín dụng dễ dàng
+7.2.1. Chuyển khoản từ ngân hàng khác
+Khi thực hiện lệnh chuyển khoản, Quý khách vui lòng cung cấp đầy đủ các thông tin sau:
+(1) Tên người thụ hưởng: Tên Chủ thẻ Chính giống như trên CCCD hoặc Passport
+(2) Tài khoản thụ hưởng: Số thẻ gồm 16 chữ số in trên mặt thẻ
+(3) Ngân hàng thụ hưởng: Ngân hàng TNHH MTV Shinhan Việt Nam
+(4) Số tiền thanh toán: Số tiền mà Quý khách muốn thanh toán
+(5) Diễn giải: Thanh toán thẻ tín dụng Shinhan
+Lưu ý:
+Nếu Quý khách nhập bất kì thông tin nào không chính xác, giao dịch thanh toán sẽ không thành công
+và khoản thanh toán của Quý khách sẽ bị hoàn trả
+Để đảm bảo việc thanh toán đúng hạn, Quý khách vui lòng chuyển khoản trước ngày thanh toán ít nhất
+02 (hai) ngày làm việc.
+
+
+
+
+                                                    11
+Trường hợp Quý khách sử dụng dịch vụ Chuyển tiền nhanh liên ngân hàng qua số thẻ, số tiền chuyển
+sẽ được ghi có trực tiếp vào Tài khoản thẻ của Quý khách, tài khoản này là tài khoản độc lập, không
+liên kết với Tài khoản thanh toán (DDA) kết nối với Thẻ của Quý khách (nếu có).
+Các khoản thanh toán theo chỉ thị của Quý khách với tài khoản thụ hưởng là Số thẻ chỉ được dùng cho
+mục đích thanh toán cho chính Số thẻ thụ hưởng đó, không được dùng cho các mục đích thanh toán
+khác.
+
+
+7.2.2. Thanh toán tự động
+Dịch vụ thanh toán tự động áp dụng cho Quý khách có tài khoản tiền gửi thanh toán tại Shinhan và đã
+đăng ký dịch vụ thanh toán tự động. Shinhan sẽ từ động trích nợ số tiền tương ứng với tỷ lệ thanh toán
+mà Quý khách đã đăng ký từ tài khoản thanh toán này vào Ngày Đến Hạn. Quý khách vui lòng duy trì
+số dư trong tài khoản lớn hơn hoặc bằng với tỷ lệ thanh toán Quý khách đã đăng ký vào Ngày Đến Hạn.
+Lưu ý:
+Nếu chưa đăng ký, Quý khách liên hệ chi nhánh/phòng giao dịch Shinhan gần nhất để được hướng dẫn
+đăng ký dịch vụ thanh toán tự động.
+Đối với thẻ tín dụng ANZ đã đăng ký dịch vụ thanh toán tự động trước đây, dịch vụ sẽ được tiếp tục
+duy trì tại Shinhan
+Trường hợp số dư trong tài khoản của Quý khách không đủ để thanh toán Số tiền Thanh Toán Tối Thiểu
+trước 16h30 vào Ngày Đến Hạn, Thẻ của Quý khách sẽ bị ghi nhận tình trạng thanh toán trễ. Sau Ngày
+Đến Hạn, Shinhan sẽ tiếp tục trích nợ trên số tiền thanh toán tối thiểu trễ hạn của Quý khách từ tài
+khoản thanh toán của Quý khách. Nếu Quý khách muốn thanh toán nhiều hơn số tiền thanh toán tối
+thiểu vui lòng liên hệ Trung tâm dịch vụ khách hàng 1900-1577 để hỗ trợ.
+
+
+7.2.3. Thanh toán tại quầy giao dịch Shinhan
+Quý khách có thể nộp tiền tại các quầy giao dịch Shinhan trong giờ làm việc của chi nhánh/phòng giao
+dịch Shinhan
+(*) Quý khách vui lòng thanh toán trước 16h30 ngày đến hạn thanh toán
+
+
+7.2.4. Liên hệ trung tâm dịch vụ khách hàng 1900 1577
+Quý khách có thể gọi đến Trung tâm Dịch vụ Khách hàng 1900 1577 từ 8h00 đến 17h00 từ Thứ Hai đến
+Thứ Sáu (không bao gồm ngày nghỉ lễ) gặp Tổng đài viên để yêu cầu thanh toán thẻ tín dụng từ số dư
+tài khoản thanh toán của Quý khách tại Shinhan
+
+
+7.2.5. Dịch vụ Ngân hàng trực tuyến Shinhan/ứng dụng Mobile Banking SOL
+Quý khách có thể đăng nhập Ngân hàng trực tuyến hoặc ứng dụng SOL và thanh toán cho thẻ tín dụng
+bằng các chức năng sau:
+Chức năng “Thanh toán thẻ”
+
+
+                                                 12
+Quý khách có thể dùng chức năng “Thanh toán thẻ” để:
+-   Thanh toán số tiền trễ hạn (nếu có)
+-   Thanh toán trước sao kê
+-   Thanh toán trước từng giao dịch
+Thời gian thực hiện lệnh thanh toán và hạch toán Dư nợ thẻ: 8:00 – 18:00 vào các ngày làm việc trong
+tuần.
+Chức năng này chỉ áp dụng khi Quý khách có đăng ký dịch vụ Thanh toán tự động.
+Quý khách chỉ có thể dùng chức năng này để thanh toán cho thẻ tín dụng của chính mình.
+Chức năng “Chuyển khoản nội bộ”
+Quý khách có thể sử dụng chức năng “Chuyển khoản nội bộ” để chuyển tiền từ bất kỳ Tài khoản tiền
+gửi thanh toán nào của Quý khách (bằng VND hoặc USD) tại Shinhan vào số thẻ tín dụng của Quý
+khách hoặc Chủ thẻ khác mà Quý khách muốn thanh toán.
+Thời gian thực hiện lệnh chuyển khoản: 24/7
+Thời gian hạch toán Dư nợ thẻ: Giao dịch thanh toán dư nợ thẻ và hạn mức thẻ sẽ được cập nhật sau
+10 phút kể từ khi lệnh chuyển khoản được thực hiện thành công.
+Cụ thể như sau:
+-   Ngày làm việc: 8:00 -17:00 từ Thứ Hai đến Thứ Sáu
+-   Ngoài giờ làm việc trên, cuối tuần và ngày lễ: Cập nhật sau 18:00 ngày làm việc tiếp theo.
+(*) Các giao dịch trả góp và ứng trước tiền mặt không thể thanh toán trước theo từng giao dịch. Sao kê
+bao gồm giao dịch trả góp chỉ có thể thanh toán vào đúng ngày thanh toán, hoặc chỉ thanh toán trước
+trong trường hợp đó là kỳ trả góp cuối cùng.
+
+
+7.2.6. Dịch vụ Hộp thanh toán (Drop box)
+Quý khách có thể nộp tiền bằng cách:
+Bước 1: Điền vào phong bì gửi tiền với các thông tin sau:
+(1) Tên chủ thẻ như trên CCCD hoặc Passport
+(2) Số thẻ gồm 16 chữ số in trên mặt thẻ
+(3) Số tiền cần thanh toán (tối đa là 30.000.000/phong bì; 100.000.000 VND/ngày)
+(4) Số CCCD/Passport và số điện thoại liên lạc
+(5) Thông tin người chỉ định thanh toán (nếu có)
+Bước 2: Bỏ tiền vào phong bì, niêm phong và bỏ vào Hộp thanh toán đặt tại chi nhánh/phòng giao dịch
+trước 16h30 ngày đến hạn thanh toán
+(*) Quý khách vui lòng giữ một liên (bản copy giấy than) như biên lai thanh toán
+Trường hợp có sự khác biệt giữa số tiền ghi trên phòng bì và số tiền Shinhan thực nhận, số tiền Shinhan
+thực nhận sẽ có tính quyết định.
+Dịch vụ hộp thanh toán (Drop Box) chỉ áp dụng tại một số Chi nhánh/Phòng giao dịch, vui lòng xem tại
+www.shinhan.com.vn
+
+                                                  13
+7.3. Các lưu ý quan trọng khi thanh toán thẻ tín dụng
+7.3.1. Để không bị ghi nhận tình trạng thanh toán trễ hạn, ít nhất Số Tiền Thanh Toán Tối Thiểu như
+được thông báo trong Bảng Sao Kê thẻ hàng tháng của Quý khách phải được ghi có vào hệ thống
+Shinhan trước 16h30 vào Ngày Đến Hạn. Do đó, Quý khách vui lòng thực hiện thanh toán chính xác
+trước hoặc vào Ngày Đến Hạn của mình như được thông báo.
+
+
+7.3.2. Lãi liên quan đến từng loại Giao Dịch sẽ được tính như sau:
+   Lãi sẽ được từ ngày giao dịch được ghi nhận cho đến ngày thực hiện thanh toán của giao dịch đó.
+   Đối với các Gói Trả Góp: Lãi sẽ được tính với mức lãi suất và kỳ hạn tương ứng với Gói Trả Góp mà
+    Quý khách đã đăng ký.
+   Đối với Giao dịch Ứng Tiền Mặt: Lãi được tính từ ngày giao dịch được thực hiện cho đến khi giao
+    dịch được thanh toán hết.
+
+
+7.3.3. Nếu Quý khách thanh toán bằng Chuyển khoản từ ngân hàng khác, Quý khách vui lòng thực hiện
+giao dịch trước 2 (hai) ngày làm việc để đảm bảo số tiền thanh toán được ghi nhận vào hệ thống
+Shinhan kịp thời.
+
+
+7.3.4. Nếu Quý khách đã đăng ký dịch vụ Thanh toán tự động và số dư trong Tài Khoản Thanh Toán
+không đủ Số Tiền Thanh Toán Tối Thiểu trước 16h30 vào Ngày Đến Hạn, Quý khách sẽ bị ghi nhận tình
+trạng thanh toán trễ hạn. Sau Ngày Đến Hạn, Shinhan sẽ chỉ thực hiện trích nợ từ Tài khoản của Quý
+khách cho khoản Thanh Toán Tối Thiểu trễ hạn. Nếu Quý khách muốn thanh toán nhiều hơn khoản
+Thanh Toán Tối Thiểu trễ hạn, vui lòng liên hệ Trung tâm Dịch vụ Khách hàng 1900 1577 từ 8h00 đến
+17h00 từ Thứ Hai đến Thứ Sáu (không bao gồm ngày nghỉ lễ) để được hỗ trợ thực hiện thanh toán.
+
+
+7.3.5. Trường hợp Quý khách thanh toán trước khi ra Bảng Sao Kê, nếu còn dư nợ trong kỳ chưa thanh
+toán hết, Bảng Sao Kê của Quý khách vẫn sẽ được phát hành và Quý khách vui lòng thanh toán ít nhất
+Số Tiền Thanh Toán Tối Thiểu trước hoặc vào Ngày Đến Hạn.
+
+
+7.3.6. Nếu ít nhất Số Tiền Thanh Toán Tối Thiểu không được ghi có vào hệ thống Shinhan trước 16:30
+vào Ngày Đến Hạn, Quý khách sẽ bị ghi nhận tình trạng thanh toán trễ hạn và điều này sẽ được ghi
+nhận vào lịch sử tín dụng của Quý khách tại Trung tâm Thông tin Tín dụng Quốc gia Việt Nam (CIC).
+
+
+8. QUẢN LÝ TÀI KHOẢN THẺ TÍN DỤNG SHINHAN
+Dễ dàng quản lý thẻ của mình với các dịch vụ ngân hàng điện tử tiện lợi.
+8.1. Ngân hàng trực tuyến
+Quý khách có thể truy cứu, theo dõi và quản lý thông tin liên quan đến giao dịch thẻ tín dụng Shinhan
+mọi lúc mọi nơi, hoàn toàn miễn phí.
+
+                                                  14
+8.1.1. Quản lý người dùng:
+   Thay đổi thông tin cá nhân: email, số điện thoại, địa chỉ.
+   Khóa khẩn cấp (thẻ ATM, thẻ ghi nợ, thẻ tín dụng, thiết bị OTP, thẻ bảo mật).
+
+
+8.1.2. Tra cứu thẻ và Bảng Sao Kê thẻ:
+   Thông tin cơ bản: Hạn mức thẻ/hạn mức thẻ còn lại, hạn mức ứng trước tiền mặt/hạn mức ứng
+    trước tiền mặt còn lại, tỷ lệ thanh toán, ngày thanh toán, tài khoản thanh toán.
+   Danh sách thẻ, chi tiết sao kê, lịch sử giao dịch, lịch sử thanh toán và thông tin Tặng thưởng Shinhan.
+
+
+8.1.3. Thanh toán thẻ:
+Thanh toán dư nợ thẻ tín dụng bằng chức năng “Thanh toán thẻ” hoặc “Chuyển khoản nội bộ”
+
+
+8.1.4. Thiết lập hạn mức giao dịch, phạm vi giao dịch cho từng Thẻ:
+   Thiết lập hạn mức giao dịch thẻ mỗi ngày (VNĐ)
+   Cho phép/Không cho phép chức năng giao dịch thẻ ở nước ngoài (Ngoại trừ giao dịch trực tuyến)
+   Cho phép/Không cho phép chức năng giao dịch thẻ trực tuyến.
+   Thiết lập hạn mức thanh toán thẻ trực tuyến mỗi ngày (VNĐ)
+
+
+
+
+8.1.5. Đăng ký dịch vụ thanh toán trả góp:
+   Quý khách có thể đăng ký thanh toán trả góp cho các giao dịch thẻ tín dụng thuộc chương trình
+    trả góp lãi suất ưu đãi.
+   Với chương trình trả góp 0% lãi suất, Quý khách vui lòng liên hệ Trung tâm Chăm sóc Khách hàng
+    để đăng ký chương trình.
+
+
+8.1.6. Tra cứu và quy đổi Điểm thưởng Shinhan:
+   Quý khách có thể tra cứu và quy đổi Điểm thưởng Shinhan thành tiền ghi có vào tài khoản thanh
+    toán Thẻ của Quý khách.
+   Số điểm tối thiểu để quy đổi là 15,000 điểm. Tỉ lệ quy đổi điểm = 1 VNĐ. Số điểm quy đổi phải là
+    bội số của 1,000.
+   Chỉ áp dụng ghi có vào tài khoản thanh toán Thẻ bằng VNĐ. Nếu quý khách có tài khoản thanh
+    toán Thẻ bằng ngoại tệ vui lòng đến chi nhanh để quy đổi Điểm thành tiền mặt.
+
+
+8.2. Ứng dụng điện thoại SOL:
+   Hoàn toàn miễn phí.
+   Áp dụng đối với khách hàng đã đăng ký và kích hoạt sử dụng Ngân hàng trực tuyến.
+                                                    15
+   Hệ điều hành điện thoại hỗ trợ: iOS phiên bản 8.0 trở lên, Android phiên bản 4.4 trở lên.
+   Tìm từ khóa “SOL Shinhan Vietnam” và tải ứng dụng Google Play hoặc App Store.
+(*) Một số dịch vụ không được áp dụng cho ứng dụng điện thoại. Để sử dụng dịch vụ, vui lòng đăng
+nhập Dịch vụ Ngân hàng Trực tuyến.
+
+
+8.3. Dịch vụ tin nhắn SMS:
+   Quản lý các giao dịch thẻ của Quý khách 24/7.
+   Nhận thông báo về giao dịch thẻ ghi nợ/tín dụng trên những tài khoản đăng ký.
+   Nhận tin nhắn sao kê thẻ: ngày đến hạn thanh toán, số tiền thanh toán.
+   Nhắn tin kích hoạt lần đầu đối với thẻ tín dụng.
+   Nhận các thông báo tài chính khác từ Shinhan.
+Cách thức đăng ký:
+Đến chi nhánh/Phòng giao dịch của ngân hàng Shinhan và xuất trình CCCD/Hộ chiếu.
+(*) Hủy dịch vụ SMS chỉ được thực hiện tại quầy giao dịch. Phí dịch vụ là 11.000 VNĐ/tháng.
+
+
+9. CHÚ Ý BẢO MẬT THẺ
+9.1. KHÔNG tiết lộ thông tin Thẻ hay số PIN:
+   Không cho người khác mượn thẻ hoặc chia sẻ thông tin thẻ với bất kỳ ai.
+   Không trả lời bất cứ cuộc gọi mạo danh ngân hàng Shinhan yêu cầu cung cấp thông tin cá nhân,
+    thông tin thẻ hoặc tài khoản.
+   Chú ý thay đổi mã PIN thường xuyên.
+   Không để mã PIN và thẻ tín dụng cùng một chỗ.
+   Khi chọn mã PIN, cần tránh chọn số dễ đoán (như ngày sinh, số điện thoại…).
+
+
+9.2. BẢO QUẢN và kiểm tra Thẻ thường xuyên để đề phòng việc thất lạc hay mất cắp
+   Ký tên lên mặt sau Thẻ Tín Dụng Shinhan và luôn giữ thẻ một khoảng cách an toàn.
+   Khi giao dịch, không để cho nhân viên đem thẻ đi khuất tầm nhìn quá lâu.
+   Luôn nhớ lấy lại thẻ của mình sau mỗi giao dịch.
+   Gọi ngay 1900 1577 nếu Quý khách phát hiện có sai lệch khi kiểm tra bảng sao kê thẻ tín dụng hàng
+    tháng.
+
+
+9.3. KHÔNG trả lời email có dấu hiệu lừa đảo
+   Xóa ngay những email bạn nghi ngờ hoặc không nhận ra người gửi.
+   Shinhan không bao giờ gửi thư cho khách hàng yêu cầu tiết lộ thông tin cá nhân, chi tiết tài khoản,
+    mật khẩu, PIN và cũng không bao giờ cử người đến nhà khách hàng để lấy thẻ/PIN. Vui lòng báo
+    ngay cho chúng tôi biết khi bạn nhận những yêu cầu này.
+   Cẩn trọng với thư điện tử lạ hoặc có dấu hiệu nghi ngờ.
+
+
+
+                                                  16
+9.4. Giao dịch trên các website có hỗ trợ xác thực 3D Secured để tăng cường bảo mật trực tuyến
+   Dùng trình duyệt an toàn và bảo mật.
+   Tham khảo về độ an toàn của trang thương mại điện tử trước khi giao dịch bằng thẻ.
+   Không được gửi thông tin về thẻ tín dụng, OTP qua bất kỳ hình thức nào.
+
+
+9.5. THÔNG BÁO đến Shinhan ngay khi bị mất thẻ
+Trong trường hợp thẻ của quý khách bị mất/đánh cắp, Quý khách vui lòng thông báo mất thẻ đến
+Shinhan để khóa thẻ ngay qua các phương thức sau:
+   Trung tâm Dịch vụ Chăm sóc Khách hàng 1900 1577 hoặc 1800 599 926 (cho khách hàng Signature
+    & PWM), gặp tổng đài viên.
+   Tổng đài trả lời tự động 1900 1577, nhấn phím 1 để chọn tiếng Việt, nhấn phím 1 để thông báo mất
+    thẻ/khóa thẻ khẩn cấp và làm theo hướng dẫn.
+   Khi quý khách ở nước ngoài vui lòng gọi 8428 3866 8830 hoặc 8428 3866 8661 (cho khách hàng
+    Signature & PWM).
+   Đăng nhập ứng dụng SOL hoặc Ngân hàng trực tuyến > chọn mục Thẻ > chọn Mở/Khóa Thẻ.
+
+
+
+
+                                                17
+

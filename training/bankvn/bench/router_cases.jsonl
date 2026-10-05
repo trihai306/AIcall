@@ -1,0 +1,40 @@
+{"question":"Dư nợ của tôi còn bao nhiêu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Khoản vay của anh còn nợ bao nhiêu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Hợp đồng vay của tôi còn mấy tháng?","expected_tool":"tra_ho_so_khach"}
+{"question":"Ngày đến hạn khoản vay của tôi là khi nào?","expected_tool":"tra_ho_so_khach"}
+{"question":"Tôi đã trả xong khoản vay chưa?","expected_tool":"tra_ho_so_khach"}
+{"question":"Kỳ hạn còn lại của hợp đồng của tôi là bao lâu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Khoản vay bên mình của anh còn bao nhiêu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Hợp đồng của chị còn dư nợ thế nào?","expected_tool":"tra_ho_so_khach"}
+{"question":"Anh còn nợ ngân hàng bao nhiêu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Khi nào khoản vay của tôi đến hạn?","expected_tool":"tra_ho_so_khach"}
+{"question":"Dư nợ còn bao nhiêu em?","expected_tool":"tra_ho_so_khach"}
+{"question":"Doanh thu khoản vay với mình là bao nhiêu?","expected_tool":"tra_ho_so_khach"}
+{"question":"Lãi suất vay tín chấp hiện bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Hạn mức vay tín chấp tối đa là bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Điều kiện vay mua nhà gồm những gì?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Phí thường niên thẻ tín dụng là bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Thẻ tín dụng có hạn mức bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Tôi có thể vay tối đa mấy trăm triệu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Thời hạn vay tín chấp tối đa bao lâu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Hồ sơ cần chuẩn bị để vay tín chấp gồm gì?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Phí trả nợ trước hạn là bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Điều kiện mở thẻ tín dụng là gì?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Nếu vay tín chấp thì mỗi tháng trả khoảng bao nhiêu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Tôi muốn vay một trăm triệu trong hai năm, cần điều kiện gì?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Lai suat vay tin chap bao nhieu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Phi thuong nien the tin dung bao nhieu?","expected_tool":"tra_thong_tin_san_pham"}
+{"question":"Alo ai đấy?","expected_tool":null}
+{"question":"Anh đang bận, gọi lại sau nhé.","expected_tool":null}
+{"question":"Nghe rõ không em?","expected_tool":null}
+{"question":"Cảm ơn em nhé.","expected_tool":null}
+{"question":"Hôm nay Hà Nội mưa à?","expected_tool":null}
+{"question":"Anh chưa muốn vay.","expected_tool":null}
+{"question":"Cho anh suy nghĩ thêm.","expected_tool":null}
+{"question":"Ừ anh biết rồi.","expected_tool":null}
+{"question":"Em tên gì?","expected_tool":null}
+{"question":"Chào em.","expected_tool":null}
+{"question":"Anh đang họp.","expected_tool":null}
+{"question":"Tạm biệt em.","expected_tool":null}
+{"question":"Anh dang ban goi lai sau.","expected_tool":null}
+{"question":"Nghe ro khong em?","expected_tool":null}

@@ -1,0 +1,256 @@
+[
+  {
+    "name": "card_user_guide_vi",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/card_user_guide_vi.pdf",
+    "bytes": 991409,
+    "sha256": "becc850f45aca85b2cafc096ed9f71719f8d6118c3240c01108c42c7cd945413",
+    "downloaded_utc": "2026-09-23T16:03:37.405458+00:00"
+  },
+  {
+    "name": "sol_club_faq",
+    "category": "digital",
+    "url": "https://shinhan.com.vn/public/uploads/personal/mobile-banking/SOL%20Club/C%C3%A1c%20c%C3%A2u%20h%E1%BB%8Fi%20th%C6%B0%E1%BB%9Dng%20g%E1%BA%B7p%20SOL%20Club%20Final.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/sol_club_faq.pdf",
+    "bytes": 281066,
+    "sha256": "47f6b5c3464a5cc8eec6c43e605cb7e719e10f6725d1acb1d9805c7bba0383f5",
+    "downloaded_utc": "2026-09-23T16:03:37.741303+00:00"
+  },
+  {
+    "name": "loan_household_terms",
+    "category": "loan",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2024/Personal/CPD/040101C.1.4_Credit%20agreement_PE.Household_one-time_loan_VN%28T%26C%29.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/loan_household_terms.pdf",
+    "bytes": 619177,
+    "sha256": "b9090cb47c80a32e635875d662bb1e02033c24bdf321c2e460e6726e62a3307d",
+    "downloaded_utc": "2026-09-23T16:03:39.726993+00:00"
+  },
+  {
+    "name": "card_fees",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/PDF%20Card/Standard_Fee_Charges_%28Credit_Card%29_VN.pdf",
+    "use": "verify_current",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/card_fees.pdf",
+    "bytes": 1074824,
+    "sha256": "d6f94e5da79a5e592b42c8f3e9ff0835ddd0119ed013568c58a024d4258208fa",
+    "downloaded_utc": "2026-09-23T16:03:41.945351+00:00"
+  },
+  {
+    "name": "digital_card_guide",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/digital_card_guide.pdf",
+    "bytes": 2451834,
+    "sha256": "5a4903a7bfd9847985f4060af786b8ad478314a0d65cc2b3b53564b03ed5554d",
+    "downloaded_utc": "2026-09-23T16:03:44.096000+00:00"
+  },
+  {
+    "name": "consumer_credit_terms_2025",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/PDF/TnC/2020_M1-%C4%90I%E1%BB%80U%20KI%E1%BB%86N%20V%C3%80%20%C4%90I%E1%BB%80U%20KHO%E1%BA%A2N%20TH%E1%BA%BA%20T%C3%8DN%20D%E1%BB%A4NG%20C%C3%81%20NH%C3%82N.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/consumer_credit_terms_2025.pdf",
+    "bytes": 365223,
+    "sha256": "cadb4c4ffec83c29b6cceb9defa3ff850b210352d001172d1f75b3547f17719f",
+    "downloaded_utc": "2026-09-23T16:03:44.575664+00:00"
+  },
+  {
+    "name": "consumer_credit_terms_2018",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/PDF/TnC/REF.CARDTC-01-VN-201808-DKDK%20THE%20TD%20MOI.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/consumer_credit_terms_2018.pdf",
+    "bytes": 1371220,
+    "sha256": "9ddb11b4e3b567e10ad0b3a1b76f897a7f1b53fedcdacad4dcc587df03254bb7",
+    "downloaded_utc": "2026-09-23T16:03:46.108042+00:00"
+  },
+  {
+    "name": "taekwang_card_terms",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/2024/Product/TnC/VN_T%26C_Taekwang%20Card.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/taekwang_card_terms.pdf",
+    "bytes": 452193,
+    "sha256": "c5856b7bfb35059dd8715542f4b84a1da45718e063cfc2e7e67a7b282d84debc",
+    "downloaded_utc": "2026-09-23T16:03:46.415400+00:00"
+  },
+  {
+    "name": "ray_vina_card_terms",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/2024/Product/TnC/TnC_RAY%20VINA_VN.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/ray_vina_card_terms.pdf",
+    "bytes": 495353,
+    "sha256": "f8c90e232abdc4844bba15055bce9f75ce64877c06368f8dcc8a58539eb1b5e3",
+    "downloaded_utc": "2026-09-23T16:03:46.832959+00:00"
+  },
+  {
+    "name": "corporate_credit_card_terms",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/PDF/corporate%20credit-01.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/corporate_credit_card_terms.pdf",
+    "bytes": 495534,
+    "sha256": "d622d038093d394f552a484f02ab0b46123728cc1812c9b0a3dfc4306be675a1",
+    "downloaded_utc": "2026-09-23T16:03:47.228865+00:00"
+  },
+  {
+    "name": "corporate_debit_card_terms",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/card/PDF/TnC/201909/Corporate%20Debit%20Card-VN.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/corporate_debit_card_terms.pdf",
+    "bytes": 361869,
+    "sha256": "ee027d4beb06deb91e3a9a934ff6ffd34828dc300747dcce056474c08a90f254",
+    "downloaded_utc": "2026-09-23T16:03:47.465652+00:00"
+  },
+  {
+    "name": "remittance_terms_2025",
+    "category": "transfer",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2025/Remittance%20T%26C_1.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/remittance_terms_2025.pdf",
+    "bytes": 475607,
+    "sha256": "778ee0c08d94509805993b2303e0344294d6c6c39aa48dd9a056a73aeeb08d7b",
+    "downloaded_utc": "2026-09-23T16:03:47.886017+00:00"
+  },
+  {
+    "name": "general_terms_v18",
+    "category": "account",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2025/1.%20General%20Terms%20and%20Conditions%20V18.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/general_terms_v18.pdf",
+    "bytes": 1837891,
+    "sha256": "02b21da8efb05b0cbd61eee2027449af376367bdbb633ce65d041c16d6c31acc",
+    "downloaded_utc": "2026-09-23T16:03:48.639564+00:00"
+  },
+  {
+    "name": "general_terms_previous",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/General_Terms_and_Conditions.pdf",
+    "status": "failed",
+    "error": "curl: (22) The requested URL returned error: 404\n"
+  },
+  {
+    "name": "individual_loan_terms",
+    "category": "loan",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/2024/Personal/CPD/040101R.1.1_%20Credit%20agreement_IND_one-time_loan_EN%28T%26C%29.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/individual_loan_terms.pdf",
+    "bytes": 983992,
+    "sha256": "2762eaed81c602b667d2de72b28bcf7572ef9e846a736e8d8cf2daf0cb1f83fe",
+    "downloaded_utc": "2026-09-23T16:03:49.454303+00:00"
+  },
+  {
+    "name": "personal_account_form_2023",
+    "category": "account",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/forms-center/accounts_and_deposits/2023/1810/Deposit%2001A%20%28VN%29.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/personal_account_form_2023.pdf",
+    "bytes": 1000869,
+    "sha256": "0c61a081e40876a7c1ffef1206b7b9443e3bfd2ba7e8effbea54c35b2af83cf2",
+    "downloaded_utc": "2026-09-23T16:03:50.550748+00:00"
+  },
+  {
+    "name": "personal_account_form_legacy",
+    "category": "account",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/forms-center/accounts_and_deposits/Deposit_01A_%C4%90o%CC%9Bn_%C4%91a%CC%86ng_ky%CC%81_tho%CC%82ng_tin%2C_mo%CC%9B%CC%89_ta%CC%80i_khoa%CC%89n_va%CC%80_di%CC%A3ch_vu%CC%A3_da%CC%80nh_cho_kha%CC%81ch_ha%CC%80ng_ca%CC%81_nha%CC%82n.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/personal_account_form_legacy.pdf",
+    "bytes": 319221,
+    "sha256": "b279b1b6f90d857d690c67af3cdd45a815b1f6d91d7277ea7caa4fad51892a3f",
+    "downloaded_utc": "2026-09-23T16:03:51.492070+00:00"
+  },
+  {
+    "name": "card_application_form",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/forms-center/cards/CARD-04-202003%20-%20SHINHAN%20CARD%20APPLICATION%20FORM%20-%20FOR%20CURRENT%20CUSTOMER.pdf",
+    "status": "failed",
+    "error": "curl: (22) The requested URL returned error: 404\n"
+  },
+  {
+    "name": "deposit_rates_2025",
+    "category": "deposit",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/deposit_personal_vi.pdf",
+    "use": "verify_current",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/deposit_rates_2025.pdf",
+    "bytes": 217879,
+    "sha256": "18bf46fc799e26378b369a00f3f7db923313ce335d5039f99671d8d69def2338",
+    "downloaded_utc": "2026-09-23T16:03:51.951777+00:00"
+  },
+  {
+    "name": "business_review_2025",
+    "category": "overview",
+    "url": "https://shinhan.com.vn/public/uploads/Business%20Review/2025/SHBVN_Business%20Review%202025_VIE.pdf",
+    "use": "review",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/business_review_2025.pdf",
+    "bytes": 7034990,
+    "sha256": "f30b3b5b123af4901f8a98aa2b6d5ae211b490cdd9edc6aa6093f5c7fac17e4c",
+    "downloaded_utc": "2026-09-23T16:03:55.764268+00:00"
+  },
+  {
+    "name": "old_fee_comparison",
+    "category": "fee",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/IB_and_counter_comparison_table_11092019_%281%29.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/old_fee_comparison.pdf",
+    "bytes": 1900002,
+    "sha256": "8084e3ce3452c43bf0130c3d06b20d37db7119af3ef14232940f9d4c782f929c",
+    "downloaded_utc": "2026-09-23T16:03:57.725202+00:00"
+  },
+  {
+    "name": "old_home_loan_promotion",
+    "category": "loan",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/PHU_MY_HUNG%20-%20THONG_TIN_CHI_TIET.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/old_home_loan_promotion.pdf",
+    "bytes": 1025087,
+    "sha256": "f40d8fdd62f7e954ae3c249a921fe8c6884cf8f56e25447614f212aa4375551d",
+    "downloaded_utc": "2026-09-23T16:03:58.685672+00:00"
+  },
+  {
+    "name": "google_pay_terms",
+    "category": "card",
+    "url": "https://shinhan.com.vn/public/uploads/Port%20and%20Usage/Google%20Pay/T%26C_GGP_VN.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/google_pay_terms.pdf",
+    "bytes": 491272,
+    "sha256": "19e9c000eff46bf73a0128b45a9185816a5f5d605da70d87262c1fbd7abc0bd5",
+    "downloaded_utc": "2026-09-23T16:03:58.976686+00:00"
+  },
+  {
+    "name": "general_terms_legacy",
+    "category": "account",
+    "url": "https://shinhan.com.vn/public/uploads/static-file/T%26C/SHBVN_Cac%20dieu%20khoan%20va%20dieu%20kien%20chung.pdf",
+    "use": "archive",
+    "status": "downloaded",
+    "path": "/Users/hainc/duan/freelancer/chat-ai/data/external/shinhan/general_terms_legacy.pdf",
+    "bytes": 828690,
+    "sha256": "ebcba80d13fd592d9331866bb12de6b8c468f8060b9b660290276e6ed5e3316f",
+    "downloaded_utc": "2026-09-23T16:03:59.723068+00:00"
+  }
+]

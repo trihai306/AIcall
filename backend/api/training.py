@@ -11,16 +11,20 @@ phần. Nên trước khi train phải nhả VRAM ra, và nạp lại sau khi xo
 import json
 import logging
 import os
+import shutil
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, UploadFile, File, Form
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.config import settings
 from backend.core.device import get_system_info
 from backend.core.jobs import JobRunner, Step
 from backend.core.vram import giai_phong_vram, theo_doi_roi_don
+from backend.core.training_guard import live_service_busy_reason
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/training", tags=["training"])
@@ -38,6 +42,22 @@ SINH_MAU_SCRIPT = TRAIN_DIR / "sinh_mau_tu_tri_thuc.py"
 THU_MUC_TRI_THUC = PROJECT_DIR / "knowledge"
 VENV_TRAIN = PROJECT_DIR / ".venv-train"
 MERGED = DATASET_DIR / "merged_dataset.jsonl"
+BANKVN_STATE_DIR = PROJECT_DIR / "data" / "bankvn" / "state"
+BANKVN_CONTINUOUS = BANKVN_STATE_DIR / "continuous.json"
+BANKVN_PROGRESS = BANKVN_STATE_DIR / "progress.json"
+BANKVN_ROUTER_GATE = BANKVN_STATE_DIR / "router-classifier-gate.json"
+BANKVN_HISTORY = BANKVN_STATE_DIR / "history.jsonl"
+BANKVN_PAUSED = BANKVN_STATE_DIR / "paused.json"
+BANKVN_ASSISTANT_GATE = BANKVN_STATE_DIR / "assistant-gate.json"
+BANKVN_STALE_SECONDS = 30 * 60
+BANKVN_TEST_OLLAMA_URL = os.getenv(
+    "BANKVN_TEST_OLLAMA_URL", "http://127.0.0.1:11435"
+).rstrip("/")
+BANKVN_TEST_MODEL = os.getenv("BANKVN_TEST_MODEL", "bankvn-candidate-live")
+BANKVN_TEST_GGUF = (
+    PROJECT_DIR / "models" / "bankvn" / "gguf" /
+    f"{BANKVN_TEST_MODEL}-f16.gguf"
+)
 
 # Fine-tune 234 mẫu x 3 epoch mất 30-60 phút; để rộng cho dataset lớn hơn.
 JOB_TIMEOUT_S = 8 * 3600
@@ -47,6 +67,15 @@ MIN_SAMPLES = 200
 
 runner = JobRunner(PROJECT_DIR, timeout_s=JOB_TIMEOUT_S)
 
+
+@router.get("/availability")
+async def training_availability():
+    """Read-only GPU admission signal for schedulers and the training UI."""
+    reason = live_service_busy_reason()
+    return {"can_use_gpu": not reason and not runner.is_busy(),
+            "reason": reason or ("Đang có job train chạy." if runner.is_busy() else ""),
+            "job_id": runner.running_job_id}
+
 # Tên model sinh ra trong Ollama. Phải khớp dòng FROM của Modelfile tương ứng.
 MODEL_NAME = "tuvan-qwen"
 MODELFILE = "Modelfile.tuvan-qwen"
@@ -55,6 +84,264 @@ GGUF_NAME = "tuvan-qwen-q4.gguf"
 
 def venv_train_python() -> Path:
     return VENV_TRAIN / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+
+
+def _doc_json(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _utc_age_seconds(value) -> int | None:
+    if not value:
+        return None
+    try:
+        timestamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        return max(
+            0,
+            int((datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)).total_seconds()),
+        )
+    except ValueError:
+        return None
+
+
+def _bankvn_recent_cycles(limit: int = 5) -> list[dict]:
+    try:
+        lines = BANKVN_HISTORY.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    recent: list[dict] = []
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(item, dict):
+            recent.append(item)
+        if len(recent) >= limit:
+            break
+    return list(reversed(recent))
+
+
+def _bankvn_24x7_status() -> dict:
+    state = _doc_json(BANKVN_CONTINUOUS)
+    progress = _doc_json(BANKVN_PROGRESS)
+    paused = _doc_json(BANKVN_PAUSED)
+    assistant_gate = _doc_json(BANKVN_ASSISTANT_GATE)
+    if not state and not progress:
+        return {
+            "available": False,
+            "stale": True,
+            "age_seconds": None,
+            "message": "Chưa có trạng thái BankVN 24/7 trên máy này",
+        }
+
+    last_cycle_utc = state.get("last_cycle_utc") or progress.get("last_cycle_utc")
+    age_seconds = _utc_age_seconds(last_cycle_utc)
+
+    gate = _doc_json(BANKVN_ROUTER_GATE)
+    quality = state.get("sft_quality") or {}
+    router_state = state.get("router_classifier") or {}
+    candidate_metrics = gate.get("metrics") or {}
+    current_metrics = gate.get("current_metrics") or {}
+    progress_updated = progress.get("updated_at_utc")
+    progress_age_seconds = _utc_age_seconds(progress_updated)
+    cycle_age_seconds = _utc_age_seconds(progress.get("cycle_started_utc"))
+    freshness_age = progress_age_seconds if progress_age_seconds is not None else age_seconds
+    stale = freshness_age is None or freshness_age > BANKVN_STALE_SECONDS
+
+    return {
+        "available": True,
+        "paused": bool(paused),
+        "pause_reason": paused.get("reason"),
+        "paused_at_utc": paused.get("paused_at_utc"),
+        "stale": stale,
+        "age_seconds": freshness_age,
+        "stale_after_seconds": BANKVN_STALE_SECONDS,
+        "last_cycle_utc": last_cycle_utc,
+        "progress": {
+            "phase": progress.get("phase"),
+            "updated_at_utc": progress_updated,
+            "age_seconds": progress_age_seconds,
+            "cycle_started_utc": progress.get("cycle_started_utc"),
+            "cycle_age_seconds": cycle_age_seconds,
+            "error": progress.get("error"),
+            "next_cycle_in_seconds": progress.get("next_cycle_in_seconds"),
+            "active_process": progress.get("active_process"),
+            "active_process_pid": progress.get("active_process_pid"),
+            "active_process_elapsed_seconds": progress.get("active_process_elapsed_seconds"),
+        },
+        "profile": state.get("profile"),
+        "new_teacher_samples": state.get("new_teacher_samples", 0),
+        "new_assistant_samples": state.get("new_assistant_samples", 0),
+        "new_router_samples": state.get("new_router_samples", 0),
+        "teacher_samples_total": state.get("teacher_samples_total", 0),
+        "teacher_samples_per_minute": state.get("teacher_samples_per_minute"),
+        "teacher_elapsed_seconds": state.get("teacher_elapsed_seconds"),
+        "teacher_workers": state.get("teacher_workers"),
+        "new_speech_profiles": state.get("new_speech_profiles") or {},
+        "new_speech_regions": state.get("new_speech_regions") or {},
+        "train_elapsed_seconds": state.get("train_elapsed_seconds"),
+        "cycle_elapsed_seconds": state.get("cycle_elapsed_seconds"),
+        "promotion": state.get("promotion"),
+        "sft": {
+            "train_loss": quality.get("sft_training_loss"),
+            "eval_loss_before": quality.get("sft_eval_loss_before"),
+            "eval_loss_after": quality.get("sft_eval_loss_after"),
+            "eval_improvement_pct": quality.get("sft_eval_loss_improvement_pct"),
+            "train_runtime": quality.get("train_runtime"),
+            "samples_per_second": quality.get("train_samples_per_second"),
+            "cuda_peak_allocated_gb": quality.get("cuda_peak_allocated_gb"),
+            "cuda_peak_reserved_gb": quality.get("cuda_peak_reserved_gb"),
+        },
+        "router": {
+            "status": router_state.get("status"),
+            "eligible_manual_review": gate.get("eligible_manual_review"),
+            "checks": gate.get("checks") or {},
+            "candidate": candidate_metrics,
+            "current": current_metrics,
+        },
+        "assistant_gate": {
+            "passed": assistant_gate.get("passed"),
+            "model": assistant_gate.get("model"),
+            "usable_rate": assistant_gate.get("usable_rate"),
+            "semantic_rate": assistant_gate.get("semantic_rate"),
+            "safe_rate": assistant_gate.get("safe_rate"),
+            "degenerate_rate": assistant_gate.get("degenerate_rate"),
+            "stop_rate": assistant_gate.get("stop_rate"),
+            "failures": assistant_gate.get("failures") or [],
+        },
+        "recent_cycles": _bankvn_recent_cycles(),
+    }
+
+
+class BankVNTestRequest(BaseModel):
+    message: str
+    history: list[dict] = Field(default_factory=list)
+
+
+def _bankvn_test_messages(req: BankVNTestRequest) -> list[dict]:
+    messages = [{
+        "role": "system",
+        "content": (
+            "Bạn là trợ lý ngân hàng Việt Nam đang được thử nghiệm. "
+            "Trả lời ngắn gọn bằng tiếng Việt. Không tự bịa lãi suất, hạn mức, "
+            "điều kiện, trạng thái hồ sơ hoặc thông tin không có trong câu hỏi. "
+            "Nếu chưa có dữ liệu sản phẩm hoặc hồ sơ thì tuyệt đối không đưa con số; "
+            "hãy hướng dẫn khách kiểm tra trên kênh chính thức. "
+            "Không hỏi hoặc tiết lộ mật khẩu, mã OTP, mã CVV hay toàn bộ số thẻ. "
+            "Vay tín chấp không yêu cầu tài sản bảo đảm. Trả lời tối đa 80 từ."
+        ),
+    }]
+    for item in req.history[-8:]:
+        role = str(item.get("role") or "")
+        content = str(item.get("content") or "").strip()
+        if role in {"user", "assistant"} and content:
+            messages.append({"role": role, "content": content[:4000]})
+    messages.append({"role": "user", "content": req.message.strip()[:2000]})
+    return messages
+
+
+@router.get("/bankvn-test/status")
+async def bankvn_test_status():
+    """Trạng thái Ollama CPU riêng dùng thử candidate, không chiếm GPU train."""
+    model_details: dict = {}
+    model_record: dict = {}
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(f"{BANKVN_TEST_OLLAMA_URL}/api/tags")
+            response.raise_for_status()
+            models = response.json().get("models", [])
+            names = [str(item.get("name") or "") for item in models]
+            normalized = {name.removesuffix(":latest") for name in names}
+            ready = BANKVN_TEST_MODEL.removesuffix(":latest") in normalized
+            if ready:
+                model_record = next(
+                    (
+                        item for item in models
+                        if str(item.get("name") or "").removesuffix(":latest")
+                        == BANKVN_TEST_MODEL.removesuffix(":latest")
+                    ),
+                    {},
+                )
+                show_response = await client.post(
+                    f"{BANKVN_TEST_OLLAMA_URL}/api/show",
+                    json={"model": BANKVN_TEST_MODEL},
+                )
+                show_response.raise_for_status()
+                model_details = show_response.json().get("details") or {}
+    except Exception as exc:
+        return {
+            "ready": False,
+            "model": BANKVN_TEST_MODEL,
+            "message": f"Máy thử BankVN chưa sẵn sàng: {exc}",
+        }
+
+    snapshot = model_record.get("modified_at")
+    if not snapshot:
+        try:
+            snapshot = datetime.fromtimestamp(
+                BANKVN_TEST_GGUF.stat().st_mtime, tz=timezone.utc
+            ).isoformat()
+        except OSError:
+            pass
+    return {
+        "ready": ready,
+        "model": BANKVN_TEST_MODEL,
+        "parameter_size": model_details.get("parameter_size"),
+        "quantization_level": model_details.get("quantization_level"),
+        "family": model_details.get("family"),
+        "runtime": "CPU riêng — không chiếm GPU training",
+        "snapshot_utc": snapshot,
+        "message": "Sẵn sàng" if ready else "Chưa nạp snapshot candidate vào máy thử",
+    }
+
+
+@router.post("/bankvn-test/chat")
+async def bankvn_test_chat(req: BankVNTestRequest):
+    question = req.message.strip()
+    if not question:
+        return {"error": "Nhập câu muốn thử."}
+    if len(question) > 2000:
+        return {"error": "Câu thử dài quá 2.000 ký tự."}
+
+    payload = {
+        "model": BANKVN_TEST_MODEL,
+        "messages": _bankvn_test_messages(req),
+        "stream": False,
+        "keep_alive": "10m",
+        # Ollama Windows không luôn tôn trọng CUDA_VISIBLE_DEVICES của process
+        # serve phụ. num_gpu=0 đặt ngay trên từng request mới là chốt chắc chắn
+        # candidate không tranh VRAM với Qwen teacher/SFT 24/7.
+        "options": {"temperature": 0.0, "num_predict": 160, "num_gpu": 0},
+    }
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                f"{BANKVN_TEST_OLLAMA_URL}/api/chat", json=payload
+            )
+            response.raise_for_status()
+        data = response.json()
+        answer = str((data.get("message") or {}).get("content") or "").strip()
+        if not answer:
+            return {"error": "Candidate không sinh được câu trả lời."}
+        return {
+            "answer": answer,
+            "model": BANKVN_TEST_MODEL,
+            "eval_count": data.get("eval_count"),
+            "eval_duration": data.get("eval_duration"),
+        }
+    except httpx.TimeoutException:
+        return {"error": "Candidate phản hồi quá 120 giây."}
+    except Exception as exc:
+        logger.warning("Thử BankVN candidate lỗi: %s", exc)
+        return {"error": f"Không gọi được candidate: {exc}"}
 
 
 # ============================================================
@@ -93,6 +380,13 @@ SAMPLE_PAIRS = [
 DUOI_FILE = (".jsonl", ".json", ".csv", ".txt")
 
 
+def _co_the_train(path: Path) -> bool:
+    """Do not offer evaluation logs or generated train outputs as a source."""
+    name = path.stem.lower()
+    blocked = ("challenge", "stress", "audit", "recheck", "_eval", "_raw", "_teacher_")
+    return not any(marker in name for marker in blocked) and not name.startswith("banking-qwen")
+
+
 def _dem_mau(path: Path) -> int:
     """Đếm đúng số cặp train đọc được, không đếm dòng thô của transcript."""
     try:
@@ -116,11 +410,13 @@ async def list_datasets():
             preview = next((l.strip()[:200] for l in lines if l.strip()), "")
         except Exception:
             preview = ""
+        count = _dem_mau(f)
         datasets.append({
             "id": f.stem,
             "filename": f.name,
             "size_kb": round(stat.st_size / 1024, 1),
-            "samples": _dem_mau(f),
+            "samples": count,
+            "trainable": _co_the_train(f) and count >= 30,
             "preview": preview,
             "created": stat.st_mtime,
         })
@@ -410,7 +706,8 @@ async def get_status():
         "du_mau": tong_mau >= MIN_SAMPLES,
         "running_job": runner.running_job_id,
         "model_dang_dung": settings.ollama_model,
-        "model_sau_train": MODEL_NAME,
+        "model_sau_train": "candidate riêng để A/B",
+        "bankvn_24x7": _bankvn_24x7_status(),
     }
 
 
@@ -446,6 +743,7 @@ class TrainingConfig(BaseModel):
     # model production. Nếu production đang là Qwen3.5-9B thì chuyển thẳng sang
     # bản 3B sau train là hạ model, phải A/B trước.
     base_model: str = "Qwen/Qwen2.5-3B-Instruct"
+    dataset_id: str = ""
     epochs: int = 3
     learning_rate: float = 2e-4
     lora_rank: int = 16
@@ -469,6 +767,14 @@ def _chuyen_model_khi_xong(auto_deploy: bool):
 async def start_training(config: TrainingConfig):
     if runner.is_busy():
         return {"error": "Đang có tiến trình khác chạy.", "job_id": runner.running_job_id}
+    from backend.api.voice_training import runner as voice_runner
+    if voice_runner.is_busy():
+        return {"error": "Đang train giọng trên cùng GPU.",
+                "job_id": voice_runner.running_job_id}
+
+    busy_reason = live_service_busy_reason()
+    if busy_reason:
+        return {"error": busy_reason + " Tiếp tục tạo/rà dữ liệu, train GPU khi dịch vụ rảnh."}
 
     py_train = venv_train_python()
     if not py_train.exists():
@@ -482,22 +788,36 @@ async def start_training(config: TrainingConfig):
         if not p.exists():
             return {"error": f"Thiếu script: {p.relative_to(PROJECT_DIR)}"}
 
-    nguon = [
-        f for duoi in DUOI_FILE for f in DATASET_DIR.glob(f"*{duoi}")
-        if f.name != MERGED.name
-    ]
-    if not nguon:
-        return {"error": "Chưa có dataset nào. Upload hoặc tạo dataset mẫu trước."}
+    supported_models = {
+        "Qwen/Qwen2.5-3B-Instruct": (False, "Modelfile.tuvan-qwen"),
+        "Qwen/Qwen3.5-2B": (True, "auto-qwen35"),
+    }
+    if config.base_model not in supported_models:
+        return {"error": "Base model chưa được kiểm chứng trên máy GPU này."}
+    if not config.dataset_id or not config.dataset_id.replace("-", "").replace("_", "").isalnum():
+        return {"error": "Hãy chọn một dataset cụ thể để train."}
+    nguon = [DATASET_DIR / f"{config.dataset_id}{ext}" for ext in DUOI_FILE
+             if (DATASET_DIR / f"{config.dataset_id}{ext}").is_file()]
+    if len(nguon) != 1 or nguon[0].name == MERGED.name:
+        return {"error": "Dataset không tồn tại hoặc tên bị trùng định dạng."}
+    if not _co_the_train(nguon[0]):
+        return {"error": "Đây là file kiểm thử/nháp, không được dùng làm nguồn train."}
 
     tong_mau = sum(_dem_mau(f) for f in nguon)
-    if tong_mau < MIN_SAMPLES:
+    if tong_mau < 30:
         return {
             "error": (
-                f"Mới có {tong_mau} mẫu, dưới mức tối thiểu {MIN_SAMPLES}. "
+                f"Mới có {tong_mau} mẫu, dưới mức thử nghiệm 30. "
                 "Train lúc này rất dễ học thuộc và trả lời lệch khi gặp câu mới. "
                 "Bổ sung dữ liệu sạch rồi train lại."
             )
         }
+
+    free_gb = shutil.disk_usage(PROJECT_DIR).free / (1024 ** 3)
+    if free_gb < 11:
+        return {"error": (f"Ổ chứa dự án chỉ còn {free_gb:.1f} GB trống; "
+                          "cần ít nhất 11 GB để xuất GGUF an toàn. "
+                          "Dọn file export trung gian cũ rồi train lại; giữ adapter LoRA.")}
 
     if not 1 <= config.epochs <= 50:
         return {"error": "epochs phải trong khoảng 1-50"}
@@ -508,26 +828,41 @@ async def start_training(config: TrainingConfig):
     if not 1e-6 <= config.learning_rate <= 1e-2:
         return {"error": "learning_rate phải trong khoảng 1e-6 đến 1e-2"}
 
+    if config.auto_deploy:
+        return {"error": "Cần kiểm tra hội thoại và nghiệp vụ sau train trước khi chuyển model đang phục vụ."}
+
+    run_name = f"banking-{('qwen35-2b' if '3.5' in config.base_model else 'qwen25-3b')}-style-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    prepared = DATASET_DIR / f"{run_name}-train.jsonl"
+    adapter_dir = PROJECT_DIR / "models" / "llm" / f"{run_name}-lora"
+    gguf_dir = PROJECT_DIR / "models" / "llm" / f"{run_name}-gguf"
+    gguf_name = f"{run_name}.gguf"
+    load_16bit, modelfile = supported_models[config.base_model]
+    train_cmd = [
+        str(py_train), str(TRAIN_SCRIPT),
+        "--dataset", str(prepared),
+        "--output-dir", str(adapter_dir),
+        "--gguf-dir", str(gguf_dir),
+        "--base-model", config.base_model,
+        "--epochs", str(config.epochs),
+        "--lr", str(config.learning_rate),
+        "--lora-rank", str(config.lora_rank),
+        "--batch-size", str(config.batch_size),
+        "--grad-accum", str(config.grad_accum),
+    ]
+    if load_16bit:
+        train_cmd.append("--load-in-16bit")
     steps = [
-        Step(command=[sys.executable, str(MAKE_DATASET)],
+        Step(command=[sys.executable, str(MAKE_DATASET), "--sources", nguon[0].name,
+                      "--output", str(prepared), "--conversation-style"],
              label="Gộp và kiểm tra dataset"),
-        Step(command=[
-            str(py_train), str(TRAIN_SCRIPT),
-            "--base-model", config.base_model,
-            "--epochs", str(config.epochs),
-            "--lr", str(config.learning_rate),
-            "--lora-rank", str(config.lora_rank),
-            "--batch-size", str(config.batch_size),
-            "--grad-accum", str(config.grad_accum),
-        ], label=f"Fine-tune {config.base_model}"),
+        Step(command=train_cmd, label=f"Fine-tune {config.base_model}"),
     ]
     # Luôn nạp model mới vào Ollama để có thể A/B với production. Chỉ sửa .env
     # và chuyển model đang phục vụ khi người dùng bật auto_deploy rõ ràng.
     deploy_cmd = [sys.executable, str(DEPLOY_SCRIPT),
-                  "--name", MODEL_NAME, "--modelfile", MODELFILE,
-                  "--gguf-name", GGUF_NAME]
-    if config.auto_deploy:
-        deploy_cmd.append("--set-env")
+                  "--name", run_name, "--modelfile", modelfile,
+                  "--gguf-name", gguf_name, "--gguf-dir", str(gguf_dir),
+                  "--cleanup-export"]
     steps.append(Step(
         command=deploy_cmd,
         label=("Nạp vào Ollama và chuyển .env" if config.auto_deploy
@@ -540,6 +875,9 @@ async def start_training(config: TrainingConfig):
     # Cảnh báo rất dễ bỏ sót trên UI: hiện production có thể là Qwen3.5-9B,
     # trong khi cấu hình mặc định fine-tune Qwen2.5-3B để vừa VRAM 12GB. Loss
     # giảm không có nghĩa model nhỏ hơn sẽ tốt hơn model production lớn hơn.
+    job.log(f"Dataset đã chọn: {nguon[0].name} ({tong_mau} mẫu); candidate: {run_name}")
+    if tong_mau < MIN_SAMPLES:
+        job.log(f"CẢNH BÁO: {tong_mau} mẫu < {MIN_SAMPLES} khuyến nghị; chỉ coi đây là bản thử nghiệm.")
     if settings.ollama_model not in (MODEL_NAME, "qwen2.5:3b") \
             and config.base_model == "Qwen/Qwen2.5-3B-Instruct":
         job.log(

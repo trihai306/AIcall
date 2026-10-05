@@ -1,0 +1,282 @@
+{
+  "phase": "before",
+  "rows": [
+    {
+      "name": "1_intro",
+      "input": "em tư vấn cho anh về khoản vay bên mình này",
+      "errors": [],
+      "audio_text": [
+        "Dạ gói vay có lãi suất từ 7,9% một năm,"
+      ],
+      "chunks": [
+        "Dạ gói vay có lãi suất từ 7,9% một năm,",
+        "hạn mức tối đa 500 triệu đồng và thời hạn từ 12 đến 60 tháng ạ."
+      ],
+      "session_id": "8a8e3aef",
+      "transcript": "em tư vấn cho anh về khoản vay bên mình này",
+      "response": "Dạ gói vay có lãi suất từ 7,9% một năm, hạn mức tối đa 500 triệu đồng và thời hạn từ 12 đến 60 tháng ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "filler_ms": 4,
+        "filler_xong_luc": 1050403.6797948,
+        "filler_text": "Dạ em nói rõ cho anh chị phần này luôn nhé,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "tra_tu_quy_tac_tai_chinh": "gioi_thieu_san_pham",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "tieng_san": "ltg_gioi_thieu_san_pham",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "ttfa_ms": 137,
+        "tts_first_ms": 0,
+        "tts_first_chars": 39,
+        "total_ms": 151,
+        "turn": 1,
+        "timestamp": 1789195784.4835255
+      },
+      "audio_matches_text": false,
+      "wav": "C:\\duan\\chat-ai\\logs\\filler_join_before_1789195783484173700\\1_intro.wav"
+    },
+    {
+      "name": "1_amount",
+      "input": "anh muốn vay 275 triệu trong 24 tháng",
+      "errors": [],
+      "audio_text": [
+        "Dạ gói này hỗ trợ tối đa 500 triệu đồng,",
+        "nên nhu cầu 275 triệu đồng đang nằm trong trần sản phẩm.",
+        "Hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ."
+      ],
+      "chunks": [
+        "Dạ gói này hỗ trợ tối đa 500 triệu đồng,",
+        "nên nhu cầu 275 triệu đồng đang nằm trong trần sản phẩm.",
+        "Hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ."
+      ],
+      "session_id": "ca688a49",
+      "transcript": "anh muốn vay 275 triệu trong 24 tháng",
+      "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng, nên nhu cầu 275 triệu đồng đang nằm trong trần sản phẩm. Hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "filler_ms": 4,
+        "filler_xong_luc": 1050404.0666763,
+        "filler_text": "Dạ em nói rõ cho anh chị phần này luôn nhé,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "known",
+            "value": "275000000",
+            "raw": "275 triệu",
+            "turn": 0
+          },
+          "term": {
+            "status": "known",
+            "value": "24",
+            "raw": "24 tháng",
+            "turn": 0
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "tra_tu_quy_tac_tai_chinh": "nhu_cau_vay",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "tieng_san": "chua_co",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "ttfa_ms": 314,
+        "tts_first_ms": 193,
+        "tts_first_chars": 40,
+        "gop_manh": "0/2",
+        "gop_ty_le": 0.0,
+        "total_ms": 748,
+        "turn": 1,
+        "timestamp": 1789195785.4664128
+      },
+      "audio_matches_text": true,
+      "wav": "C:\\duan\\chat-ai\\logs\\filler_join_before_1789195783484173700\\1_amount.wav"
+    },
+    {
+      "name": "1_calculation",
+      "input": "anh vay 425 triệu trong 24 tháng mỗi tháng đóng bao nhiêu",
+      "errors": [],
+      "audio_text": [
+        "Dạ nếu được duyệt 425 triệu đồng trong 24 tháng,",
+        "tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 20,5 triệu đồng;",
+        "các tháng sau sẽ giảm dần ạ.",
+        "Đây là số ước tính,"
+      ],
+      "chunks": [
+        "Dạ nếu được duyệt 425 triệu đồng trong 24 tháng,",
+        "tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 20,5 triệu đồng;",
+        "các tháng sau sẽ giảm dần ạ.",
+        "Đây là số ước tính,",
+        "chưa phải lịch trả nợ chính thức."
+      ],
+      "session_id": "e87b3e41",
+      "transcript": "anh vay 425 triệu trong 24 tháng mỗi tháng đóng bao nhiêu",
+      "response": "Dạ nếu được duyệt 425 triệu đồng trong 24 tháng, tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 20,5 triệu đồng; các tháng sau sẽ giảm dần ạ. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "filler_ms": 4,
+        "filler_xong_luc": 1050405.0894095,
+        "filler_text": "Dạ em nói rõ cho anh chị phần này luôn nhé,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "known",
+            "value": "425000000",
+            "raw": "425 triệu",
+            "turn": 0
+          },
+          "term": {
+            "status": "known",
+            "value": "24",
+            "raw": "24 tháng",
+            "turn": 0
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "tra_tu_quy_tac_tai_chinh": "tinh_tra_gop",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "tieng_san": "chua_co",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "ttfa_ms": 507,
+        "tts_first_ms": 355,
+        "tts_first_chars": 48,
+        "gop_manh": "1/4",
+        "gop_ty_le": 0.25,
+        "total_ms": 1273,
+        "turn": 1,
+        "timestamp": 1789195787.0166183
+      },
+      "audio_matches_text": false,
+      "wav": "C:\\duan\\chat-ai\\logs\\filler_join_before_1789195783484173700\\1_calculation.wav"
+    },
+    {
+      "name": "1_procedure",
+      "input": "hồ sơ vay cần giấy tờ gì",
+      "errors": [],
+      "audio_text": [
+        "Dạ hồ sơ chính gồm căn cước công dân và xác nhận thu nhập hoặc sao kê lương 3 tháng gần nhất ạ."
+      ],
+      "chunks": [
+        "Dạ hồ sơ chính gồm căn cước công dân và xác nhận thu nhập hoặc sao kê lương 3 tháng gần nhất ạ."
+      ],
+      "session_id": "ce3430ec",
+      "transcript": "hồ sơ vay cần giấy tờ gì",
+      "response": "Dạ hồ sơ chính gồm căn cước công dân và xác nhận thu nhập hoặc sao kê lương 3 tháng gần nhất ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "filler_ms": 4,
+        "filler_xong_luc": 1050406.6138507,
+        "filler_text": "Dạ em nói rõ cho anh chị phần này luôn nhé,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "tra_tu_quy_tac_tai_chinh": "ho_so_can_thiet",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "bang_hoi_dap": "can_nhung_gi",
+        "bang_diem": 0.86,
+        "bang_theo_tinh_huong": false,
+        "llm_nghi_san": false,
+        "tieng_san": "ltg_ho_so_can_thiet",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 1,
+        "ttfa_ms": 121,
+        "tts_first_ms": 0,
+        "tts_first_chars": 95,
+        "total_ms": 130,
+        "turn": 1,
+        "timestamp": 1789195787.3938994
+      },
+      "audio_matches_text": true,
+      "wav": "C:\\duan\\chat-ai\\logs\\filler_join_before_1789195783484173700\\1_procedure.wav"
+    }
+  ],
+  "scope": "Compare actual backend filler/answer packets before and after a join change.\n\nRun on Windows. Creates labelled TEST sessions, never dials. WAVs replay the\nreceived packets in FIFO order, including arrival gaps; they do not measure\nphone end-to-ear latency and are not a human assessment of naturalness.\n",
+  "passed": true,
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "16 docs"
+    }
+  },
+  "source_hashes": {
+    "backend\\pipeline\\streaming_pipeline.py": "a7908c7965707137dbc935d4a69c3291472cb789b31fa56fda8de1c912ae0053",
+    "backend\\services\\tieng_san.py": "6cb7995903cd9e82784837bf7ec4bfe7a1610012e12b1fba8132d72f04eec29b"
+  }
+}

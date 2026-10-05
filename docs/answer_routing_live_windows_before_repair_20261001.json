@@ -1,0 +1,205 @@
+{
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "61 docs"
+    }
+  },
+  "scenario_id": "sc_cfa532b8",
+  "transport": "loopback WebSocket, telephone-band audio; no physical call",
+  "results": [
+    {
+      "kind": "text_soi",
+      "session_id": "2fa2424b",
+      "question": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "transcript": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "answer": "Dạ, anh chị vào Internet Banking chọn mục Thẻ để bật hoặc tắt giao dịch thẻ ở nước ngoài ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "bang_hoi_dap": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "bang_diem": 0.992,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "answer_route": {
+          "mode": "answer_bank",
+          "model": "qwen3.5:9b",
+          "answer_id": "ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+          "source_path": "shinhan/shinhan_card_user_guide_vi.md",
+          "reason": "ai_selected",
+          "selector_model": "qwen3.5:9b"
+        },
+        "tieng_san": "hd_ab_auto_shinhan_shinhan_card_user_guide__5d69005162_307e83a67165",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 486,
+        "turn": 1,
+        "timestamp": 1790840144.6139252
+      },
+      "audio_bytes": 0,
+      "selected_source_answer": true,
+      "qwen_selected": true,
+      "passed": true
+    },
+    {
+      "kind": "text_soi",
+      "session_id": "fe39199b",
+      "question": "Tôi muốn bật giao dịch thẻ ở nước ngoài, phải vào đâu?",
+      "transcript": "Tôi muốn bật giao dịch thẻ ở nước ngoài, phải vào đâu?",
+      "answer": "Chào anh/chị, hiện tại em chưa có thông tin về quy trình kích hoạt giao dịch quốc tế cho thẻ tín dụng ạ. Anh/chị có đang sở hữu một chiếc thẻ cụ thể nào mà cần hỗ trợ không?",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "ngu_canh_tron": 1966,
+        "cong_cu_bo_dinh_tuyen": "khong_co_dau_hieu_ho_so",
+        "llm_nghi_san": false,
+        "answer_route": {
+          "mode": "generated",
+          "model": "qwen3.5:9b",
+          "answer_id": "",
+          "source_path": "",
+          "reason": "no_matching_answer",
+          "selector_model": "qwen3.5:9b"
+        },
+        "llm_ttft_ms": 484,
+        "llm_chunk1_ms": 790,
+        "gop_manh": "2/1",
+        "gop_ty_le": 1.0,
+        "total_ms": 1399,
+        "turn": 1,
+        "timestamp": 1790840146.0161023
+      },
+      "audio_bytes": 0,
+      "selected_source_answer": false,
+      "qwen_selected": true,
+      "passed": false
+    },
+    {
+      "kind": "audio",
+      "session_id": "6e0781ad",
+      "question": "Cách bật hoặc tắt giao dịch thẻ quốc tế trên Shinhan?",
+      "transcript": "cách bật hoặc tắt giao dịch thẻ quốc tế trên xi nhan",
+      "answer": "Khách hàng đang hỏi về cách bật/tắt giao dịch thẻ quốc tế trên ứng dụng Shinhan Mobile thì em xin phép ghi nhận và sẽ có chuyên viên liên hệ lại để hướng dẫn cụ thể ạ.",
+      "metrics": {
+        "la_thoai": true,
+        "filler_ms": 2,
+        "filler_xong_luc": 19168.2876604,
+        "filler_text": "Dạ vâng, em nói luôn ạ,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "stt_doan_truoc": false,
+        "stt_ms": 41,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "selector_model": "qwen3.5:9b",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "ngu_canh_tron": 1966,
+        "cong_cu_bo_dinh_tuyen": "khong_co_dau_hieu_ho_so",
+        "llm_nghi_san": false,
+        "answer_route": {
+          "mode": "generated",
+          "model": "qwen3.5:9b",
+          "answer_id": "",
+          "source_path": "",
+          "reason": "no_matching_answer",
+          "selector_model": "qwen3.5:9b"
+        },
+        "llm_ttft_ms": 197,
+        "llm_chunk1_ms": 647,
+        "noi_dem_nghi_ms": 0.0,
+        "ttfa_ms": 2053,
+        "tts_first_ms": 853,
+        "tts_first_chars": 167,
+        "total_ms": 2071,
+        "turn": 1,
+        "timestamp": 1790840148.4285738
+      },
+      "audio_bytes": 410444,
+      "selected_source_answer": false,
+      "qwen_selected": true,
+      "passed": false
+    }
+  ],
+  "passed": false
+}

@@ -1,0 +1,482 @@
+[
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Chào em, thẻ của con vừa về nhà mà chưa kịp dùng thì bị mất luôn rồi.",
+    "assistant": "Dạ vâng ạ, chị đừng buồn nhé. Chị yên tâm, sau khi nhận thẻ chị có thể kích hoạt ngay trên ứng dụng hoặc gọi 1900 1577 để xử lý nhanh nhất ạ."
+  },
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Em ơi, mình muốn biết làm sao để thẻ mới bắt đầu dùng được không?",
+    "assistant": "Chào anh/chị, rất vui vì anh/chị đã nhận được thẻ. Anh/chị chỉ cần vào mục Thẻ > Kích hoạt thẻ trên SOL/Internet Banking hoặc gọi 1900 1577 là xong ạ."
+  },
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Thẻ mới về mà mình chưa kịp kích hoạt thì làm sao bây giờ?",
+    "assistant": "Dạ không sao cả ạ, chị cứ bình tĩnh. Chị vào ứng dụng hoặc gọi 1900 1577 để kích hoạt thẻ ngay lúc này nhé."
+  },
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Em ơi, vừa nhận thẻ Shinhan thì làm sao để kích hoạt nhanh nhất chứ?",
+    "assistant": "Chào anh/chị, sau khi nhận thẻ mình có thể vào SOL hoặc Internet Banking chọn mục Thẻ > Kích hoạt thẻ, hoặc gọi ngay 1900 1577 là được rồi đó."
+  },
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Thẻ bị mất luôn rồi, giờ em còn kích hoạt được không?",
+    "assistant": "Dạ tiếc quá anh/chị bị mất thẻ vậy, lúc này mình chỉ cần liên hệ 1900 1577 để báo mất và làm thủ tục thôi ạ, không thể kích hoạt online được nữa đâu."
+  },
+  {
+    "status": "rejected",
+    "topic": "activate",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Anh có hướng dẫn cụ thể nào để em tự kích hoạt thẻ mới nhận không?",
+    "assistant": "Dạ dễ mà anh/chị, vào SOL hoặc Internet Banking rồi tìm mục Thẻ > Kích hoạt thẻ là xong, gọi 1900 1577 cũng tiện lắm nếu rảnh."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "activate",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận thẻ, có thể kích hoạt trong SOL/Internet Banking ở Thẻ > Kích hoạt thẻ; hoặc liên hệ 1900 1577.",
+    "customer": "Chị có thể kích hoạt thẻ bằng cách nào nhanh nhất mà không cần đến quầy không?",
+    "assistant": "Chị hoàn toàn có thể làm được đó, sau khi nhận thẻ chị chỉ cần vào mục Thẻ trên ứng dụng hoặc Internet Banking để kích hoạt ngay tại nhà nhé."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Chị vừa nhận thẻ nhưng chưa kịp đặt mã, làm thế nào để có PIN nhanh?",
+    "assistant": "Em chào chị ạ. Chị yên tâm, sau khi kích hoạt thẻ, chị chỉ cần đăng nhập vào Mobile Banking hoặc đến chi nhánh Shinhan là thiết lập được ngay thôi."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Anh ơi, mình đi làm xa ngân hàng, có thể tự đặt mã pin ở nhà không?",
+    "assistant": "Dạ vâng anh ạ. Anh hoàn toàn có thể làm được mà không cần ra chi nhánh, chỉ cần vào Internet Banking hoặc Mobile Banking để nhập mã mới là xong."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Thẻ mình bị mất rồi, buồn quá! Giờ phải đặt PIN thế nào cho kịp?",
+    "assistant": "Em rất tiếc vì chuyện này anh ạ. Trước hết hãy báo mất thẻ ngay với em để khóa an toàn, sau đó khi nhận thẻ mới, anh có thể đặt PIN qua ứng dụng hoặc đến chi nhánh Shinhan bất cứ lúc nào."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Chị vừa nhận được thẻ Shinhan nhưng chưa biết làm sao để có PIN dùng ngay?",
+    "assistant": "Dạ vâng, chị yên tâm nhé! Sau khi kích hoạt thẻ xong, chị chỉ cần đăng nhập vào Mobile Banking là thiết lập PIN được luôn đó em."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Anh bị mất thẻ rồi, giờ anh muốn đổi PIN thì phải làm sao?",
+    "assistant": "Thương anh quá, đừng lo lắng gì cả. Anh cứ đến bất kỳ chi nhánh Shinhan gần nhất để nhân viên hướng dẫn em giúp đổi PIN mới ngay thôi ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Em vừa mở tài khoản xong, có thể đặt mã PIN online không vậy?",
+    "assistant": "Được đó, sau khi nhận và kích hoạt thẻ rồi thì em đăng nhập vào Internet Banking hay Mobile Banking là thiết lập PIN được liền mà không cần ra quầy đâu anh."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Chị vừa nhận được thẻ mới nhưng chưa kịp kích hoạt, vậy làm sao để thiết lập PIN ngay bây giờ?",
+    "assistant": "Em hiểu chị đang cần gấp, sau khi kích hoạt thẻ, chị có thể đăng nhập vào Internet Banking hoặc Mobile Banking của Shinhan để tự đặt PIN rất nhanh."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Anh ơi, nếu em không tiện ra chi nhánh thì có cách nào khác để lấy mã bảo vệ cho thẻ không?",
+    "assistant": "Đừng lo lắng anh, ngoài việc đến chi nhánh, anh hoàn toàn có thể thiết lập PIN trực tuyến ngay trên ứng dụng Mobile Banking sau khi thẻ đã được kích hoạt."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "pin",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sau khi nhận và kích hoạt thẻ, có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc tại chi nhánh Shinhan.",
+    "customer": "Thẻ của con bị mất rồi, giờ phải làm gì để con dùng thẻ được không?",
+    "assistant": "Em rất tiếc vì sự bất tiện này, nếu thẻ đã được kích hoạt, em có thể hướng dẫn gia đình đăng nhập vào hệ thống trực tuyến để thiết lập PIN mới cho thẻ thay thế."
+  },
+  {
+    "status": "rejected",
+    "topic": "lost",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Em vừa để quên thẻ ở nhà hàng rồi, giờ lo quá ạ.",
+    "assistant": "Chị yên tâm nhé, em giúp chị khóa ngay thẻ qua hotline 1900 1577 hoặc trong ứng dụng ShinhanBank của chị là xong ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "lost",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Thẻ mất rồi, làm sao biết số điện thoại báo cho ai nhỉ?",
+    "assistant": "Anh không cần nhớ đâu ạ, anh gọi ngay 1900 1577 hoặc mở app lên chọn mục Thẻ > Mở/Khóa Thẻ là được luôn ạ."
+  },
+  {
+    "status": "rejected",
+    "topic": "lost",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Em mới thấy thẻ bị rơi ở taxi, em phải làm gì trước nhất hả chị?",
+    "assistant": "Đừng lo chị, em chỉ cần báo khóa ngay qua số 1900 1577 hoặc trong SOL/Internet Banking của Shinhan là an tâm rồi ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "lost",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Cảm ơn em nhiều vậy, giờ em biết làm gì tiếp theo đây chứ?",
+    "assistant": "Anh yên tâm, vào SOL/Internet Banking bấm Thẻ > Mở/Khóa Thẻ hoặc gọi 1900 1577 là xong ngay lập tức thôi."
+  },
+  {
+    "status": "rejected",
+    "topic": "lost",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Chị vừa để quên thẻ tại quán cà phê, giờ chị lo quá không biết làm sao.",
+    "assistant": "Em rất tiếc vì sự cố này xảy ra với chị. Chị hãy gọi ngay đến số 1900 1577 hoặc đăng nhập vào SOL/Internet Banking để khóa thẻ ngay lập tức nhé."
+  },
+  {
+    "status": "rejected",
+    "topic": "lost",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Anh ơi, em vừa bị mất thẻ ngân hàng, sợ tiền trong tài khoản sẽ bị rút hết.",
+    "assistant": "Em hiểu lo lắng của anh lúc này. Để bảo vệ tài khoản, anh vui lòng liên hệ 1900 1577 hoặc thao tác khóa thẻ trên ứng dụng SOL/Internet Banking ngay bây giờ ạ."
+  },
+  {
+    "status": "rejected",
+    "topic": "lost",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Khi mất thẻ, báo Shinhan để khóa ngay qua 1900 1577 hoặc trong SOL/Internet Banking ở Thẻ > Mở/Khóa Thẻ.",
+    "customer": "Bạn ơi, tôi vừa tìm thấy chiếc ví cũ và phát hiện thẻ Shinhan đang bị mất từ lâu.",
+    "assistant": "Em rất vui vì bạn đã tìm lại thông tin quan trọng. Để đảm bảo an toàn, bạn nên gọi 1900 1577 hoặc vào mục Thẻ trên SOL/Internet Banking để khóa thẻ ngay nhé."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Chào em, thẻ của con vừa hết hạn rồi, giờ con phải trả bao nhiêu tiền mới được?",
+    "assistant": "Chị yên tâm nhé, chị chỉ cần thanh toán tối thiểu ghi trên sao kê là đủ để tránh bị phạt trễ hạn rồi."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Em ơi, mình đang kẹt tiền, số tiền tối thiểu cho lần này là bao nhiêu vậy?",
+    "assistant": "Anh xem kỹ bản sao kê đi bạn, ở đó sẽ có con số cụ thể cần trả ngay để không bị trừ phí."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Thẻ mất rồi em ơi, mình phải thanh toán tối thiểu bao nhiêu mới được cấp thẻ mới?",
+    "assistant": "Đừng lo chị ạ, chị cứ xem sao kê là biết ngay số tiền tối thiểu cần nộp để tránh bị phạt trễ hạn."
+  },
+  {
+    "status": "rejected",
+    "topic": "minimum",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Em chào, mình vừa bị mất thẻ Shinhan Bank này thì phải làm sao?",
+    "assistant": "Chào anh/chị, em rất tiếc vì chuyện bất ngờ đó. Anh/chị yên tâm, việc quan trọng nhất là bảo vệ tài khoản trước khi lo đến các thủ tục khác."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Thế mình cần trả bao nhiêu tiền ngay bây giờ để không bị phạt?",
+    "assistant": "Anh/chị cứ xem sao kê gần nhất của mình nhé, ở đó sẽ ghi rõ số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí trễ hạn."
+  },
+  {
+    "status": "rejected",
+    "topic": "minimum",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Mình không rành lắm về sao kê thì phải làm sao?",
+    "assistant": "Đừng lo, anh/chị chỉ cần nhìn vào phần 'Minimum Payment' trong sao kê là biết ngay số tiền mình cần trả mỗi tháng rồi."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Chị ơi, em vừa bị mất thẻ ngân hàng, làm sao biết phải trả ít nhất bao nhiêu tiền?",
+    "assistant": "Em xin lỗi vì sự cố này, chị nhé. Để tránh phí trễ hạn, chị chỉ cần xem số tiền tối thiểu trên sao kê của mình là đủ rồi ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Anh cho hỏi, nếu không có sao kê thì làm sao biết mình phải trả bao nhiêu?",
+    "assistant": "Đừng lo anh, dù chưa có sao kê thì số tiền tối thiểu vẫn được tính dựa trên khoản nợ trước đó để tránh phí phát sinh. Em sẽ hướng dẫn cách kiểm tra nhanh nhất sau ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "minimum",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Thanh toán tối thiểu là số tiền tối thiểu cần trả trước hoặc vào ngày đến hạn để tránh phí do thanh toán trễ; xem số tiền cụ thể trên sao kê.",
+    "customer": "Em nghe nói thanh toán tối thiểu rất quan trọng, đúng không chị?",
+    "assistant": "Đúng vậy chị, đây là khoản tiền cần trả ít nhất vào ngày đến hạn để đảm bảo không bị tính phí trễ hạn nhé."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "bac",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Thẻ của mình bị mất, sao kê ghi có phí xử lý thẻ mới, vậy mình cần làm gì tiếp theo?",
+    "assistant": "Dạ em rất tiếc về sự bất tiện này, anh/chị cứ yên tâm vì sao kê sẽ phản ánh đúng các khoản phí phát sinh trong chu kỳ và ngày đến hạn thanh toán ạ."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Chị ơi, sao kê mới của em có ghi rõ các khoản phí và lãi trong chu kỳ không?",
+    "assistant": "Dạ vâng chị, em thấy trên đây đã liệt kê hết mọi giao dịch, cả những khoản phí phát sinh lẫn tiền lãi (nếu có) cho kỳ này."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Thẻ của con bị mất rồi, làm sao để biết ngày đến hạn thanh toán còn bao nhiêu trong statement?",
+    "assistant": "Em xin lỗi vì chuyện bất tiện này chị, tại sao kê bên em đã ghi rõ ngày đến hạn và số dư cần trả cho kỳ vừa qua."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "nam",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Anh có thể chỉ giúp em xem phần nào trên sao kê là các khoản lãi được tính trong chu kỳ tháng này không?",
+    "assistant": "Dạ anh yên tâm, tại mục chi tiết giao dịch, em đã đánh dấu rõ những khoản lãi phát sinh và ngày đến hạn thanh toán của kỳ này."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Chị ơi, trong sao kê này có ghi rõ các giao dịch và ngày đến hạn thanh toán không?",
+    "assistant": "Dạ đúng vậy anh ạ, tất cả các khoản chi trả, lãi suất (nếu có) cùng ngày đến hạn đều được liệt kê đầy đủ trên đây."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Em thấy sao kê ghi phí dịch vụ nhưng không thấy dòng tiền vào, liệu có liên quan gì không?",
+    "assistant": "Dạ chị yên tâm, dòng phí đó chính là khoản trừ đi trong chu kỳ này nên mới xuất hiện như vậy."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "statement",
+    "region": "trung_tinh",
+    "source": "card_user_guide_vi",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "approved_fact": "Sao kê ghi các giao dịch, phí, lãi (nếu có) trong chu kỳ và ngày đến hạn thanh toán.",
+    "customer": "Thẻ của em bị mất rồi, sao kê còn ghi được những gì để em kiểm tra?",
+    "assistant": "Dạ dù thẻ đã mất, sao kê vẫn ghi rõ lịch sử giao dịch và ngày đến hạn thanh toán trong chu kỳ vừa qua."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "bac",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Em ơi, thẻ của em vừa bị mất, làm sao để đăng ký thẻ điện tử ngay ạ?",
+    "assistant": "Chị yên tâm nhé, chị vào ứng dụng SOL chọn mục Đăng ký thẻ điện tử rồi xác nhận thỏa thuận là được."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "bac",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Anh cho hỏi, nếu em không tìm thấy mục đăng ký ở đâu thì phải làm sao ạ?",
+    "assistant": "Em cứ mở app SOL lên, tìm đến phần Đăng ký thẻ điện tử và làm theo các bước xác thực trên màn hình nhé."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "bac",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Thật đơn giản quá anh, vậy sau khi xác nhận thỏa thuận thì thẻ dùng được ngay không ạ?",
+    "assistant": "Vâng, chỉ cần hoàn tất xác thực theo hướng dẫn là thẻ điện tử sẽ sẵn sàng sử dụng cho chị rồi."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "nam",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Chị vừa bị mất thẻ, giờ làm sao để dùng ngân hàng online được?",
+    "assistant": "Em hiểu chị rất lo lắng khi mất thẻ đó. Chị yên tâm nhé, trong ứng dụng SOL có mục 'Đăng ký thẻ điện tử', chị đăng ký ở đó rồi xác nhận thỏa thuận là xong."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "nam",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Anh ơi, mình cần làm gì để có thể thanh toán không dùng tiền mặt ngay?",
+    "assistant": "Chào anh, việc này rất đơn giản. Anh chỉ cần vào mục 'Đăng ký thẻ điện tử' trên app SOL, xác nhận thỏa thuận rồi làm theo các bước xác thực là xong."
+  },
+  {
+    "status": "rejected",
+    "topic": "digital",
+    "region": "nam",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Em muốn dùng dịch vụ ngân hàng số nhưng sợ phức tạp quá.",
+    "assistant": "Đừng lo em, mọi thứ đều rất dễ. Chị vào mục 'Đăng ký thẻ điện tử' trong app SOL, xác nhận thỏa thuận rồi làm theo hướng dẫn là có ngay thẻ ảo để dùng."
+  },
+  {
+    "status": "rejected",
+    "topic": "digital",
+    "region": "trung_tinh",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Chị ơi, em vừa bị mất thẻ ngân hàng và rất lo lắng vì chưa kịp rút tiền trong tài khoản.",
+    "assistant": "Em hiểu chị đang rất bất an khi gặp chuyện này, nhưng đừng lo, chúng ta có thể đăng ký ngay thẻ điện tử để tiếp tục sử dụng dịch vụ qua ứng dụng SOL."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "trung_tinh",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Anh tư vấn giúp em với, làm sao để đăng ký thẻ điện tử mà không cần ra quầy?",
+    "assistant": "Chị yên tâm nhé, chỉ cần vào mục Đăng ký thẻ điện tử trong ứng dụng SOL, xác nhận thỏa thuận rồi làm theo các bước xác thực là xong."
+  },
+  {
+    "status": "needs_human_review",
+    "topic": "digital",
+    "region": "trung_tinh",
+    "source": "digital_card_guide",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/2024/Product/Guideline/External%20Guideline%20for%20Digital%20Card%20Function%20Registration_VN_final.pdf",
+    "approved_fact": "Có thể đăng ký chức năng thẻ điện tử trong ứng dụng SOL qua mục Đăng ký thẻ điện tử, xác nhận thỏa thuận rồi làm theo các bước xác thực.",
+    "customer": "Thế sau khi đăng ký, em có thể dùng thẻ điện tử đó ngay lập tức không?",
+    "assistant": "Em hoàn toàn có thể sử dụng thẻ điện tử mới ngay sau khi hoàn tất xác thực trên ứng dụng SOL để thanh toán và chuyển khoản."
+  }
+]

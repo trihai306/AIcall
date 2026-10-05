@@ -1,0 +1,269 @@
+{
+  "mode": "verify",
+  "source": [
+    "chinh_sach",
+    "kiem_thu_answer_first_20261001"
+  ],
+  "row": {
+    "id": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+    "cau_hoi": [],
+    "tra_loi": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+    "san_pham": "",
+    "bat": true,
+    "updated_at": 1790831177.0766118,
+    "nguon": "nhap_tay",
+    "voice_ready": true
+  },
+  "samples": [
+    {
+      "question": "Đã gửi yêu cầu hỗ trợ rồi, muốn biết họ đang xử lý đến đâu thì xem ở chỗ nào?",
+      "answer": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "bang_hoi_dap": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "bang_diem": 0.793,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "tieng_san": "hd_ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 1,
+        "total_ms": 421,
+        "turn": 1,
+        "timestamp": 1790831244.821052
+      },
+      "wall_ms": 422.0,
+      "audio_bytes": 0
+    },
+    {
+      "question": "Muốn theo dõi tiến độ xử lý thì mở mục nào?",
+      "answer": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "bang_hoi_dap": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "bang_diem": 0.764,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "tieng_san": "hd_ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 349,
+        "turn": 2,
+        "timestamp": 1790831245.1715593
+      },
+      "wall_ms": 349.5,
+      "audio_bytes": 0
+    },
+    {
+      "question": "Cần xem yêu cầu hỗ trợ đã được xử lý đến bước nào ở đâu?",
+      "answer": "Dạ anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "bang_hoi_dap": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "bang_diem": 0.785,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "bang_doc_thang": true,
+        "tieng_san": "hd_ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "total_ms": 385,
+        "turn": 3,
+        "timestamp": 1790831245.5572352
+      },
+      "wall_ms": 385.4,
+      "audio_bytes": 0
+    },
+    {
+      "question": "Đã gửi yêu cầu hỗ trợ rồi, muốn biết họ đang xử lý đến đâu thì xem ở chỗ nào?",
+      "answer": "anh chị mở mục Yêu cầu của tôi để xem tiến độ xử lý yêu cầu hỗ trợ ạ.",
+      "metrics": {
+        "stt_ms": 0,
+        "la_thoai": false,
+        "tinh_huong_diem": 0.705,
+        "tinh_huong_cach_chon": "vector",
+        "tinh_huong_chon_ms": 177.09,
+        "tinh_huong_tu_cau_day_du": true,
+        "filler_ms": 180,
+        "filler_xong_luc": 10267.6658543,
+        "filler_text": "Dạ em thông tin luôn ạ,",
+        "filler_id": "",
+        "tinh_huong_id": "chung",
+        "du_kien_vay": {
+          "amount": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "term": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          },
+          "income": {
+            "status": "unknown",
+            "value": null,
+            "raw": "",
+            "turn": -1
+          }
+        },
+        "bang_hoi_dap": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "bang_diem": 0.793,
+        "bang_theo_tinh_huong": false,
+        "bang_chon_qwen": "ab_manual_9f6061987b2c419c94ddc7172fd52251",
+        "rag_ms": 0,
+        "rag_doan_truoc": false,
+        "llm_nghi_san": false,
+        "noi_dem_bo_mo_dau_lap": true,
+        "bang_doc_thang": true,
+        "tieng_san": "hd_ab_manual_9f6061987b2c419c94ddc7172fd52251_noi_dem",
+        "llm_ttft_ms": 0,
+        "llm_chunk1_ms": 0,
+        "noi_dem_nghi_ms": 80.0,
+        "ttfa_ms": 585,
+        "tts_first_ms": 0,
+        "tts_first_chars": 69,
+        "total_ms": 594,
+        "turn": 4,
+        "timestamp": 1790831246.1523938
+      },
+      "wall_ms": 595.9,
+      "audio_bytes": 199244
+    }
+  ],
+  "session": {
+    "type": "connected",
+    "session_id": "0d412a8b",
+    "noi_lai": false,
+    "history": []
+  },
+  "negative_sample": {
+    "question": "Công thức nấu món canh chua là gì?",
+    "answer": "Dạ em chưa có thông tin về công thức nấu ăn ạ.",
+    "metrics": {
+      "stt_ms": 0,
+      "la_thoai": false,
+      "du_kien_vay": {
+        "amount": {
+          "status": "unknown",
+          "value": null,
+          "raw": "",
+          "turn": -1
+        },
+        "term": {
+          "status": "unknown",
+          "value": null,
+          "raw": "",
+          "turn": -1
+        },
+        "income": {
+          "status": "unknown",
+          "value": null,
+          "raw": "",
+          "turn": -1
+        }
+      },
+      "cong_cu_bo_dinh_tuyen": "khong_co_dau_hieu_ho_so",
+      "rag_nguon": [
+        {
+          "doan": "# Vay Tín Chấp Cá Nhân\n## Hồ sơ cần thiết\n- CMND/CCCD\n- Hộ khẩu hoặc KT3\n- Xác nhận thu nhập hoặc sao kê lương 3 tháng gần nhất\n- Hợp đồng lao động (nếu là người đi làm)",
+          "diem": -0.401,
+          "nguon": "vay_tin_chap.md",
+          "bi_loc": false
+        },
+        {
+          "doan": "# Quy trình hỗ trợ kiểm thử\n## Gửi yêu cầu\nKhách hàng chọn Hỗ trợ, chọn loại sự cố, mô tả vấn đề, rồi bấm Gửi.",
+          "diem": -0.428,
+          "nguon": "kiem_thu_answer_first_20261001.md",
+          "bi_loc": false
+        }
+      ],
+      "rag_truy_van": "Công thức nấu món canh chua là gì?",
+      "rag_ms": 136,
+      "llm_nghi_san": false,
+      "llm_ttft_ms": 459,
+      "llm_chunk1_ms": 606,
+      "total_ms": 879,
+      "turn": 5,
+      "timestamp": 1790831247.0352855
+    },
+    "wall_ms": 879.8,
+    "audio_bytes": 0
+  },
+  "passed": true
+}

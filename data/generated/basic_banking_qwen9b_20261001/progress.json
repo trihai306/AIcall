@@ -1,0 +1,19 @@
+{
+  "model": "qwen3.5:9b",
+  "target": 1000,
+  "accepted": 0,
+  "complete": false,
+  "status": "blocked_gpu_busy",
+  "review": "synthetic_automated_checks_only",
+  "excluded": [
+    "numbers",
+    "rates",
+    "fees",
+    "documents",
+    "credentials",
+    "guarantees"
+  ],
+  "rejections": {},
+  "categories": {},
+  "reason": "Máy đang tự nhận cuộc gọi đến; không thể lấy GPU khỏi dịch vụ khách."
+}

@@ -15,12 +15,14 @@ phẩm, điều kiện, câu hỏi thường gặp.
 """
 
 import io
+import hashlib
 import logging
 import re
 import time
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from backend.core.knowledge_rules import (MAU, bat_dau_giua_cau, cat_ngang_bang,
                                           soi_manh, soi_tai_lieu)
@@ -39,6 +41,35 @@ GOC_LICH_SU = Path("./data/lich_su_tri_thuc")
 # Giữ bao nhiêu bản cho mỗi tài liệu. Tài liệu tri thức chỉ vài KB nên 20 bản
 # vẫn không đáng kể, mà đủ để lùi qua một buổi sửa nhiều lần.
 SO_BAN_GIU = 20
+
+
+class ThuVienTuDongConfig(BaseModel):
+    enabled: bool = True
+    questions_per_document: int = 120
+    variants_per_answer: int = 4
+    learn_history: bool = True
+
+
+class ThuVienTuDongBuild(BaseModel):
+    full_rebuild: bool = False
+
+
+class HoiDapSave(BaseModel):
+    nhom: str
+    ten: str
+    cau_hoi: list[str] = Field(default_factory=list, max_length=100)
+    tra_loi: str = Field(min_length=1, max_length=20000)
+    bat: bool = True
+
+
+class HoiDapEdit(HoiDapSave):
+    expected_updated_at: float = Field(allow_inf_nan=False)
+
+
+class HoiDapAppend(BaseModel):
+    nhom: str
+    ten: str
+    so_cau: int = Field(ge=1, le=300)
 
 # Thư mục cho phép. KHÔNG nhận tên thư mục tuỳ ý từ client: nó ghép thẳng vào
 # đường dẫn file, nhận bừa là mở đường ghi đè file bất kỳ trên máy.
@@ -70,6 +101,35 @@ def cac_nhom() -> dict[str, str]:
     except FileNotFoundError:
         pass
     return ra
+
+
+@router.get("/thu-vien-tu-dong")
+async def thu_vien_tu_dong_status():
+    from backend.services.answer_bank_learning import bo_hoc_tra_loi
+    return bo_hoc_tra_loi.trang_thai()
+
+
+@router.post("/thu-vien-tu-dong")
+async def thu_vien_tu_dong_config(body: ThuVienTuDongConfig):
+    from backend.services.answer_bank_learning import bo_hoc_tra_loi
+    return bo_hoc_tra_loi.configure(
+        enabled=body.enabled,
+        questions_per_document=body.questions_per_document,
+        variants_per_answer=body.variants_per_answer,
+        learn_history=body.learn_history,
+    )
+
+
+@router.post("/thu-vien-tu-dong/build")
+async def thu_vien_tu_dong_build(body: ThuVienTuDongBuild):
+    from backend.services.answer_bank_learning import bo_hoc_tra_loi
+    return bo_hoc_tra_loi.request_build(full_rebuild=body.full_rebuild)
+
+
+@router.post("/thu-vien-tu-dong/cancel")
+async def thu_vien_tu_dong_cancel():
+    from backend.services.answer_bank_learning import bo_hoc_tra_loi
+    return bo_hoc_tra_loi.cancel()
 
 DUOI_VAN_BAN = {".md", ".txt"}
 DUOI_BANG = {".csv", ".xlsx", ".xls"}
@@ -144,13 +204,34 @@ def _cac_dang_nguon(p: Path) -> list[str]:
 
 
 def _dem_manh(p: Path) -> int:
+    return _thong_tin_chi_muc(p)["so_manh"]
+
+
+def _thong_tin_chi_muc(p: Path) -> dict:
+    """Trạng thái vector của file mà không chạy embedding.
+
+    `can_cap_nhat` nghĩa là file trên đĩa đã đổi so với hash đang nằm trong
+    ChromaDB. Kho cũ chưa có hash cũng được đánh dấu cần cập nhật đúng một lần
+    để chuyển sang metadata mới.
+    """
     rag = _rag()
     if rag is None:
-        return 0
-    tong = 0
-    for src in dict.fromkeys(_cac_dang_nguon(p)):
-        tong += rag.dem_theo_nguon(src)
-    return tong
+        return {"so_manh": 0, "trang_thai": "chua_lap", "lap_luc": None}
+
+    info = rag.thong_tin_nguon(_cac_dang_nguon(p))
+    so_manh = int(info.get("so_manh") or 0)
+    if not so_manh:
+        return {"so_manh": 0, "trang_thai": "chua_lap", "lap_luc": None}
+
+    noi_dung = p.read_text(encoding="utf-8", errors="replace")
+    digest = hashlib.sha256(noi_dung.encode("utf-8")).hexdigest()
+    hashes = set(info.get("hashes") or [])
+    trang_thai = "da_lap" if hashes == {digest} else "can_cap_nhat"
+    return {
+        "so_manh": so_manh,
+        "trang_thai": trang_thai,
+        "lap_luc": info.get("indexed_at"),
+    }
 
 
 def _dem_soi(p: Path) -> dict:
@@ -168,8 +249,36 @@ def _nap_lai_mot_tep(p: Path) -> int:
     src = str(p.resolve())
     noi_dung = p.read_text(encoding="utf-8", errors="replace")
     if noi_dung.strip():
-        rag.ingest_text(noi_dung, doc_id=p.stem, metadata={"source": src})
+        try:
+            rel = p.resolve().relative_to(GOC.resolve()).as_posix()
+        except ValueError:
+            rel = p.name
+        rag.ingest_text(noi_dung, doc_id=p.stem, metadata={
+            "source": src,
+            "knowledge_root": str(GOC.resolve()),
+            "knowledge_relpath": rel,
+            **({"bank": "shinhan"} if rel.startswith("shinhan/") else {}),
+        })
     return rag.dem_theo_nguon(src)
+
+
+async def _dong_bo_hoi_dap(p: Path, nhom: str) -> dict:
+    """Sau khi tài liệu đổi, tự chuẩn bị Q&A + voice cho đường gọi.
+
+    Lưu tài liệu là thao tác chính nên lỗi Qwen/TTS không được làm mất bản vừa
+    lưu. Service tự tắt bộ Q&A cũ nếu không sinh được bộ mới, còn API trả trạng
+    thái để giao diện báo rõ cho người vận hành.
+    """
+    try:
+        from backend.services.answer_bank_learning import bo_hoc_tra_loi
+        from backend.services.knowledge_qa_service import nap_lai_duong_goi
+
+        status = bo_hoc_tra_loi.document_changed(p)
+        runtime = await nap_lai_duong_goi(build_voice=False)
+        return {"ok": True, "queued": True, "runtime": runtime, "job": status["job"]}
+    except Exception as e:
+        logger.exception("Tri thức: không tự đồng bộ Q&A cho %s", p)
+        return {"error": f"Tài liệu đã lưu nhưng chưa tạo được Q&A + voice: {e}"}
 
 
 # .docx là file zip chứa word/document.xml. Đọc bằng `zipfile` + `ElementTree`
@@ -278,6 +387,7 @@ async def danh_sach():
             continue
         for p in sorted(thu_muc.glob("*.md")) + sorted(thu_muc.glob("*.txt")):
             st = p.stat()
+            chi_muc = _thong_tin_chi_muc(p)
             tai_lieu.append({
                 "ten": p.stem,
                 "nhom": nhom,
@@ -287,7 +397,9 @@ async def danh_sach():
                 # Số mảnh trong RAG: 0 nghĩa là file có trên đĩa nhưng AI CHƯA
                 # đọc được nó - phải bấm "Nạp lại". Không hiện ra thì người dùng
                 # sửa xong tưởng đã xong, mà bot vẫn trả lời bằng bản cũ.
-                "so_manh": _dem_manh(p),
+                "so_manh": chi_muc["so_manh"],
+                "trang_thai_chi_muc": chi_muc["trang_thai"],
+                "lap_chi_muc_luc": chi_muc["lap_luc"],
                 # Soi ngay trong danh sách: tài liệu cũ chưa ai mở ra sửa cũng
                 # phải lộ vấn đề, không thì chỉ tài liệu vừa soạn mới được soi.
                 **_dem_soi(p),
@@ -297,6 +409,54 @@ async def danh_sach():
         "nhom": cac_nhom(),
         "tong": len(tai_lieu),
         "duoi_nhan": sorted(DUOI_VAN_BAN | DUOI_BANG | DUOI_WORD),
+    }
+
+
+@router.post("/lap-chi-muc")
+async def lap_chi_muc(nhom: str = Form(...), ten: str = Form(...),
+                      force: bool = Form(False)):
+    """Tạo/cập nhật vector cho đúng một tài liệu.
+
+    Đây là thao tác embedding bằng BGE-M3. Qwen 9B chỉ đọc các mảnh được RAG
+    tìm ra ở bước trả lời, không dùng Qwen để tạo vector.
+    """
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        return {"error": "Tên hoặc nhóm không hợp lệ"}
+    if not p.exists():
+        alt = p.with_suffix(".txt")
+        if not alt.exists():
+            return {"error": f"Không có tài liệu '{ten}'"}
+        p = alt
+
+    rag = _rag()
+    if rag is None:
+        return {"error": "RAG chưa sẵn sàng"}
+
+    truoc = _thong_tin_chi_muc(p)
+    if truoc["trang_thai"] == "da_lap" and not force:
+        return {
+            "ok": True,
+            "bo_qua": True,
+            "ten": p.stem,
+            "nhom": nhom,
+            "so_manh": truoc["so_manh"],
+            "model": "BAAI/bge-m3",
+            "ms": 0,
+        }
+
+    t0 = time.perf_counter()
+    so_manh = _nap_lai_mot_tep(p)
+    sau = _thong_tin_chi_muc(p)
+    return {
+        "ok": True,
+        "bo_qua": False,
+        "ten": p.stem,
+        "nhom": nhom,
+        "so_manh": so_manh,
+        "trang_thai_chi_muc": sau["trang_thai"],
+        "model": "BAAI/bge-m3",
+        "ms": round((time.perf_counter() - t0) * 1000),
     }
 
 
@@ -371,6 +531,105 @@ async def hoi_thu(cau_hoi: str, san_pham: str = "", top_k: int = 4) -> dict:
 async def hoi_thu_api(cau_hoi: str = Form(""), san_pham: str = Form(""),
                       top_k: int = Form(4)):
     return await hoi_thu(cau_hoi, san_pham, top_k)
+
+
+@router.get("/hoi-dap")
+async def hoi_dap_da_tao(nhom: str, ten: str):
+    """Các câu hỏi-đáp Qwen đã chuẩn bị từ đúng một tài liệu."""
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        return {"error": "Tên hoặc nhóm không hợp lệ"}
+    if not p.exists():
+        p = p.with_suffix(".txt")
+    if not p.exists():
+        return {"error": f"Không có tài liệu '{ten}'"}
+
+    from backend.services.knowledge_qa_service import danh_sach
+    from backend.config import settings
+
+    items = danh_sach(nhom, p.stem)
+    active = [item for item in items if item["bat"]]
+    voice = {"status": ("disabled" if not settings.tieng_san_bat else
+                        "ready" if all(item["voice_ready"] for item in active) else "queued")}
+    return {"nhom": nhom, "ten": p.stem, "so_dong": len(items), "items": items, "voice": voice}
+
+
+@router.post("/tao-hoi-dap")
+async def tao_hoi_dap(nhom: str = Form(...), ten: str = Form(...),
+                      so_cau: int = Form(12), cau_hoi_nhan_vien: str = Form("")):
+    """Qwen đọc tài liệu -> Q&A -> vector -> WAV sẵn cho đường gọi.
+
+    Nếu ``cau_hoi_nhan_vien`` có dữ liệu, mỗi dòng là một câu thực tế nhân viên
+    đã gặp và Qwen chỉ soạn câu trả lời cho các câu đó. Để trống thì Qwen tự nghĩ
+    các câu khách hàng có khả năng hỏi từ nội dung tài liệu.
+    """
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        return {"error": "Tên hoặc nhóm không hợp lệ"}
+    if not p.exists():
+        p = p.with_suffix(".txt")
+    if not p.exists():
+        return {"error": f"Không có tài liệu '{ten}'"}
+
+    from backend.services.knowledge_qa_service import (tao_va_luu,
+                                                       tach_cau_hoi_nhan_vien)
+
+    cau_nv = tach_cau_hoi_nhan_vien(cau_hoi_nhan_vien)
+    try:
+        return await tao_va_luu(
+            nhom, p.stem,
+            p.read_text(encoding="utf-8", errors="replace"),
+            so_cau=max(1, min(int(so_cau or 12), 300)),
+            cau_hoi_nhan_vien=cau_nv,
+        )
+    except Exception as e:
+        logger.exception("Tri thức: không tạo được hỏi-đáp cho %s/%s", nhom, p.stem)
+        return {"error": f"Không tạo được bộ hỏi-đáp: {e}"}
+
+
+def _editor_source(nhom: str, ten: str) -> Path:
+    p = _duong_dan(nhom, ten)
+    if p is None:
+        raise HTTPException(400, "Tên hoặc nhóm không hợp lệ")
+    if not p.exists():
+        p = p.with_suffix(".txt")
+    if not p.is_file():
+        raise HTTPException(404, f"Không có tài liệu '{ten}'")
+    return p
+
+
+@router.post("/hoi-dap")
+async def them_hoi_dap(body: HoiDapSave):
+    from backend.services import answer_bank_editor as editor
+    p = _editor_source(body.nhom, body.ten)
+    try:
+        return await editor.save(body.nhom, p.stem, body.cau_hoi, body.tra_loi, body.bat)
+    except editor.EditorError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@router.patch("/hoi-dap/{answer_id}")
+async def sua_hoi_dap(answer_id: str, body: HoiDapEdit):
+    from backend.services import answer_bank_editor as editor
+    p = _editor_source(body.nhom, body.ten)
+    try:
+        return await editor.save(body.nhom, p.stem, body.cau_hoi, body.tra_loi, body.bat,
+                                 answer_id=answer_id, expected_updated_at=body.expected_updated_at)
+    except editor.EditorError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+
+
+@router.post("/tao-them-hoi-dap")
+async def tao_them_hoi_dap(body: HoiDapAppend):
+    from backend.services import answer_bank_editor as editor
+    p = _editor_source(body.nhom, body.ten)
+    try:
+        return await editor.append(body.nhom, p.stem, body.so_cau)
+    except editor.EditorError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Không tạo thêm được hỏi-đáp cho %s/%s", body.nhom, p.stem)
+        raise HTTPException(503, f"Chưa tạo thêm được đáp án: {exc}") from exc
 
 
 @router.get("/manh")
@@ -626,8 +885,10 @@ async def khoi_phuc(nhom: str = Form(...), ten: str = Form(...), moc: str = Form
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(ban.read_text(encoding="utf-8", errors="replace"), encoding="utf-8")
     so_manh = _nap_lai_mot_tep(p)
+    hoi_dap = await _dong_bo_hoi_dap(p, nhom)
     logger.info("Tri thức: khôi phục %s về bản %s (%d mảnh)", p, moc, so_manh)
-    return {"ok": True, "ten": p.stem, "nhom": nhom, "moc": moc, "so_manh": so_manh}
+    return {"ok": True, "ten": p.stem, "nhom": nhom, "moc": moc,
+            "so_manh": so_manh, "hoi_dap": hoi_dap}
 
 
 # --- ghi -----------------------------------------------------------------------
@@ -641,8 +902,10 @@ async def luu(nhom: str = Form(...), ten: str = Form(...), noi_dung: str = Form(
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(noi_dung, encoding="utf-8")
     so_manh = _nap_lai_mot_tep(p)
+    hoi_dap = await _dong_bo_hoi_dap(p, nhom)
     logger.info("Tri thức: lưu %s (%d mảnh)", p, so_manh)
-    return {"ok": True, "ten": p.stem, "nhom": nhom, "so_manh": so_manh}
+    return {"ok": True, "ten": p.stem, "nhom": nhom, "so_manh": so_manh,
+            "hoi_dap": hoi_dap}
 
 
 @router.post("/upload")
@@ -688,11 +951,12 @@ async def upload(file: UploadFile = File(...), nhom: str = Form("products"),
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(noi_dung, encoding="utf-8")
     so_manh = _nap_lai_mot_tep(p)
+    hoi_dap = await _dong_bo_hoi_dap(p, nhom)
     logger.info("Tri thức: tải lên %s (%d mảnh, ghi đè=%s)", p, so_manh, ghi_de)
     return {
         "ok": True, "ten": p.stem, "nhom": nhom, "so_manh": so_manh,
         "ghi_de": ghi_de, "so_dong": noi_dung.count("\n") + 1,
-        "xem_truoc": noi_dung[:400],
+        "xem_truoc": noi_dung[:400], "hoi_dap": hoi_dap,
     }
 
 
@@ -711,22 +975,35 @@ async def xoa(nhom: str, ten: str):
             rag.xoa_theo_nguon(src)
     # Cất bản cuối trước khi xoá: lỡ tay xoá vẫn lấy lại được.
     _giu_ban_cu(p, nhom, ten)
+    ten_goc = p.stem
     p.unlink()
+    try:
+        from backend.services.answer_bank_learning import bo_hoc_tra_loi
+        from backend.services.knowledge_qa_service import nap_lai_duong_goi
+        status = bo_hoc_tra_loi.document_changed(p)
+        runtime = await nap_lai_duong_goi(build_voice=False)
+        hoi_dap = {"ok": True, "queued": True, "runtime": runtime,
+                   "job": status["job"]}
+    except Exception as e:
+        logger.exception("Tri thức: không gỡ được Q&A của %s/%s", nhom, ten_goc)
+        hoi_dap = {"error": f"Đã xóa tài liệu nhưng chưa gỡ được Q&A: {e}"}
     logger.info("Tri thức: xoá %s", p)
-    return {"ok": True, "da_xoa": p.name}
+    return {"ok": True, "da_xoa": p.name, "hoi_dap": hoi_dap}
 
 
 @router.post("/nap-lai")
 async def nap_lai():
-    """Nạp lại toàn bộ thư mục. Dùng khi sửa file thẳng trên đĩa."""
+    """Đồng bộ thư mục tăng dần. Dùng khi sửa file thẳng trên đĩa."""
     rag = _rag()
     if rag is None:
         return {"error": "RAG chưa sẵn sàng"}
     t0 = time.perf_counter()
-    rag.clear()
-    rag.ingest_directory(str(GOC))
+    kq = rag.ingest_directory(str(GOC)) or {}
     return {
         "ok": True,
         "ms": round((time.perf_counter() - t0) * 1000),
-        "so_tai_lieu": len(list(GOC.rglob("*.md"))) + len(list(GOC.rglob("*.txt"))),
+        "so_tai_lieu": kq.get("files", 0),
+        "da_cap_nhat": kq.get("changed", 0),
+        "giu_nguyen": kq.get("skipped", 0),
+        "manh_da_don": kq.get("stale_chunks", 0),
     }

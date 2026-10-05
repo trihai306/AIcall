@@ -30,13 +30,14 @@ DEM = "Dạ lãi suất bên em thì,"          # nguyên văn câu đệm cuộ
 
 def test_cau_dem_con_dang_phat_thi_chen_nhip_phay():
     metrics = {"filler_text": DEM, "filler_xong_luc": time.perf_counter() + 0.5}
-    assert StreamingPipeline._nghi_noi_cau_dem(metrics) == nhip_nghi_sau(DEM)
+    assert StreamingPipeline._nghi_noi_cau_dem(metrics) == StreamingPipeline._NHIP_NOI_CAU_DEM_MS
 
 
-def test_dung_chung_luat_voi_moi_ranh_gioi_phay_khac():
-    """Không đẻ hằng số mới: câu đệm kết bằng phẩy thì nghỉ đúng bằng nghỉ phẩy."""
+def test_noi_cau_dem_ngan_hon_nhip_phay_binh_thuong():
+    """Chỗ nối hai clip chỉ cần tách tiếng, không cần nghỉ đủ một dấu phẩy."""
     metrics = {"filler_text": DEM, "filler_xong_luc": time.perf_counter() + 0.5}
-    assert StreamingPipeline._nghi_noi_cau_dem(metrics) > 0
+    nghi = StreamingPipeline._nghi_noi_cau_dem(metrics)
+    assert 0 < nghi < nhip_nghi_sau(DEM)
 
 
 def test_cau_dem_da_het_thi_khong_chen_gi():
@@ -60,4 +61,5 @@ def test_khoang_lang_da_co_duoc_tru_khoi_nhip_noi(monkeypatch):
     monkeypatch.setattr("backend.pipeline.streaming_pipeline.time.perf_counter", lambda: 10.05)
     metrics = {"filler_text": DEM, "filler_xong_luc": 10.0}
     import pytest
-    assert StreamingPipeline._nghi_noi_cau_dem(metrics) == pytest.approx(nhip_nghi_sau(DEM) - 50)
+    assert StreamingPipeline._nghi_noi_cau_dem(metrics) == pytest.approx(
+        StreamingPipeline._NHIP_NOI_CAU_DEM_MS - 50)

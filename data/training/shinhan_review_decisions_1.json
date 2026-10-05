@@ -1,0 +1,231 @@
+[
+  {
+    "id": 1,
+    "question": "Anh cho hỏi làm thế nào để đặt PIN sau khi kích hoạt thẻ Shinhan?",
+    "decision": "approved"
+  },
+  {
+    "id": 3,
+    "question": "Bác ơi, sau khi nhận thẻ mình đăng nhập mobile banking đặt PIN được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 14,
+    "question": "Anh cho biết thanh toán tối thiểu là bao nhiêu?",
+    "decision": "approved"
+  },
+  {
+    "id": 20,
+    "question": "Anh ơi, trả tối thiểu là bao nhiêu tiền vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 22,
+    "question": "Em vừa rơi thẻ ở ngoài đường, làm sao để khóa?",
+    "decision": "approved"
+  },
+  {
+    "id": 25,
+    "question": "Anh ơi, khoản thanh toán tối thiểu kỳ này là bao nhiêu vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 38,
+    "question": "Sao tôi chưa nhận được mã xác thực thẻ điện tử để kích hoạt?",
+    "decision": "approved"
+  },
+  {
+    "id": 39,
+    "question": "Anh ơi, làm sao để nhập mã xác thực thẻ điện tử kích hoạt nhanh vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 41,
+    "question": "Thư lạ gửi đến nói Shinhan cần PIN, làm sao để xử lý?",
+    "decision": "approved"
+  },
+  {
+    "id": 43,
+    "question": "Anh nhận lừa đảo qua email hỏi chi tiết tài khoản, làm gì tiếp?",
+    "decision": "approved"
+  },
+  {
+    "id": 44,
+    "question": "Tôi nhận thẻ Shinhan vừa rồi kích hoạt thẻ ở đâu?",
+    "decision": "approved"
+  },
+  {
+    "id": 49,
+    "question": "Sao kê sai nhiều giao dịch lạ trong tháng này?",
+    "decision": "approved"
+  },
+  {
+    "id": 50,
+    "question": "Sai lệch sao kê thẻ của mình làm sao sửa?",
+    "decision": "approved"
+  },
+  {
+    "id": 54,
+    "question": "Tôi vừa bị mất thẻ Shinhan thì làm sao để khóa ngay?",
+    "decision": "approved"
+  },
+  {
+    "id": 57,
+    "question": "Tôi cần đăng ký thẻ điện tử như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 58,
+    "question": "Làm sao để mở thẻ điện tử ngay trên SOL?",
+    "decision": "approved"
+  },
+  {
+    "id": 60,
+    "question": "Mình vừa rơi thẻ Shinhan thì cần báo số nào để khóa?",
+    "decision": "approved"
+  },
+  {
+    "id": 4,
+    "question": "Cô ơi em muốn hỏi quy trình kích hoạt và đặt PIN cho thẻ mới",
+    "decision": "rejected",
+    "reason": "hoi_hai_chu_de"
+  },
+  {
+    "id": 9,
+    "question": "Bác cho hỏi, ngoài ngân hàng Shinhan thì mình có thể đặt PIN ở đâu?",
+    "decision": "rejected",
+    "reason": "hoi_ngoai_pham_vi_shinhan"
+  },
+  {
+    "id": 13,
+    "question": "Có hợp đồng nào quy định rõ về phí trả nợ trước hạn không?",
+    "decision": "rejected",
+    "reason": "hoi_phi_cu_the_khong_co_nguon"
+  },
+  {
+    "id": 16,
+    "question": "Chị nói rõ trả tối thiểu vào ngày đến hạn nhé.",
+    "decision": "rejected",
+    "reason": "cau_menh_lenh_khong_tu_nhien"
+  },
+  {
+    "id": 17,
+    "question": "Bác giải thích cách tính thanh toán tối thiểu sao?",
+    "decision": "rejected",
+    "reason": "hoi_cach_tinh_khong_co_nguon"
+  },
+  {
+    "id": 19,
+    "question": "Họ hàng hỏi thanh toán tối thiểu có đúng không?",
+    "decision": "rejected",
+    "reason": "cau_vo_nghia"
+  },
+  {
+    "id": 21,
+    "question": "Chú nói rõ số tiền tối thiểu cần chi trả.",
+    "decision": "rejected",
+    "reason": "cau_menh_lenh_khong_tu_nhien"
+  },
+  {
+    "id": 23,
+    "question": "Bị lấy thẻ mất tiền, cách khóa thẻ Shinhan là gì?",
+    "decision": "rejected",
+    "reason": "kem_van_de_mat_tien_chua_du_nguon"
+  },
+  {
+    "id": 27,
+    "question": "Chị vui lòng cho em biết cách tính thanh toán tối thiểu được không?",
+    "decision": "rejected",
+    "reason": "hoi_cach_tinh_khong_co_nguon"
+  },
+  {
+    "id": 32,
+    "question": "Nếu không có tiền thì khoản thanh toán tối thiểu là bao nhiêu chị?",
+    "decision": "rejected",
+    "reason": "tinh_huong_thieu_tien_can_tu_van_rieng"
+  },
+  {
+    "id": 33,
+    "question": "Anh có cần tư vấn về điều kiện trả nợ trước hạn không ạ?",
+    "decision": "rejected",
+    "reason": "dao_vai_tu_van"
+  },
+  {
+    "id": 35,
+    "question": "Chú có biết quy trình tất toán trước hạn cần chuẩn bị gì không chú?",
+    "decision": "rejected",
+    "reason": "hoi_giay_to_khong_co_nguon"
+  },
+  {
+    "id": 36,
+    "question": "Anh hỏi xem mức phí trả khoản vay sớm được ghi trong hợp đồng là bao nhiêu anh.",
+    "decision": "rejected",
+    "reason": "hoi_phi_cu_the_khong_co_nguon"
+  },
+  {
+    "id": 37,
+    "question": "Chị muốn biết điều kiện ngân hàng chấp thuận trả nợ trước hạn như thế nào chị.",
+    "decision": "rejected",
+    "reason": "xung_ho_khong_tu_nhien"
+  },
+  {
+    "id": 40,
+    "question": "Tại sao mình vẫn cần mã xác thực thẻ điện tử mới kích hoạt được thẻ ảo?",
+    "decision": "rejected",
+    "reason": "hoi_ly_do_khong_co_nguon"
+  },
+  {
+    "id": 42,
+    "question": "Chị thấy thư yêu cầu gửi nhầm cho Shinhan thì phải báo như thế nào?",
+    "decision": "rejected",
+    "reason": "cau_mo_ho"
+  },
+  {
+    "id": 45,
+    "question": "Mình bận quá mở thẻ mới nhận thì dùng thẻ mới như thế nào?",
+    "decision": "rejected",
+    "reason": "de_hieu_nham_mo_the_moi"
+  },
+  {
+    "id": 46,
+    "question": "Em gọi cho anh hỏi về việc kích hoạt thẻ sau khi nhận?",
+    "decision": "rejected",
+    "reason": "dao_vai"
+  },
+  {
+    "id": 47,
+    "question": "Chị muốn biết cách dùng thẻ mới cho đợt biến thể này?",
+    "decision": "rejected",
+    "reason": "lo_ma_dot_sinh"
+  },
+  {
+    "id": 48,
+    "question": "Bác cần tư vấn mở thẻ mới nhận để kích hoạt thẻ nhanh không?",
+    "decision": "rejected",
+    "reason": "dao_vai_tu_van"
+  },
+  {
+    "id": 53,
+    "question": "Anh có thể nói rõ về phí tất toán trước hạn của tôi không?",
+    "decision": "rejected",
+    "reason": "hoi_phi_cu_the_khong_co_nguon"
+  },
+  {
+    "id": 55,
+    "question": "Em lỡ rơi thẻ xuống nước phải gọi số nào để khóa?",
+    "decision": "rejected",
+    "reason": "tinh_huong_khong_ro_mat_the"
+  },
+  {
+    "id": 56,
+    "question": "Mình đã thất lạc thẻ ở nhà ngoài giờ làm là gì?",
+    "decision": "rejected",
+    "reason": "cau_vo_nghia"
+  },
+  {
+    "id": 61,
+    "question": "Khi bị lấy thẻ, anh/chị có thể mở khóa qua Internet Banking được không?",
+    "decision": "rejected",
+    "reason": "hoi_mo_khoa_trai_nguon"
+  }
+]

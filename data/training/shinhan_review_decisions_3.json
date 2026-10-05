@@ -1,0 +1,527 @@
+[
+  {
+    "id": 933,
+    "question": "Tôi vừa rơi thẻ ở đây có cách nào khóa không?",
+    "decision": "approved"
+  },
+  {
+    "id": 291,
+    "question": "Em thất lạc thẻ ngân hàng cần làm gì để khóa?",
+    "decision": "approved"
+  },
+  {
+    "id": 2540,
+    "question": "Em rơi thẻ ở ngoài đường, gọi số nào để khóa?",
+    "decision": "approved"
+  },
+  {
+    "id": 2430,
+    "question": "Tôi vừa rơi thẻ ngoài đường có thể khóa không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1712,
+    "question": "Khi thất lạc thẻ mình phải gọi số nào cho đúng?",
+    "decision": "approved"
+  },
+  {
+    "id": 712,
+    "question": "Mình đã đánh mất thẻ Shinhan, có cần khóa ngay không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2906,
+    "question": "Tôi vừa thất lạc thẻ, cần báo khóa ngay như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 1156,
+    "question": "Số tiền tối thiểu tôi cần nộp vào ngày đến hạn là bao nhiêu?",
+    "decision": "approved"
+  },
+  {
+    "id": 297,
+    "question": "Mình cần trả tối thiểu vào ngày nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 2328,
+    "question": "Số tiền tối thiểu phải nộp vào ngày đến hạn là bao nhiêu?",
+    "decision": "approved"
+  },
+  {
+    "id": 2506,
+    "question": "Mình cần trả tối thiểu bao nhiêu để tránh phí trễ hạn?",
+    "decision": "approved"
+  },
+  {
+    "id": 1666,
+    "question": "Tôi phải trả tối thiểu bao nhiêu để tránh phí trễ hạn?",
+    "decision": "approved"
+  },
+  {
+    "id": 2937,
+    "question": "Mình muốn hỏi trả tối thiểu kỳ này nằm ở đâu trong sao kê vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 5467,
+    "question": "Số tiền tối thiểu kỳ này nằm đâu vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 1302,
+    "question": "Tôi muốn trả nợ trước hạn có được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 181,
+    "question": "Mình muốn hỏi tất toán trước hạn có phải được ngân hàng chấp thuận không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2641,
+    "question": "Tôi đang lo lắng về việc trả nợ trước hạn cần điều kiện gì?",
+    "decision": "approved"
+  },
+  {
+    "id": 1913,
+    "question": "Em hỏi về việc trả nợ trước hạn có cần ngân hàng chấp thuận không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2924,
+    "question": "Em muốn hỏi nếu sao kê sai thì gọi số nào của Shinhan?",
+    "decision": "approved"
+  },
+  {
+    "id": 2054,
+    "question": "Em thấy sao kê sai ở khoản trừ tiền thì làm sao ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 2786,
+    "question": "Tôi phát hiện sao kê sai khi kiểm tra tháng trước thì gọi số nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 568,
+    "question": "Em bị sai lệch sao kê khi kiểm tra thẻ tín dụng hằng tháng phải xử lý ra sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 156,
+    "question": "Khi phát hiện sao kê sai, tôi cần gọi số nào ngay?",
+    "decision": "approved"
+  },
+  {
+    "id": 2153,
+    "question": "Tôi phát hiện giao dịch lạ trên sao kê Shinhan thì làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 1057,
+    "question": "Nếu phát hiện sai lệch sao kê tôi phải làm gì ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 349,
+    "question": "Làm thế nào để tôi thiết lập PIN khi vừa kích hoạt thẻ?",
+    "decision": "approved"
+  },
+  {
+    "id": 828,
+    "question": "Em muốn đặt PIN qua Internet Banking thì làm sao vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 900,
+    "question": "Mình cần đến chi nhánh để thiết lập PIN cho thẻ của mình đúng không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1296,
+    "question": "Sau khi nhận thẻ, em có thể tự mình đặt PIN được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2802,
+    "question": "Em cần biết cách đặt PIN online ở đâu vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 5759,
+    "question": "Sau khi kích hoạt thẻ mình đặt PIN qua Internet Banking được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1762,
+    "question": "Làm thế nào để em tự thiết lập PIN trực tuyến trên Mobile Banking?",
+    "decision": "approved"
+  },
+  {
+    "id": 1069,
+    "question": "Em muốn đặt mã PIN qua Internet Banking được không ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 841,
+    "question": "Em cần đặt PIN cho thẻ vừa kích hoạt như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 854,
+    "question": "Tôi đã nhận thẻ rồi, có cách nào tự kích hoạt thẻ qua internet không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1701,
+    "question": "Em cần gọi ai để kích hoạt thẻ nếu không vào app?",
+    "decision": "approved"
+  },
+  {
+    "id": 2350,
+    "question": "Khi đã nhận thẻ xong, tôi phải kích hoạt thẻ ra sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 1378,
+    "question": "Tôi cần gọi số nào để kích hoạt thẻ?",
+    "decision": "approved"
+  },
+  {
+    "id": 2009,
+    "question": "Tôi có thể kích hoạt thẻ ở đâu khi vừa nhận được?",
+    "decision": "approved"
+  },
+  {
+    "id": 1544,
+    "question": "Bảng sao kê có hiển thị ngày đến hạn thanh toán rõ ràng?",
+    "decision": "approved"
+  },
+  {
+    "id": 2279,
+    "question": "Bảng sao kê có hiển thị ngày đến hạn không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1948,
+    "question": "Trong sao kê có hiển thị lãi nếu có trong chu kỳ hay không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2473,
+    "question": "Em đang thắc mắc làm sao để có thẻ ảo trên SOL?",
+    "decision": "approved"
+  },
+  {
+    "id": 5473,
+    "question": "Mình đã xác nhận thỏa thuận thì làm thế nào để mở thẻ điện tử?",
+    "decision": "approved"
+  },
+  {
+    "id": 257,
+    "question": "Em muốn biết cách đăng ký thẻ ảo trên SOL như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 255,
+    "question": "Tôi cần đăng ký thẻ điện tử trên SOL thì làm sao ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 2071,
+    "question": "Tôi muốn đăng ký thẻ điện tử trong ứng dụng SOL thì làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 986,
+    "question": "Em có thể mở thẻ điện tử qua ứng dụng Shinhan được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 5856,
+    "question": "Em có thể đăng ký thẻ ảo trên SOL được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2943,
+    "question": "Tôi muốn biết ứng tiền mặt có áp dụng miễn lãi không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1809,
+    "question": "Ứng tiền mặt thẻ tín dụng tính lãi như thế nào khi tôi rút?",
+    "decision": "approved"
+  },
+  {
+    "id": 436,
+    "question": "Rút tiền mặt từ thẻ tín dụng có miễn lãi không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2309,
+    "question": "Tôi muốn biết ứng tiền mặt có tính lãi ngay không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2637,
+    "question": "Ứng tiền mặt tôi có áp dụng thời gian miễn lãi không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1633,
+    "question": "Giao dịch ứng tiền mặt của mình tại Shinhan Bank có miễn lãi hay không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2512,
+    "question": "Khi tôi ứng tiền mặt, lãi có tính từ hôm sau không?",
+    "decision": "approved"
+  },
+  {
+    "id": 1098,
+    "question": "Tôi nhận email lạ yêu cầu tiết lộ mật khẩu PIN của mình thì sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 1975,
+    "question": "Tôi nhận email lạ yêu cầu mật khẩu thì sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 1106,
+    "question": "Có nên báo Shinhan khi nhận được thư lạ gửi cho mình?",
+    "decision": "approved"
+  },
+  {
+    "id": 1107,
+    "question": "Tôi nhận email lạ yêu cầu tiết lộ mật khẩu phải làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 2172,
+    "question": "Em thấy thư lạ gửi đến, liệu đó có phải lừa đảo qua email không?",
+    "decision": "approved"
+  },
+  {
+    "id": 2294,
+    "question": "Tôi nhận email lạ yêu cầu mật khẩu thì làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 1492,
+    "question": "Tôi cần biết làm thế nào để kích hoạt thẻ ảo qua SMS?",
+    "decision": "approved"
+  },
+  {
+    "id": 1575,
+    "question": "Mình cần nhập mã xác thực thẻ điện tử như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 426,
+    "question": "Sau khi đăng ký, tôi phải dùng mã xác thực thẻ điện tử như thế nào để kích hoạt thẻ?",
+    "decision": "approved"
+  },
+  {
+    "id": 1339,
+    "question": "Em muốn biết làm thế nào để kích hoạt thẻ điện tử?",
+    "decision": "approved"
+  },
+  {
+    "id": 1425,
+    "question": "Tôi cần kích hoạt thẻ điện tử như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 2733,
+    "question": "Tôi đã nhận mã xác thực thẻ điện tử nhưng chưa biết nhập thế nào để kích hoạt?",
+    "decision": "approved"
+  },
+  {
+    "id": 4451,
+    "question": "Tôi muốn hỏi xem làm thế nào để thanh toán thẻ tại chi nhánh Shinhan?",
+    "decision": "approved"
+  },
+  {
+    "id": 3776,
+    "question": "Tôi muốn biết cách nộp tiền trả thẻ tại quầy giao dịch Shinhan?",
+    "decision": "approved"
+  },
+  {
+    "id": 4735,
+    "question": "Tôi hỏi xem có thể thanh toán thẻ tại chi nhánh không?",
+    "decision": "approved"
+  },
+  {
+    "id": 4843,
+    "question": "Em có thể nộp tiền trả thẻ tại quầy Shinhan được không ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 4623,
+    "question": "Em cần tắt giao dịch trực tuyến để an toàn hơn, làm thế nào ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 4044,
+    "question": "Làm sao để khóa thanh toán online cho thẻ Shinhan của mình?",
+    "decision": "approved"
+  },
+  {
+    "id": 3766,
+    "question": "Làm sao để tôi bật giao dịch trực tuyến cho thẻ Shinhan?",
+    "decision": "approved"
+  },
+  {
+    "id": 5084,
+    "question": "Tôi có thể bật giao dịch trực tuyến cho thẻ này được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 3038,
+    "question": "Tôi muốn xem sao kê online qua Internet Banking Shinhan được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 4173,
+    "question": "Tôi cần tra cứu sao kê qua internet banking như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 4215,
+    "question": "Em muốn xem sao kê online cho thẻ của mình được không ?",
+    "decision": "approved"
+  },
+  {
+    "id": 5173,
+    "question": "Làm cách nào để tra cứu sao kê trên internet?",
+    "decision": "approved"
+  },
+  {
+    "id": 5438,
+    "question": "Em muốn tra cứu sao kê cho thẻ của em thì làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 5443,
+    "question": "Tôi muốn hỏi về việc đặt hạn mức thẻ mỗi ngày thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 3132,
+    "question": "Em thắc mắc về việc rút tiền mặt và ứng tiền khác nhau ra sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 3344,
+    "question": "Tôi đang phân vân giữa rút từ hạn mức tín dụng và rút khác nhau thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 4777,
+    "question": "Em muốn biết rút từ hạn mức tín dụng có giống rút tiền mặt không nhỉ?",
+    "decision": "approved"
+  },
+  {
+    "id": 5309,
+    "question": "Rút từ hạn mức tín dụng có khác gì so với rút từ tài khoản thanh toán?",
+    "decision": "approved"
+  },
+  {
+    "id": 3945,
+    "question": "Khi nào ngân hàng trích nợ tự động cho tôi?",
+    "decision": "approved"
+  },
+  {
+    "id": 4767,
+    "question": "Mình cần đăng ký gì để được trích nợ tự động đúng hạn?",
+    "decision": "approved"
+  },
+  {
+    "id": 3258,
+    "question": "Tôi muốn biết thanh toán tự động có hoạt động như thế nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 3441,
+    "question": "Em thắc mắc khi nào thì trích nợ tự động diễn ra?",
+    "decision": "approved"
+  },
+  {
+    "id": 5340,
+    "question": "Tôi cần biết thanh toán tự động hoạt động thế nào khi đến hạn?",
+    "decision": "approved"
+  },
+  {
+    "id": 4994,
+    "question": "Em muốn biết ngân hàng có hỗ trợ thanh toán tự động không?",
+    "decision": "approved"
+  },
+  {
+    "id": 4533,
+    "question": "Tôi muốn biết thanh toán tự động áp dụng khi nào?",
+    "decision": "approved"
+  },
+  {
+    "id": 3711,
+    "question": "Mình có thể dùng dịch vụ này để thanh toán thẻ người khác được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 3294,
+    "question": "Tôi muốn biết mình có thể trả thẻ cho người khác được không?",
+    "decision": "approved"
+  },
+  {
+    "id": 3614,
+    "question": "Tôi cần tắt giao dịch nước ngoài thì phải làm sao đây?",
+    "decision": "approved"
+  },
+  {
+    "id": 4350,
+    "question": "Tôi muốn biết làm sao để tắt giao dịch nước ngoài cho thẻ của mình?",
+    "decision": "approved"
+  },
+  {
+    "id": 4221,
+    "question": "Tôi có thể tắt giao dịch thẻ ở nước ngoài không?",
+    "decision": "approved"
+  },
+  {
+    "id": 3890,
+    "question": "Cháu có thể bật giao dịch thẻ ở nước ngoài qua Internet Banking không?",
+    "decision": "approved"
+  },
+  {
+    "id": 3082,
+    "question": "Em muốn hỏi làm sao để trả dư nợ trên SOL được vậy?",
+    "decision": "approved"
+  },
+  {
+    "id": 3436,
+    "question": "Làm thế nào để mình trả thẻ qua SOL mà không phải ra quầy?",
+    "decision": "approved"
+  },
+  {
+    "id": 4813,
+    "question": "Tôi đang muốn trả dư nợ trên SOL, làm sao?",
+    "decision": "approved"
+  },
+  {
+    "id": 3521,
+    "question": "Tôi muốn biết làm sao để thanh toán thẻ trên SOL được?",
+    "decision": "approved"
+  },
+  {
+    "id": 3998,
+    "question": "Tôi muốn thanh toán thẻ trên SOL thì làm sao ạ?",
+    "decision": "approved"
+  },
+  {
+    "id": 3640,
+    "question": "Tôi muốn biết thanh toán thẻ trên SOL như thế nào?",
+    "decision": "approved"
+  }
+]

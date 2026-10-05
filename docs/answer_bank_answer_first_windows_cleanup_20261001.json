@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "da_xoa": "kiem_thu_answer_first_20261001.md",
+  "hoi_dap": {
+    "ok": true,
+    "queued": true,
+    "runtime": {
+      "so_dong": 246,
+      "voice": null
+    },
+    "job": {
+      "id": "answer_bank_1790829079595",
+      "status": "cancelled",
+      "phase": "",
+      "current_document": "",
+      "documents_done": 11,
+      "documents_total": 12,
+      "answers_added": 67,
+      "voice_done": 4,
+      "voice_total": 4,
+      "logs": [
+        "Chờ khách yên lặng thêm 20 giây.",
+        "Chờ khách yên lặng thêm 19 giây.",
+        "Chờ khách yên lặng thêm 18 giây.",
+        "Chờ khách yên lặng thêm 17 giây.",
+        "Chờ khách yên lặng thêm 16 giây.",
+        "Chờ khách yên lặng thêm 15 giây.",
+        "Chờ khách yên lặng thêm 14 giây.",
+        "Chờ khách yên lặng thêm 13 giây.",
+        "Chờ khách yên lặng thêm 12 giây.",
+        "Chờ khách yên lặng thêm 11 giây.",
+        "Chờ khách yên lặng thêm 10 giây.",
+        "Chờ khách yên lặng thêm 9 giây.",
+        "Chờ khách yên lặng thêm 8 giây.",
+        "Chờ khách yên lặng thêm 7 giây.",
+        "Chờ khách yên lặng thêm 6 giây.",
+        "Chờ khách yên lặng thêm 5 giây.",
+        "Chờ khách yên lặng thêm 4 giây.",
+        "Chờ khách yên lặng thêm 3 giây.",
+        "Chờ khách yên lặng thêm 2 giây.",
+        "Chờ khách yên lặng thêm 1 giây.",
+        "faq/faq_banking.md: lỗi Expecting ',' delimiter: line 1 column 1681 (char 1680)",
+        "products/the_tin_dung.md: lỗi Expecting ',' delimiter: line 1 column 4124 (char 4123)",
+        "products/tiet_kiem.md: thêm 18 đáp án đã đối chiếu nguồn.",
+        "products/vay_mua_nha.md: thêm 12 đáp án đã đối chiếu nguồn.",
+        "products/vay_tin_chap.md: lỗi Expecting ',' delimiter: line 1 column 4245 (char 4244)",
+        "shinhan/shinhan_card_user_guide_vi.md: lỗi Expecting ',' delimiter: line 1 column 306 (char 305)",
+        "shinhan/shinhan_consumer_credit_terms_2025.md: thêm 13 đáp án đã đối chiếu nguồn.",
+        "shinhan/shinhan_corporate_credit_card_terms.md: thêm 2 đáp án đã đối chiếu nguồn.",
+        "shinhan/shinhan_corporate_debit_card_terms.md: lỗi Expecting ',' delimiter: line 1 column 3401 (char 3400)",
+        "shinhan/shinhan_digital_card_guide.md: thêm 8 đáp án đã đối chiếu nguồn.",
+        "shinhan/shinhan_individual_loan_terms.md: thêm 14 đáp án đã đối chiếu nguồn."
+      ],
+      "error": "Đã tắt theo cấu hình"
+    }
+  },
+  "cleaned_own_sessions": 2
+}

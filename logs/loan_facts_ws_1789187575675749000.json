@@ -1,0 +1,1306 @@
+{
+  "health": {
+    "status": "ok",
+    "system": {
+      "platform": "Windows",
+      "arch": "AMD64",
+      "python": "3.11.15",
+      "torch": "2.11.0+cu128",
+      "device": "cuda",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "gpu_vram_gb": 11.9,
+      "cuda_version": "12.8"
+    },
+    "services": {
+      "stt": "ok",
+      "stt_engine": "gipformer",
+      "llm": "ok",
+      "tts": "loaded",
+      "rag": "16 docs"
+    }
+  },
+  "sessions": [
+    {
+      "session_id": "a876f077",
+      "turns": [
+        {
+          "input": "anh vay 850 triệu trong 36 tháng",
+          "transcript": "anh vay 850 triệu trong 36 tháng",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 850 triệu đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "850000000",
+                "raw": "850 triệu",
+                "turn": 0
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "gop_manh": "2/1",
+            "gop_ty_le": 1.0,
+            "total_ms": 158,
+            "turn": 1,
+            "timestamp": 1789187572.0113733
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "135 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "transcript": "135 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị vừa nói 135. Số tiền này tính theo triệu hay tỷ đồng ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "missing_unit",
+                "value": null,
+                "raw": "135",
+                "turn": 2
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_don_vi_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 138,
+            "turn": 2,
+            "timestamp": 1789187572.1519916
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "triệu đồng",
+          "transcript": "triệu đồng",
+          "response": "Dạ nếu được duyệt 135 triệu đồng trong 24 tháng, tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 6,5 triệu đồng; các tháng sau sẽ giảm dần ạ. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "135000000",
+                "raw": "135 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "tinh_tra_gop",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_tinh_tra_gop",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 1,
+            "total_ms": 105,
+            "turn": 3,
+            "timestamp": 1789187572.2598069
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "transcript": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "response": "Dạ trước đó anh chị nói cần vay 135 triệu đồng trong 24 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "135000000",
+                "raw": "135 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 139,
+            "turn": 4,
+            "timestamp": 1789187572.4005651
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "transcript": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "response": "Dạ trước đó anh chị nói cần vay 850 triệu đồng trong 36 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "135000000",
+                "raw": "135 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 138,
+            "turn": 5,
+            "timestamp": 1789187572.5364425
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "đổi kỳ hạn sang số khác",
+          "transcript": "đổi kỳ hạn sang số khác",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "135000000",
+                "raw": "135 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 110,
+            "turn": 6,
+            "timestamp": 1789187572.6538084
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "mỗi tháng đóng bao nhiêu",
+          "transcript": "mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "135000000",
+                "raw": "135 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 121,
+            "turn": 7,
+            "timestamp": 1789187572.7701194
+          },
+          "audio_events": 0,
+          "errors": []
+        }
+      ],
+      "history_items": 14
+    },
+    {
+      "session_id": "efea791a",
+      "turns": [
+        {
+          "input": "anh vay 850 triệu trong 36 tháng",
+          "transcript": "anh vay 850 triệu trong 36 tháng",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 850 triệu đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "850000000",
+                "raw": "850 triệu",
+                "turn": 0
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "gop_manh": "2/1",
+            "gop_ty_le": 1.0,
+            "total_ms": 119,
+            "turn": 1,
+            "timestamp": 1789187572.9039962
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "275 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "transcript": "275 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị vừa nói 275. Số tiền này tính theo triệu hay tỷ đồng ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "missing_unit",
+                "value": null,
+                "raw": "275",
+                "turn": 2
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_don_vi_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 138,
+            "turn": 2,
+            "timestamp": 1789187573.0454235
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "triệu đồng",
+          "transcript": "triệu đồng",
+          "response": "Dạ nếu được duyệt 275 triệu đồng trong 24 tháng, tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 13,3 triệu đồng; các tháng sau sẽ giảm dần ạ. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "275000000",
+                "raw": "275 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "tinh_tra_gop",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "gop_manh": "5/4",
+            "gop_ty_le": 1.0,
+            "total_ms": 90,
+            "turn": 3,
+            "timestamp": 1789187573.1381016
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "transcript": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "response": "Dạ trước đó anh chị nói cần vay 275 triệu đồng trong 24 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "275000000",
+                "raw": "275 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 134,
+            "turn": 4,
+            "timestamp": 1789187573.2746973
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "transcript": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "response": "Dạ trước đó anh chị nói cần vay 850 triệu đồng trong 36 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "275000000",
+                "raw": "275 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 140,
+            "turn": 5,
+            "timestamp": 1789187573.4065676
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "đổi kỳ hạn sang số khác",
+          "transcript": "đổi kỳ hạn sang số khác",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "275000000",
+                "raw": "275 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 114,
+            "turn": 6,
+            "timestamp": 1789187573.5327778
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "mỗi tháng đóng bao nhiêu",
+          "transcript": "mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "275000000",
+                "raw": "275 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 114,
+            "turn": 7,
+            "timestamp": 1789187573.6482334
+          },
+          "audio_events": 0,
+          "errors": []
+        }
+      ],
+      "history_items": 14
+    },
+    {
+      "session_id": "68315acb",
+      "turns": [
+        {
+          "input": "anh vay 850 triệu trong 36 tháng",
+          "transcript": "anh vay 850 triệu trong 36 tháng",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 850 triệu đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "850000000",
+                "raw": "850 triệu",
+                "turn": 0
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_vuot_han_muc",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 121,
+            "turn": 1,
+            "timestamp": 1789187573.774799
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "425 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "transcript": "425 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị vừa nói 425. Số tiền này tính theo triệu hay tỷ đồng ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "missing_unit",
+                "value": null,
+                "raw": "425",
+                "turn": 2
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_don_vi_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 129,
+            "turn": 2,
+            "timestamp": 1789187573.9101393
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "triệu đồng",
+          "transcript": "triệu đồng",
+          "response": "Dạ nếu được duyệt 425 triệu đồng trong 24 tháng, tạm tính theo lãi suất từ 7,9% một năm trên dư nợ giảm dần thì tháng đầu khoảng 20,5 triệu đồng; các tháng sau sẽ giảm dần ạ. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "425000000",
+                "raw": "425 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "tinh_tra_gop",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "gop_manh": "5/4",
+            "gop_ty_le": 1.0,
+            "total_ms": 91,
+            "turn": 3,
+            "timestamp": 1789187574.004432
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "transcript": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "response": "Dạ trước đó anh chị nói cần vay 425 triệu đồng trong 24 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "425000000",
+                "raw": "425 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 138,
+            "turn": 4,
+            "timestamp": 1789187574.1450617
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "transcript": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "response": "Dạ trước đó anh chị nói cần vay 850 triệu đồng trong 36 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "425000000",
+                "raw": "425 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 143,
+            "turn": 5,
+            "timestamp": 1789187574.2900512
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "đổi kỳ hạn sang số khác",
+          "transcript": "đổi kỳ hạn sang số khác",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "425000000",
+                "raw": "425 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 106,
+            "turn": 6,
+            "timestamp": 1789187574.3969994
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "mỗi tháng đóng bao nhiêu",
+          "transcript": "mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "425000000",
+                "raw": "425 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 114,
+            "turn": 7,
+            "timestamp": 1789187574.509931
+          },
+          "audio_events": 0,
+          "errors": []
+        }
+      ],
+      "history_items": 14
+    },
+    {
+      "session_id": "ca685632",
+      "turns": [
+        {
+          "input": "anh vay 850 triệu trong 36 tháng",
+          "transcript": "anh vay 850 triệu trong 36 tháng",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 850 triệu đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "850000000",
+                "raw": "850 triệu",
+                "turn": 0
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_vuot_han_muc",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 117,
+            "turn": 1,
+            "timestamp": 1789187574.6385317
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "725 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "transcript": "725 trong 24 tháng mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị vừa nói 725. Số tiền này tính theo triệu hay tỷ đồng ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "missing_unit",
+                "value": null,
+                "raw": "725",
+                "turn": 2
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_don_vi_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 121,
+            "turn": 2,
+            "timestamp": 1789187574.7630894
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "triệu đồng",
+          "transcript": "triệu đồng",
+          "response": "Dạ nhu cầu 725 triệu đồng đang vượt hạn mức tối đa 500 triệu đồng của gói này, nên em chưa thể tính phương án đó ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "725000000",
+                "raw": "725 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 1,
+            "gop_manh": "2/1",
+            "gop_ty_le": 1.0,
+            "total_ms": 99,
+            "turn": 3,
+            "timestamp": 1789187574.8624518
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "transcript": "nhắc lại số tiền và kỳ hạn hiện tại",
+          "response": "Dạ trước đó anh chị nói cần vay 725 triệu đồng trong 24 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "725000000",
+                "raw": "725 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 132,
+            "turn": 4,
+            "timestamp": 1789187574.9989233
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "transcript": "nhắc lại số tiền và kỳ hạn anh nói lúc đầu",
+          "response": "Dạ trước đó anh chị nói cần vay 850 triệu đồng trong 36 tháng ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "725000000",
+                "raw": "725 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "known",
+                "value": "24",
+                "raw": "24 tháng",
+                "turn": 2
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhac_lai_nhu_cau",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "chua_co",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 139,
+            "turn": 5,
+            "timestamp": 1789187575.1410992
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "đổi kỳ hạn sang số khác",
+          "transcript": "đổi kỳ hạn sang số khác",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "725000000",
+                "raw": "725 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 105,
+            "turn": 6,
+            "timestamp": 1789187575.249479
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "mỗi tháng đóng bao nhiêu",
+          "transcript": "mỗi tháng đóng bao nhiêu",
+          "response": "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "725000000",
+                "raw": "725 triệu",
+                "turn": 4
+              },
+              "term": {
+                "status": "ambiguous",
+                "value": null,
+                "raw": "đổi kỳ hạn sang số khác",
+                "turn": 10
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "xac_nhan_ky_han_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_xac_nhan_ky_han_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 119,
+            "turn": 7,
+            "timestamp": 1789187575.3710048
+          },
+          "audio_events": 0,
+          "errors": []
+        }
+      ],
+      "history_items": 14
+    },
+    {
+      "session_id": "40378efc",
+      "turns": [
+        {
+          "input": "anh vay 850 triệu trong 36 tháng",
+          "transcript": "anh vay 850 triệu trong 36 tháng",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 850 triệu đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.",
+          "metrics": {
+            "stt_ms": 0,
+            "la_thoai": false,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "850000000",
+                "raw": "850 triệu",
+                "turn": 0
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "vuot_han_muc",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_vuot_han_muc",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "total_ms": 122,
+            "turn": 1,
+            "timestamp": 1789187575.4959965
+          },
+          "audio_events": 0,
+          "errors": []
+        },
+        {
+          "input": "C:\\duan\\chat-ai\\logs\\asr_eval_20260912\\samples\\d9b57f0b_07.wav",
+          "transcript": "anh muốn vay bốn trăm triệu",
+          "response": "Dạ gói này hỗ trợ tối đa 500 triệu đồng, nên nhu cầu 400 triệu đồng đang nằm trong trần sản phẩm. Hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ.",
+          "metrics": {
+            "la_thoai": true,
+            "tinh_huong_cho_ms": 0,
+            "tinh_huong_bo_cho": "cau chung 2217ms / can che 1800ms",
+            "filler_ms": 4,
+            "filler_xong_luc": 1042194.8518103999,
+            "filler_text": "Dạ em nói rõ cho anh chị phần này luôn nhé,",
+            "filler_id": "",
+            "tinh_huong_id": "chung",
+            "stt_doan_truoc": false,
+            "stt_ms": 33,
+            "du_kien_vay": {
+              "amount": {
+                "status": "known",
+                "value": "400000000",
+                "raw": "bốn trăm triệu",
+                "turn": 2
+              },
+              "term": {
+                "status": "known",
+                "value": "36",
+                "raw": "36 tháng",
+                "turn": 0
+              },
+              "income": {
+                "status": "unknown",
+                "value": null,
+                "raw": "",
+                "turn": -1
+              }
+            },
+            "tra_tu_quy_tac_tai_chinh": "nhu_cau_vay",
+            "rag_ms": 0,
+            "rag_doan_truoc": false,
+            "llm_nghi_san": false,
+            "tieng_san": "ltg_nhu_cau_vay",
+            "llm_ttft_ms": 0,
+            "llm_chunk1_ms": 0,
+            "ttfa_ms": 149,
+            "tts_first_ms": 0,
+            "tts_first_chars": 40,
+            "total_ms": 165,
+            "turn": 2,
+            "timestamp": 1789187575.67114
+          },
+          "audio_events": 2,
+          "errors": []
+        }
+      ],
+      "history_items": 4
+    }
+  ],
+  "scope": "text and recorded-audio WS, not live telephone or human ASR scoring"
+}

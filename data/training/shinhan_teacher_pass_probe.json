@@ -1,0 +1,74 @@
+[
+  {
+    "id": 2,
+    "fact_id": "set_pin",
+    "question": "Chị cho biết cần làm gì để thiết lập PIN tại chi nhánh ngân hàng?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 5,
+    "fact_id": "set_pin",
+    "question": "Anh có thể hướng dẫn đặt PIN qua ứng dụng Shinhan Mobile Banking không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 6,
+    "fact_id": "set_pin",
+    "question": "Em xin hỏi làm sao để nhập mã PIN sau khi nhận thẻ Shinhan online?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "người trẻ hỏi ngắn",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 7,
+    "fact_id": "set_pin",
+    "question": "Anh ơi, sau khi kích hoạt thẻ thì mình làm sao để thiết lập PIN?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 8,
+    "fact_id": "set_pin",
+    "question": "Chị có thể hướng dẫn em đặt mã PIN qua Internet Banking không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 10,
+    "fact_id": "set_pin",
+    "question": "Em cần đến chi nhánh Shinhan để thiết lập mã PIN như thế nào ạ?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 11,
+    "fact_id": "set_pin",
+    "question": "Chú ơi, mình có thể đổi PIN trực tuyến ngay sau khi kích hoạt thẻ không?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách hỏi tiếp sau một lượt trò chuyện",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  },
+  {
+    "id": 81,
+    "fact_id": "set_pin",
+    "question": "Em có thể thiết lập mã PIN qua internet banking được không chị?",
+    "answer": "Dạ, sau khi kích hoạt thẻ, mình có thể thiết lập PIN trên Internet Banking hoặc Mobile Banking. Nếu cần, chi nhánh Shinhan cũng hỗ trợ ạ.",
+    "source_url": "https://shinhan.com.vn/public/uploads/card/PDF/Guideline/SH-Consumer-Credit-Userguide-VN.pdf",
+    "persona": "khách đang lo lắng",
+    "verified_fact": "Sau khi nhận và kích hoạt thẻ, khách có thể thiết lập PIN qua Internet Banking/Mobile Banking hoặc đến chi nhánh Shinhan."
+  }
+]
