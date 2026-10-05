@@ -336,17 +336,31 @@ def is_safe_direct(
     return False
 
 
+def khoa_cau_hoi(text: str) -> frozenset[str]:
+    """Tập từ mang nghĩa CỘNG mọi con số của câu hỏi.
+
+    `_words` bỏ từ một ký tự nên rơi mất "1", "3", "6": chỉ so tập từ thì "lãi
+    tiết kiệm 1 tháng" trùng "lãi tiết kiệm 3 tháng" và khách hỏi kỳ này nghe
+    lãi của kỳ kia. Con số là phần phân biệt của câu hỏi, phải nằm trong khoá.
+    """
+    return frozenset(_words(text)) | {"#" + n for n in re.findall(r"\d+", _norm(text))}
+
+
 def _khop_vi_du(question: str, row: Mapping[str, Any]) -> bool:
     """Lời khách trùng một câu hỏi mẫu của dòng: trùng chữ, hoặc trùng tập từ
     mang nghĩa ("lãi suất vay tín chấp LÀ bao nhiêu" = "... bao nhiêu")."""
     q = _norm(question)
-    words = _words(question)
+    key = khoa_cau_hoi(question)
     for sample in row.get("cau_hoi") or ():
         if q == _norm(str(sample)):
             return True
-        if len(words) >= 3 and words == _words(str(sample)):
+        if len(key) >= 3 and key == khoa_cau_hoi(str(sample)):
             return True
     return False
+
+
+# Lượt xoay vòng cách nói theo câu hỏi (tập từ mang nghĩa) -> số lần đã đọc.
+_luot_xoay: dict[frozenset, int] = {}
 
 
 def _so_trong(text: str) -> frozenset[str]:
@@ -363,8 +377,9 @@ def direct_by_example(
     Bộ chọn bằng Qwen tốn 0,8-1,2 giây mỗi lượt; khách hỏi đúng câu đã soạn
     thì không có gì để phân xử. Kho thường có nhiều dòng cùng một câu hỏi mẫu
     (đo trên máy thật 05-10-2026: ~100 dòng cho "lãi suất vay tín chấp bao
-    nhiêu", cùng nói 7.9%): đọc dòng GỌN nhất - ít con số nhất rồi ngắn nhất -
-    miễn là không dòng nào trùng mẫu MÂU THUẪN với nó. Mâu thuẫn = con số của
+    nhiêu", cùng nói 7.9%): lấy nhóm dòng GỌN nhất (ít con số nhất) rồi luân
+    phiên giữa các cách nói trong nhóm, miễn là không dòng nào trùng mẫu MÂU
+    THUẪN với nó. Mâu thuẫn = con số của
     hai dòng không bao nhau (7.9 và 8.5), hoặc cả hai không có số mà khác hẳn
     chữ (vay thế chấp / vay tín chấp). Có mâu thuẫn thì để Qwen chọn như cũ.
     """
@@ -391,9 +406,23 @@ def direct_by_example(
             tu = _words(tra_loi(other_id))
             if len(tu & tu_dau) < 0.5 * max(1, len(tu | tu_dau)):
                 return None
+    # Luân phiên giữa các cách nói CÙNG Ý của câu hỏi này: cùng đúng bộ con số
+    # với dòng gọn nhất. Khách hỏi lại (hoặc khách sau hỏi cùng câu) thì nghe
+    # một cách diễn đạt khác thay vì đúng một câu lặp đi lặp lại. Xoay vòng chứ
+    # không ngẫu nhiên: không bao giờ ra hai lần liền cùng một câu khi có ≥2 cách.
+    cung_y = sorted(other_id for other_id, _ in khop if _so_trong(tra_loi(other_id)) == so_dau)
+    if len(cung_y) > 1:
+        key = khoa_cau_hoi(question)
+        luot = _luot_xoay.get(key, 0)
+        if len(_luot_xoay) > 5000:
+            _luot_xoay.clear()
+        _luot_xoay[key] = luot + 1
+        answer_id = cung_y[luot % len(cung_y)]
+        score = dict(khop)[answer_id]
     row = dict(bank[answer_id])
     row["diem"] = score
     row["khop_vi_du"] = True
+    row["so_cach_noi"] = len(cung_y)
     return row
 
 
@@ -417,7 +446,7 @@ def _chi_muc_cua(bank: Mapping[str, Mapping[str, Any]]) -> dict:
             for sample in row.get("cau_hoi") or ():
                 text = str(sample)
                 index.setdefault(_norm(text), []).append(answer_id)
-                words = frozenset(_words(text))
+                words = khoa_cau_hoi(text)
                 if len(words) >= 3:
                     index.setdefault(words, []).append(answer_id)
         _chi_muc = (bank, index, {"n": len(bank)})
@@ -463,7 +492,7 @@ def fast_direct(
             or len(_intent_parts(question)) > 1):
         return None
     index = _chi_muc_cua(bank)
-    words = frozenset(_words(question))
+    words = khoa_cau_hoi(question)
     ids = list(index.get(_norm(question), ()))
     if len(words) >= 3:
         ids += index.get(words, ())
@@ -778,7 +807,7 @@ async def choose(
     row["diem"] = score_by_id[chosen_id]
     row["qwen_chon"] = True
     # Nhớ lựa chọn cho câu KHÔNG phụ thuộc lượt trước: lần sau khỏi hỏi lại Qwen.
-    words = frozenset(_words(question))
+    words = khoa_cau_hoi(question)
     if (retrieval_question == question and len(words) >= 3 and not _is_follow_up(question)
             and _chi_muc is not None and _chi_muc[0] is bank):
         if len(_da_chon) >= _DA_CHON_TOI_DA:

@@ -691,10 +691,10 @@ def test_customer_words_matching_example_are_read_without_qwen():
     llm = LLMFake()
     row = _choose(llm, question="lãi suất vay tín chấp là bao nhiêu", product="vay tín chấp",
                   bank=bank, vector_bank=vectors)
-    assert row["id"] == "ab_mem_1" and row["khop_vi_du"] and llm.prompts == []  # dòng gọn nhất
+    assert row["id"] in bank and row["khop_vi_du"] and llm.prompts == []
     fast, _ = best_candidate(rag=RagFake(), bank=bank, vector_bank=vectors,
                              question="lãi suất vay tín chấp là bao nhiêu", product="vay tín chấp")
-    assert fast["id"] == "ab_mem_1" and doc_nguyen_van(fast)
+    assert fast["id"] in bank and doc_nguyen_van(fast)
 
 
 def test_matching_example_with_conflicting_numbers_still_needs_qwen():
@@ -714,7 +714,7 @@ def test_matching_example_prefers_tersest_consistent_answer():
     llm = LLMFake()
     row = _choose(llm, question="lãi suất vay tín chấp bao nhiêu", product="vay tín chấp", bank=bank,
                   vector_bank={"ab_mem_3": _vec(0.99), "ab_mem_1": _vec(0.9), "ab_mem_2": _vec(0.9)})
-    assert row["id"] == "ab_mem_1" and llm.prompts == []
+    assert row["id"] in ("ab_mem_1", "ab_mem_2") and llm.prompts == []  # không đọc dòng dài
 
 
 class NoEmbed(RagFake):
@@ -727,7 +727,7 @@ def test_exact_example_skips_embedding_and_qwen():
     bank = _rate_bank()
     row, q = best_candidate(rag=NoEmbed(), bank=bank, vector_bank={"ab_mem_1": _vec(0.9), "ab_mem_2": _vec(0.9)},
                             question="lãi suất vay tín chấp là bao nhiêu", product="vay tín chấp")
-    assert row["id"] == "ab_mem_1" and row["khop_vi_du"] and q is None
+    assert row["id"] in bank and row["khop_vi_du"] and q is None
 
 
 def test_fast_path_still_respects_product_isolation():
@@ -765,3 +765,32 @@ def test_qwen_choice_is_remembered_until_bank_reloads():
 def test_follow_up_detection_uses_accented_connectors(question, follow):
     from backend.services.answer_bank_selector import _is_follow_up
     assert _is_follow_up(question) is follow
+
+
+def test_equivalent_answers_rotate_instead_of_repeating():
+    from backend.services import answer_bank_selector as selector
+    selector._luot_xoay.clear()
+    bank = _rate_bank()
+    bank["ab_mem_3"] = {"id": "ab_mem_3", "san_pham": "vay tín chấp",
+                        "cau_hoi": ["lãi suất vay tín chấp bao nhiêu"],
+                        "tra_loi": "Dạ, mức lãi suất vay tín chấp là từ 7.9%/năm ạ."}
+    bank["ab_dai"] = {"id": "ab_dai", "san_pham": "vay tín chấp",
+                      "cau_hoi": ["lãi suất vay tín chấp bao nhiêu"],
+                      "tra_loi": "Dạ, lãi suất từ 7.9%/năm, hạn mức đến 500 triệu ạ."}
+    vectors = {k: _vec(0.9) for k in bank}
+    llm = LLMFake()
+    picks = [_choose(llm, question="lãi suất vay tín chấp là bao nhiêu", product="vay tín chấp",
+                     bank=bank, vector_bank=vectors)["id"] for _ in range(6)]
+    assert picks[:3] == ["ab_mem_1", "ab_mem_2", "ab_mem_3"] and picks[3:] == picks[:3]
+    assert "ab_dai" not in picks and llm.prompts == []
+
+
+def test_single_digit_term_is_part_of_the_question():
+    # "1 tháng" và "3 tháng" không phải cùng một câu hỏi.
+    from backend.services.answer_bank_selector import best_candidate, khoa_cau_hoi
+    assert khoa_cau_hoi("lãi suất tiết kiệm 1 tháng") != khoa_cau_hoi("lãi suất tiết kiệm 3 tháng")
+    bank = {"ab_3": {"id": "ab_3", "san_pham": "tiết kiệm", "cau_hoi": ["lãi suất tiết kiệm 3 tháng bao nhiêu"],
+                     "tra_loi": "Dạ, gửi tiết kiệm 3 tháng lãi suất 3.8%/năm ạ."}}
+    row, _ = best_candidate(rag=RagFake(), bank=bank, vector_bank={"ab_3": _vec(0.95)},
+                            question="lãi suất tiết kiệm 6 tháng là bao nhiêu", product="tiết kiệm")
+    assert not (row or {}).get("khop_vi_du")

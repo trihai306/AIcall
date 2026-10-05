@@ -730,8 +730,10 @@ def test_history_question_already_in_bank_is_not_generated_again(monkeypatch, tm
     (root / "products" / "vay.md").write_text("Lãi suất vay tín chấp từ 7.9%/năm.", encoding="utf-8")
     doc = learning.prepare_sources()[0][0]
     learning._store_items(doc, [{"cau_hoi": ["lãi suất vay tín chấp bao nhiêu"],
-                                 "tra_loi": "Dạ lãi suất vay tín chấp từ 7.9%/năm ạ.",
-                                 "evidence": "Lãi suất vay tín chấp từ 7.9%/năm."}], "memory", replace=False)
+                                 "tra_loi": f"Dạ lãi suất vay tín chấp {cach} 7.9%/năm ạ.",
+                                 "evidence": "Lãi suất vay tín chấp từ 7.9%/năm."}
+                                for cach in ("từ", "là từ", "hiện từ", "bên em từ")],
+                          "memory", replace=False)
     rows = [{"session_id": "s1", "turn_index": 0, "text": "lãi vay tín chấp nhiêu", "product": ""}]
     monkeypatch.setattr(learning, "_history_candidates", lambda: rows)
 
@@ -739,11 +741,11 @@ def test_history_question_already_in_bank_is_not_generated_again(monkeypatch, tm
         return [{**batch[0], "intent": "lãi suất vay tín chấp là bao nhiêu", "source": doc.rel}]
 
     async def must_not_generate(*_a, **_k):
-        raise AssertionError("câu hỏi đã có trong kho thì không sinh thêm đáp án")
+        raise AssertionError("câu hỏi đã đủ cách nói thì không sinh thêm đáp án")
 
     monkeypatch.setattr(learning, "_map_history", mapped)
     monkeypatch.setattr(learning, "generate_document", must_not_generate)
     worker = learning.AnswerBankLearning()
     assert asyncio.run(worker._learn_history([doc], {"variants_per_answer": 1})) == []
     assert conn.execute("SELECT status FROM answer_bank_history").fetchone()[0] == "learned"
-    assert conn.execute("SELECT COUNT(*) FROM hoi_dap").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM hoi_dap").fetchone()[0] == learning._VARIANTS_PER_QUESTION

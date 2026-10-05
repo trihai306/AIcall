@@ -1192,22 +1192,29 @@ def _mark_history(rows: list[dict], status: str, source: str = "", error: str = 
 
 def _question_key(question: str) -> frozenset[str]:
     """Tập từ mang nghĩa của câu hỏi - cùng phép so mà bộ chọn dùng để đọc thẳng."""
-    from backend.services.answer_bank_selector import _words
-    return frozenset(_words(question))
+    from backend.services.answer_bank_selector import khoa_cau_hoi
+    return khoa_cau_hoi(question)
 
 
-def _known_question_keys(doc: Document) -> set:
+# Mỗi câu hỏi giữ vài cách nói để bộ chọn luân phiên; quá số này thì thôi.
+# Không giới hạn thì kho phình: đo 05-10-2026 có ~100 dòng cho một câu hỏi.
+_VARIANTS_PER_QUESTION = 4
+
+
+def _known_question_keys(doc: Document) -> dict:
+    """Câu hỏi (tập từ) -> số đáp án đang bật của tài liệu này có câu hỏi đó."""
     rows = _conn().execute(
         "SELECT h.cau_hoi FROM answer_bank_entries e JOIN hoi_dap h ON h.id=e.hoi_dap_id "
         "WHERE e.source_path=? AND h.bat=1", (doc.rel,)).fetchall()
-    keys = set()
+    keys: dict = {}
     for row in rows:
         try:
             questions = json.loads(row[0] or "[]")
         except json.JSONDecodeError:
             continue
-        keys.update(_question_key(q) for q in questions if isinstance(q, str))
-    keys.discard(frozenset())
+        for key in {_question_key(q) for q in questions if isinstance(q, str)}:
+            if key:
+                keys[key] = keys.get(key, 0) + 1
     return keys
 
 
@@ -1501,7 +1508,7 @@ class AnswerBankLearning:
             return []
         by_rel = {d.rel: d for d in docs}
         ids: list[str] = []
-        da_co: dict[str, set] = {}
+        da_co: dict[str, dict] = {}
         for start in range(0, len(rows), 8):
             batch = rows[start:start + 8]
             mapped = await _map_history(batch, docs)
@@ -1517,14 +1524,13 @@ class AnswerBankLearning:
                                   error="Không xác định chắc chắn tài liệu phù hợp")
                     continue
                 doc = by_rel[item["source"]]
-                # Kho đã có đáp án cho đúng câu hỏi này thì thôi. Trước đây mỗi
-                # lượt khách hỏi lại sinh thêm một cách diễn đạt: đo 05-10-2026
-                # có ~100 dòng cho "lãi suất vay tín chấp bao nhiêu", cùng nói
-                # 7.9% - bộ chọn phải nhờ Qwen phân xử giữa các bản giống nhau.
+                # Kho đã ĐỦ cách nói cho câu hỏi này thì thôi (bộ chọn luân phiên
+                # giữa chúng). Trước đây mỗi lượt khách hỏi lại sinh thêm một
+                # cách diễn đạt không giới hạn.
                 key = _question_key(item["intent"])
                 known = da_co.setdefault(doc.rel, _known_question_keys(doc))
-                if key and key in known:
-                    _mark_history([item], "learned", error="Kho đã có câu hỏi này")
+                if key and known.get(key, 0) >= _VARIANTS_PER_QUESTION:
+                    _mark_history([item], "learned", error="Kho đã đủ cách nói cho câu hỏi này")
                     continue
                 stage_key = f"memory:{item['session_id']}:{item['turn_index']}"
                 generated, reasons = await generate_document(
@@ -1533,7 +1539,9 @@ class AnswerBankLearning:
                     _mark_history([item], "failed", error=json.dumps(reasons, ensure_ascii=False))
                     continue
                 ids.extend(_store_items(doc, generated, "memory", replace=False))
-                known.update(_question_key(q) for g in generated for q in g["cau_hoi"])
+                for g in generated:
+                    for q in g["cau_hoi"]:
+                        known[_question_key(q)] = known.get(_question_key(q), 0) + 1
                 _mark_history([item], "learned")
                 conn = _conn()
                 with db.write_lock, conn:
