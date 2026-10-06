@@ -1295,6 +1295,43 @@ class StreamingPipeline:
             muc_tieu = min(muc_tieu, StreamingPipeline._NHIP_NOI_CAU_DEM_MS)
         return max(0.0, muc_tieu - da_nghi)
 
+    def _kho_co_san_tieng(self, text: str, session: CallSession) -> str:
+        """Id đáp án trong kho sẽ được ĐỌC THẲNG cho câu này và đã có tiếng dựng
+        sẵn; "" nếu không. Gọi TRƯỚC câu đệm, không await, không nhúng (<1ms).
+
+        Câu đệm sinh ra để lấp quãng chờ mô hình. Đáp án đã nằm sẵn cùng tiếng thì
+        không có quãng nào để lấp: đo 06-10-2026, tiếng trả lời sẵn sàng sau
+        ~150ms nhưng phải xếp sau câu đệm dài 1,2-1,45s, khách nghe nội dung sau
+        ~1,4s. Chỉ nhận đúng ca chắc chắn: lời khách trùng câu hỏi mẫu (hoặc câu
+        Qwen đã chọn), không có chữ số (câu có số thuộc về luật tính), và bản
+        tiếng ĐẦY ĐỦ của đúng dòng sắp đọc đã có trên đĩa.
+        """
+        try:
+            if (not text or re.search(r"\d", text) or not settings.tieng_san_bat
+                    or not self._tts_available):
+                return ""
+            from backend.main import app_state
+            from backend.services.answer_bank_learning import row_is_current
+            from backend.services.answer_bank_selector import fast_direct
+            bang = getattr(app_state, "hoi_dap", None) or {}
+            kho = getattr(app_state, "hoi_dap_vector", None) or {}
+            if not bang:
+                return ""
+            row = fast_direct(
+                text, bang, product=session.product,
+                bank_name=scenarios_db.ten_to_chuc(getattr(session, "scenario", None)),
+                provenance=_answer_bank_provenance(app_state, bang, kho),
+                excluded_ids=bo_qua_chi_theo_tinh_huong(bang, DIEU_KIEN_NGU_CANH),
+                is_current=row_is_current, advance=False)
+            if row is None:
+                return ""
+            wav = kho_tieng_san.lay(self.tts, f"hd_{row['id']}", row["tra_loi"],
+                                    self.tts._giong_thuc(session.voice_name))
+            return row["id"] if wav else ""
+        except Exception as e:
+            logger.debug("xem trước kho câu trả lời trượt (vẫn phát câu đệm): %s", e)
+            return ""
+
     async def _send_filler(self, ws: WebSocket, session: CallSession, t_start: float,
                            metrics: dict, la_thoai: bool, n_audio: int = 0,
                            known_text: str = ""):
@@ -1634,8 +1671,16 @@ class StreamingPipeline:
         # (không await) để _send_filler có dữ liệu đọc. Xem _phan_loai_dong_bo.
         self._phan_loai_dong_bo(session)
 
-        await self._send_filler(ws, session, t_start, metrics, la_thoai=True,
-                                n_audio=len(audio_bytes), known_text=pre_transcript)
+        # Đã có chữ của TRỌN lượt (phiên âm trước, hoặc bản đoán phủ đủ byte) mà
+        # kho có sẵn đáp án kèm tiếng thì không phát câu đệm - xem `_kho_co_san_tieng`.
+        chu_da_biet = pre_transcript
+        if not chu_da_biet and session.spec_stt and session.spec_stt[0] == len(audio_bytes):
+            chu_da_biet = session.spec_stt[1]
+        if chu_da_biet and self._kho_co_san_tieng(chu_da_biet, session):
+            metrics["filler_bo_qua"] = "kho_tra_loi_da_co_tieng"
+        else:
+            await self._send_filler(ws, session, t_start, metrics, la_thoai=True,
+                                    n_audio=len(audio_bytes), known_text=pre_transcript)
 
         # STT - dùng lại bản đã phiên âm lúc đoán trước, NHƯNG chỉ khi nó phủ
         # đúng chừng này byte. Bằng nhau nghĩa là bản đoán đã nghe trọn câu,
@@ -1886,6 +1931,8 @@ class StreamingPipeline:
                 text, bank=scenarios_db.ten_to_chuc(session.scenario))
             if fast_fact:
                 metrics["filler_bo_qua"] = "dap_an_shinhan_da_san"
+            elif self._kho_co_san_tieng(text, session):
+                metrics["filler_bo_qua"] = "kho_tra_loi_da_co_tieng"
             else:
                 await self._send_filler(
                     ws, session, t_start, metrics, la_thoai=la_thoai,

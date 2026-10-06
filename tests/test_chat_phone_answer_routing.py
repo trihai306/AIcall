@@ -289,3 +289,38 @@ def test_static_rule_stays_when_bank_has_no_match(pipeline, monkeypatch):
     asyncio.run(pipeline.process_text_turn(QUESTION, session, sink, soi=True))
     complete = next(e for e in sink.events if e["type"] == "turn_complete")
     assert "câu của luật" in complete["full_response"]
+
+
+def test_ready_bank_answer_skips_filler(pipeline, monkeypatch):
+    # 06-10-2026: tiếng trả lời có sẵn sau ~150ms nhưng phải xếp sau câu đệm 1,3s.
+    import backend.main as main
+    from backend.pipeline import streaming_pipeline as sp
+    main.app_state.hoi_dap[ANSWER_ID]["cau_hoi"] = [QUESTION]
+    monkeypatch.setattr(sp.settings, "tieng_san_bat", True)
+    monkeypatch.setattr(sp.kho_tieng_san, "lay", lambda *_a, **_k: _wav())
+    pipeline.tts._giong_thuc = lambda _v: "default"
+    called = []
+
+    async def filler(*_a, **_k):
+        called.append(1)
+    pipeline._send_filler = filler
+    session, sink = _session(), Sink()
+    asyncio.run(pipeline.process_text_turn(QUESTION, session, sink))
+    complete = next(e for e in sink.events if e["type"] == "turn_complete")
+    assert called == [] and complete["metrics"]["filler_bo_qua"] == "kho_tra_loi_da_co_tieng"
+    assert complete["full_response"] == ANSWER
+
+
+def test_filler_kept_when_voice_missing_or_question_differs(pipeline, monkeypatch):
+    import backend.main as main
+    from backend.pipeline import streaming_pipeline as sp
+    main.app_state.hoi_dap[ANSWER_ID]["cau_hoi"] = [QUESTION]
+    monkeypatch.setattr(sp.settings, "tieng_san_bat", True)
+    monkeypatch.setattr(sp.kho_tieng_san, "lay", lambda *_a, **_k: None)
+    pipeline.tts._giong_thuc = lambda _v: "default"
+    session = _session()
+    assert pipeline._kho_co_san_tieng(QUESTION, session) == ""
+    monkeypatch.setattr(sp.kho_tieng_san, "lay", lambda *_a, **_k: _wav())
+    assert pipeline._kho_co_san_tieng(QUESTION, session) == ANSWER_ID
+    assert pipeline._kho_co_san_tieng("mất thẻ thì phải làm thế nào bây giờ", session) == ""
+    assert pipeline._kho_co_san_tieng(QUESTION + " 200 triệu", session) == ""

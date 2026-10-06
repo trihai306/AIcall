@@ -392,6 +392,8 @@ def direct_by_example(
     question: str,
     ranked: Sequence[tuple[str, float]],
     bank: Mapping[str, Mapping[str, Any]],
+    *,
+    advance: bool = True,
 ) -> dict[str, Any] | None:
     """Đọc thẳng dòng có câu hỏi mẫu TRÙNG lời khách, không gọi mô hình.
 
@@ -437,7 +439,8 @@ def direct_by_example(
         luot = _luot_xoay.get(key, 0)
         if len(_luot_xoay) > 5000:
             _luot_xoay.clear()
-        _luot_xoay[key] = luot + 1
+        if advance:  # xem trước (advance=False) không được ăn mất một lượt xoay
+            _luot_xoay[key] = luot + 1
         answer_id = cung_y[luot % len(cung_y)]
         score = dict(khop)[answer_id]
     row = dict(bank[answer_id])
@@ -501,6 +504,7 @@ def fast_direct(
     provenance: ProvenanceMap | None = None,
     excluded_ids: Set[str] = frozenset(),
     is_current: FreshnessCheck | None = None,
+    advance: bool = True,
 ) -> dict[str, Any] | None:
     """Đường nhanh: tra chỉ mục, KHÔNG nhúng câu hỏi, KHÔNG gọi mô hình.
 
@@ -521,7 +525,8 @@ def fast_direct(
     if ids:
         usable = _con_dung_duoc(ids, question, product, bank_name, bank, provenance,
                                 excluded_ids, is_current)
-        row = direct_by_example(question, [(answer_id, 1.0) for answer_id in usable], bank)
+        row = direct_by_example(question, [(answer_id, 1.0) for answer_id in usable], bank,
+                                advance=advance)
         if row is not None:
             return row
     if len(words) >= 3:
