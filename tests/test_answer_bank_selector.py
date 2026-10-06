@@ -794,3 +794,20 @@ def test_single_digit_term_is_part_of_the_question():
     row, _ = best_candidate(rag=RagFake(), bank=bank, vector_bank={"ab_3": _vec(0.95)},
                             question="lãi suất tiết kiệm 6 tháng là bao nhiêu", product="tiết kiệm")
     assert not (row or {}).get("khop_vi_du")
+
+
+def test_general_row_about_another_product_is_not_served():
+    # 06-10-2026: phiên vay mua nhà nhận "vay tín chấp miễn phí trả trước hạn".
+    q = "trả nợ trước hạn có mất phí không"
+    bank = {
+        "ab_tc": {"id": "ab_tc", "san_pham": "", "cau_hoi": [q],
+                  "tra_loi": "Dạ, vay tín chấp miễn phí trả trước hạn ạ."},
+        "ab_ca_hai": {"id": "ab_ca_hai", "san_pham": "", "cau_hoi": [q],
+                      "tra_loi": "Dạ, vay tín chấp miễn phí trả trước hạn. Vay mua nhà miễn phí sau 3 năm ạ."},
+    }
+    vectors = {k: _vec(0.9) for k in bank}
+    llm = LLMFake()
+    for _ in range(3):
+        row = _choose(llm, question=q, product="vay mua nhà", bank=bank, vector_bank=vectors)
+        assert row["id"] == "ab_ca_hai"
+    assert _choose(llm, question=q, product="vay tín chấp", bank=bank, vector_bank=vectors)["id"] in bank

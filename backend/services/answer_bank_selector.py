@@ -128,6 +128,27 @@ _CHU_DE_HEP = (
 )
 
 
+_TEN_SAN_PHAM = ("vay tin chap", "vay mua nha", "the tin dung", "tiet kiem")
+
+
+def _noi_san_pham_khac(row: Mapping[str, Any], product: str) -> bool:
+    """Đáp án CHUNG (không gắn sản phẩm) nhưng chỉ nói về sản phẩm khác.
+
+    FAQ sinh ra dòng không có `san_pham` như "vay tín chấp miễn phí trả trước
+    hạn"; cổng sản phẩm không chặn được dòng trống nên phiên VAY MUA NHÀ hỏi
+    "trả nợ trước hạn có mất phí không" đã nhận đúng câu đó (06-10-2026) - sai,
+    vay mua nhà chỉ miễn phí sau 3 năm. Dòng nhắc cả sản phẩm đang tư vấn thì giữ.
+    """
+    current = _norm(product)
+    if not current or str(row.get("san_pham") or "").strip():
+        return False
+    answer = f" {_norm(str(row.get('tra_loi') or ''))} "
+    named = [name for name in _TEN_SAN_PHAM if f" {name} " in answer]
+    if not named:
+        return False
+    return not any(name in current or current in name for name in named)
+
+
 # Ngoại lệ đảo nghĩa: đáp án nói về chúng mà câu hỏi không nhắc thì là lạc đề.
 # Bộ học từng gắn "ứng tiền mặt không được miễn lãi" cho câu "thẻ tín dụng miễn
 # lãi bao nhiêu ngày" (02-10-2026) - khách hỏi chung lại nghe ngoại lệ.
@@ -467,6 +488,7 @@ def _con_dung_duoc(
     blocked |= set(_bank_scope_exclusions(question, product, bank_name, sub, provenance))
     return [answer_id for answer_id, row in sub.items()
             if answer_id not in blocked and not _thieu_chu_de(row, question)
+            and not _noi_san_pham_khac(row, product)
             and _is_current(is_current, answer_id, snapshot=row)]
 
 
@@ -594,6 +616,7 @@ def best_candidate(
                 question, product, bank_name, bank, provenance)))
     ranked = [item for item in ranked
               if item[1] >= NGUONG_DIEM and not _thieu_chu_de(bank[item[0]], question)
+              and not _noi_san_pham_khac(bank[item[0]], product)
               and _is_current(is_current, item[0], snapshot=bank[item[0]])]
     if not ranked:
         return None, q
@@ -725,6 +748,7 @@ async def choose(
         return None
     ranked = [item for item in ranked
               if item[1] >= NGUONG_DIEM and not _thieu_chu_de(bank[item[0]], question)
+              and not _noi_san_pham_khac(bank[item[0]], product)
               and _is_current(is_current, item[0], snapshot=bank[item[0]])]
     if not ranked:
         return None

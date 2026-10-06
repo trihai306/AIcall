@@ -764,3 +764,10 @@ def test_filler_thuc_hien_is_rejected_but_real_usage_kept(answer, ok):
     if not ok:
         assert "thực hiện" in why
     assert 'Không chèn cụm "anh chị thực hiện"' in learning._generation_prompt("x", 1, 1)
+
+
+def test_trailing_dot_before_a_is_normalised():
+    source = "Trả góp 0% lãi suất tại các đối tác."
+    item, _ = learning._validate_item({"questions": [], "answer": "Dạ, anh chị được trả góp 0% lãi suất tại các đối tác. ạ",
+                                       "evidence": source}, source, 4)
+    assert item["tra_loi"].endswith("đối tác ạ.")

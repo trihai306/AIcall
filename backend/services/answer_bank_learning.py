@@ -513,6 +513,8 @@ def _lac_chu_de(item: dict, question: str) -> bool:
 
 def _validate_item(raw: dict, source: str, variants: int) -> tuple[dict | None, str]:
     answer = _normal(str(raw.get("answer") or raw.get("tra_loi") or ""))
+    # Qwen hay viết "...đối tác. ạ": TTS đọc "ạ" thành một câu rời.
+    answer = re.sub(r"\s*[.,]\s*ạ\.?$", " ạ.", answer)
     evidence = _normal(str(raw.get("evidence") or raw.get("nguon") or ""))
     questions = raw.get("questions") or raw.get("cau_hoi") or []
     if not isinstance(questions, list) or any(not isinstance(q, str) for q in questions):
