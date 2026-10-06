@@ -301,3 +301,9 @@ def test_chu_de_co_trong_tai_lieu_hoac_doi_san_pham_khong_bi_chan(tl, cau):
 def test_chua_co_tai_lieu_thi_luat_khoan_vay_khong_tra_loi_the_va_tiet_kiem(cau):
     # Kịch bản riêng (Shinhan) không nạp tài liệu sản phẩm chung: tai_lieu rỗng.
     assert tra_loi(cau, "") is None
+
+
+def test_cau_tu_dong_khong_lap_da():
+    from backend.pipeline.tra_loi_khoan_vay import _cau_tu_dong
+    assert _cau_tu_dong("Dạ, mức lãi này có thể khiến mình cân nhắc.") == "Dạ, mức lãi này có thể khiến mình cân nhắc ạ."
+    assert _cau_tu_dong("trong vòng 24 giờ") == "Dạ trong vòng 24 giờ ạ."

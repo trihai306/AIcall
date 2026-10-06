@@ -120,6 +120,12 @@ class Settings(BaseSettings):
     # Dựng cả bảng hỏi-đáp lúc khởi động; lượt thường gặp dựng NỀN sau lần
     # nói đầu tiên (chữ phụ thuộc tên ngân hàng/nhân viên/sản phẩm của kịch bản).
     tieng_san_bat: bool = True
+    # Câu đệm ("Dạ về lãi suất bên em,") phát trước câu trả lời. TẮT theo quyết
+    # định của bên A 06-10-2026: đáp án phần lớn đã nằm sẵn trong kho kèm tiếng
+    # (trả lời sau 40-150ms) nên câu đệm dài 1,2-1,5s chỉ đẩy lùi nội dung. Cái
+    # giá: lượt phải nhờ mô hình sinh câu trả lời sẽ IM trong lúc chờ (0,6-2s).
+    # Bật lại bằng CAU_DEM_BAT=true; mã và kho câu đệm vẫn còn nguyên.
+    cau_dem_bat: bool = False
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08

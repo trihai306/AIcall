@@ -324,3 +324,21 @@ def test_filler_kept_when_voice_missing_or_question_differs(pipeline, monkeypatc
     assert pipeline._kho_co_san_tieng(QUESTION, session) == ANSWER_ID
     assert pipeline._kho_co_san_tieng("mất thẻ thì phải làm thế nào bây giờ", session) == ""
     assert pipeline._kho_co_san_tieng(QUESTION + " 200 triệu", session) == ""
+
+
+def test_filler_is_off_by_default_end_to_end(pipeline, monkeypatch):
+    """Câu đệm mặc định tắt: lượt không trúng kho cũng không phát tiếng đệm."""
+    from backend.config import Settings
+    from backend.pipeline import streaming_pipeline as sp
+    assert Settings.model_fields["cau_dem_bat"].default is False
+    assert sp.settings.cau_dem_bat is False
+    del pipeline._send_filler            # dùng hàm thật của lớp
+    monkeypatch.setattr(sp, "lay_kho", lambda: SimpleNamespace(tinh_huong=[], duoi=[]))
+    pipeline.tts.filler_dai_nhat_ms = lambda *_a, **_k: 0
+    pipeline.tts.pick_filler = lambda *_a, **_k: (_wav(), "x", None)   # nếu bị gọi là có tiếng đệm
+    session, sink = _session(), Sink()
+    asyncio.run(pipeline.process_text_turn(QUESTION, session, sink))
+    complete = next(e for e in sink.events if e["type"] == "turn_complete")
+    assert not any(e["type"] == "audio" and e.get("is_filler") for e in sink.events)
+    assert not complete["metrics"].get("filler_text")
+    assert complete["full_response"] == ANSWER

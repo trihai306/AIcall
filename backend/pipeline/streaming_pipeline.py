@@ -474,6 +474,8 @@ class StreamingPipeline:
         Giữ tham chiếu mạnh trong `_bg_writes` theo đúng khuôn `_ham_cache_tts`:
         task rơi khỏi tầm tham chiếu thì bị thu gom giữa chừng.
         """
+        if not settings.cau_dem_bat:
+            return  # câu đệm tắt: khỏi tốn một lượt LLM nghĩ câu không ai phát
         if session.tinh_huong is not None or session.spec_cau_dem:
             return
         if getattr(session, "_cau_dem_dang_nghi", False):
@@ -1542,6 +1544,14 @@ class StreamingPipeline:
         if do_phu is not None:
             metrics["tinh_huong_do_phu"] = round(do_phu, 3)
             metrics["tinh_huong_diem"] = round(session.tinh_huong[2], 3)
+
+        # Câu đệm TẮT (config.cau_dem_bat): không phát tiếng nào. Phần phân loại
+        # tình huống phía trên vẫn chạy vì dòng bảng hỏi-đáp theo tình huống
+        # (khách chê lãi cao...) được chọn bằng `tinh_huong_id`.
+        if not settings.cau_dem_bat:
+            metrics["filler_bo_qua"] = "da tat cau dem"
+            metrics["tinh_huong_id"] = id_th
+            return
 
         # Không nhận ra tình huống -> THÔI, đừng phát rổ chung. Xem
         # `filler_pick.nen_bo_cau_dem` cho cái giá đã đo của quyết định này.

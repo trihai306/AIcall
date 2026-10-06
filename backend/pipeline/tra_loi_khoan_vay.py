@@ -104,7 +104,10 @@ def _cau_tu_dong(gia_tri: str) -> str:
     c = re.sub(r"\s+", " ", (gia_tri or "").strip().strip('"')).strip().rstrip(".,;")
     if not c:
         return ""
-    if not _bo_dau(c).startswith("da "):
+    # "Dạ, mức lãi này..." cũng là đã có "Dạ": chỉ so "da " thì dấu phẩy làm lọt
+    # và ra "Dạ dạ, mức lãi này" (lộ ra 06-10-2026 khi tắt câu đệm - trước đó
+    # bước nối sau câu đệm cắt mất chữ "Dạ" thừa).
+    if not re.match(r"da\b", _bo_dau(c)):
         c = "Dạ " + c[0].lower() + c[1:]
     if not _bo_dau(c).endswith(" a"):
         c += " ạ"

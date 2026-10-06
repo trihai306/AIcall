@@ -208,7 +208,10 @@ async def startup(state: AppState):
     logger.info("[6/6] Loading F5-TTS Vietnamese...")
     try:
         state.tts.load()
-        await state.tts.dung_fillers(lay_kho())
+        if settings.cau_dem_bat:
+            await state.tts.dung_fillers(lay_kho())
+        else:
+            logger.info("  Câu đệm đang TẮT (CAU_DEM_BAT=false): bỏ qua dựng tiếng câu đệm")
         logger.info("  TTS: OK")
 
         # Tiếng sẵn cho bảng hỏi-đáp (services/tieng_san.py): chữ cố định,
