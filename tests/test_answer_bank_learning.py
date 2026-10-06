@@ -749,3 +749,18 @@ def test_history_question_already_in_bank_is_not_generated_again(monkeypatch, tm
     assert asyncio.run(worker._learn_history([doc], {"variants_per_answer": 1})) == []
     assert conn.execute("SELECT status FROM answer_bank_history").fetchone()[0] == "learned"
     assert conn.execute("SELECT COUNT(*) FROM hoi_dap").fetchone()[0] == learning._VARIANTS_PER_QUESTION
+
+
+@pytest.mark.parametrize("answer, ok", [
+    ("Dạ, anh chị thực hiện sau khi phê duyệt trong vòng 24 giờ ạ.", False),
+    ("Dạ, anh chị thực hiện mở thẻ sẽ được miễn phí năm đầu ạ.", False),
+    ("Dạ, anh chị thực hiện giao dịch ứng trước tiền mặt sẽ không được miễn lãi ạ.", True),
+    ("Dạ, anh chị mở thẻ sẽ được miễn phí năm đầu ạ.", True),
+])
+def test_filler_thuc_hien_is_rejected_but_real_usage_kept(answer, ok):
+    source = "Giải ngân trong vòng 24 giờ. Mở thẻ miễn phí năm đầu. Giao dịch ứng trước tiền mặt không được miễn lãi."
+    item, why = learning._validate_item({"questions": [], "answer": answer, "evidence": "Mở thẻ miễn phí năm đầu."}, source, 4)
+    assert (item is not None) is ok, why
+    if not ok:
+        assert "thực hiện" in why
+    assert 'Không chèn cụm "anh chị thực hiện"' in learning._generation_prompt("x", 1, 1)

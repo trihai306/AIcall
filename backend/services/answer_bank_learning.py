@@ -497,6 +497,15 @@ _REFUSAL = re.compile(
     r"(?:thông tin|cụ thể|rõ|quy định|căn cứ)|tài liệu (?:chỉ|không|chưa)|em xin lỗi")
 
 
+# "anh chị thực hiện" làm TỪ ĐỆM: "anh chị thực hiện sau khi phê duyệt trong vòng
+# 24 giờ", "anh chị thực hiện miễn phí thường niên". Lời dặn cũ của prompt khiến
+# Qwen chép cụm này vào 300/2.481 đáp án (06-10-2026). "thực hiện giao dịch /
+# thanh toán / thủ tục..." là cách nói đúng, không bắt.
+_FILLER_THUC_HIEN = re.compile(
+    r"(?i)(?:anh/?\s?chị|khách|mình) thực hiện "
+    r"(?!giao dịch|thanh toán|thủ tục|đăng ký|các bước|theo hướng dẫn|việc|yêu cầu|khoản|lệnh)")
+
+
 def _lac_chu_de(item: dict, question: str) -> bool:
     from backend.services.answer_bank_selector import _thieu_chu_de
     return _thieu_chu_de(item, question)
@@ -517,6 +526,8 @@ def _validate_item(raw: dict, source: str, variants: int) -> tuple[dict | None, 
         return None, "câu trả lời đảo nghĩa của bằng chứng"
     if _REFUSAL.search(answer):
         return None, "câu trả lời là từ chối, không có căn cứ trong nguồn"
+    if _FILLER_THUC_HIEN.search(answer):
+        return None, "câu trả lời chèn cụm đệm 'anh chị thực hiện'"
     # loc_cap uses its first argument only as a nonempty identity check;
     # answer style and numeric grounding remain independent of examples.
     ok, why = qa.loc_cap(answer, answer, source)
@@ -568,7 +579,9 @@ Nếu câu hỏi bắt buộc không có căn cứ thì bỏ qua. Trả lời 1-
 kết thúc ạ. Không thêm hoặc đổi bất kỳ con số nào.
 Mọi cách hỏi phải giữ cùng sản phẩm và nghiệp vụ; không đổi câu hỏi về thẻ
 thành khoản vay. Giữ đủ các bước và điều kiện cần để trả lời trọn ý. Nếu tài
-liệu hướng dẫn khách thực hiện thì nói anh chị thực hiện, không nói em làm.
+liệu hướng dẫn khách tự làm một việc thì chủ ngữ là anh chị kèm ĐỘNG TỪ CỤ THỂ
+(anh chị mở ứng dụng, anh chị cần nộp, anh chị được vay...), không nói em làm.
+Không chèn cụm "anh chị thực hiện" làm từ đệm trước một động từ hay một dữ kiện.
 
 Mỗi item bắt buộc có evidence là một câu/trích đoạn CHÉP NGUYÊN VĂN từ tài liệu
 và trực tiếp chứng minh answer. Chỉ trả JSON array:
@@ -776,6 +789,10 @@ async def generate_document(doc: Document, count: int, variants: int,
                 # Bản lưu tạm của lần dựng trước có thể chưa qua luật mới.
                 reasons["câu trả lời là từ chối, không có căn cứ trong nguồn"] = (
                     reasons.get("câu trả lời là từ chối, không có căn cứ trong nguồn", 0) + 1)
+                continue
+            if _FILLER_THUC_HIEN.search(item.get("tra_loi", "")):
+                reasons["câu trả lời chèn cụm đệm 'anh chị thực hiện'"] = (
+                    reasons.get("câu trả lời chèn cụm đệm 'anh chị thực hiện'", 0) + 1)
                 continue
             kept = [q for q in item["cau_hoi"] if not _lac_chu_de(item, q)]
             if len(kept) < len(item["cau_hoi"]):
