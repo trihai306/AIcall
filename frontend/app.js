@@ -4316,7 +4316,7 @@ function knAutoEsc(value) { return escapeHtml(String(value ?? '')); }
 
 function knAutoPageChanged(name) {
   if (name !== 'knowledge') dongHoiDapTriThuc();
-  if (name === 'knowledge') { loadKnThieu(); knTuHoiXem(); }
+  if (name === 'knowledge') { loadKnThieu(); knTuHoiXem(); loadKnNhom(); }
   else if (knTuHoiTimer) { clearInterval(knTuHoiTimer); knTuHoiTimer = null; }
   if (knAutoTimer) { clearInterval(knAutoTimer); knAutoTimer = null; }
   if (name === 'knowledge' && !document.hidden) {
@@ -4572,6 +4572,40 @@ async function knTuHoiChay() {
     else thongBao('AI bắt đầu tự đặt câu hỏi. Việc này chạy nền và tự nhường khi có cuộc gọi.');
     knTuHoiXem();
   } catch (error) { thongBao(`Chưa chạy được: ${error.message}`, 'loi'); }
+}
+
+// Đáp án chung gom theo tình huống của khách.
+let knNhomData = [];
+let knNhomChon = '';
+
+function veKnNhom() {
+  const chips = document.getElementById('knNhomChips');
+  const list = document.getElementById('knNhomList');
+  if (!chips || !list) return;
+  chips.innerHTML = knNhomData.map(n => `<button class="chip${n.nhom === knNhomChon ? ' active' : ''}" data-nhom="${knAutoEsc(n.nhom)}">${knAutoEsc(n.nhom)} · ${n.so_dap_an}</button>`).join('');
+  chips.querySelectorAll('button').forEach(nut => nut.addEventListener('click', () => {
+    knNhomChon = knNhomChon === nut.dataset.nhom ? '' : nut.dataset.nhom;
+    veKnNhom();
+  }));
+  const nhom = knNhomData.find(n => n.nhom === knNhomChon);
+  list.innerHTML = !nhom ? '' : nhom.items.map(item => `<div class="kn-thieu-item">
+      <div class="kn-thieu-q">${knAutoEsc((item.cau_hoi || []).join(' · ') || '(chưa có cách hỏi mẫu)')}</div>
+      <div class="kn-thieu-ai"><b>AI trả lời:</b> ${knAutoEsc(item.tra_loi)}${item.bat ? '' : ' <span class="text-amber-400">(đang tắt)</span>'}</div>
+    </div>`).join('');
+}
+
+async function loadKnNhom(showError = false) {
+  try {
+    knNhomData = (await knAutoRequest('/api/knowledge/theo-tinh-huong')).nhom || [];
+    const tong = document.getElementById('knNhomTong');
+    if (tong) tong.textContent = `${knNhomData.reduce((a, n) => a + n.so_dap_an, 0)} câu trả lời · ${knNhomData.reduce((a, n) => a + n.so_cach_hoi, 0)} cách khách nói`;
+    if (!knNhomData.length) {
+      document.getElementById('knNhomChips').innerHTML = '<div class="lk-empty">Chưa có câu trả lời nào được gắn tình huống.</div>';
+      document.getElementById('knNhomList').innerHTML = '';
+      return;
+    }
+    veKnNhom();
+  } catch (error) { if (showError) thongBao(`Không tải được: ${error.message}`, 'loi'); }
 }
 
 let knDuyetIds = [];

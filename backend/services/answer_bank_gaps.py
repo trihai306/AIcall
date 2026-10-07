@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS answer_bank_misses (
 CREATE INDEX IF NOT EXISTS ix_answer_bank_misses_status ON answer_bank_misses(status, count);
 CREATE TABLE IF NOT EXISTS answer_bank_pending (
  hoi_dap_id TEXT PRIMARY KEY, created_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS answer_bank_groups (
+ hoi_dap_id TEXT PRIMARY KEY, nhom TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS answer_bank_route_stats (
  day TEXT NOT NULL, mode TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0,
  PRIMARY KEY(day, mode));
@@ -382,3 +384,67 @@ def duyet(ids, chap_nhan: bool) -> list[str]:
         conn.executemany("DELETE FROM answer_bank_pending WHERE hoi_dap_id=?",
                          [(i,) for i in dang_cho])
     return dang_cho if chap_nhan else []
+
+
+# ── 5. Nhóm tình huống của đáp án ────────────────────────────────────────
+#
+# Kho vài nghìn đáp án thì "khách đang ở tình huống nào" (bận, từ chối, nghi
+# ngờ, muốn nghe tiếp...) là thứ người soạn cần để tìm và soát, và là thứ Qwen
+# cần để phân biệt hai đáp án gần chữ nhau: "anh không cần" lúc mở đầu khác
+# "anh không cần hỏi gì thêm" lúc kết thúc. Nhãn nằm ở bảng riêng vì `hoi_dap`
+# là bảng dùng chung với dòng soạn tay đời cũ.
+
+_nhom_cache: tuple[object, dict[str, str]] | None = None
+
+
+def dat_nhom(answer_id: str, nhom: str) -> None:
+    global _nhom_cache
+    conn = _conn()
+    if conn is None or not answer_id:
+        return
+    nhom = (nhom or "").strip()[:80]
+    with db.write_lock, conn:
+        if nhom:
+            conn.execute("INSERT INTO answer_bank_groups VALUES (?,?) ON CONFLICT(hoi_dap_id) "
+                         "DO UPDATE SET nhom=excluded.nhom", (answer_id, nhom))
+        else:
+            conn.execute("DELETE FROM answer_bank_groups WHERE hoi_dap_id=?", (answer_id,))
+    _nhom_cache = None
+
+
+def nhom_cua(answer_id: str) -> str:
+    """Nhóm tình huống của một đáp án, "" nếu chưa gắn. Đọc từ bản nhớ đệm:
+    hàm này nằm trên đường chọn đáp án của cuộc gọi."""
+    global _nhom_cache
+    conn = _conn()
+    if conn is None:
+        return ""
+    if _nhom_cache is None or _nhom_cache[0] is not conn:
+        try:
+            _nhom_cache = (conn, dict(conn.execute(
+                "SELECT hoi_dap_id,nhom FROM answer_bank_groups").fetchall()))
+        except Exception:
+            return ""
+    return _nhom_cache[1].get(answer_id, "")
+
+
+def theo_nhom() -> list[dict]:
+    """Các đáp án đã gắn nhóm tình huống, gom theo nhóm (cả dòng đang tắt)."""
+    conn = _conn()
+    if conn is None:
+        return []
+    rows = conn.execute(
+        "SELECT g.nhom,h.id,h.cau_hoi,h.tra_loi,h.bat FROM answer_bank_groups g "
+        "JOIN hoi_dap h ON h.id=g.hoi_dap_id ORDER BY g.nhom,h.created_at,h.id").fetchall()
+    ra: dict[str, dict] = {}
+    for nhom, answer_id, cau_hoi, tra_loi, bat in rows:
+        try:
+            cach_hoi = json.loads(cau_hoi or "[]")
+        except ValueError:
+            cach_hoi = []
+        muc = ra.setdefault(nhom, {"nhom": nhom, "so_dap_an": 0, "so_cach_hoi": 0, "items": []})
+        muc["so_dap_an"] += 1
+        muc["so_cach_hoi"] += len(cach_hoi)
+        muc["items"].append({"id": answer_id, "cau_hoi": cach_hoi, "tra_loi": tra_loi,
+                             "bat": bool(bat)})
+    return list(ra.values())

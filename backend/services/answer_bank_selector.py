@@ -412,10 +412,11 @@ def direct_by_example(
     hai dòng không bao nhau (7.9 và 8.5), hoặc cả hai không có số mà khác hẳn
     chữ (vay thế chấp / vay tín chấp). Có mâu thuẫn thì để Qwen chọn như cũ.
     """
-    if _personal_result_request(question) or _is_follow_up(question):
+    if _personal_result_request(question):
         return None
     if not trung_nguyen_chu and (
-            _opposite_request(question) or len(_intent_parts(question)) > 1):
+            _is_follow_up(question) or _opposite_request(question)
+            or len(_intent_parts(question)) > 1):
         return None
     khop = [(answer_id, score) for answer_id, score in ranked[:300]
             if str(bank[answer_id].get("tra_loi") or "").strip()
@@ -536,16 +537,21 @@ def fast_direct(
     mẫu, hoặc trùng câu Qwen đã phân xử trong tiến trình này, thì cả ba khoản
     đó đều thừa.
     """
-    if (len((question or "").strip()) < 4 or not bank
-            or _personal_result_request(question) or _is_follow_up(question)):
+    if len((question or "").strip()) < 4 or not bank or _personal_result_request(question):
         return None
+    # Câu mở bằng "thế/vậy/còn" thường là câu nối tiếp, phải neo vào lượt trước.
+    # Nhưng "thế nhé em", "vậy thôi nhé em" là lời chào kết thúc có sẵn câu mẫu:
+    # coi là nối tiếp thì bộ chọn ghép nó với lượt trước ("anh muốn đăng ký") và
+    # đọc lại đáp án đăng ký (đo 07-10-2026). Trùng NGUYÊN CHỮ một câu mẫu thì
+    # đọc thẳng; còn lại vẫn đi đường nối tiếp như cũ.
+    noi_tiep = _is_follow_up(question)
     # Hai cổng dưới đây đoán theo mặt chữ và bắt nhầm nhiều câu thường ngày: "sao
     # biết bên em KHÔNG PHẢI lừa đảo" bị coi là lời từ chối, "anh phải bàn VỚI
     # vợ đã" bị coi là hai yêu cầu (đo 07-10-2026: câu sau đã có trong sổ ghi nhớ
     # mà lần nào cũng quay lại Qwen, 560ms thay vì 45ms). Chúng chỉ còn chặn
     # phép so LỎNG theo tập từ; câu trùng nguyên chữ một câu mẫu, hoặc câu Qwen
     # đã phân xử và đã qua `_covers_all_intents`, thì không cần đoán nữa.
-    mo_ho = _opposite_request(question) or len(_intent_parts(question)) > 1
+    mo_ho = noi_tiep or _opposite_request(question) or len(_intent_parts(question)) > 1
     index = _chi_muc_cua(bank)
     words = khoa_cau_hoi(question)
     ids = list(index.get(_norm(question), ()))
@@ -558,7 +564,7 @@ def fast_direct(
                                 advance=advance, trung_nguyen_chu=mo_ho)
         if row is not None:
             return row
-    if len(words) >= 3 and not _opposite_request(question):
+    if len(words) >= 3 and not noi_tiep and not _opposite_request(question):
         remembered, answer = _da_chon.get((_norm(product), _norm(bank_name), words), ("", ""))
         # Đáp án bị sửa tại chỗ sau lúc Qwen chọn thì lựa chọn đó hết hiệu lực.
         if (remembered and str(bank.get(remembered, {}).get("tra_loi") or "") == answer
@@ -684,6 +690,20 @@ def _history_data(history: Sequence[Mapping[str, Any]] | None, question: str) ->
     return turns[-4:]
 
 
+# Tài liệu chỉ chứa lời giao tiếp, không có nội dung sản phẩm
+# (scripts/gieo_giao_tiep_chung.py). Mọi đợt gieo sau đặt tên theo tiền tố này.
+TAI_LIEU_GIAO_TIEP = "faq/giao_tiep"
+
+
+def _nhom_tinh_huong(row: Mapping[str, Any]) -> str:
+    """Nhãn tình huống người soạn đã gắn cho đáp án (bận, từ chối, nghi ngờ...)."""
+    try:
+        from backend.services.answer_bank_gaps import nhom_cua
+        return nhom_cua(str(row.get("id") or ""))
+    except Exception:
+        return ""
+
+
 def _prompt(
     question: str,
     product: str,
@@ -699,6 +719,7 @@ def _prompt(
         "candidates": [
             {
                 "choice": alias,
+                "situation": _nhom_tinh_huong(row),
                 "product": _clean_data(row.get("san_pham", ""), 100),
                 "prepared_answer": str(row.get("tra_loi") or ""),
                 "prepared_questions": [
@@ -719,6 +740,8 @@ def _prompt(
         "current_product là ngữ cảnh đang tư vấn; không lấy sản phẩm cũ trong recent_turns. "
         "product trống là thông tin chung từ nguồn đã lọc, vẫn được chọn nếu đáp án phù hợp "
         "với sản phẩm. Không chọn ứng viên ghi rõ sản phẩm khác.\n"
+        "situation (nếu có) là tình huống của khách mà đáp án đó dành cho; chỉ chọn khi "
+        "khách đang đúng ở tình huống ấy theo recent_turns.\n"
         "Lời khách có thể bị nhận dạng giọng nói sai chữ; dùng ngữ cảnh để hiểu ý, "
         "không tự suy đoán số hoặc dữ kiện.\n"
         "Các thao tác bật/tắt, mở/khóa, dùng ở nước ngoài/quốc tế là cách diễn đạt cùng ý "
@@ -784,6 +807,17 @@ async def choose(
               if item[1] >= NGUONG_DIEM and not _thieu_chu_de(bank[item[0]], question)
               and not _noi_san_pham_khac(bank[item[0]], product)
               and _is_current(is_current, item[0], snapshot=bank[item[0]])]
+    if retrieval_question != question:
+        # Câu nối tiếp ("thế phí thì sao") được nhúng KÈM lượt trước làm neo. Nếu
+        # lượt trước là lời xã giao thì cosine kéo về đúng đáp án xã giao đó và
+        # Qwen đọc lại câu chào kết thúc cho một câu hỏi về phí (đo 07-10-2026).
+        # Câu nối tiếp hỏi tiếp về NỘI DUNG, nên bỏ các đáp án giao tiếp chung.
+        # Đáp án bộ dựng tự sinh từ tài liệu giao tiếp không có nhãn tình huống,
+        # nên xét cả nguồn: lần thử đầu "còn hồ sơ thì sao" vẫn lọt một dòng như vậy.
+        ranked = [item for item in ranked
+                  if not _nhom_tinh_huong(bank[item[0]])
+                  and not str((provenance or {}).get(item[0], {}).get("source_path", ""))
+                  .startswith(TAI_LIEU_GIAO_TIEP)]
     if not ranked:
         return None
 

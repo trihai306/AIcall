@@ -60,6 +60,7 @@ class HoiDapSave(BaseModel):
     cau_hoi: list[str] = Field(default_factory=list, max_length=100)
     tra_loi: str = Field(min_length=1, max_length=20000)
     bat: bool = True
+    tinh_huong: str | None = Field(default=None, max_length=80)
 
 
 class HoiDapEdit(HoiDapSave):
@@ -610,9 +611,13 @@ async def them_hoi_dap(body: HoiDapSave):
     from backend.services import answer_bank_editor as editor
     p = _editor_source(body.nhom, body.ten)
     try:
-        return await editor.save(body.nhom, p.stem, body.cau_hoi, body.tra_loi, body.bat)
+        saved = await editor.save(body.nhom, p.stem, body.cau_hoi, body.tra_loi, body.bat)
     except editor.EditorError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
+    if body.tinh_huong is not None:
+        from backend.services import answer_bank_gaps as gaps
+        gaps.dat_nhom(saved["item"]["id"], body.tinh_huong)
+    return saved
 
 
 @router.patch("/hoi-dap/{answer_id}")
@@ -745,6 +750,24 @@ async def cho_duyet_quyet_dinh(body: DuyetDapAn):
     bat = gaps.duyet(body.ids, body.chap_nhan)
     voice = await editor._publish(bat) if bat else None
     return {"ok": True, "da_bat": len(bat), "con_lai": gaps.so_cho_duyet(), "voice": voice}
+
+
+class GanTinhHuong(BaseModel):
+    tinh_huong: str = Field(default="", max_length=80)
+
+
+@router.get("/theo-tinh-huong")
+async def theo_tinh_huong():
+    """Đáp án gom theo nhóm tình huống của khách (bận, từ chối, nghi ngờ...)."""
+    from backend.services import answer_bank_gaps as gaps
+    return {"nhom": gaps.theo_nhom()}
+
+
+@router.post("/hoi-dap/{answer_id}/tinh-huong")
+async def gan_tinh_huong(answer_id: str, body: GanTinhHuong):
+    from backend.services import answer_bank_gaps as gaps
+    gaps.dat_nhom(answer_id, body.tinh_huong)
+    return {"ok": True}
 
 
 @router.get("/lua-chon-da-nho")

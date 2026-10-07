@@ -162,3 +162,33 @@ def test_dap_an_tu_soan_cho_duyet_roi_moi_bat(so):
     assert so.execute("SELECT hoi_dap_id FROM answer_bank_entries").fetchall() == [("ab_a",)]
     # Id không nằm trong hàng chờ thì không được bật/xoá qua đường này.
     assert gaps.duyet(["ab_a"], False) == [] and gaps.so_cho_duyet() == 0
+
+
+def test_nhom_tinh_huong_gan_doc_va_gom(so):
+    so.execute("ALTER TABLE hoi_dap ADD COLUMN cau_hoi TEXT")
+    so.execute("ALTER TABLE hoi_dap ADD COLUMN created_at REAL")
+    so.execute("INSERT INTO hoi_dap (id,tra_loi,bat,cau_hoi) VALUES ('ab_x','Dạ vâng ạ.',1,'[\"anh đang họp\",\"chị đang bận\"]')")
+    so.execute("INSERT INTO hoi_dap (id,tra_loi,bat,cau_hoi) VALUES ('ab_y','Dạ em chào ạ.',0,'[\"thế nhé em\"]')")
+    gaps.dat_nhom("ab_x", "Khách bận")
+    gaps.dat_nhom("ab_y", "Kết thúc cuộc gọi")
+    assert gaps.nhom_cua("ab_x") == "Khách bận" and gaps.nhom_cua("khong_co") == ""
+    nhom = {n["nhom"]: n for n in gaps.theo_nhom()}
+    assert nhom["Khách bận"]["so_dap_an"] == 1 and nhom["Khách bận"]["so_cach_hoi"] == 2
+    assert nhom["Kết thúc cuộc gọi"]["items"][0]["bat"] is False
+    # Bộ chọn đưa nhãn này cho Qwen.
+    assert '"situation":"Khách bận"' in selector._prompt(
+        "anh đang bận", "", "", [], [("C1", {"id": "ab_x", "tra_loi": "Dạ vâng ạ.", "cau_hoi": []})])
+    gaps.dat_nhom("ab_x", "")
+    assert gaps.nhom_cua("ab_x") == ""
+
+
+def test_cau_chao_ket_thuc_mo_bang_the_vay_doc_thang_cau_mau(so):
+    bank = {"ab_k": {"id": "ab_k", "cau_hoi": ["thế nhé em", "vậy thôi nhé em"],
+                     "tra_loi": "Dạ vâng ạ. Em chào anh chị ạ.", "san_pham": ""},
+            "ab_d": {"id": "ab_d", "cau_hoi": ["anh muốn đăng ký"],
+                     "tra_loi": "Dạ em xin ghi nhận nhu cầu ạ.", "san_pham": ""}}
+    for cau in ("thế nhé em", "Vậy thôi nhé em."):
+        row = selector.fast_direct(cau, bank)
+        assert row is not None and row["id"] == "ab_k"
+    # Câu nối tiếp thật, không trùng câu mẫu nào: vẫn phải đi đường neo lượt trước.
+    assert selector.fast_direct("thế phí thì sao", bank) is None

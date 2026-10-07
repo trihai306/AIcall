@@ -148,21 +148,42 @@ BANG = [
 ]
 
 
-def viet_tai_lieu(goc: Path) -> Path:
-    p = goc / "knowledge" / NHOM / f"{TEN}.md"
+# Bộ thứ hai nằm ở TÀI LIỆU RIÊNG. Không được thêm dòng vào tài liệu đã gieo:
+# đổi nội dung một tài liệu nguồn là kho tự TẮT mọi đáp án thuộc tài liệu đó (kể
+# cả dòng soạn tay) vì mã băm nguồn không còn khớp. Muốn thêm đợt mới thì tạo
+# một tài liệu mới với tên khác.
+TEN_BO_HAI = "giao_tiep_theo_tinh_huong"
+
+
+def cac_bo():
+    """[(tên tài liệu, [(nhóm, tình huống, cách nói, trả lời)])]"""
+    from du_lieu_giao_tiep_chung import BANG_MOI, NHOM_CUA_DONG_GOC
+    goc = [(NHOM_CUA_DONG_GOC.get(t, ""), t, q, a) for t, q, a in BANG]
+    return [(TEN, goc), (TEN_BO_HAI, list(BANG_MOI))]
+
+
+def viet_tai_lieu(goc: Path, ten: str, bang, theo_nhom: bool) -> Path:
+    p = goc / "knowledge" / NHOM / f"{ten}.md"
     dong = ["# Giao tiếp chung trong cuộc gọi tư vấn", "",
             "Phạm vi: các câu khách nói KHÔNG thuộc một sản phẩm cụ thể nào - cảm ơn, phân vân, "
             "hỏi về chính cuộc gọi, phàn nàn, chào kết thúc. Tài liệu này không chứa lãi suất, "
             "hạn mức hay điều kiện sản phẩm; những thông tin đó nằm ở tài liệu sản phẩm.", ""]
-    for chu_de, cach_hoi, tra_loi in BANG:
-        dong += [f"## {chu_de}", "",
+    nhom_truoc = None
+    for nhom, chu_de, cach_hoi, tra_loi in bang:
+        if theo_nhom and nhom != nhom_truoc:
+            dong += [f"## Nhóm tình huống: {nhom}", ""]
+            nhom_truoc = nhom
+        dong += [f"{'###' if theo_nhom else '##'} {chu_de}", "",
                  "Khách thường nói: " + "; ".join(f'"{c}"' for c in cach_hoi) + ".", "",
                  f"Tư vấn viên trả lời: {tra_loi}", ""]
     moi = "\n".join(dong)
-    if not p.exists() or p.read_text(encoding="utf-8") != moi:
+    if not p.exists():
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(moi, encoding="utf-8")
         print("Đã ghi tài liệu", p)
+    elif p.read_text(encoding="utf-8") != moi:
+        print(f"GIỮ NGUYÊN {p.name}: tài liệu đã gieo khác bản trong mã. Không ghi đè vì "
+              "sẽ tắt mọi đáp án của nó; thêm dòng mới thì tạo tài liệu mới.")
     return p
 
 
@@ -185,27 +206,33 @@ def main() -> int:
     ap.add_argument("--url", default="http://127.0.0.1:8100")
     ap.add_argument("--chi-tai-lieu", action="store_true", help="chỉ ghi tài liệu, không gọi API")
     a = ap.parse_args()
-    viet_tai_lieu(Path(__file__).resolve().parents[1])
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    bo = cac_bo()
+    for ten, bang in bo:
+        viet_tai_lieu(Path(__file__).resolve().parents[1], ten, bang, theo_nhom=ten != TEN)
     if a.chi_tai_lieu:
         return 0
     goc = a.url.rstrip("/") + "/api/knowledge"
     # Tài liệu mới phải vào chỉ mục tri thức trước, bộ soạn mới nhận nó làm nguồn.
     goi(goc + "/nap-lai", data={}, form=True)
-    q = urllib.parse.urlencode({"nhom": NHOM, "ten": TEN})
-    co = goi(f"{goc}/hoi-dap?{q}")
-    if co.get("error"):
-        print("Backend chưa thấy tài liệu:", co["error"])
-        return 1
-    da_co = {str(i.get("tra_loi", "")).strip() for i in co.get("items", [])}
-    them = 0
-    for chu_de, cach_hoi, tra_loi in BANG:
-        if tra_loi in da_co:
-            continue
-        r = goi(goc + "/hoi-dap", data={"nhom": NHOM, "ten": TEN, "cau_hoi": cach_hoi,
-                                         "tra_loi": tra_loi, "bat": True})
-        them += 1
-        print(f"+ {chu_de}: {r.get('item', {}).get('id', '?')} (tiếng: {r.get('voice', {}).get('status')})")
-    print(f"Xong: thêm {them}, đã có sẵn {len(BANG) - them}.")
+    for ten, bang in bo:
+        q = urllib.parse.urlencode({"nhom": NHOM, "ten": ten})
+        co = goi(f"{goc}/hoi-dap?{q}")
+        if co.get("error"):
+            print("Backend chưa thấy tài liệu:", co["error"])
+            return 1
+        da_co = {str(i.get("tra_loi", "")).strip(): i["id"] for i in co.get("items", [])}
+        them = 0
+        for nhom, chu_de, cach_hoi, tra_loi in bang:
+            if tra_loi in da_co:
+                # Dòng gieo từ trước khi có nhóm tình huống: chỉ gắn nhãn.
+                goi(f"{goc}/hoi-dap/{da_co[tra_loi]}/tinh-huong", data={"tinh_huong": nhom})
+                continue
+            r = goi(goc + "/hoi-dap", data={"nhom": NHOM, "ten": ten, "cau_hoi": cach_hoi,
+                                             "tra_loi": tra_loi, "bat": True, "tinh_huong": nhom})
+            them += 1
+            print(f"+ [{nhom}] {chu_de}: tiếng {r.get('voice', {}).get('status')}")
+        print(f"{ten}: thêm {them}, đã có sẵn {len(bang) - them}.")
     return 0
 
 
