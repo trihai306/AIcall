@@ -19,6 +19,7 @@ nền khác của kho.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import hashlib
 import logging
 import re
@@ -114,6 +115,48 @@ async def _dat_cau_hoi(doc: learning.Document, so_cau: int, known: dict) -> list
     return ra[:so_cau]
 
 
+# Tài liệu dài hơn mức này thì KHÔNG nhét trọn vào prompt soạn đáp án.
+_TRON_TAI_LIEU_TOI_DA = 6000
+
+
+async def _soan_dap_an(doc: learning.Document, cau_hoi: list[str], variants: int,
+                       stage: str) -> tuple[list[dict], dict]:
+    """Soạn đáp án có căn cứ cho các câu đã đặt.
+
+    `generate_document` đưa TRỌN tài liệu vào prompt cho mỗi nhóm 8 câu. Với tài
+    liệu 21.000 ký tự (`nghiep_vu_co_ban_va_loi_thoai.md`) prompt vượt ngữ cảnh
+    của Qwen và nó trả lời không ra JSON - hỏng cả tài liệu, 2/2 lần chạy
+    07-10-2026. Tài liệu dài thì mỗi nhóm 8 câu chỉ nhận các mảnh gần nó nhất;
+    trích dẫn vẫn phải có nguyên văn trong các mảnh đó, tức là trong tài liệu.
+    Một nhóm hỏng không kéo theo các nhóm khác.
+    """
+    if len(doc.text) <= _TRON_TAI_LIEU_TOI_DA:
+        return await learning.generate_document(doc, len(cau_hoi), variants, cau_hoi,
+                                                stage_key=stage)
+    manh = [c for c in learning.cat_manh(doc.text) if c.strip()]
+    items: list[dict] = []
+    reasons: dict = {}
+    da_co: set[str] = set()
+    for start in range(0, len(cau_hoi), 8):
+        nhom = cau_hoi[start:start + 8]
+        hep = dataclasses.replace(doc, text="\n\n".join(qa._chon_manh(nhom, manh, 8)))
+        try:
+            moi, ly_do = await learning.generate_document(
+                hep, len(nhom), variants, nhom, stage_key=f"{stage}:{start}")
+        except (learning.PausedForCustomer, learning.BuildCancelled):
+            raise
+        except Exception as exc:
+            ly_do, moi = {f"nhóm câu hỏi lỗi {type(exc).__name__}": len(nhom)}, []
+        for why, count in ly_do.items():
+            reasons[why] = reasons.get(why, 0) + count
+        for item in moi:
+            key = qa._khong_dau(item["tra_loi"])
+            if key not in da_co:
+                da_co.add(key)
+                items.append(item)
+    return items, reasons
+
+
 async def _mot_tai_lieu(doc: learning.Document, so_cau: int, cfg: dict) -> tuple[list[str], int]:
     async with learning.source_operation_lock(doc):
         if not learning._source_is_current(doc):
@@ -127,8 +170,7 @@ async def _mot_tai_lieu(doc: learning.Document, so_cau: int, cfg: dict) -> tuple
             _ghi(f"{doc.rel}: không nghĩ thêm được câu nào mới")
             return [], 0
         stage = "tuhoi:" + hashlib.sha1("\n".join(cau_hoi).encode()).hexdigest()[:12]
-        items, reasons = await learning.generate_document(
-            doc, len(cau_hoi), cfg["variants_per_answer"], cau_hoi, stage_key=stage)
+        items, reasons = await _soan_dap_an(doc, cau_hoi, cfg["variants_per_answer"], stage)
         # Câu "mời xem tài liệu" không phải là đáp án.
         items = [item for item in items if not _NE_TRANH.search(item["tra_loi"])]
         co_dap_an = {qa._khong_dau(q) for item in items for q in item["cau_hoi"]}
@@ -140,6 +182,9 @@ async def _mot_tai_lieu(doc: learning.Document, so_cau: int, cfg: dict) -> tuple
             (learning._id_for(doc, item, "memory"),)).fetchone()]
         ids = learning._store_items(doc, items, "memory", replace=False) if items else []
         gaps.cho_duyet(ids)  # vào kho ở trạng thái TẮT, chờ người duyệt
+        with learning.db.write_lock, conn:  # bản lưu tạm của lượt này hết tác dụng
+            conn.execute("DELETE FROM answer_bank_staging WHERE source_path=? AND stage_key LIKE 'tuhoi:%'",
+                         (doc.rel,))
         thieu = [q for q in cau_hoi if qa._khong_dau(q) not in co_dap_an]
         san_pham = doc.stem if doc.group == "products" else ""
         for q in thieu:
