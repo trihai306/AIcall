@@ -71,6 +71,13 @@ class HoiDapAppend(BaseModel):
     ten: str
     so_cau: int = Field(ge=1, le=300)
 
+
+class CauThieuThem(BaseModel):
+    nhom: str
+    ten: str
+    tra_loi: str = Field(min_length=1, max_length=20000)
+    cau_hoi: str = Field(default="", max_length=300)
+
 # Thư mục cho phép. KHÔNG nhận tên thư mục tuỳ ý từ client: nó ghép thẳng vào
 # đường dẫn file, nhận bừa là mở đường ghi đè file bất kỳ trên máy.
 #
@@ -630,6 +637,128 @@ async def tao_them_hoi_dap(body: HoiDapAppend):
     except Exception as exc:
         logger.exception("Không tạo thêm được hỏi-đáp cho %s/%s", body.nhom, p.stem)
         raise HTTPException(503, f"Chưa tạo thêm được đáp án: {exc}") from exc
+
+
+# ── Câu chưa có đáp án: lượt mô hình phải TỰ VIẾT vì kho không có ─────────
+#
+# Mục tiêu là bớt dần phần mô hình sinh. Sổ này cho biết đúng chỗ kho còn
+# thiếu, xếp theo số lần khách thật đã hỏi; soạn đáp án ở đây là lần sau câu
+# đó chỉ còn được CHỌN trong kho. Xem `services/answer_bank_gaps.py`.
+
+# Tài liệu chứa các câu giao tiếp không thuộc sản phẩm nào ("em tên gì", khách
+# phân vân, khách cảm ơn...). Đáp án nào cũng phải thuộc một tài liệu nguồn.
+TAI_LIEU_GIAO_TIEP = ("faq", "giao_tiep_chung")
+
+
+def _tai_lieu_cho_dap_an() -> list[dict]:
+    from backend.services import answer_bank_learning as learning
+    docs, _errors = learning._documents()
+    return [{"nhom": d.group, "ten": d.stem} for d in docs]
+
+
+def _goi_y_tai_lieu(san_pham: str, tai_lieu: list[dict]) -> dict | None:
+    from backend.services.bang_hoi_dap import _cung_san_pham
+    for d in tai_lieu:
+        if d["nhom"] == "products" and _cung_san_pham(d["ten"], san_pham):
+            return d
+    return next((d for d in tai_lieu if (d["nhom"], d["ten"]) == TAI_LIEU_GIAO_TIEP), None)
+
+
+@router.get("/cau-chua-co")
+async def cau_chua_co(trang_thai: str = "open", ngay: int = 7):
+    from backend.services import answer_bank_gaps as gaps
+    if trang_thai not in {"open", "ignored", "answered"}:
+        raise HTTPException(400, "Trạng thái không hợp lệ")
+    tai_lieu = _tai_lieu_cho_dap_an()
+    items = gaps.danh_sach_thieu(trang_thai)
+    for item in items:
+        item["goi_y"] = _goi_y_tai_lieu(item["san_pham"], tai_lieu)
+    return {"items": items, "thong_ke": gaps.thong_ke(ngay), "tai_lieu": tai_lieu}
+
+
+@router.post("/cau-chua-co/{key}/trang-thai")
+async def cau_chua_co_trang_thai(key: str, trang_thai: str = Form(...)):
+    from backend.services import answer_bank_gaps as gaps
+    if trang_thai not in {"open", "ignored"}:
+        raise HTTPException(400, "Trạng thái không hợp lệ")
+    if not gaps.dat_trang_thai(key, trang_thai):
+        raise HTTPException(404, "Không còn câu này trong sổ")
+    return {"ok": True}
+
+
+@router.post("/cau-chua-co/{key}/them")
+async def cau_chua_co_them(key: str, body: CauThieuThem):
+    """Soạn đáp án cho một câu khách đã hỏi mà kho chưa có.
+
+    Lời khách được ghi làm câu hỏi mẫu của đáp án, nên lần sau khách hỏi đúng
+    câu đó là đọc thẳng - không qua Qwen, không qua mô hình sinh.
+    """
+    from backend.services import answer_bank_editor as editor
+    from backend.services import answer_bank_gaps as gaps
+    miss = gaps.lay_thieu(key)
+    if miss is None:
+        raise HTTPException(404, "Không còn câu này trong sổ")
+    p = _editor_source(body.nhom, body.ten)
+    cau_hoi = (body.cau_hoi or miss["cau_hoi"]).strip()
+    try:
+        saved = await editor.save(body.nhom, p.stem, [cau_hoi], body.tra_loi, True)
+    except editor.EditorError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    gaps.dat_trang_thai(key, "answered", saved["item"]["id"])
+    return {"ok": True, "answer_id": saved["item"]["id"], "voice": saved.get("voice")}
+
+
+class TuHoi(BaseModel):
+    so_cau: int = Field(default=40, ge=5, le=200)
+    tai_lieu: str = Field(default="", max_length=300)
+
+
+@router.get("/tu-hoi")
+async def tu_hoi_trang_thai():
+    from backend.services import answer_bank_selfask as selfask
+    return selfask.trang_thai()
+
+
+@router.post("/tu-hoi")
+async def tu_hoi_bat_dau(body: TuHoi):
+    """Qwen đóng vai khách tự đặt câu hỏi, soạn đáp án có căn cứ cho câu kho chưa có."""
+    from backend.services import answer_bank_selfask as selfask
+    return selfask.bat_dau(body.so_cau, body.tai_lieu)
+
+
+class DuyetDapAn(BaseModel):
+    ids: list[str] = Field(min_length=1, max_length=500)
+    chap_nhan: bool
+
+
+@router.get("/cho-duyet")
+async def cho_duyet_danh_sach():
+    from backend.services import answer_bank_gaps as gaps
+    return {"items": gaps.danh_sach_cho_duyet()}
+
+
+@router.post("/cho-duyet")
+async def cho_duyet_quyet_dinh(body: DuyetDapAn):
+    """Bật các đáp án AI tự soạn đã được người duyệt, hoặc xoá hẳn nếu từ chối."""
+    from backend.services import answer_bank_gaps as gaps
+    from backend.services import answer_bank_editor as editor
+    bat = gaps.duyet(body.ids, body.chap_nhan)
+    voice = await editor._publish(bat) if bat else None
+    return {"ok": True, "da_bat": len(bat), "con_lai": gaps.so_cho_duyet(), "voice": voice}
+
+
+@router.get("/lua-chon-da-nho")
+async def lua_chon_da_nho():
+    from backend.services import answer_bank_gaps as gaps
+    return {"items": gaps.danh_sach_lua_chon()}
+
+
+@router.delete("/lua-chon-da-nho/{key}")
+async def xoa_lua_chon_da_nho(key: str):
+    from backend.services import answer_bank_gaps as gaps
+    if not gaps.xoa_lua_chon(key):
+        raise HTTPException(404, "Không còn lựa chọn này")
+    return {"ok": True}
 
 
 @router.get("/manh")

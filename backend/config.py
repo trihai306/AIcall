@@ -126,6 +126,13 @@ class Settings(BaseSettings):
     # giá: lượt phải nhờ mô hình sinh câu trả lời sẽ IM trong lúc chờ (0,6-2s).
     # Bật lại bằng CAU_DEM_BAT=true; mã và kho câu đệm vẫn còn nguyên.
     cau_dem_bat: bool = False
+    # CHỈ CHỌN TRONG KHO (bên A chốt 07-10-2026): kho trả lời và các luật không
+    # có đáp án thì AI KHÔNG tự viết câu trả lời nữa mà hẹn liên hệ hỗ trợ sau
+    # (`streaming_pipeline.CAU_KHO_KHONG_CO`). Đổi lấy: không bao giờ nói sai tài
+    # liệu, không còn quãng im 0,6-2,7s chờ mô hình. Giá: câu lạ nào cũng nhận
+    # câu hẹn lại - nên phải làm dày kho (bảng "câu chưa có đáp án", Qwen tự hỏi).
+    # CHI_CHON_TRONG_KHO=false là về lại mô hình sinh như cũ.
+    chi_chon_trong_kho: bool = True
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08

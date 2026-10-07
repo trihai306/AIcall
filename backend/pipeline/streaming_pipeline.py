@@ -138,6 +138,18 @@ def _ghep_uu_tien(du_lieu_cong_cu: str, ngu_canh: str) -> str:
     return ra
 
 
+# Câu AI nói khi kho không có đáp án và `chi_chon_trong_kho` đang bật. Cố ý
+# không hứa giờ giấc hay kênh liên hệ cụ thể - đó là việc của kịch bản.
+CAU_KHO_KHONG_CO = (
+    "Dạ phần này em xin phép ghi nhận lại, bên em sẽ liên hệ hỗ trợ anh chị sau ạ. "
+    "Anh chị còn cần em hỗ trợ thông tin nào khác không ạ?",
+    "Dạ câu này em chưa có thông tin chính xác để trả lời ngay, em xin ghi nhận để "
+    "bên em liên hệ hỗ trợ anh chị sau ạ.",
+    "Dạ em xin phép ghi lại câu hỏi này, sẽ có bạn hỗ trợ liên hệ lại anh chị sau ạ. "
+    "Anh chị muốn hỏi thêm phần nào nữa không ạ?",
+)
+
+
 def _schedule_persist(session: CallSession):
     """Fire-and-forget the DB write so it stays off the latency path."""
     task = asyncio.create_task(_persist_turn(session))
@@ -2614,6 +2626,17 @@ class StreamingPipeline:
         # câu bên dưới, để phần TTS không phải biết gì về chuyện này.
         dung_ban_nghi = bool(spec_answer) and self._answer_hit(spec_transcript, user_text)
         metrics["llm_nghi_san"] = dung_ban_nghi
+        if (settings.chi_chon_trong_kho and not dap_san
+                and not (dong_bang and doc_nguyen_van(dong_bang))):
+            # Kho và luật đều không có: hẹn liên hệ lại thay vì để mô hình tự viết.
+            # Luân phiên theo phiên để khách không nghe hai lần liền một câu.
+            luot_hen = getattr(session, "_luot_kho_khong_co", 0)
+            session._luot_kho_khong_co = luot_hen + 1
+            dap_san = (f"kho_khong_co_{luot_hen % len(CAU_KHO_KHONG_CO)}",
+                       CAU_KHO_KHONG_CO[luot_hen % len(CAU_KHO_KHONG_CO)])
+            dong_bang = None
+            dung_ban_nghi = False
+            metrics["llm_nghi_san"] = False
         if dong_bang:
             from backend.services.answer_bank_selector import GENERATED_PREFIXES
             from backend.services.answer_bank_learning import row_is_current
@@ -2644,7 +2667,8 @@ class StreamingPipeline:
             # `luot_thuong_gap` để biết vì sao KHÔNG giao cho mô hình.
             nguon_token = _phat_lai(chu_tieng_san)
             metrics["answer_route"] = {
-                "mode": "safe_fallback" if dap_san[0] == "answer_bank_changed" else "rule",
+                "mode": ("safe_fallback" if dap_san[0] == "answer_bank_changed"
+                         else "kho_khong_co" if dap_san[0].startswith("kho_khong_co") else "rule"),
                 "model": "", "answer_id": "", "source_path": "",
                 "reason": dap_san[0],
             }
@@ -3018,6 +3042,14 @@ class StreamingPipeline:
         session.add_turn("assistant", cau_bot_that)
         session.log_latency(metrics)
         _schedule_persist(session)  # after the audio is out - zero TTFA cost
+        # Sổ "câu chưa có đáp án" + thống kê đường trả lời: lượt mô hình phải tự
+        # viết được ghi lại để soạn đáp án, lần sau chỉ còn CHỌN trong kho.
+        try:
+            from backend.services import answer_bank_gaps
+            answer_bank_gaps.ghi_luot(user_text, getattr(session, "product", "") or "",
+                                      route, cau_bot_that)
+        except Exception:
+            logger.exception("Không ghi được sổ câu chưa có đáp án")
 
         # Đếm các dấu hiệu "bot đang bí" để quyết định có nối máy cho chuyên
         # viên không. Chỉ CẬP NHẬT ĐẾM ở đây; việc nối máy do lớp gọi điện làm,

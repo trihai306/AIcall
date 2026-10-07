@@ -394,8 +394,14 @@ def direct_by_example(
     bank: Mapping[str, Mapping[str, Any]],
     *,
     advance: bool = True,
+    trung_nguyen_chu: bool = False,
 ) -> dict[str, Any] | None:
     """Đọc thẳng dòng có câu hỏi mẫu TRÙNG lời khách, không gọi mô hình.
+
+    `trung_nguyen_chu`: người gọi đã lọc `ranked` chỉ còn các dòng có câu mẫu
+    trùng NGUYÊN CHỮ lời khách. Khi đó bỏ hai cổng "câu phủ định" và "câu nhiều
+    ý": chúng đoán theo mặt chữ ("không phải", "với") nên hay bắt nhầm, mà một
+    câu mẫu trùng từng chữ thì không còn gì để đoán.
 
     Bộ chọn bằng Qwen tốn 0,8-1,2 giây mỗi lượt; khách hỏi đúng câu đã soạn
     thì không có gì để phân xử. Kho thường có nhiều dòng cùng một câu hỏi mẫu
@@ -406,8 +412,10 @@ def direct_by_example(
     hai dòng không bao nhau (7.9 và 8.5), hoặc cả hai không có số mà khác hẳn
     chữ (vay thế chấp / vay tín chấp). Có mâu thuẫn thì để Qwen chọn như cũ.
     """
-    if (_opposite_request(question) or _personal_result_request(question)
-            or _is_follow_up(question) or len(_intent_parts(question)) > 1):
+    if _personal_result_request(question) or _is_follow_up(question):
+        return None
+    if not trung_nguyen_chu and (
+            _opposite_request(question) or len(_intent_parts(question)) > 1):
         return None
     khop = [(answer_id, score) for answer_id, score in ranked[:300]
             if str(bank[answer_id].get("tra_loi") or "").strip()
@@ -455,11 +463,21 @@ def direct_by_example(
 # so bằng `is` là đủ để biết chỉ mục còn đúng. Giữ tham chiếu tới kho để id của
 # nó không bị cấp lại cho một dict khác.
 _chi_muc: tuple[Any, dict, dict] | None = None
-# Lựa chọn Qwen đã làm cho một câu hỏi (kho, sản phẩm, ngân hàng, tập từ) -> id.
-# Chỉ sống trong tiến trình và mất khi kho nạp lại: Qwen chọn sai thì không bị
-# ghi chết vào dữ liệu.
+# Lựa chọn Qwen đã làm cho một câu hỏi (sản phẩm, ngân hàng, tập từ) -> (id, chữ
+# đáp án lúc chọn). Bản trong RAM được nạp lại từ sổ `answer_bank_choices` mỗi
+# lần kho đổi (xem `answer_bank_gaps`): mỗi cách hỏi chỉ phải qua Qwen MỘT lần,
+# kể cả sau khi khởi động lại. Lựa chọn KHÔNG được ghi vào câu hỏi mẫu của dòng:
+# nó nằm ở sổ riêng, xoá được từng dòng ở trang Tri thức AI, và tự hết hiệu lực
+# khi chữ đáp án bị sửa - Qwen chọn sai thì không bị ghi chết vào dữ liệu.
 _da_chon: dict[tuple, tuple[str, str]] = {}
-_DA_CHON_TOI_DA = 4000
+_DA_CHON_TOI_DA = 20000
+
+
+def quen_lua_chon() -> None:
+    """Bỏ chỉ mục và bản RAM của sổ lựa chọn; lượt sau dựng lại từ đĩa."""
+    global _chi_muc
+    _chi_muc = None
+    _da_chon.clear()
 
 
 def _chi_muc_cua(bank: Mapping[str, Mapping[str, Any]]) -> dict:
@@ -475,6 +493,11 @@ def _chi_muc_cua(bank: Mapping[str, Mapping[str, Any]]) -> dict:
                     index.setdefault(words, []).append(answer_id)
         _chi_muc = (bank, index, {"n": len(bank)})
         _da_chon.clear()
+        try:
+            from backend.services.answer_bank_gaps import nap_lua_chon
+            _da_chon.update(nap_lua_chon(bank))
+        except Exception:
+            pass
     return _chi_muc[1]
 
 
@@ -513,23 +536,29 @@ def fast_direct(
     mẫu, hoặc trùng câu Qwen đã phân xử trong tiến trình này, thì cả ba khoản
     đó đều thừa.
     """
-    if (len((question or "").strip()) < 4 or not bank or _opposite_request(question)
-            or _personal_result_request(question) or _is_follow_up(question)
-            or len(_intent_parts(question)) > 1):
+    if (len((question or "").strip()) < 4 or not bank
+            or _personal_result_request(question) or _is_follow_up(question)):
         return None
+    # Hai cổng dưới đây đoán theo mặt chữ và bắt nhầm nhiều câu thường ngày: "sao
+    # biết bên em KHÔNG PHẢI lừa đảo" bị coi là lời từ chối, "anh phải bàn VỚI
+    # vợ đã" bị coi là hai yêu cầu (đo 07-10-2026: câu sau đã có trong sổ ghi nhớ
+    # mà lần nào cũng quay lại Qwen, 560ms thay vì 45ms). Chúng chỉ còn chặn
+    # phép so LỎNG theo tập từ; câu trùng nguyên chữ một câu mẫu, hoặc câu Qwen
+    # đã phân xử và đã qua `_covers_all_intents`, thì không cần đoán nữa.
+    mo_ho = _opposite_request(question) or len(_intent_parts(question)) > 1
     index = _chi_muc_cua(bank)
     words = khoa_cau_hoi(question)
     ids = list(index.get(_norm(question), ()))
-    if len(words) >= 3:
+    if len(words) >= 3 and not mo_ho:
         ids += index.get(words, ())
     if ids:
         usable = _con_dung_duoc(ids, question, product, bank_name, bank, provenance,
                                 excluded_ids, is_current)
         row = direct_by_example(question, [(answer_id, 1.0) for answer_id in usable], bank,
-                                advance=advance)
+                                advance=advance, trung_nguyen_chu=mo_ho)
         if row is not None:
             return row
-    if len(words) >= 3:
+    if len(words) >= 3 and not _opposite_request(question):
         remembered, answer = _da_chon.get((_norm(product), _norm(bank_name), words), ("", ""))
         # Đáp án bị sửa tại chỗ sau lúc Qwen chọn thì lựa chọn đó hết hiệu lực.
         if (remembered and str(bank.get(remembered, {}).get("tra_loi") or "") == answer
@@ -724,13 +753,13 @@ async def choose(
     ID thật không bao giờ được gửi cho mô hình. Mô hình chỉ thấy alias C1..Cn;
     kết quả được map lại và kiểm tra membership, sản phẩm, đa ý lần cuối.
     """
-    if _opposite_request(question) or _personal_result_request(question):
+    if _personal_result_request(question):
         return None
     fast = fast_direct(question, bank, product=product, bank_name=bank_name,
                        provenance=provenance, excluded_ids=excluded_ids, is_current=is_current)
     if fast is not None:
         return fast
-    if rag is None or llm is None:
+    if _opposite_request(question) or rag is None or llm is None:
         return None
     if _exact_only_in_other_product(question, product, bank):
         return None
@@ -843,4 +872,10 @@ async def choose(
             _da_chon.clear()
         _da_chon[(_norm(product), _norm(bank_name), words)] = (
             chosen_id, str(bank[chosen_id].get("tra_loi") or ""))
+        try:
+            from backend.services.answer_bank_gaps import ghi_lua_chon
+            ghi_lua_chon(_norm(product), _norm(bank_name), words, question, chosen_id,
+                         str(bank[chosen_id].get("tra_loi") or ""))
+        except Exception:
+            pass
     return row

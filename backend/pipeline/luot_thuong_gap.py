@@ -70,6 +70,13 @@ BANG = [
       r"\bem la ai\b", r"\bben nao (day|do|vay)\b", r"\bcong ty nao\b"],
      "Dạ em là {agent} bên {bank}, em gọi để giới thiệu chương trình {product} ạ."),
 
+    ("ten_tu_van",
+     # Tên tư vấn viên nằm ở kịch bản chứ không ở tài liệu nào, nên kho trả lời
+     # không soạn sẵn được câu này và mô hình phải tự viết mỗi lần.
+     [r"\bem ten (la )?gi\b", r"\bten em la gi\b", r"\bem la ban nao\b",
+      r"\bcho (anh|chi|toi) (xin|hoi|biet) ten\b"],
+     "Dạ em tên {agent}, tư vấn viên bên {bank} ạ."),
+
     ("sao_co_so",
      [r"\bsao (em |minh )?(lai )?co (so|sdt)", r"\b(so|sdt) .*o dau (ra|the|vay)",
       r"\blay so .*o dau\b", r"\bai cho (so|sdt)\b"],

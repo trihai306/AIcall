@@ -4316,6 +4316,8 @@ function knAutoEsc(value) { return escapeHtml(String(value ?? '')); }
 
 function knAutoPageChanged(name) {
   if (name !== 'knowledge') dongHoiDapTriThuc();
+  if (name === 'knowledge') { loadKnThieu(); knTuHoiXem(); }
+  else if (knTuHoiTimer) { clearInterval(knTuHoiTimer); knTuHoiTimer = null; }
   if (knAutoTimer) { clearInterval(knAutoTimer); knAutoTimer = null; }
   if (name === 'knowledge' && !document.hidden) {
     loadKnAuto();
@@ -4438,6 +4440,205 @@ async function loadKnAuto(showError = false) {
     if (retry) retry.classList.remove('hidden');
     if (showError) thongBao(`Không tải được thư viện: ${error.message}`, 'loi');
   } finally { knAutoBusy = false; }
+}
+
+// ── Câu khách hỏi mà kho chưa có ────────────────────────────────────────
+// KHÔNG tự làm mới theo nhịp như thanh trạng thái phía trên: người dùng đang gõ
+// đáp án trong các ô này, vẽ lại là mất chữ.
+const KN_THIEU_URL = '/api/knowledge/cau-chua-co';
+let knThieuTaiLieu = [];
+
+function knThieuNgay(giay) {
+  if (!giay) return '';
+  const d = new Date(giay * 1000);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function knThieuPhanTram(v) { return v === null || v === undefined ? '—' : `${Math.round(v * 100)}%`; }
+
+function veKnThieuStats(tk) {
+  const el = document.getElementById('knThieuStats');
+  if (!el) return;
+  const o = (nhan, gia, phu) => `<div class="stat-cell"><div class="k">${nhan}</div><div class="v">${gia}</div><div class="s">${phu}</div></div>`;
+  el.innerHTML = o('Lượt trong 7 ngày', knAutoEsc(tk.so_luot ?? 0), 'mọi cuộc gọi và hội thoại')
+    + o('Đọc từ kho', knThieuPhanTram(tk.ty_le_kho), `${knAutoEsc(tk.tong?.answer_bank ?? 0)} lượt`)
+    + o('Kho chưa có', knThieuPhanTram(tk.ty_le_sinh), 'AI hẹn liên hệ sau hoặc tự viết')
+    + o('Câu chưa có đáp án', knAutoEsc(tk.cau_thieu ?? 0), `${knAutoEsc(tk.lua_chon_da_nho ?? 0)} cách hỏi đã ghi nhớ`);
+  const demDuyet = document.getElementById('knDuyetCount');
+  if (demDuyet) demDuyet.textContent = `(${tk.cho_duyet ?? 0})`;
+  const dem = document.getElementById('knNhoCount');
+  if (dem) dem.textContent = `(${tk.lua_chon_da_nho ?? 0})`;
+}
+
+async function loadKnThieu(showError = false) {
+  const list = document.getElementById('knThieuList');
+  if (!list) return;
+  const loc = document.getElementById('knThieuLoc')?.value || 'open';
+  try {
+    const data = await knAutoRequest(`${KN_THIEU_URL}?trang_thai=${encodeURIComponent(loc)}`);
+    knThieuTaiLieu = data.tai_lieu || [];
+    veKnThieuStats(data.thong_ke || {});
+    const items = data.items || [];
+    if (!items.length) {
+      list.innerHTML = `<div class="lk-empty">${loc === 'open' ? 'Chưa có câu nào AI phải tự viết. Sau vài cuộc gọi, các câu kho còn thiếu sẽ hiện ở đây.' : 'Không có câu nào.'}</div>`;
+      return;
+    }
+    list.innerHTML = items.map(item => {
+      const chon = knThieuTaiLieu.map(d => {
+        const dung = item.goi_y && item.goi_y.nhom === d.nhom && item.goi_y.ten === d.ten;
+        return `<option value="${knAutoEsc(d.nhom)}/${knAutoEsc(d.ten)}"${dung ? ' selected' : ''}>${knAutoEsc(knTenTaiLieu(d.ten))}</option>`;
+      }).join('');
+      const k = knAutoEsc(item.key);
+      const form = loc === 'answered' ? '' : `<div class="kn-thieu-form">
+          <textarea class="inp" id="knThieuTl-${k}" placeholder="Soạn câu AI sẽ nói khi khách hỏi câu này…">${knAutoEsc(item.cau_mo_hinh || '')}</textarea>
+          <div class="lk-actions">
+            <select class="inp" id="knThieuDoc-${k}" aria-label="Thuộc tài liệu">${chon}</select>
+            <button class="btn btn-primary" onclick="knThieuLuu('${k}', this)">Lưu vào kho</button>
+            ${loc === 'open' ? `<button class="btn btn-ghost" onclick="knThieuTrangThai('${k}', 'ignored')">Bỏ qua</button>` : `<button class="btn btn-ghost" onclick="knThieuTrangThai('${k}', 'open')">Mở lại</button>`}
+          </div>
+        </div>`;
+      return `<div class="kn-thieu-item">
+        <div class="kn-thieu-top"><div>
+          <div class="kn-thieu-q">${knAutoEsc(item.cau_hoi)}</div>
+          <div class="kn-thieu-meta"><span class="${item.so_lan > 1 ? 'nhieu' : ''}">${item.so_lan ? `Khách hỏi ${knAutoEsc(item.so_lan)} lần` : 'AI tự đặt câu hỏi'}</span>${item.san_pham ? `<span>${knAutoEsc(knTenTaiLieu(item.san_pham))}</span>` : ''}<span>Lần cuối ${knThieuNgay(item.lan_cuoi)}</span></div>
+        </div></div>
+        ${item.cau_mo_hinh ? `<div class="kn-thieu-ai"><b>AI đã tự trả lời:</b> ${knAutoEsc(item.cau_mo_hinh)}</div>` : ''}
+        ${form}
+      </div>`;
+    }).join('');
+  } catch (error) {
+    list.innerHTML = `<div class="lk-empty text-red-400">Không tải được: ${knAutoEsc(error.message)}</div>`;
+    if (showError) thongBao(`Không tải được danh sách: ${error.message}`, 'loi');
+  }
+}
+
+async function knThieuLuu(key, nut) {
+  const traLoi = document.getElementById(`knThieuTl-${key}`)?.value.trim();
+  const doc = (document.getElementById(`knThieuDoc-${key}`)?.value || '').split('/');
+  if (!traLoi) { thongBao('Chưa có nội dung câu trả lời.', 'loi'); return; }
+  if (doc.length < 2) { thongBao('Chưa chọn tài liệu cho đáp án.', 'loi'); return; }
+  if (nut) nut.disabled = true;
+  try {
+    await knAutoRequest(`${KN_THIEU_URL}/${encodeURIComponent(key)}/them`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nhom: doc[0], ten: doc.slice(1).join('/'), tra_loi: traLoi }),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined
+    });
+    thongBao('Đã lưu vào kho. Lần sau khách hỏi câu này, AI đọc thẳng đáp án.');
+    loadKnThieu();
+  } catch (error) {
+    thongBao(`Chưa lưu được: ${error.message}`, 'loi');
+    if (nut) nut.disabled = false;
+  }
+}
+
+async function knThieuTrangThai(key, trangThai) {
+  try {
+    const body = new FormData();
+    body.append('trang_thai', trangThai);
+    await knAutoRequest(`${KN_THIEU_URL}/${encodeURIComponent(key)}/trang-thai`, { method: 'POST', body });
+    loadKnThieu();
+  } catch (error) { thongBao(`Chưa đổi được: ${error.message}`, 'loi'); }
+}
+
+// Qwen đóng vai khách tự đặt câu hỏi rồi soạn đáp án có căn cứ từ tài liệu.
+let knTuHoiTimer = null;
+
+async function knTuHoiXem() {
+  const el = document.getElementById('knTuHoiStatus');
+  const nut = document.getElementById('knTuHoiBtn');
+  try {
+    const d = await knAutoRequest('/api/knowledge/tu-hoi');
+    if (nut) nut.disabled = !!d.dang_chay;
+    if (el) {
+      const dong = (d.nhat_ky || []).slice(-4).map(x => `<div>${knAutoEsc(x)}</div>`).join('');
+      el.innerHTML = d.dang_chay
+        ? `<span class="text-cyan-300">AI đang tự đặt câu hỏi${d.tai_lieu ? ` · ${knAutoEsc(knTenTaiLieu(d.tai_lieu.split('/').pop().replace(/\.[^.]+$/, '')))}` : ''}</span> · ${knAutoEsc(d.them)} đáp án chờ duyệt${dong}`
+        : (d.ket_thuc ? `Lượt gần nhất: ${knAutoEsc(d.them)} đáp án chờ duyệt, ${knAutoEsc(d.thieu)} câu cần soạn tay.${d.loi ? ` <span class="text-red-400">${knAutoEsc(d.loi)}</span>` : ''}${dong}` : '');
+    }
+    if (!d.dang_chay && knTuHoiTimer) { clearInterval(knTuHoiTimer); knTuHoiTimer = null; loadKnThieu(); }
+    if (d.dang_chay && !knTuHoiTimer) knTuHoiTimer = setInterval(knTuHoiXem, 4000);
+  } catch (_) { /* thanh trạng thái phụ, lỗi thì thôi */ }
+}
+
+async function knTuHoiChay() {
+  const soCau = Math.max(5, Math.min(200, Number(document.getElementById('knTuHoiSo')?.value) || 40));
+  try {
+    const d = await knAutoRequest('/api/knowledge/tu-hoi', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ so_cau: soCau })
+    });
+    if (d.ok === false) thongBao(d.error || 'Chưa chạy được.', 'loi');
+    else thongBao('AI bắt đầu tự đặt câu hỏi. Việc này chạy nền và tự nhường khi có cuộc gọi.');
+    knTuHoiXem();
+  } catch (error) { thongBao(`Chưa chạy được: ${error.message}`, 'loi'); }
+}
+
+let knDuyetIds = [];
+
+async function loadKnDuyet() {
+  const list = document.getElementById('knDuyetList');
+  if (!list) return;
+  try {
+    const items = (await knAutoRequest('/api/knowledge/cho-duyet')).items || [];
+    knDuyetIds = items.map(i => i.id);
+    const dem = document.getElementById('knDuyetCount');
+    if (dem) dem.textContent = `(${items.length})`;
+    list.innerHTML = items.length ? items.map(item => `<div class="kn-thieu-item">
+        <div class="kn-thieu-top"><div>
+          <div class="kn-thieu-q">${knAutoEsc((item.cau_hoi || [])[0] || '(không có câu hỏi mẫu)')}</div>
+          <div class="kn-thieu-meta">${item.tai_lieu ? `<span>${knAutoEsc(knTenTaiLieu(item.tai_lieu.split('/').pop().replace(/\.[^.]+$/, '')))}</span>` : ''}${(item.cau_hoi || []).length > 1 ? `<span>+${item.cau_hoi.length - 1} cách hỏi khác</span>` : ''}</div>
+        </div><div class="lk-actions"><button class="btn btn-primary btn-xs" onclick="knDuyet(['${knAutoEsc(item.id)}'], true)">Duyệt</button><button class="btn btn-ghost btn-xs" onclick="knDuyet(['${knAutoEsc(item.id)}'], false)">Xoá</button></div></div>
+        <div class="kn-thieu-ai"><b>AI sẽ trả lời:</b> ${knAutoEsc(item.tra_loi)}</div>
+        ${item.can_cu ? `<div class="kn-thieu-ai"><b>Căn cứ trong tài liệu:</b> ${knAutoEsc(item.can_cu)}</div>` : ''}
+      </div>`).join('') : '<div class="lk-empty">Không có đáp án nào chờ duyệt.</div>';
+  } catch (error) {
+    list.innerHTML = `<div class="lk-empty text-red-400">Không tải được: ${knAutoEsc(error.message)}</div>`;
+  }
+}
+
+async function knDuyet(ids, chapNhan) {
+  if (!ids.length) return;
+  try {
+    const d = await knAutoRequest('/api/knowledge/cho-duyet', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, chap_nhan: chapNhan }),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(180000) : undefined
+    });
+    thongBao(chapNhan ? `Đã đưa ${d.da_bat} đáp án vào kho.` : 'Đã xoá.');
+    loadKnDuyet();
+  } catch (error) { thongBao(`Chưa làm được: ${error.message}`, 'loi'); }
+}
+
+function knDuyetTatCa(chapNhan) {
+  if (!knDuyetIds.length) return;
+  if (!confirm(chapNhan ? `Duyệt cả ${knDuyetIds.length} đáp án đang hiện?` : `Xoá cả ${knDuyetIds.length} đáp án đang hiện?`)) return;
+  knDuyet(knDuyetIds.slice(0, 500), chapNhan);
+}
+
+async function loadKnNho() {
+  const list = document.getElementById('knNhoList');
+  if (!list) return;
+  try {
+    const data = await knAutoRequest('/api/knowledge/lua-chon-da-nho');
+    const items = data.items || [];
+    list.innerHTML = items.length ? items.map(item => `<div class="kn-thieu-item">
+        <div class="kn-thieu-top"><div>
+          <div class="kn-thieu-q">${knAutoEsc(item.cau_hoi)}</div>
+          <div class="kn-thieu-meta"><span>Dùng ${knAutoEsc(item.so_lan)} lần</span>${item.san_pham ? `<span>${knAutoEsc(item.san_pham)}</span>` : ''}${item.con_hieu_luc ? '' : '<span>Hết hiệu lực (đáp án đã đổi)</span>'}</div>
+        </div><button class="btn btn-ghost btn-xs" onclick="knNhoXoa('${knAutoEsc(item.key)}')">Xoá</button></div>
+        <div class="kn-thieu-ai"><b>AI chọn:</b> ${knAutoEsc(item.tra_loi || '(đáp án không còn trong kho)')}</div>
+      </div>`).join('') : '<div class="lk-empty">Chưa có cách hỏi nào được ghi nhớ.</div>';
+  } catch (error) {
+    list.innerHTML = `<div class="lk-empty text-red-400">Không tải được: ${knAutoEsc(error.message)}</div>`;
+  }
+}
+
+async function knNhoXoa(key) {
+  try {
+    await knAutoRequest(`/api/knowledge/lua-chon-da-nho/${encodeURIComponent(key)}`, { method: 'DELETE' });
+    loadKnNho();
+  } catch (error) { thongBao(`Chưa xoá được: ${error.message}`, 'loi'); }
 }
 
 async function knAutoSaveConfig() {

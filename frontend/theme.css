@@ -517,3 +517,19 @@ main > .page { flex: 1 1 0; min-height: 0; }
 /* Ô log trên nền tối: chữ 12px đọc được. */
 #page-logs > div:first-child { padding: 26px 28px 14px; }
 #page-logs #logViewer { margin: 0 28px 28px; }
+
+/* ── Tri thức AI: câu khách hỏi mà kho chưa có ─────────────────────────── */
+.stat-cell .s { font-size: 11.5px; color: var(--tx3); margin-top: 4px; }
+.kn-thieu-list { display: flex; flex-direction: column; gap: 10px; }
+.kn-thieu-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: rgba(255,255,255,.015); }
+.kn-thieu-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.kn-thieu-q { font-size: 14px; color: var(--tx1); font-weight: 550; line-height: 1.45; }
+.kn-thieu-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 11.5px; color: var(--tx2); }
+.kn-thieu-meta span { border: 1px solid var(--line-strong); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.kn-thieu-meta .nhieu { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+.kn-thieu-ai { margin-top: 10px; font-size: 12.5px; color: var(--tx2); line-height: 1.55; border-left: 2px solid var(--line-strong); padding-left: 10px; }
+.kn-thieu-ai b { color: var(--tx1); font-weight: 550; }
+.kn-thieu-form { margin-top: 12px; display: grid; gap: 8px; }
+.kn-thieu-form textarea { width: 100%; min-height: 64px; resize: vertical; line-height: 1.5; }
+.kn-thieu-form .lk-actions { justify-content: flex-start; flex-wrap: wrap; }
+.kn-thieu-form select { max-width: 280px; }
