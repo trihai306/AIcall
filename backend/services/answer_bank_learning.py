@@ -553,7 +553,11 @@ def _generation_prompt(source: str, count: int, variants: int,
                        exclusions: list[dict] | None = None) -> str:
     fixed = ""
     if fixed_questions:
-        fixed = ("\nCÂU HỎI PHẢI TRẢ LỜI (giữ request_index tương ứng):\n" +
+        # Câu hỏi cho trước kéo Qwen chép nguyên đoạn nguồn: với tài liệu lời
+        # thoại, 9/20 đáp án dài 37-48 từ và bị trần 35 từ loại (07-10-2026).
+        fixed = ("\nCÂU HỎI PHẢI TRẢ LỜI (giữ request_index tương ứng). Mỗi answer TÓM GỌN "
+                 "nhiều nhất 28 từ: chỉ lấy ý trả lời thẳng vào câu hỏi, KHÔNG chép cả đoạn "
+                 "lời thoại trong tài liệu; đếm lại số từ trước khi trả:\n" +
                  "\n".join(f"{i}: {q}" for i, q in enumerate(fixed_questions)))
     excluded = ""
     if exclusions:
