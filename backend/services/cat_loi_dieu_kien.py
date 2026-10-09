@@ -17,6 +17,8 @@ TIENG_DE = {
     "dạ", "vâng", "ừ", "ừm", "à", "ờ", "ơ", "ok", "okê", "okay", "alo", "à lô",
     "hử", "hả", "hở", "rồi", "đúng", "phải", "vậy", "thế", "nghe", "em", "anh",
     "chị", "ạ", "à ừ", "uh", "um", "mm", "hmm",
+    # "a lô" khi AI đang nói là khách thử đường truyền, không phải giành lượt.
+    "a", "lô", "alô", "lo",
 }
 
 # Dưới ngưỡng này thì hai câu trùng nhau rất dễ là ngẫu nhiên, không đủ để kết
@@ -45,7 +47,16 @@ def la_vong_ai(chu: str, chu_ai: str) -> bool:
     Không có lưới này thì AI tự cắt lời chính nó.
     """
     tu = _chuan(chu)
-    cua_ai = set(_chuan(chu_ai))
+    tu_ai = _chuan(chu_ai)
+    cua_ai = set(tu_ai)
+    if len(tu) == 2 and cua_ai:
+        # Bản phiên âm tạm lúc phải quyết định thường mới có HAI từ. Cuộc gọi
+        # 08-10-2026: AI nói "Dạ gói này hỗ trợ...", kênh khách nghe ra 'dạ
+        # gói' sau 420ms và AI tự cắt lời mình - 5 lần trong một cuộc, kiểu
+        # 'dạ phần', 'dạ cảm', 'dạ câu'. Hai từ trùng rời rạc thì dễ là ngẫu
+        # nhiên, nên đòi chúng nằm LIỀN NHAU ĐÚNG THỨ TỰ trong lời AI. Khách nói
+        # tiếp thì bản tạm dài ra và được xét lại theo tỉ lệ bên dưới.
+        return any(tu_ai[i:i + 2] == tu for i in range(len(tu_ai) - 1))
     if len(tu) < _VONG_MIN_TU or not cua_ai:
         return False
     trung = sum(1 for t in tu if t in cua_ai)
@@ -86,3 +97,41 @@ def nen_doc_not(phan_do_giay: float, cau_khach: str,
         return False
     dau = " ".join(_chuan(cau_khach))
     return not any(dau.startswith(t) for t in TU_CHUYEN_HUONG)
+
+
+# Câu dừng ở những từ này là câu CÒN DỞ: khách đang nghĩ nốt con số, kỳ hạn...
+# chứ chưa nhường lượt. Xem `cau_con_do`.
+_TU_CON_DO = {
+    "trong", "vòng", "khoảng", "tầm", "là", "thì", "với", "và", "hoặc", "hay",
+    "nhưng", "mà", "của", "cho", "về", "để", "vì", "nếu", "khi", "từ", "đến",
+    "tới", "hơn", "dưới", "trên", "cùng", "tức", "nghĩa", "kiểu", "như",
+    # Động từ/lượng từ còn thiếu vế sau: "thì bên em cho vay ..." rồi nghỉ một
+    # nhịp mới nói "tối đa bao nhiêu tháng" (cuộc d1086216). Chờ thừa 0,9s ở
+    # một câu hoá ra đã trọn thì chỉ chậm một chút; chốt non thì AI đáp bừa.
+    "vay", "muốn", "cần", "hỏi", "những", "các", "mỗi", "bao", "sẽ", "đang",
+    "bị", "gồm",
+}
+
+
+def cau_con_do(chu: str) -> bool:
+    """Bản phiên âm tạm dừng ở một từ nối -> khách chưa nói hết câu.
+
+    Cuộc gọi 08-10-2026: "thế anh muốn vay ba trăm triệu trong vòng" + nghỉ
+    0,8s + "mười hai". Chốt lượt sau 700ms im làm câu vỡ đôi: AI đáp nửa đầu,
+    rồi hỏi lại "anh vừa nói mười hai, tính theo triệu hay tỷ". Câu một-hai từ
+    không tính (chưa đủ để biết là dở).
+    """
+    tu = _chuan(chu)
+    return len(tu) >= 3 and tu[-1] in _TU_CON_DO
+
+
+def la_vong_duoi_cau(chu: str, chu_ai: str) -> bool:
+    """Lượt "khách" thật ra là ĐUÔI câu AI vừa nói vọng về sau khi AI dứt lời.
+
+    Cuộc hai máy 08-10-2026: AI chào "... em là Lan bên Ngân hàng Quân đội ạ.",
+    kênh khách trả về 'quân đội ạ' thành một lượt, AI đáp câu hẹn và nuốt mất
+    câu hỏi thật ngay sau đó. Chỉ nhận khi lời nghe được trùng NGUYÊN ĐUÔI câu
+    AI (2-6 từ): khách nhắc lại một cụm giữa câu để hỏi lại thì không bị chặn.
+    """
+    tu, tu_ai = _chuan(chu), _chuan(chu_ai)
+    return 2 <= len(tu) <= 6 and len(tu_ai) > len(tu) and tu_ai[-len(tu):] == tu

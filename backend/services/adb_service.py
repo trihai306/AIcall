@@ -108,6 +108,24 @@ async def describe(serial: str) -> dict:
 
 
 
+def _telecom_cuoc_dang_song(tele: str) -> str:
+    """Phần `dumpsys telecom` nói về cuộc gọi ĐANG SỐNG, viết hoa.
+
+    Android 15 (ROM cài 03-10-2026) in thêm nhật ký cuộc gọi cũ ngay trong bản
+    dump: `Historical Events` giữ nguyên các dòng `state=CONNECTING`,
+    `state=ACTIVE` của cuộc hôm qua. Dò trên cả bản dump thì máy đang rảnh cũng
+    ra "đang đổ chuông", cuộc chưa ai nhấc ra "đã nhấc máy" (chào và đặt đường
+    tiêm lúc còn đổ chuông - HAL xoá ngay khi nối máy, khách không nghe gì), và
+    không bao giờ thấy cúp (cầu tiếng chạy tiếp, AI nói ra loa máy rồi tự nghe
+    lại mình). Cuộc đang sống nằm trong mục `mCalls:`, hết ở mục kế tiếp.
+    Bản dump không có mục đó (ROM cũ) thì trả nguyên văn như trước.
+    """
+    # Mục kế tiếp là dòng thụt ĐÚNG BẰNG `mCalls:`; dòng thụt sâu hơn vẫn thuộc
+    # về một cuộc gọi.
+    m = re.search(r"^([ \t]*)mCalls:[^\n]*\n(.*?)(?=^\1\S|\Z)", tele, re.S | re.M)
+    return (m.group(2) if m else tele).upper()
+
+
 # Chỉ tính khi `InCallActivity` đang GIỮ FOCUS. Tìm nó trong toàn bộ `dumpsys
 # window` là sai: cửa sổ vẫn nằm trong ngăn xếp sau khi cúp máy, nên trạng thái
 # kẹt ở "offhook" vĩnh viễn - đã đo, báo offhook cả trước khi gọi lẫn sau khi cúp.
@@ -128,7 +146,11 @@ async def call_state(serial: str) -> tuple[str, str]:
         return "unknown", err.strip() or "Không đọc được trạng thái"
     m = _CALL_STATE.search(out)
     if m:
-        state = CALL_STATES.get(int(m.group(1)), "unknown")
+        # Máy hai khe SIM in `mCallState` MỖI KHE một dòng. Lấy dòng đầu thì
+        # SIM nằm ở khe 2 luôn ra "rảnh" - máy khách của bộ tự gọi (Vinaphone
+        # khe 2) đổ chuông 33 giây mà hệ thống báo "không đổ chuông".
+        ma = max((int(x) for x in _CALL_STATE.findall(out)), default=0)
+        state = CALL_STATES.get(ma, "unknown")
         if state != "idle":
             return state, ""
 
@@ -138,7 +160,9 @@ async def call_state(serial: str) -> tuple[str, str]:
     # thêm nguồn khác trước khi dám kết luận "rảnh".
     code2, tele, _ = await _run("-s", serial, "shell", "dumpsys", "telecom")
     if code2 == 0:
-        t = tele.upper()
+        t = _telecom_cuoc_dang_song(tele)
+        if "STATE=RINGING" in t or "STATE: RINGING" in t:
+            return "ringing", "telecom: có cuộc gọi đến"
         if "STATE=ACTIVE" in t or "STATE: ACTIVE" in t:
             return "offhook", "telecom: đang nói chuyện"
         if any(k in t for k in ("STATE=DIALING", "STATE: DIALING",
@@ -187,7 +211,7 @@ async def precise_call_state(serial: str) -> tuple[int, str]:
     # hiệu chắc chắn thứ hai (đã đối chiếu với ảnh chụp màn hình).
     code2, tele, _ = await _run("-s", serial, "shell", "dumpsys", "telecom")
     if code2 == 0:
-        t = tele.upper()
+        t = _telecom_cuoc_dang_song(tele)
         if "STATE=ACTIVE" in t or "STATE: ACTIVE" in t:
             return 1, "Khách đã nhấc máy (telecom: ACTIVE)"
         if any(k in t for k in ("STATE=DIALING", "STATE: DIALING",
@@ -614,7 +638,7 @@ def _tuyen_codec(on: bool) -> list[tuple[str, str]]:
     """
     if not on:
         return ([(f"ABOX SPUS OUT{i}", "SIFS0") for i in range(6)] +
-                [("ABOX UAIF0 SPK", "RESERVED"),
+                [("ABOX UAIF0 SPK", "RESERVED"), ("ABOX ERAP info Bypass On", "0"),
                  ("AIF1TX1 Input 2", "None"), ("AIF1TX2 Input 2", "None"),
                  ("AIF1TX1 Input 1", "ASRC1IN1L"),
                  ("AIF1TX2 Input 1", "ASRC1IN1R")] +
@@ -644,11 +668,30 @@ def _tuyen_codec(on: bool) -> list[tuple[str, str]]:
     #
     # Triệu chứng cực kỳ dễ đổ nhầm: nhìn từ ngoài chỉ thấy "khách nói mà AI
     # không trả lời", và mọi control đường tiêm đọc lại đều đúng.
-    return ([("ABOX SPUS OUT0", "SIFS1")] +
-            [("ABOX UAIF0 SPK", "SIFS1"),
+    # THỨ TỰ có nghĩa: các lệnh chạy lần lượt trong ~1 giây, khách nghe được
+    # mọi trạng thái nửa chừng. Tắt micro TRƯỚC, nối tiếng AI vào đường lên SAU
+    # CÙNG. Thứ tự cũ (micro tắt cuối) cho khách nghe ~1,3 giây tiếng rè ngay
+    # sau khi nhấc máy, trước lời chào - đo ở máy nhận 08-10-2026, khách tả là
+    # "lúc tới thì dè một cái".
+    # BA NÚM THỬ NGHIỆM ở tầng chip (08-10-2026), mặc định giữ hành vi cũ:
+    #  - `phone_tiem_mot_mic`: chỉ đưa tiếng AI vào AIF1TX1 (micro chính), để
+    #    AIF1TX2 (micro phụ) im. Modem chạy khử ồn HAI MICRO cho chế độ cầm tay,
+    #    lấy micro phụ làm mốc tạp âm; đưa cùng một tín hiệu vào cả hai thì nó
+    #    có cớ coi tiếng AI là tạp âm mà ép xuống.
+    #  - `phone_sound_type`: báo cho modem nguồn tiếng là loại gì (VOICE = cầm
+    #    tay, HEADSET, BTVOICE, USB) để nó chọn bộ chỉnh âm tương ứng.
+    #  - `phone_erap_bypass`: bật cờ bỏ qua khối xử lý ERAP.
+    tx2 = "None" if settings.phone_tiem_mot_mic else "AIF1RX1"
+    them = []
+    if settings.phone_sound_type:
+        them.append(("ABOX Sound Type", settings.phone_sound_type))
+    if settings.phone_erap_bypass:
+        them.append(("ABOX ERAP info Bypass On", "1"))
+    return ([(f"AIF1TX{tx} Input {i}", "None") for tx in (1, 2) for i in (1, 3, 4)] +
+            [("ABOX SPUS OUT0", "SIFS1"),
+             ("ABOX UAIF0 SPK", "SIFS1"),
              ("ABOX NSRC1", "UAIF0"), ("ABOX ERAP info USB On", "0"),
-             ("AIF1TX1 Input 2", "AIF1RX1"), ("AIF1TX2 Input 2", "AIF1RX1")] +
-            [(f"AIF1TX{tx} Input {i}", "None") for tx in (1, 2) for i in (1, 3, 4)])
+             ("AIF1TX1 Input 2", "AIF1RX1"), ("AIF1TX2 Input 2", tx2)] + them)
 
 
 def _tuyen_usb(on: bool) -> list[tuple[str, str]]:
@@ -746,8 +789,79 @@ async def doc_duong_tiem(serial: str) -> dict[str, str]:
     return ra
 
 
+def lenh_duong_tiem(on: bool, duong: str | None = None) -> tuple[str, int, str]:
+    """(chuỗi lệnh shell, số control, tên đường) để đặt đường tiêm - cho những
+    chỗ cần tự chạy lệnh ngay trên máy thay vì qua `set_uplink_injection`."""
+    duong = (duong or settings.phone_duong_tiem or "codec").lower()
+    dat = _tuyen_usb(on) if duong == "usb" else _tuyen_codec(on)
+    return "; ".join(f'{MIXCTL} set "{ten}" "{gt}"' for ten, gt in dat), len(dat), duong
+
+
+class VoRootSan:
+    """Một phiên `adb shell su` mở SẴN, để lúc cần chỉ việc ghi lệnh vào.
+
+    Mỗi lượt `adb shell su -c ...` mất ~1 giây chỉ để dựng phiên, còn bản thân
+    mười mấy lệnh mixer chạy trong vài chục ms. Với đường tiêm, 1 giây đó rơi
+    đúng lúc khách vừa nhấc máy: micro của máy farm còn mở nên khách nghe tiếng
+    rè của phòng đặt máy (đo ở máy nhận 08-10-2026: ~1,2s rè trước lời chào).
+    Mở vỏ từ lúc đổ chuông thì khi nối máy chỉ còn độ trễ ghi lệnh.
+    """
+
+    def __init__(self, serial: str):
+        self.serial = serial
+        self._proc = None
+
+    async def mo(self) -> bool:
+        try:
+            self._proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", self.serial, "shell", "su",
+                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT)
+            return (await self.chay("echo san_sang", cho=6.0)) is not None
+        except Exception as e:
+            logger.debug("Không mở được vỏ root sẵn cho %s: %s", self.serial, e)
+            self._proc = None
+            return False
+
+    async def chay(self, lenh: str, cho: float = 6.0) -> str | None:
+        """Chạy `lenh`, trả stdout; None nếu vỏ hỏng hoặc quá giờ."""
+        p = self._proc
+        if p is None or p.returncode is not None:
+            return None
+        moc = "__XONG_VO_ROOT__"
+        try:
+            p.stdin.write(f"{lenh}; echo {moc}\n".encode())
+            await p.stdin.drain()
+            ra = []
+            while True:
+                dong = (await asyncio.wait_for(p.stdout.readline(), cho)).decode(errors="replace")
+                if not dong:
+                    return None
+                if moc in dong:
+                    return "".join(ra)
+                ra.append(dong)
+        except Exception:
+            return None
+
+    async def dong(self):
+        p, self._proc = self._proc, None
+        if p is None:
+            return
+        try:
+            if p.returncode is None:
+                p.stdin.write(b"exit\n")
+                await p.stdin.drain()
+                await asyncio.wait_for(p.wait(), 2.0)
+        except Exception:
+            try:
+                p.kill()
+            except Exception:
+                pass
+
+
 async def set_uplink_injection(serial: str, on: bool,
-                               duong: str | None = None) -> tuple[bool, str]:
+                               duong: str | None = None,
+                               vo: "VoRootSan | None" = None) -> tuple[bool, str]:
     """Bật/tắt đường đưa tiếng AI vào chiều lên của cuộc gọi.
 
     Hai đường, chọn bằng `settings.phone_duong_tiem` hoặc tham số `duong`:
@@ -772,8 +886,13 @@ async def set_uplink_injection(serial: str, on: bool,
     # ("AIF1TX1 Input 2", "SPUS OUT0"). Bọc thiếu giá trị thì shell tách đôi và
     # mixctl chỉ nhận "SPUS" rồi báo không nằm trong danh sách.
     lenh = "; ".join(f'{MIXCTL} set "{ten}" "{gt}"' for ten, gt in dat)
-    code, out, err = await _run("-s", serial, "shell", f"su -c '{lenh}'",
-                                timeout=25.0)
+    # Có vỏ root mở sẵn (`VoRootSan`) thì ghi thẳng vào đó; hỏng thì đường cũ.
+    out_san = await vo.chay(lenh) if vo is not None else None
+    if out_san is not None and out_san.count("da dat") >= len(dat):
+        code, out, err = 0, out_san, ""
+    else:
+        code, out, err = await _run("-s", serial, "shell", f"su -c '{lenh}'",
+                                    timeout=25.0)
     so_ok = out.count("da dat")
     if code != 0 or so_ok < len(dat):
         return False, (f"Không đặt được đường tiêm '{duong}' — "

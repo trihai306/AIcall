@@ -75,3 +75,27 @@ def test_khach_phu_dinh_thi_bo_cau_cu():
 
 def test_khach_bao_khoan_thi_bo_cau_cu():
     assert nen_doc_not(phan_do_giay=2.0, cau_khach="khoan đã anh ơi") is False
+
+
+def test_ban_tam_hai_tu_trung_dau_loi_ai_la_vong():
+    """Cuộc 08-10-2026: AI tự cắt lời 5 lần vì bản tạm mới có hai từ đầu câu
+    của chính nó ('dạ gói', 'dạ phần')."""
+    ai = "Dạ gói này hỗ trợ tối đa 500 triệu đồng ạ."
+    assert not nen_dung(420, "dạ gói", ai, 700)
+    assert not nen_dung(420, "a lô", ai, 700)
+    # Hai từ có trong lời AI nhưng không liền nhau: khách nói thật.
+    assert nen_dung(420, "triệu gói", ai, 700)
+    assert nen_dung(420, "không phải", ai, 700)
+
+
+def test_cau_dung_o_tu_noi_la_cau_con_do():
+    from backend.services.cat_loi_dieu_kien import cau_con_do
+    assert cau_con_do("thế anh muốn vay ba trăm triệu trong vòng")
+    assert not cau_con_do("anh muốn vay ba trăm triệu trong vòng mười hai tháng")
+    assert not cau_con_do("thì")
+
+
+def test_cau_dung_o_dong_tu_thieu_ve_sau_la_con_do():
+    from backend.services.cat_loi_dieu_kien import cau_con_do
+    assert cau_con_do("thì bên em cho vay")
+    assert not cau_con_do("bên em cho vay tối đa bao nhiêu tháng")

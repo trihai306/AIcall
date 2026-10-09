@@ -17,6 +17,7 @@ import asyncio
 import base64
 import io
 import logging
+import re
 import time
 import wave
 
@@ -29,7 +30,7 @@ from backend.services.audio_utils import (
     resample_lien_tuc,
 )
 from backend.pipeline.session_manager import viec_cho_doan_ngan
-from backend.services.cat_loi_dieu_kien import nen_dung
+from backend.services.cat_loi_dieu_kien import cau_con_do, nen_dung
 from backend.services.dem_truoc import DEM_TRUOC_MS, DemTruoc
 from backend.services.gender_detect import doan_gioi_tinh
 from backend.services.khu_vong import KhuVong
@@ -107,6 +108,8 @@ MAX_TURN_MS = 15000        # chốt chặn: không để một lượt kéo dài
 # thành "AI im" và báo hội thoại đứt quãng. 130ms vẫn dài hơn hẳn 80ms mà
 # VAD_ON_FRAMES đòi, nên không mở thêm cửa cho tiếng động.
 MIN_TURN_MS = 130
+# Mức coi là khách đang phát ra tiếng trong lúc chờ chào (chưa đo được nền kênh).
+NGUONG_TIENG_CHO = 700.0
 # Phải NHIỀU khung liên tiếp vượt ngưỡng mới coi là khách bắt đầu nói. Một khung
 # thôi thì mọi tiếng gõ bàn, tiếng ho, tiếng xe ngoài đường đều mở một lượt mới -
 # đo trong phòng làm việc: nền ~1235 so với ngưỡng 700, cứ vài giây lại kích một
@@ -698,6 +701,11 @@ class PhoneCallBridge:
         # không - đúng thứ đã xảy ra ở lần gọi thử đầu ("5 lượt hội thoại" trong
         # khi chưa ai bắt máy). Bật cờ này lên là đọc để socket khỏi ứ nhưng vứt.
         self.tam_dung_nghe = False
+        # Mốc khung tiếng AI gần nhất được phát ra, cho chế độ bán song công.
+        self._t_ai_phat = 0.0
+        # Tiếng khách trong lúc CHƯA mở nghe (xem nhánh `tam_dung_nghe`).
+        self._khung_tieng_khach = 0
+        self._t_tieng_khach = 0.0
 
         # Nền ồn thật của kênh, đo ngay khi bắt đầu nghe. Hằng số VAD_RMS_ON
         # được chỉnh cho micro trình duyệt; kênh thoại EDGE có nền cao hơn nên
@@ -800,9 +808,48 @@ class PhoneCallBridge:
             logger.warning(f"{self.tag} nối lại không được: {e}")
             return False
 
+    def _canh_vong_su_kien(self):
+        """Chụp ĐOẠN MÃ đang chạy mỗi khi vòng sự kiện đứng quá 250ms.
+
+        Vòng phát tiếng xuống máy sống trên vòng sự kiện: nó đứng thì khách
+        nghe AI "đang nói tự nhiên dứt" - cuộc e9ecd741 (08-10-2026) tệp tiếng
+        dài 2,95s liền mạch mà phát ra thành 3,6s với 0,6s im ở giữa, trong khi
+        không khung nào đói và điện thoại không nghẽn. Một luồng riêng nhìn
+        nhịp tim của vòng; nhịp trễ thì ghi ngăn xếp của luồng chính ra log để
+        biết ai đang giữ nó.
+        """
+        import sys
+        import threading
+        import traceback
+        vong = asyncio.get_running_loop()
+        luong_chinh = threading.get_ident()
+        tim = {"t": time.perf_counter()}
+
+        async def _dap():
+            while self.running:
+                tim["t"] = time.perf_counter()
+                await asyncio.sleep(0.05)
+
+        def _canh():
+            bao_luc = 0.0
+            while self.running:
+                time.sleep(0.05)
+                tre = time.perf_counter() - tim["t"]
+                if tre > 0.25 and time.perf_counter() - bao_luc > 1.0:
+                    bao_luc = time.perf_counter()
+                    khung = sys._current_frames().get(luong_chinh)
+                    ngan_xep = "".join(traceback.format_stack(khung)[-7:]) if khung else "?"
+                    logger.warning("%s VÒNG SỰ KIỆN ĐỨNG %.0fms - đang kẹt ở:\n%s",
+                                   self.tag, tre * 1000, ngan_xep)
+
+        vong.create_task(_dap())
+        threading.Thread(target=_canh, daemon=True).start()
+
     async def start(self, ghi_am: bool = True):
         await self._mo_o_cam()
         self.running = True
+        if settings.phone_canh_vong_su_kien:
+            self._canh_vong_su_kien()
         if ghi_am:
             bo_ghi = GhiAmCuocGoi(
                 self.session.session_id, settings.recordings_dir,
@@ -1172,14 +1219,27 @@ class PhoneCallBridge:
                 khung_8k = self._xuong_8k(frame)
                 if self.ghi_am is not None:
                     self.ghi_am.them_bot(khung_8k)
+                self._t_ai_phat = time.monotonic()
                 # Tham chiếu cho bộ khử vọng: cùng chỗ, cùng lý do với bản ghi -
                 # tới đây thì khung chắc chắn được phát ra.
                 if self.khu_vong_bat:
                     self.khu_vong.them_tham_chieu(khung_8k)
 
                 try:
+                    t_gui = time.perf_counter()
                     self.writer.write(frame)
                     await self.writer.drain()
+                    # Điện thoại ngừng nhận (AudioTrack trên máy bị nghẽn/dựng
+                    # lại) thì `drain` đứng ở đây và khách nghe AI "đang nói tự
+                    # nhiên dứt": cuộc 5901dca0 (08-10-2026) lời chào nói 1,8s,
+                    # im 1,0s, rồi nói nốt - bản thu ở máy nhận khớp y hệt. Bộ
+                    # đếm đói khung không thấy vì hàng đợi vẫn còn khung.
+                    cham = (time.perf_counter() - t_gui) * 1000
+                    if cham > 150:
+                        self._nghen_xuong_ms = getattr(self, "_nghen_xuong_ms", 0) + cham
+                        logger.warning(
+                            f"{self.tag} điện thoại ngừng nhận tiếng %dms giữa lúc AI "
+                            "đang nói - khách nghe AI khựng lại", cham)
                 except (ConnectionError, OSError) as e:
                     logger.warning(f"{self.tag} đứt ổ cắm khi gửi: {e} — nối lại")
                     if not await self.noi_lai():
@@ -1357,6 +1417,11 @@ class PhoneCallBridge:
                         self.khu_vong.xu_ly(int16_to_float32(frame)))
 
                 if self.tam_dung_nghe:
+                    # Vẫn THEO DÕI MỨC dù chưa nghe: `chao_khi_bat_may` cần biết
+                    # khách có đang "a lô" không để đừng chào đè lên họ.
+                    if compute_rms(int16_to_float32(frame)) * 32768.0 >= NGUONG_TIENG_CHO:
+                        self._khung_tieng_khach += 1
+                        self._t_tieng_khach = time.monotonic()
                     speaking, on_streak, silence_ms, speech_ms = False, 0, 0, 0
                     silence_rms_ms = 0
                     spec_cho.clear()
@@ -1365,6 +1430,14 @@ class PhoneCallBridge:
                     self.nen_kenh = None
                     self._mau_nen.clear()
                     continue
+
+                # BÁN SONG CÔNG: trong lúc AI đang phát (và một quãng đuôi cho
+                # tiếng vọng về tới) thì coi kênh khách là im. Xem
+                # `settings.phone_ban_song_cong`. Bản ghi ở trên vẫn giữ bản thô.
+                if settings.phone_ban_song_cong and (
+                        time.monotonic() - self._t_ai_phat
+                        < settings.phone_ban_song_cong_duoi_ms / 1000):
+                    frame = bytes(len(frame))
 
                 rms = compute_rms(int16_to_float32(frame)) * 32768.0
 
@@ -1635,7 +1708,13 @@ class PhoneCallBridge:
                     except Exception as e:
                         logger.debug(f"{self.tag} đoán cuối câu bỏ qua: {e}")
 
-                if silence_ms >= SILENCE_END_MS or speech_ms >= MAX_TURN_MS:
+                # Câu còn dở ("... trong vòng") thì chờ thêm trước khi chốt lượt.
+                # Bản tạm có từ mốc SPEC_CUOI_MS, kịp trước mốc chốt 700ms.
+                can_im = SILENCE_END_MS
+                if settings.phone_cho_cau_do_ms and cau_con_do(
+                        (self.session.spec_stt or (0, ""))[1]):
+                    can_im += settings.phone_cho_cau_do_ms
+                if silence_ms >= can_im or speech_ms >= MAX_TURN_MS:
                     speaking = False
                     # Khách dứt lời `silence_ms` TRƯỚC lúc này, không phải bây
                     # giờ. Trừ ngược ra thay vì cộng hằng số SILENCE_END_MS: khi
@@ -1881,7 +1960,7 @@ class PhoneCallManager:
         ]
 
     async def start(self, serial: str, pipeline, session, port: int = 8123,
-                    src: int = 3, inject: bool = True,
+                    src: int | None = None, inject: bool = True,
                     ghi_am: bool = True,
                     cho_bat_may: bool = False) -> tuple[bool, str]:
         """Mở đường tiếng cho một cuộc gọi trên máy `serial`.
@@ -1901,6 +1980,8 @@ class PhoneCallManager:
 
         if serial in self._calls:
             return False, "Máy này đã có phiên tiếng đang chạy"
+        if src is None:
+            src = settings.phone_src_thu
 
         from backend.core.service_priority import prepare_customer_service
         await prepare_customer_service()
@@ -2050,34 +2131,183 @@ class PhoneCallManager:
 
         asyncio.create_task(_ham_llm())
 
+        # Dựng sẵn chỉ mục của bộ chọn đáp án trong lúc đổ chuông, ở luồng
+        # riêng. Lần dùng đầu sau khi backend khởi động (hoặc sau khi kho đổi)
+        # nó tự dựng ngay trong lượt thoại, giữ vòng sự kiện 513ms - bắt được ở
+        # cuộc d1086216 (08-10-2026), đúng lúc lời chào vừa dứt.
+        async def _ham_chi_muc():
+            try:
+                from backend.main import app_state
+                from backend.services.answer_bank_selector import _chi_muc_cua
+                bang = getattr(app_state, "hoi_dap", None)
+                if bang:
+                    await asyncio.to_thread(_chi_muc_cua, bang)
+            except Exception as e:
+                logger.debug(f"{bridge.tag} hâm chỉ mục bỏ qua: {e}")
+
+        asyncio.create_task(_ham_chi_muc())
+
+        # Mở sẵn vỏ root trong lúc đổ chuông, xem `adb_service.VoRootSan`.
+        vo = adb_service.VoRootSan(serial)
+        if not await vo.mo():
+            vo = None
+        # Hạ âm lượng nhánh micro về 0 từ lúc đổ chuông: từ khi nối máy tới khi
+        # đường tiêm đặt xong (~0,5-1s dò "đã nhấc máy") micro máy farm còn mở,
+        # khách nghe tiếng rè của phòng đặt máy trước lời chào. Trả lại mức cũ
+        # ngay sau khi đường tiêm đã tắt micro, hoặc khi không ai bắt máy.
+        MIC_VOL = ("AIF1TX1 Input 1 Volume", "AIF1TX2 Input 1 Volume")
+        muc_mic: dict[str, str] = {}
+
+        async def _mic(tra_lai: bool):
+            if vo is None:
+                return
+            if not tra_lai:
+                ra = await vo.chay("; ".join(
+                    f'{adb_service.MIXCTL} get "{t}"' for t in MIC_VOL)) or ""
+                for dong in ra.splitlines():
+                    m = re.match(r"(.+?)\[0\] = (\d+)", dong.strip())
+                    if m:
+                        muc_mic[m.group(1)] = m.group(2)
+                if len(muc_mic) == len(MIC_VOL):
+                    await vo.chay("; ".join(
+                        f'{adb_service.MIXCTL} set "{t}" 0' for t in MIC_VOL))
+            elif muc_mic:
+                await vo.chay("; ".join(
+                    f'{adb_service.MIXCTL} set "{t}" {v}' for t, v in muc_mic.items()))
+
+        if settings.phone_tat_mic_khi_do_chuong:
+            await _mic(False)
+
+        # DÒ NỐI MÁY VÀ ĐẶT ĐƯỜNG TIÊM NGAY TRÊN ĐIỆN THOẠI. Dò từ máy tính
+        # thì mỗi vòng là một lượt adb (~0,3-0,5s) rồi mới tới lượt đặt; trong
+        # quãng đó micro máy farm còn mở và khách nghe ~1 giây rè ("dè") trước
+        # lời chào. Vòng lặp dưới chạy trong vỏ root đã mở sẵn: thấy cuộc gọi
+        # sang ACTIVE là đặt luôn, trễ cỡ một lượt dumpsys tại chỗ. 0,25s sau
+        # soát lại một lần, HAL có ghi đè thì đặt lại đúng một lần nữa.
+        da_dat_tai_cho = False
+        if vo is not None and settings.phone_do_noi_may_tai_cho:
+            lenh, so, duong = adb_service.lenh_duong_tiem(True)
+            soat = ("" if duong != "codec" else
+                    f'; sleep 0.25; if ! {adb_service.MIXCTL} get "AIF1TX1 Input 2" '
+                    f'| grep -q AIF1RX1; then {lenh}; echo DAT_LAI; fi')
+            vong = int(cho_toi_da / 0.07)
+            kich_ban = (
+                f"n=0; while [ $n -lt {vong} ]; do "
+                'if dumpsys telephony.registry | grep -q "Foreground call state: 1"; '
+                f"then {lenh}; echo NOI_MAY{soat}; break; fi; "
+                "n=$((n+1)); sleep 0.05; done")
+            viec = asyncio.create_task(vo.chay(kich_ban, cho=cho_toi_da + 10))
+            while not viec.done():
+                await asyncio.sleep(0.05)
+                if serial not in self._calls:
+                    viec.cancel()
+                    await vo.dong()
+                    return                  # cuộc gọi bị dừng trong lúc chờ
+            ra = viec.result() if not viec.cancelled() else None
+            if ra is not None and "NOI_MAY" not in ra:
+                logger.info(f"{bridge.tag} không ai bắt máy trong %.0fs, không chào",
+                            cho_toi_da)
+                await vo.dong()
+                return
+            if ra is not None and ra.count("da dat") >= so:
+                da_dat_tai_cho = True
+                ok_inj = True
+                msg_inj = (f"Đường lên [{duong}]: đặt ngay trên máy khi nối máy"
+                           + (" (HAL ghi đè, đã đặt lại)" if "DAT_LAI" in ra else ""))
+                asyncio.create_task(vo.dong())
+            # ra None (vỏ hỏng) hoặc đặt thiếu: rơi xuống đường dò cũ bên dưới.
+
         het = time.perf_counter() + cho_toi_da
-        while time.perf_counter() < het:
-            await asyncio.sleep(1.0)
+        while not da_dat_tai_cho and time.perf_counter() < het:
+            # 0,4s chứ không phải 1s: mỗi vòng còn tốn thêm hai lượt dumpsys.
+            # Khách nhấc máy rồi nghe im 3-4 giây mới tới lời chào thì "a lô"
+            # vào khoảng trống, mà lúc đó máy còn chưa mở nghe.
+            await asyncio.sleep(0.4)
             if serial not in self._calls:
+                if vo is not None:
+                    await _mic(True)
+                    await vo.dong()
                 return                      # cuộc gọi bị dừng trong lúc chờ
             ma, _ = await adb_service.precise_call_state(serial)
             if ma == 1:
                 break
         else:
-            logger.info(f"{bridge.tag} không ai bắt máy trong %.0fs, không chào",
-                        cho_toi_da)
-            return
+            if not da_dat_tai_cho:
+                logger.info(f"{bridge.tag} không ai bắt máy trong %.0fs, không chào",
+                            cho_toi_da)
+                if vo is not None:
+                    await _mic(True)
+                    await vo.dong()
+                return
 
-        await asyncio.sleep(0.8)
-        ok_inj, msg_inj = await adb_service.set_uplink_injection(serial, True)
+        # 0,2s là đủ trên ROM Android 15: chụp toàn bộ control ABOX/AIF theo
+        # giây (08-10-2026) thấy HAL dựng xong tuyến IN_CALL trước cả lúc ta dò
+        # ra "đã nhấc máy", và không ghi đè gì trong 17 giây sau đó. Trước đây
+        # chờ 0,8s, khách nhấc máy nghe im thêm ngần đó.
+        if not da_dat_tai_cho:
+            await asyncio.sleep(0.2)
+            ok_inj, msg_inj = await adb_service.set_uplink_injection(serial, True, vo=vo)
+            if vo is not None:
+                async def _don_vo():
+                    await _mic(True)
+                    await vo.dong()
+                asyncio.create_task(_don_vo())
         logger.info(f"{bridge.tag} %s", msg_inj)
         if not ok_inj:
             logger.warning(f"{bridge.tag} KHÔNG đặt được đường tiêm -> khách sẽ không "
                            "nghe thấy AI")
         # Đọc lại để chắc HAL không giật lại ngay. Đọc là thao tác vô hại, khác
-        # hẳn ghi - xem chú thích ở `PhoneCallManager.start`.
-        doc = await adb_service.doc_duong_tiem(serial)
-        thieu = [k for k in ("ABOX UAIF0 SPK", "AIF1TX1 Input 2")
-                 if doc.get(k) in (None, "None", "RESERVED")]
-        if thieu:
-            logger.warning(f"{bridge.tag} đường tiêm bị HAL giật lại ngay: %s -> khách "
-                           "không nghe thấy AI", ", ".join(thieu))
+        # hẳn ghi - xem chú thích ở `PhoneCallManager.start`. Chạy NỀN: lượt đọc
+        # mất ~1s adb, để nó chắn trước lời chào là khách chờ thêm 1s im lặng.
+        async def _doc_lai():
+            try:
+                doc = await adb_service.doc_duong_tiem(serial)
+            except Exception:
+                return
+            thieu = [k for k in ("ABOX UAIF0 SPK", "AIF1TX1 Input 2")
+                     if doc.get(k) in (None, "None", "RESERVED")]
+            if thieu:
+                logger.warning(f"{bridge.tag} đường tiêm bị HAL giật lại ngay: %s -> "
+                               "khách không nghe thấy AI", ", ".join(thieu))
 
+        if settings.phone_doc_lai_duong_tiem:
+            asyncio.create_task(_doc_lai())
+        # Đệm im trước lời chào: tuyến vừa đổi và AudioTrack vừa thức, phát
+        # ngay thì mấy trăm ms đầu bị chặt vụn (đo ở máy nhận 08-10-2026: 0,4s
+        # đầu lời chào bật/tắt mỗi 50ms - khách nghe "dè" rồi mất chữ đầu).
+        if settings.phone_dem_im_truoc_chao_ms > 0:
+            try:
+                for _ in range(settings.phone_dem_im_truoc_chao_ms // FRAME_MS):
+                    await bridge._out.put(bytes(FRAME_BYTES_XUONG))
+            except Exception as e:
+                logger.debug(f"{bridge.tag} đệm im bỏ qua: {e}")
+
+        # NHƯỜNG KHÁCH "A LÔ" TRƯỚC. Người nhấc máy gần như ai cũng "a lô" ngay
+        # trong giây đầu; chào đúng lúc đó là hai bên nói đè, máy khách tự ép
+        # nhỏ tiếng vào trong lúc chủ máy đang nói, và khách không nghe được
+        # lời chào. Bản ghi hai cuộc 08-10-2026 (d1086216, 7b63d2db): "a lô" lần
+        # một nằm trọn trong lời chào, khách phải "a lô" thêm hai lần, 9-15 giây
+        # sau mới được đáp. Nên: chờ một nhịp ngắn xem khách có lên tiếng không;
+        # có thì đợi họ dứt rồi mới chào, không thì chào luôn.
+        cho_ms = settings.phone_cho_alo_ms
+        if cho_ms > 0 and wav:
+            bridge._khung_tieng_khach = 0
+            t_cho = time.monotonic()
+            while True:
+                await asyncio.sleep(0.04)
+                nay = time.monotonic()
+                da_noi = bridge._khung_tieng_khach >= 3
+                if not da_noi and (nay - t_cho) * 1000 >= cho_ms:
+                    break
+                if da_noi and (nay - bridge._t_tieng_khach) * 1000 >= 350:
+                    logger.info(f"{bridge.tag} khách lên tiếng trước (%d khung) - "
+                                "chào sau khi họ dứt, trễ %.0fms",
+                                bridge._khung_tieng_khach, (nay - t_cho) * 1000)
+                    break
+                if nay - t_cho >= 3.0:
+                    break
+                if serial not in self._calls:
+                    return
         try:
             if wav:
                 await bridge.play(wav)
