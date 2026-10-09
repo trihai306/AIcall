@@ -21,3 +21,11 @@ def _tat_chi_chon_trong_kho(request, monkeypatch):
     from backend.config import settings
     monkeypatch.setattr(settings, "chi_chon_trong_kho",
                         "chi_chon" in request.module.__name__)
+
+
+@pytest.fixture(autouse=True)
+def _vector_kho_tra_loi_ra_thu_muc_tam(monkeypatch, tmp_path):
+    """Vector kho trả lời được giữ trên đĩa. Test dùng embedding giả, để nó ghi
+    vào `data/cache` thật là lần khởi động sau máy thật nạp vector giả."""
+    from backend.config import settings
+    monkeypatch.setattr(settings, "hoi_dap_vector_cache_dir", str(tmp_path / "vec"))

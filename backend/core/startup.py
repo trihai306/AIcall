@@ -93,15 +93,118 @@ async def _nhung_cpu(rag, nhom):
         raise
 
 
+def _tep_vector_hoi_dap():
+    """Tệp giữ vector đã nhúng của kho trả lời, riêng cho từng model nhúng."""
+    import hashlib
+    from pathlib import Path
+    from backend.services.bang_hoi_dap import RETRIEVAL_LAYOUT_VERSION
+    khoa = hashlib.sha1(
+        f"{settings.embedding_model}|{RETRIEVAL_LAYOUT_VERSION}".encode()).hexdigest()[:12]
+    return Path(settings.hoi_dap_vector_cache_dir) / f"hoi_dap_vector_{khoa}.npz"
+
+
+def _doc_vector_da_luu() -> dict:
+    """{sha1(văn bản): vector đã chuẩn hoá}. Hỏng hay thiếu thì coi như rỗng."""
+    import numpy as np
+    try:
+        with np.load(_tep_vector_hoi_dap(), allow_pickle=False) as tep:
+            return dict(zip(tep["khoa"].tolist(), tep["vector"]))
+    except Exception:
+        return {}
+
+
+def _ghi_vector_da_luu(theo_khoa: dict) -> None:
+    import os
+    import numpy as np
+    if not theo_khoa:
+        return
+    tep = _tep_vector_hoi_dap()
+    try:
+        tep.parent.mkdir(parents=True, exist_ok=True)
+        tam = tep.with_suffix(".tmp.npz")
+        khoa = list(theo_khoa)
+        np.savez(tam, khoa=np.asarray(khoa), vector=np.stack([theo_khoa[k] for k in khoa]))
+        os.replace(tam, tep)
+    except Exception as e:
+        logger.warning("Không lưu được vector kho trả lời: %s", e)
+
+
+# Từ ngần này văn bản mới trở lên thì mượn GPU một lúc thay vì nhúng trên CPU.
+NHUNG_GPU_TU = 200
+
+
+def _nhung_tam_tren_gpu(texts: list[str]):
+    """Nhúng hàng loạt bằng một bản model TẠM trên GPU rồi trả VRAM ngay.
+
+    Model nhúng thường trú ở CPU để nhường VRAM cho STT/LLM/TTS, đủ cho một câu
+    khách mỗi lượt nhưng nhúng cả kho thì 15.000 văn bản mất 36 phút. Đo
+    08-10-2026 trên RTX 5070: bản fp16 trên GPU nhúng 3.000 văn bản trong 1,0s,
+    đỉnh 2,6GB, cosine so với bản CPU thấp nhất 0,999997. Lỗi gì (không có GPU,
+    hết VRAM) cũng trả None để đường CPU cũ lo.
+    """
+    try:
+        import numpy as np
+        import torch
+        if not torch.cuda.is_available():
+            return None
+        from sentence_transformers import SentenceTransformer
+        model = SentenceTransformer(settings.embedding_model, device="cuda")
+        try:
+            model.half()
+            vec = np.asarray(model.encode(texts, batch_size=128), dtype=np.float32)
+        finally:
+            del model
+            torch.cuda.empty_cache()
+        chuan = np.linalg.norm(vec, axis=1, keepdims=True)
+        chuan[chuan == 0] = 1.0
+        return vec / chuan
+    except Exception as e:
+        logger.warning("Nhúng tạm trên GPU không được, quay về CPU: %s", e)
+        return None
+
+
 async def _nhung_bang_hoi_dap(state, dong):
+    """Nhúng kho trả lời, CHỈ tính những văn bản chưa có trong tệp đã lưu.
+
+    Trước 08-10-2026 mỗi lần khởi động nhúng lại TRỌN kho trên CPU: 2.700 đáp án
+    mất ~10 phút, 5.500 đáp án (16.000 văn bản, 511 lô) mất 36 phút - backend
+    không trả lời nổi một câu trong suốt quãng đó. Vector của một văn bản không
+    đổi khi kho thêm dòng, nên giữ lại theo sha1 của chữ; lần sau chỉ nhúng phần
+    mới. Đổi model nhúng hay bố cục truy hồi là sang tệp khác (xem khoá tên tệp).
+    """
+    import hashlib
+    import numpy as np
     from backend.services.bang_hoi_dap import retrieval_texts, RETRIEVAL_LAYOUT_VERSION
+
+    def khoa(text: str) -> str:
+        return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
     rag = state.rag
     groups = [(row["id"], retrieval_texts(row)) for row in dong]
-    if str(settings.embedding_device).lower() == "cpu":
-        vectors = await _nhung_cpu(rag, groups)
-    else:
-        vectors = _nhung_theo_nhom(rag, groups)
+    da_luu = _doc_vector_da_luu()
+    thieu = list(dict.fromkeys(
+        text for _, texts in groups for text in texts if khoa(text) not in da_luu))
+    if thieu:
+        logger.info("Kho trả lời: nhúng %d văn bản mới, dùng lại %d vector đã lưu",
+                    len(thieu), len(da_luu))
+        nhanh = None
+        if len(thieu) >= NHUNG_GPU_TU:
+            nhanh = await asyncio.to_thread(_nhung_tam_tren_gpu, thieu)
+        if nhanh is not None:
+            da_luu.update({khoa(text): vec for text, vec in zip(thieu, nhanh)})
+        else:
+            nhom = [(text, (text,)) for text in thieu]
+            if str(settings.embedding_device).lower() == "cpu":
+                moi = await _nhung_cpu(rag, nhom)
+            else:
+                moi = _nhung_theo_nhom(rag, nhom)
+            da_luu.update({khoa(text): np.asarray(moi[text][0]) for text in thieu})
+    can = {khoa(text) for _, texts in groups for text in texts}
+    if thieu or len(da_luu) > len(can):
+        # Chỉ giữ vector của văn bản còn trong kho, không để tệp phình mãi.
+        _ghi_vector_da_luu({k: v for k, v in da_luu.items() if k in can})
+    vectors = {ma: np.stack([da_luu[khoa(text)] for text in texts])
+               for ma, texts in groups if texts}
     state.hoi_dap_vector = vectors
     state._hoi_dap_vector_rag = rag
     state._hoi_dap_vector_layout = RETRIEVAL_LAYOUT_VERSION

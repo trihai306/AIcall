@@ -14,6 +14,7 @@ và vector do `rag.embed` sinh, nên tệp này chỉ lo dữ liệu và luật 
 được trên máy không GPU.
 """
 import json
+import functools
 import re
 import unicodedata
 
@@ -67,6 +68,9 @@ def kiem_dong(d: dict) -> None:
                       "đệm rồi im bặt")
 
 
+# Nhớ kết quả: mỗi lượt bộ chọn chuẩn hoá lại câu mẫu của CẢ kho (5.500 đáp
+# án), đo 08-10-2026 mất ~300ms ngay trên vòng sự kiện giữa cuộc gọi.
+@functools.lru_cache(maxsize=200_000)
 def _khoa_san_pham(text: str) -> str:
     text = (text or "").replace("_", " ").replace("-", " ")
     text = text.replace("đ", "d").replace("Đ", "D")

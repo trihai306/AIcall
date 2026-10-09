@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import functools
 import re
 import unicodedata
 from collections.abc import Mapping, Sequence, Set
@@ -26,6 +27,9 @@ GENERATED_PREFIXES = ("auto_", "staff_", "mem_", "ab_auto_", "ab_staff_", "ab_me
 MAX_PREPARED_ANSWER_CHARS = 8000
 
 
+# Nhớ kết quả: mỗi lượt bộ chọn chuẩn hoá lại câu mẫu của CẢ kho (5.500 đáp
+# án), đo 08-10-2026 mất ~300ms ngay trên vòng sự kiện giữa cuộc gọi.
+@functools.lru_cache(maxsize=200_000)
 def _norm(value: str) -> str:
     value = unicodedata.normalize("NFD", (value or "").casefold())
     value = "".join(c for c in value if unicodedata.category(c) != "Mn")

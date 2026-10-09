@@ -29,6 +29,7 @@ from pathlib import Path
 
 import numpy as np
 
+from backend.config import settings
 from backend.services.audio_utils import pcm_to_wav
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,49 @@ async def dung_tieng_ca_cau(tts, text: str, voice: str) -> bytes:
     return pcm_to_wav(np.concatenate(khuc).tobytes(), sample_rate=SR)
 
 
+def rut_quang_im(wav: bytes, toi_da_ms: int, nguong: float = 90.0) -> bytes:
+    """Rút mọi quãng im BÊN TRONG câu dài hơn `toi_da_ms` về đúng `toi_da_ms`.
+
+    Tiếng sẵn là nhiều mảnh F5 nối lại: mỗi mảnh mang lặng thừa ở đầu và đuôi,
+    cộng nhịp nghỉ chèn giữa hai mảnh. Đo trên cuộc gọi thật 08-10-2026: giữa
+    "hạn mức vay tín chấp cá nhân" và "lên đến 500 triệu đồng" im 640ms, câu
+    khác tới 840ms - khách tả là "đang nói tự nhiên dứt cái". Rút ở LÚC PHÁT để
+    khỏi dựng lại mười mấy nghìn tệp; giữ phần đầu và phần cuối quãng im nên
+    đuôi âm trước và đầu âm sau không bị chạm.
+    """
+    if toi_da_ms <= 0 or len(wav) <= 44:
+        return wav
+    x = np.frombuffer(wav[44:], dtype=np.int16)
+    khung = SR // 100                                   # 10ms
+    n = len(x) // khung
+    if n < 20:
+        return wav
+    rms = np.sqrt((x[:n * khung].astype(np.float32).reshape(n, khung) ** 2).mean(1))
+    im = rms < nguong
+    giu = max(1, toi_da_ms // 10)                       # số khung im được giữ
+    lay = np.ones(n, dtype=bool)
+    co_tieng = np.flatnonzero(~im)
+    if len(co_tieng) == 0:
+        return wav
+    dau, cuoi = co_tieng[0], co_tieng[-1]
+    i = dau
+    while i <= cuoi:
+        if im[i]:
+            j = i
+            while j <= cuoi and im[j]:
+                j += 1
+            if j - i > giu:
+                nua = giu // 2
+                lay[i + nua: j - (giu - nua)] = False   # bỏ phần GIỮA quãng im
+            i = j
+        else:
+            i += 1
+    if lay.all():
+        return wav
+    ra = np.concatenate([x[:n * khung].reshape(n, khung)[lay].reshape(-1), x[n * khung:]])
+    return pcm_to_wav(ra.tobytes(), sample_rate=SR)
+
+
 class KhoTiengSan:
     def __init__(self, thu_muc: Path = THU_MUC_TIENG_SAN):
         self.thu_muc = Path(thu_muc)
@@ -98,7 +142,7 @@ class KhoTiengSan:
             return wav
         p = self._duong_dan(voice, ma, vt)
         if p.exists():
-            wav = p.read_bytes()
+            wav = rut_quang_im(p.read_bytes(), settings.tieng_san_im_toi_da_ms)
             self._cache[key] = wav
             return wav
         return None
@@ -126,7 +170,9 @@ class KhoTiengSan:
                     if cu != p:
                         cu.unlink(missing_ok=True)
             p.write_bytes(wav)
-            self._cache[(voice, ma, vt)] = wav
+            self._cache[(voice, ma, vt)] = rut_quang_im(
+                wav, settings.tieng_san_im_toi_da_ms)
+            wav = self._cache[(voice, ma, vt)]
             logger.info("Tiếng sẵn: dựng %r cho giọng %s trong %.0fms (%d ký tự)",
                         ma, voice, (time.perf_counter() - t0) * 1000, len(text))
             return wav

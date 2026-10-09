@@ -108,3 +108,37 @@ def test_answer_only_managed_validation_does_not_relax_legacy_or_empty_answer():
         kiem_dong({"id": "legacy", "cau_hoi": [], "tra_loi": "Có nội dung"})
     with pytest.raises(LoiBang, match="trả lời rỗng"):
         kiem_dong({"id": "ab_manual_x", "cau_hoi": [], "tra_loi": "   "})
+
+
+def test_khoi_dong_lan_hai_chi_nhung_van_ban_moi(monkeypatch):
+    """Lần khởi động sau không nhúng lại cả kho: 5.500 đáp án từng mất 36 phút."""
+    from backend.core.startup import _nhung_bang_hoi_dap
+    from backend.config import settings
+    from backend.services.bang_hoi_dap import doc_dong, retrieval_texts
+
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE hoi_dap (id TEXT,cau_dem TEXT,cau_hoi TEXT,tra_loi TEXT,san_pham TEXT,bat INTEGER)")
+    conn.execute("INSERT INTO hoi_dap VALUES ('a','','[\"Hỏi một\"]','Đáp một.','',1)")
+    calls = []
+
+    def embed(texts):
+        calls.append(list(texts))
+        return np.array([[float(len(t)), 1.0] for t in texts], dtype=np.float32)
+
+    state = SimpleNamespace(rag=SimpleNamespace(embed=embed))
+    monkeypatch.setattr(settings, "embedding_device", "cpu")
+    asyncio.run(_nhung_bang_hoi_dap(state, doc_dong(conn)))
+    lan_dau = {k: v.copy() for k, v in state.hoi_dap_vector.items()}
+
+    conn.execute("INSERT INTO hoi_dap VALUES ('b','','[\"Hỏi hai\"]','Đáp hai.','',1)")
+    rows = doc_dong(conn)
+    calls.clear()
+    asyncio.run(_nhung_bang_hoi_dap(state, rows))
+    moi = [t for t in retrieval_texts(rows[1]) if t not in retrieval_texts(rows[0])]
+    assert calls == [moi]
+    assert np.allclose(state.hoi_dap_vector["a"], lan_dau["a"])
+    assert len(state.hoi_dap_vector["b"]) == len(retrieval_texts(rows[1]))
+
+    calls.clear()
+    asyncio.run(_nhung_bang_hoi_dap(state, rows))
+    assert calls == []

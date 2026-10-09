@@ -133,6 +133,19 @@ class Settings(BaseSettings):
     # câu hẹn lại - nên phải làm dày kho (bảng "câu chưa có đáp án", Qwen tự hỏi).
     # CHI_CHON_TRONG_KHO=false là về lại mô hình sinh như cũ.
     chi_chon_trong_kho: bool = True
+    # HAI CHỐT cho câu do mô hình sinh, dùng khi `chi_chon_trong_kho` TẮT (chế
+    # độ kết hợp: kho + luật trước, kho không có thì mô hình trả lời):
+    #  - chặn mô hình tự tính tiền trả hàng tháng/tiền lãi (`chan_tu_tinh_tien`);
+    #  - số câu tối đa của một câu trả lời sinh ra, kèm tự thêm "Dạ" (0 = tắt).
+    # Nối câu hỏi dẫn dắt (số tiền -> thời hạn -> thu nhập -> ghi nhận hồ sơ) sau
+    # câu trả lời. Xem `pipeline/dan_dat.py`.
+    dan_dat_bat: bool = True
+    chan_tu_tinh_tien: bool = True
+    # Chặn mô hình tự phán "không được duyệt / chưa đủ điều kiện" (xem chan_tuan_thu).
+    chan_ket_luan_tu_choi: bool = True
+    sinh_cau_toi_da: int = 2
+    # Nơi giữ vector đã nhúng của kho trả lời (startup._nhung_bang_hoi_dap).
+    hoi_dap_vector_cache_dir: str = "data/cache"
     # Hạt giống cho nhiễu ngẫu nhiên của F5. KHÔNG chỗ nào trong repo lẫn trong
     # `utils_infer.py` đặt seed, nên mỗi lần sinh là một lần bốc nhiễu mới: cùng
     # một câu mỗi lần đọc một kiểu. Khách phản ánh đúng điều này 2026-08-08
@@ -309,7 +322,29 @@ class Settings(BaseSettings):
     #
     # Cái giá: khách nói thật vẫn bị AI nói đè trong chừng ấy thời gian. Hạ số
     # này xuống thì AI nhạy hơn nhưng dễ bị cắt oan trở lại.
+    # Quãng im dài nhất còn được giữ BÊN TRONG một câu tiếng dựng sẵn, xem
+    # `tieng_san.rut_quang_im`. 0 là tắt (phát nguyên tệp).
+    tieng_san_im_toi_da_ms: int = 220
+    # Bộ canh vòng sự kiện trong lúc gọi, xem `PhoneCallBridge._canh_vong_su_kien`.
+    phone_canh_vong_su_kien: bool = True
+    # Sau khi nối máy, chờ ngần này xem khách có "a lô" không rồi mới chào (có
+    # thì đợi họ dứt lời). 0 là chào ngay như cũ. Xem `chao_khi_bat_may`.
+    phone_cho_alo_ms: int = 1000
     phone_cat_loi_min_ms: int = 700
+    # Đọc lại control đường tiêm ngay sau khi đặt (chỉ để ghi cảnh báo). TẮT:
+    # lượt đọc qua adb+su chạy trùng lúc lời chào bắt đầu phát.
+    # Hạ âm lượng nhánh micro về 0 trong lúc đổ chuông (xem chao_khi_bat_may).
+    # TẮT: đo 08-10-2026 không bớt được tiếng rè (HAL đặt lại mức khi nối máy).
+    phone_tat_mic_khi_do_chuong: bool = False
+    # Dò "đã nối máy" và đặt đường tiêm bằng vòng lặp chạy ngay trên điện thoại
+    # (xem chao_khi_bat_may). Tắt thì quay về dò từ máy tính qua adb.
+    phone_do_noi_may_tai_cho: bool = True
+    phone_doc_lai_duong_tiem: bool = False
+    # Số ms khung im đẩy xuống máy trước lời chào, cho tuyến tiếng kịp ổn định.
+    phone_dem_im_truoc_chao_ms: int = 0
+    # Khách dừng ở một từ nối ("... trong vòng", "... là") thì chờ thêm ngần này
+    # trên mức `phone_silence_end_ms` rồi mới chốt lượt. 0 là tắt.
+    phone_cho_cau_do_ms: int = 900
 
     # Ngưỡng RMS coi là khách BẮT ĐẦU nói. Đây là SÀN: ngưỡng thật là
     # `max(sàn này, nền_kênh × VAD_HE_SO_ON)`, xem `phone_call_service.nguong_on`.
@@ -386,6 +421,21 @@ class Settings(BaseSettings):
     # MẶC ĐỊNH TẮT cho tới khi nghiệm thu offline trên bản ghi thật đạt: bản
     # đầu (06-09-2026) phân kỳ trên dữ liệu thật, đầu ra TO HƠN đầu vào 11-32dB
     # và đẻ thêm lượt giả trong phép chạy lại VAD - tệ hơn không làm gì.
+    # Nguồn thu tiếng khách của app cầu nối (AudioSource của Android).
+    # 3 = VOICE_DOWNLINK, 4 = VOICE_CALL. ROM Android 9 cũ: 3 chỉ có tiếng khách,
+    # 4 lẫn cả tiếng AI. ROM Android 15 (cài 03-10-2026) thì NGƯỢC LẠI - đo
+    # 08-10-2026 bằng hai máy farm gọi nhau, AI đọc, máy kia im: nguồn 3 thu
+    # tiếng AI ở -25 dB (to hơn cả nguồn phát -38 dB), nguồn 4 ra -79 dB.
+    phone_src_thu: int = 3
+    # BÁN SONG CÔNG: không nghe khách trong lúc AI đang nói. ROM Android 15 trả
+    # tiếng AI ngược về kênh khách ở -25 dB (to hơn nguồn phát 13 dB), trễ
+    # ~250ms, ở cả nguồn thu 3 lẫn 4, bắt đầu khoảng 10s sau khi nối máy. Đo
+    # 08-10-2026: khử vọng tuyến tính chỉ được 2 dB (tương quan sóng 0,34 -
+    # vọng đã qua bộ mã thoại), nên AI tự chép lời mình thành lời khách và tự
+    # cắt lời liên tục. Bật cờ này thì cuộc gọi chạy trọn, ĐỔI LẠI khách không
+    # cắt lời AI được - phải chờ AI nói hết câu. Tìm ra gốc vọng thì tắt đi.
+    phone_ban_song_cong: bool = False
+    phone_ban_song_cong_duoi_ms: int = 450
     phone_khu_vong: bool = False
 
     # Máy phone farm đang dùng. Cần để dựng lại `adb forward` khi ổ cắm chết
@@ -433,6 +483,10 @@ class Settings(BaseSettings):
     #   "usb"   - đường thiết bị ngoài Samsung dựng sẵn cho tai nghe USB, kèm cờ
     #             ERAP báo nguồn không phải micro cầm tay.
     phone_duong_tiem: str = "codec"
+    # Ba núm thử ở tầng chip cho đường "codec", xem `adb_service._tuyen_codec`.
+    phone_tiem_mot_mic: bool = False
+    phone_sound_type: str = ""
+    phone_erap_bypass: bool = False
 
     # Lọc tiếng khách trước khi đưa vào STT: cắt ngoài dải tiếng nói, hạ nhiễu
     # nền, chuẩn mức.

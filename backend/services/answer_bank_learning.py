@@ -1363,6 +1363,42 @@ class AnswerBankLearning:
         self._set_job(logs=logs)
         logger.info("Thư viện tự động: %s", message)
 
+    _TIENG_NHO_GIAY = 60.0
+
+    def _dem_tieng_da_nho(self, mac_dinh: int) -> int:
+        """Số đáp án đã có đủ tệp tiếng - số đã nhớ, tự làm mới ở luồng nền."""
+        import threading
+        import time as _time
+        nho = getattr(self, "_tieng_nho", None)
+        dang = getattr(self, "_tieng_dang_dem", False)
+        if (nho is None or _time.monotonic() - nho[0] > self._TIENG_NHO_GIAY) and not dang:
+            self._tieng_dang_dem = True
+
+            def _dem():
+                try:
+                    from backend.services.tieng_san import kho_tieng_san  # noqa: F401
+                    tts = self._state.tts
+                    voice = tts.default_voice_name()
+                    # Kết nối DÙNG CHUNG của ứng dụng: chỉ đọc, KHÔNG đóng.
+                    rows = _conn().execute(
+                        "SELECT h.id,h.tra_loi,e.voice_ready,e.voice_fingerprint "
+                        "FROM answer_bank_entries e JOIN hoi_dap h "
+                        "ON h.id=e.hoi_dap_id WHERE h.bat=1").fetchall()
+                    n = 0
+                    for row in rows:
+                        if (bool(row[2]) and row[3] == tts._van_tay_filler(row[1], voice)
+                                and _voice_files_ready(tts, row[0], row[1], voice)):
+                            n += 1
+                    self._tieng_nho = (_time.monotonic(), n)
+                except Exception:
+                    pass
+                finally:
+                    self._tieng_dang_dem = False
+
+            threading.Thread(target=_dem, daemon=True).start()
+        nho = getattr(self, "_tieng_nho", None)
+        return nho[1] if nho is not None else mac_dinh
+
     def trang_thai(self) -> dict:
         conn = _conn()
         cfg = _config(conn)
@@ -1374,22 +1410,13 @@ class AnswerBankLearning:
         ).fetchone()
         ready = int(stats[3])
         if self._state is not None:
-            try:
-                from backend.services.tieng_san import kho_tieng_san
-                voice = self._state.tts.default_voice_name()
-                voice_rows = conn.execute(
-                    "SELECT h.id,h.tra_loi,e.voice_ready,e.voice_fingerprint "
-                    "FROM answer_bank_entries e JOIN hoi_dap h "
-                    "ON h.id=e.hoi_dap_id WHERE h.bat=1"
-                ).fetchall()
-                ready = 0
-                for row in voice_rows:
-                    fingerprint = self._state.tts._van_tay_filler(row[1], voice)
-                    if (bool(row[2]) and row[3] == fingerprint
-                            and _voice_files_ready(self._state.tts, row[0], row[1], voice)):
-                        ready += 1
-            except Exception:
-                pass
+            # ĐẾM TỆP TIẾNG Ở LUỒNG RIÊNG, trả số đã nhớ. Bản cũ soát tệp của
+            # TỪNG đáp án ngay trong lời gọi này: 5.494 đáp án mất 1,3 giây, mà
+            # hàm chạy trên vòng sự kiện và trang Tri thức AI gọi nó mỗi 2,5
+            # giây. Hễ ai mở trang đó là mọi cuộc gọi đang chạy bị đứng 1,3
+            # giây một lần - khách nghe AI "đang nói tự nhiên dứt" (bộ canh
+            # vòng sự kiện bắt được ngăn xếp này 08-10-2026).
+            ready = self._dem_tieng_da_nho(ready)
         job = self._job()
         last = conn.execute("SELECT last_run FROM answer_bank_job WHERE id=1").fetchone()[0]
         return {"enabled": cfg["enabled"],
@@ -1477,12 +1504,24 @@ class AnswerBankLearning:
         from backend.services.tieng_san import kho_tieng_san
         voice = self._state.tts.default_voice_name()
         pending: list[str] = []
-        with db.write_lock, conn:
+        # Soát tệp tiếng của cả kho ở LUỒNG RIÊNG rồi mới vào khoá ghi: 5.500
+        # đáp án là hơn một giây đọc đĩa, làm ngay trên vòng sự kiện thì cuộc
+        # gọi đang chạy bị đứng tiếng (cùng lỗi với `_dem_tieng_da_nho`).
+        tts = self._state.tts
+
+        def _soat():
+            ra = []
             for row in rows:
-                current = self._state.tts._van_tay_filler(row[1], voice)
+                current = tts._van_tay_filler(row[1], voice)
+                ra.append((current, bool(row[4]) and row[2] == current
+                           and _voice_files_ready(tts, row[0], row[1], voice)))
+            return ra
+
+        da_soat = await asyncio.to_thread(_soat)
+        with db.write_lock, conn:
+            for row, (current, san_sang) in zip(rows, da_soat):
                 attempts = int(row[3] or 0)
-                if (bool(row[4]) and row[2] == current
-                        and _voice_files_ready(self._state.tts, row[0], row[1], voice)):
+                if san_sang:
                     continue
                 if row[2] != current:
                     conn.execute("UPDATE answer_bank_entries SET voice_ready=0,voice_attempts=0 "
@@ -1499,6 +1538,15 @@ class AnswerBankLearning:
 
     async def _build_document_locked(self, doc: Document, cfg: dict) -> list[str]:
         conn = _conn()
+        if doc.stem.endswith("_ai_soan"):
+            # Tài liệu GIỮ CHỖ cho đáp án giao tiếp do hai AI đối thoại soạn
+            # (answer_bank_selfask). Nó không có nội dung nghiệp vụ; để bộ dựng
+            # đọc là sinh ra đáp án rác kiểu "tài liệu này là nơi giữ...".
+            with db.write_lock, conn:
+                conn.execute("UPDATE answer_bank_sources SET status='done',last_error='',"
+                             "built_at=?,updated_at=? WHERE source_path=?",
+                             (time.time(), time.time(), doc.rel))
+            return []
         # Preserve staff questions before replacing their source-grounded answers.
         staff_questions = _staff_questions(doc)
         items, reasons = await generate_document(

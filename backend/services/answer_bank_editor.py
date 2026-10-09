@@ -59,11 +59,19 @@ async def _retry_voices(state):
     try:
         while True:
             try:
+                # ĐANG CÓ CUỘC GỌI thì nghỉ vòng này. Việc dưới đây quét cả kho
+                # (5.500 đáp án); bộ canh vòng sự kiện bắt được nó giữ vòng
+                # 388ms giữa lúc AI đang nói (cuộc 59a9339c, 08-10-2026).
+                from backend.services.phone_call_service import phone_calls
+                if phone_calls.status():
+                    await asyncio.sleep(10.0)
+                    continue
                 if getattr(state, "_answer_bank_publish_retry", False):
                     await qa.nap_lai_duong_goi(build_voice=False)
                     state._answer_bank_publish_retry = False
                 await worker._refresh_stale_voices(retry_failed=True)
-                qa.nap_lai_provenance_voice(state)
+                # Luồng riêng: hàm này so lại nguồn gốc của từng đáp án.
+                await asyncio.to_thread(qa.nap_lai_provenance_voice, state)
             except asyncio.CancelledError:
                 raise
             except Exception:
