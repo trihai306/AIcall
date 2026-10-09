@@ -923,6 +923,29 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         r"\b(muon (?:vay|may)|can vay|nhu cau|vay tam|vay khoang|dang vay|"
         r"can nhac vay|du dinh vay|xin vay)\b", t)
         or hoi_duoc_khong)
+    # Khách nêu KỲ HẠN muốn vay ngay trong câu này mà chưa nói số tiền: "anh
+    # muốn vay mười hai tháng được không". Phải đáp ĐƯỢC hay KHÔNG. Cuộc gọi
+    # 7b63d2db (08-10-2026): kho đáp "thời hạn từ 12 đến 60 tháng" ba lần liền
+    # cho ba lần khách hỏi lại, vì câu đó không nói ra chữ "được".
+    # ... hoặc khách chỉ đáp cụt "mười hai tháng" cho câu AI vừa hỏi "vay trong
+    # bao lâu": cũng là nêu kỳ hạn. Không có nhánh này, lượt đó rơi xuống mô
+    # hình và nó tự tính tiền trả góp (bộ thử 304 lượt, 08-10-2026).
+    ai_vua_hoi_ky_han = bool(re.search(
+        r"\b(bao lau|may thang|bao nhieu thang|may nam)\b",
+        _bo_dau(next((m.get("content", "") for m in reversed(history or [])
+                      if m.get("role") == "assistant"), ""))))
+    if (state.term_updated and thang and ky_han and not state.amount_updated
+            and (re.search(r"\b(vay|may)\b", t) or ai_vua_hoi_ky_han)):
+        if ky_han[0] <= thang <= ky_han[1]:
+            return "ky_han_trong_khung", (
+                f"Dạ được ạ, {thang} tháng nằm trong khung thời hạn từ "
+                f"{ky_han[0]} đến {ky_han[1]} tháng của gói ạ."
+            )
+        return "ky_han_ngoai_khung", (
+            f"Dạ thời hạn {thang} tháng nằm ngoài khung của gói, bên em cho vay "
+            f"từ {ky_han[0]} đến {ky_han[1]} tháng ạ."
+        )
+
     if not (so_tien and neu_nhu_cau and tran):
         return None
 
@@ -945,8 +968,25 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     # 400 triệu" tuy có nguồn nhưng vẫn sai ý định và khiến khách tưởng trần
     # sản phẩm chỉ có 300 triệu. Khi khách hỏi rõ "hồ sơ/đã duyệt của tôi" thì
     # `tra_loi_ho_so` ở pipeline mới là đường được phép đọc dữ liệu riêng.
+    # Khách nêu CẢ kỳ hạn trong chính câu này ("năm trăm triệu trong mười hai
+    # tháng") thì phải đáp cả vế đó. Cuộc gọi 08-10-2026: AI chỉ nói về 500
+    # triệu, khách phải hỏi lại vì tưởng máy không nghe thấy "mười hai tháng".
+    if state.term_updated and thang and ky_han:
+        if ky_han[0] <= thang <= ky_han[1]:
+            return "nhu_cau_vay", (
+                f"Dạ gói này hỗ trợ tối đa {_fmt_trieu(tran)}, thời hạn từ "
+                f"{ky_han[0]} đến {ky_han[1]} tháng, nên nhu cầu "
+                f"{_fmt_trieu(so_tien)} trong {thang} tháng đang nằm trong khung "
+                "sản phẩm. Hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ."
+            )
+        return "nhu_cau_vay", (
+            f"Dạ số tiền {_fmt_trieu(so_tien)} nằm trong trần {_fmt_trieu(tran)} "
+            f"của gói, nhưng thời hạn {thang} tháng nằm ngoài khung từ "
+            f"{ky_han[0]} đến {ky_han[1]} tháng ạ."
+        )
+    # Câu NGẮN (25 từ thay vì 34) để còn chỗ nối câu hỏi dẫn dắt phía sau - bản
+    # dài làm lượt này luôn kết thúc cụt, không hỏi được thời hạn (`dan_dat`).
     return "nhu_cau_vay", (
-        f"Dạ gói này hỗ trợ tối đa {_fmt_trieu(tran)}, nên nhu cầu "
-        f"{_fmt_trieu(so_tien)} đang nằm trong trần sản phẩm. Hạn mức thực tế "
-        "vẫn cần thẩm định theo hồ sơ ạ."
+        f"Dạ {_fmt_trieu(so_tien)} nằm trong hạn mức tối đa {_fmt_trieu(tran)} "
+        "của gói, hạn mức thực tế vẫn cần thẩm định theo hồ sơ ạ."
     )

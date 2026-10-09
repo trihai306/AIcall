@@ -73,12 +73,17 @@ def _sap(ma_co: set[str], chi_vay: bool) -> list[str]:
 # "những gì / những cái gì / những sản phẩm nào / mấy loại / các gói nào..."
 _HOI_LIET_KE = re.compile(
     r"\b(?:nhung|cac|may)\s+(?:cai\s+)?(?:gi|nao|loai|goi|san pham|dich vu)\b"
-    r"|\b(?:san pham|dich vu|goi vay|loai vay)\s+(?:gi|nao)\b")
+    r"|\b(?:san pham|dich vu|goi vay|loai vay|khoan vay)\s+(?:gi|nao)\b"
+    # "bên mình có NHỮNG KHOẢN VAY NÀO thế": danh từ chen giữa "những" và "nào".
+    # Trước đây câu này trượt lưới, rơi xuống mô hình; ở chế độ chỉ chọn trong
+    # kho nó thành câu hẹn "liên hệ sau" cho một câu hỏi danh mục cơ bản nhất.
+    r"|\b(?:nhung|cac|may)\s+(?:khoan vay|goi vay|loai vay|san pham|dich vu|hinh thuc vay)"
+    r"\s+(?:gi|nao)\b")
 # Phải hỏi về BÊN BÁN, không phải về một thuộc tính: "hồ sơ cần những gì" có
 # "những gì" nhưng hỏi giấy tờ.
 _VE_BEN_BAN = re.compile(
     r"\b(?:ben (?:ban|em|minh|chi)|ngan hang)\b|\bcho vay\b|\bsan pham\b|\bdich vu\b"
-    r"|\bgoi vay\b|\bloai vay\b")
+    r"|\bgoi vay\b|\bloai vay\b|\bkhoan vay\b")
 _THUOC_TINH = re.compile(
     r"\b(?:ho so|giay to|dieu kien|uu dai|lai|phi|thu tuc|quy trinh|han muc"
     r"|thoi han|tai san|the chap)\b")

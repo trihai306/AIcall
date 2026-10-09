@@ -11,7 +11,8 @@ from backend.config import settings
 from backend.models import scenarios_db
 from backend.models.db import save_session
 from backend.pipeline.session_manager import CallSession
-from backend.pipeline.chan_tuan_thu import chan_gan_thu_nhap, chan_tu_cam
+from backend.pipeline.chan_tuan_thu import (chan_gan_thu_nhap, chan_ket_luan_tu_choi,
+                                           chan_tu_cam, chan_tu_tinh_tien)
 from backend.pipeline.thuoc_tinh import (chan_thuoc_tinh_sai,
                                          sua_theo_tai_lieu)
 from backend.pipeline.ngu_canh_tai_lieu import toan_van as _toan_van_tai_lieu
@@ -1736,6 +1737,19 @@ class StreamingPipeline:
             await self._send_event(ws, "turn_complete", {"full_response": "", "metrics": {"error": "stt_unavailable"}})
             return
 
+        # Đuôi câu AI vừa nói vọng về thành "lời khách": bỏ lượt, không đáp.
+        if transcript.strip():
+            from backend.services.cat_loi_dieu_kien import la_vong_duoi_cau
+            ai_cuoi = next((m.get("content", "") for m in reversed(session.history)
+                            if m.get("role") == "assistant"), "")
+            if la_vong_duoi_cau(transcript, ai_cuoi):
+                logger.info("Bỏ lượt %r: trùng đuôi câu AI vừa nói (tiếng vọng)",
+                            transcript.strip()[:60])
+                session.clear_speculation()
+                await self._send_event(ws, "turn_complete", {
+                    "full_response": "", "metrics": {"vong_duoi_cau": True}})
+                return
+
         if not transcript.strip():
             # KHÔNG RA CHỮ -> HỎI LẠI, đừng im. Bản cũ chỉ gửi sự kiện lỗi rồi
             # đóng lượt: khách nói mà không được đáp gì, nghe như máy đã chết.
@@ -1746,6 +1760,15 @@ class StreamingPipeline:
             cau = ""
             if nen_hoi_lai(so_lan):
                 cau = chon_cau_hoi_lai(so_lan)
+                if session.turn_count == 0:
+                    # Tiếng đầu tiên của khách mà không ra chữ gần như chắc chắn
+                    # là một tiếng "a lô" cụt (bản ghi 7b63d2db: chỉ còn 170ms
+                    # âm "lô"). Hỏi "anh chị nói lại giúp em" lúc khách còn chưa
+                    # biết ai gọi thì vô nghĩa - xưng danh thay vào đó.
+                    from backend.pipeline.luot_thuong_gap import CHAO_LAI
+                    cau = CHAO_LAI.format(
+                        bank=scenarios_db.ten_to_chuc(session.scenario),
+                        agent=scenarios_db.ten_nhan_vien(session.scenario))
                 try:
                     wav = await self.tts.synthesize(
                         cau, voice=getattr(session, "voice_name", None) or "default")
@@ -1969,6 +1992,91 @@ class StreamingPipeline:
 
         await self._generate_response(text, session, ws, t_start, metrics, soi=soi)
 
+    def _cau_dan_dat(self, session, user_text: str, metrics: dict, cau_tra_loi: str,
+                     ma_luat: str = "") -> tuple[str, str] | None:
+        """Chọn câu hỏi dẫn dắt cho lượt này và GHI NHỚ là đã hỏi. None nếu không hỏi."""
+        try:
+            from backend.pipeline.dan_dat import cau_hoi_tiep
+            da_hoi = getattr(session, "_dan_dat_da_hoi", None)
+            if da_hoi is None:
+                da_hoi = session._dan_dat_da_hoi = set()
+            lich_su = getattr(session, "history", None) or []
+            dd = cau_hoi_tiep(
+                ma_san_pham=(self.rag._ma_san_pham(session.product)
+                             if (session.product or "").strip() else ""),
+                trang_thai=resolve_loan_facts(lich_su, user_text),
+                loi_khach_ca_cuoc=" ".join(m.get("content", "") for m in lich_su
+                                           if m.get("role") == "user"),
+                loi_khach_luot_nay=user_text, cau_tra_loi=cau_tra_loi, da_hoi=da_hoi,
+                y_dinh_thuong_gap=metrics.get("luot_thuong_gap", "") or "",
+                ma_luat=ma_luat,
+                vua_hoi=(getattr(session, "_dan_dat_vua_hoi", ("", -1))[0]
+                         if getattr(session, "_dan_dat_vua_hoi", ("", -1))[1]
+                         == session.turn_count - 1 else ""))
+        except Exception as e:
+            logger.debug("Dẫn dắt bỏ qua: %s", e)
+            return None
+        if dd:
+            da_hoi.add(dd[0])
+            session._dan_dat_vua_hoi = (dd[0], session.turn_count)
+            metrics["dan_dat"] = dd[0]
+        return dd
+
+    async def _noi_dan_dat(self, nguon, session, user_text: str, metrics: dict):
+        """Bọc luồng token của mô hình: hết câu thì nối thêm câu hỏi dẫn dắt."""
+        chu = ""
+        async for token in nguon:
+            chu += token
+            yield token
+        dd = self._cau_dan_dat(session, user_text, metrics, chu)
+        if dd:
+            yield (" " if chu and not chu.endswith(" ") else "") + dd[1]
+
+    @staticmethod
+    async def _gon_cau_sinh(nguon, toi_da_cau: int, toi_da_tu: int = 22):
+        """Bọc luồng token của mô hình: mở đầu bằng "Dạ", dừng sau N câu.
+
+        Dấu chấm trong số ("7.9%") không tính là hết câu: chỉ đếm dấu kết câu
+        ĐÃ có khoảng trắng theo sau trong phần chữ đã nhận.
+        """
+        da_mo_dau = False
+        dem_dau = ""
+        chu = ""
+        try:
+            async for token in nguon:
+                if not da_mo_dau:
+                    dem_dau += token
+                    tho = dem_dau.lstrip()
+                    if len(tho) < 3 and not tho.endswith((" ", ",")):
+                        continue            # chưa đủ chữ để biết có "Dạ" không
+                    da_mo_dau = True
+                    if not tho.casefold().startswith(("dạ", "da ", "da,")):
+                        # "Mức lãi suất..." -> "Dạ mức lãi suất..."; giữ hoa cho
+                        # từ viết hoa toàn bộ (CMND, CCCD) và tên riêng hai chữ hoa.
+                        dau = tho.split(" ", 1)[0]
+                        if not (dau.isupper() and len(dau) > 1):
+                            tho = tho[:1].lower() + tho[1:]
+                        tho = "Dạ " + tho
+                    token = tho
+                # Xét TRƯỚC khi phát token: token mới mở đầu bằng khoảng trắng
+                # nghĩa là dấu kết câu ở cuối `chu` là thật (không phải dấu chấm
+                # giữa "7.9%"), và câu kế tiếp chưa lọt ra chữ nào.
+                if chu and token[:1].isspace() and chu.rstrip()[-1:] in ".?!…":
+                    so_cau = len(re.findall(r"[.?!…](?=\s|$)", chu.rstrip()))
+                    if so_cau >= toi_da_cau or len(chu.split()) >= toi_da_tu:
+                        return
+                chu += token
+                yield token
+            if not da_mo_dau and dem_dau.strip():
+                yield dem_dau
+        finally:
+            dong = getattr(nguon, "aclose", None)
+            if dong is not None:
+                try:
+                    await dong()
+                except Exception:
+                    pass
+
     async def _generate_response(self, user_text: str, session: CallSession, ws: WebSocket,
                                  t_start: float, metrics: dict, soi: bool = False):
         """Shared logic: RAG -> LLM streaming -> optional TTS.
@@ -2053,6 +2161,23 @@ class StreamingPipeline:
                 metrics["tra_tu_danh_muc"] = got[0]
                 logger.info("Danh mục sản phẩm '%s' -> trả lời xác định, bỏ qua RAG+LLM",
                             got[0])
+
+        # So sánh hai sản phẩm: đặt hai dòng dữ kiện cạnh nhau, không để kho đọc
+        # một vế hay mô hình gật theo khách. Xem `so_sanh_san_pham`.
+        if not dap_san:
+            try:
+                from backend.pipeline.so_sanh_san_pham import tra_loi as tra_loi_so_sanh
+                got = tra_loi_so_sanh(
+                    user_text, self.rag._san_pham_co_tai_lieu(), self.rag._manh_mo_dau,
+                    ma_phien=(self.rag._ma_san_pham(session.product)
+                              if (session.product or "").strip() else ""))
+            except Exception as e:
+                logger.warning("Không so sánh được sản phẩm (%s)", e)
+                got = None
+            if got:
+                dap_san = got
+                metrics["tra_tu_so_sanh"] = got[0]
+                logger.info("So sánh sản phẩm '%s' -> trả lời xác định", got[0])
 
         from backend.services.gender_detect import xung_ho as _xh
         ho_so = getattr(session, "ho_so_khach", None) or {}
@@ -2654,6 +2779,15 @@ class StreamingPipeline:
             ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
         elif dong_bang and doc_nguyen_van(dong_bang):
             ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
+        # CÂU HỎI DẪN DẮT nối sau câu trả lời cố định (luật / kho). Xem
+        # `pipeline/dan_dat.py`. Mã tiếng sẵn mang thêm hậu tố để bản có câu hỏi
+        # và bản không có nằm cạnh nhau trên đĩa, không đè nhau.
+        if ma_tieng_san and settings.dan_dat_bat:
+            dd = self._cau_dan_dat(session, user_text, metrics, chu_tieng_san,
+                                   ma_luat=dap_san[0] if dap_san else "")
+            if dd:
+                chu_tieng_san = chu_tieng_san.rstrip() + " " + dd[1]
+                ma_tieng_san += f"_dd_{dd[0]}"
         if ma_tieng_san:
             noi_tiep = loi_sau_dem(metrics.get("filler_text", ""), chu_tieng_san)
             if noi_tiep != chu_tieng_san:
@@ -2721,6 +2855,17 @@ class StreamingPipeline:
             nguon_token = response_llm.stream_response(
                 session.history, system_prompt,
                 prefill=prefill)
+
+        # CÂU DO MÔ HÌNH SINH phải gọn như lời nói qua điện thoại. Đo trên bộ
+        # thử 304 lượt (08-10-2026): 28/91 câu Qwen sinh dài quá 28 từ (dài nhất
+        # 53), 57/91 câu không mở đầu bằng "Dạ". Dặn trong prompt không đủ, nên
+        # chốt ở đây: thêm "Dạ" nếu thiếu, và dừng sau `sinh_cau_toi_da` câu.
+        if (settings.sinh_cau_toi_da > 0
+                and metrics.get("answer_route", {}).get("mode") in ("generated", "speculative")):
+            nguon_token = self._gon_cau_sinh(nguon_token, settings.sinh_cau_toi_da)
+        if (settings.dan_dat_bat
+                and metrics.get("answer_route", {}).get("mode") in ("generated", "speculative")):
+            nguon_token = self._noi_dan_dat(nguon_token, session, user_text, metrics)
 
         # Lượt chữ cố định -> tra kho tiếng sẵn. Chưa có thì lượt này vẫn đi F5
         # như cũ và dựng NỀN sau khi xong lượt (xem cuối hàm), lần sau phát sẵn.
@@ -2808,6 +2953,23 @@ class StreamingPipeline:
                 metrics["chan_tu_cam"] = sua_cam
                 vua_thay_cau[0] = True
                 return ra
+            # Mô hình tự tính tiền trả hàng tháng/tiền lãi -> thay bằng câu xin
+            # dữ kiện. Phép tính đó chỉ luật `tinh_tra_gop` được làm.
+            if settings.chan_tu_tinh_tien:
+                ra, sua_tinh = chan_tu_tinh_tien(doan)
+                if sua_tinh:
+                    logger.warning("CHẶN TỰ TÍNH TIỀN: %s | %r", sua_tinh, doan[:70])
+                    metrics["chan_tu_tinh_tien"] = sua_tinh
+                    vua_thay_cau[0] = True
+                    return _doi_cau_neu_lap(ra)
+            # Mô hình tự phán khách không vay được / không được duyệt.
+            if settings.chan_ket_luan_tu_choi:
+                ra, sua_tc = chan_ket_luan_tu_choi(doan)
+                if sua_tc:
+                    logger.warning("CHẶN TỰ KẾT LUẬN TỪ CHỐI: %s | %r", sua_tc, doan[:70])
+                    metrics["chan_ket_luan_tu_choi"] = sua_tc
+                    vua_thay_cau[0] = True
+                    return _doi_cau_neu_lap(ra)
             if not da_chan_thu_nhap:
                 ra, sua_tn = chan_gan_thu_nhap(doan, khach_da_noi=khach_da_noi)
                 if sua_tn:

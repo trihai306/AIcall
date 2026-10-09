@@ -1,0 +1,1042 @@
+[
+ {
+  "ma": "mo_ho_01",
+  "mo_ta": "Khách nam hỏi chung về vay, dần lộ ra muốn vay tiêu dùng cá nhân, cộc lốc",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho anh hỏi bên mình có cho vay không",
+   "vay tiêu dùng ấy vay cá nhân",
+   "ừ anh muốn vay khoảng ba trăm triệu",
+   "mười hai tháng",
+   "anh đi làm công ty thu nhập khoảng mười lăm triệu một tháng",
+   "ừ được rồi thủ tục như thế nào"
+  ],
+  "mong_doi": [
+   "hỏi khách muốn vay để làm gì hoặc vay loại nào",
+   "xác nhận được và hỏi thêm thời hạn và mục đích",
+   "xác nhận số tiền và hỏi thời hạn muốn vay",
+   "tóm lại yêu cầu ba trăm triệu mười hai tháng và hỏi về thu nhập hoặc nghề nghiệp",
+   "xác nhận đủ điều kiện cơ bản và hướng dẫn hồ sơ tiếp theo",
+   "nêu các giấy tờ cần chuẩn bị và đề nghị hẹn gặp hoặc đăng ký online"
+  ]
+ },
+ {
+  "ma": "mo_ho_02",
+  "mo_ta": "Khách nữ gọi hỏi 'bên em có gì', dần lộ ra muốn vay mua xe",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho chị hỏi bên em có những sản phẩm gì vậy em",
+   "chị đang cần vay tiền ấy",
+   "chị muốn mua xe máy khoảng năm mươi triệu",
+   "chị chưa biết bao nhiêu tháng để trả góp vừa sức",
+   "thu nhập chị khoảng tám triệu thôi",
+   "ừ vậy được không em",
+   "okay chị hiểu rồi"
+  ],
+  "mong_doi": [
+   "giới thiệu sơ các sản phẩm và hỏi nhu cầu cụ thể",
+   "hỏi thêm muốn vay bao nhiêu và mục đích gì",
+   "xác nhận mục đích và hỏi thời hạn mong muốn",
+   "gợi ý thời hạn phổ biến và hỏi thu nhập để tư vấn cho phù hợp",
+   "xác nhận đủ điều kiện và đề xuất thời hạn vừa sức với thu nhập đó",
+   "xác nhận được và nêu bước tiếp theo đăng ký",
+   "tóm tắt và hỏi có cần hỗ trợ thêm gì không"
+  ]
+ },
+ {
+  "ma": "mo_ho_03",
+  "mo_ta": "Khách hỏi vay tín chấp rồi đặt câu hỏi mơ hồ ba lần theo kiểu 'được không', không cung cấp số liệu",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "anh muốn hỏi về vay tín chấp bên em",
+   "anh muốn vay một số tiền",
+   "khoảng vài trăm triệu gì đó",
+   "thì bên em cho vay được không",
+   "anh đang kinh doanh tự do",
+   "ừ thì bao lâu biết được không"
+  ],
+  "mong_doi": [
+   "hỏi anh muốn vay khoảng bao nhiêu và thời hạn",
+   "hỏi rõ hơn số tiền cụ thể",
+   "xác nhận và hỏi thời hạn cùng mục đích sử dụng",
+   "giải thích điều kiện chung và hỏi thêm thu nhập hoặc hồ sơ",
+   "nêu yêu cầu giấy tờ cho đối tượng kinh doanh tự do",
+   "giải thích thời gian phê duyệt và bước đăng ký tiếp theo"
+  ]
+ },
+ {
+  "ma": "mo_ho_04",
+  "mo_ta": "Khách hỏi vay mua nhà nhưng không biết vay bao nhiêu, chưa rõ căn nào",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "em ơi anh muốn hỏi về vay mua nhà",
+   "anh chưa biết mua ở đâu nữa đang tìm",
+   "khoảng một tỷ đến hai tỷ gì đó",
+   "anh chưa có nhà anh đang thuê",
+   "thì bên em cho vay được bao nhiêu phần trăm",
+   "thu nhập anh khoảng hai mươi triệu tháng thì vay được nhiều không"
+  ],
+  "mong_doi": [
+   "hỏi anh đang tìm nhà ở khu vực nào và dự kiến giá trị",
+   "hỏi dự kiến giá trị bất động sản muốn mua",
+   "xác nhận tầm giá và hỏi thêm về tình trạng hiện tại",
+   "nêu điều kiện vay và hỏi thêm thu nhập để tính hạn mức",
+   "giải thích tỷ lệ cho vay tối đa theo giá trị tài sản",
+   "xác nhận đủ điều kiện cơ bản và tư vấn hướng tiếp theo"
+  ]
+ },
+ {
+  "ma": "mo_ho_05",
+  "mo_ta": "Khách hỏi thẻ tín dụng theo kiểu mơ hồ rồi dần hỏi về hạn mức và điều kiện",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "bên em có làm thẻ không",
+   "thẻ tín dụng ấy",
+   "thì làm được bao nhiêu hạn mức",
+   "chị mới đi làm được một năm lương tám triệu",
+   "vậy a",
+   "thế thủ tục có phức tạp không"
+  ],
+  "mong_doi": [
+   "xác nhận có và hỏi chị muốn làm loại thẻ nào",
+   "giải thích các loại thẻ và hỏi nhu cầu sử dụng",
+   "giải thích hạn mức phụ thuộc thu nhập và hỏi thu nhập",
+   "tư vấn loại thẻ phù hợp với thu nhập đó và hạn mức tương ứng",
+   "xác nhận và nêu sơ bước làm thẻ",
+   "trấn an thủ tục đơn giản và nêu giấy tờ cần thiết"
+  ]
+ },
+ {
+  "ma": "mo_ho_06",
+  "mo_ta": "Khách hỏi gửi tiết kiệm chung chung rồi hỏi về lãi và kỳ hạn, chưa biết gửi bao lâu",
+  "san_pham": "tiết kiệm",
+  "luot": [
+   "cho anh hỏi gửi tiết kiệm bên em như thế nào",
+   "thì lãi suất bao nhiêu",
+   "anh có khoảng năm mươi triệu muốn gửi",
+   "anh chưa biết gửi bao lâu nữa",
+   "thì gửi ngắn hay dài lãi hơn",
+   "ừ vậy thì anh gửi mười hai tháng xem thử",
+   "online được không hay phải ra quầy"
+  ],
+  "mong_doi": [
+   "giới thiệu sơ và hỏi anh muốn gửi bao nhiêu và kỳ hạn nào",
+   "nêu khung lãi theo kỳ hạn và hỏi anh dự định gửi bao lâu",
+   "xác nhận số tiền và hỏi kỳ hạn để tư vấn cụ thể hơn",
+   "hỏi mục đích để gợi ý kỳ hạn phù hợp",
+   "giải thích gửi dài lãi cao hơn nhưng ít linh hoạt rút sớm",
+   "xác nhận và tính sơ lãi nhận được cuối kỳ",
+   "xác nhận gửi online được và hướng dẫn bước tiếp theo"
+  ]
+ },
+ {
+  "ma": "so_mieng_01",
+  "mo_ta": "khách nam muốn vay tín chấp mua xe, nói 'bốn trăm' không đơn vị rồi đổi lên 'năm trăm', hỏi kỳ hạn hai năm rồi chuyển sang ba sáu tháng, hỏi mỗi tháng trả bao nhiêu",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho anh hỏi cái khoản vay không thế chấp bên mình thế nào em",
+   "anh đang cần vay khoảng bốn trăm để mua xe em à",
+   "anh muốn trả trong hai năm thôi được không",
+   "vậy mỗi tháng anh phải trả bao nhiêu tiền vậy em",
+   "à thôi anh đổi lại vay năm trăm luôn được không",
+   "nếu anh vay năm trăm mà trả ba sáu tháng thì mỗi tháng là bao nhiêu",
+   "ừ thủ tục anh cần chuẩn bị gì vậy em"
+  ],
+  "mong_doi": [
+   "chào và hỏi thêm nhu cầu cụ thể như số tiền và kỳ hạn",
+   "hỏi xác nhận đơn vị bốn trăm là triệu đồng hay đơn vị khác, hỏi kỳ hạn dự kiến",
+   "xác nhận kỳ hạn hợp lệ và ước tính số tiền trả hàng tháng",
+   "tư vấn con số trả hàng tháng ước tính với bốn trăm triệu hai năm",
+   "xác nhận năm trăm triệu vẫn trong hạn mức và hỏi lại kỳ hạn giữ nguyên không",
+   "tư vấn ước tính trả hàng tháng với năm trăm triệu ba mươi sáu tháng",
+   "hướng dẫn hồ sơ cần chuẩn bị và bước tiếp theo"
+  ]
+ },
+ {
+  "ma": "so_mieng_02",
+  "mo_ta": "khách hỏi vay tín chấp với số tiền 'một tỷ hai' vượt hạn mức, sau đó hỏi hạn mức tối đa rồi đổi xuống 'tám trăm', hỏi kỳ hạn năm năm và điều kiện thu nhập",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "chào em anh muốn hỏi về vay tín chấp bên mình",
+   "anh đang cần vay một tỷ hai em à",
+   "ừ vậy hạn mức tối đa bên em là bao nhiêu vậy",
+   "vậy anh đổi xuống vay tám trăm được không em",
+   "anh muốn vay năm năm thì có được không",
+   "thu nhập anh khoảng hai mươi mấy triệu một tháng có đủ điều kiện không",
+   "ừ vậy thôi để anh cân nhắc lại rồi gọi lại cho em nhé"
+  ],
+  "mong_doi": [
+   "chào và hỏi thêm số tiền và mục đích vay",
+   "thông báo khéo một tỷ hai có thể vượt hạn mức và hỏi lại nhu cầu thực sự",
+   "thông báo hạn mức tối đa của sản phẩm và gợi ý điều chỉnh số tiền phù hợp",
+   "xác nhận tám trăm triệu trong hạn mức và hỏi kỳ hạn mong muốn",
+   "xác nhận năm năm là kỳ hạn tối đa và tư vấn ước tính trả hàng tháng",
+   "hỏi rõ thu nhập hơn và đánh giá sơ điều kiện có đáp ứng không",
+   "tóm tắt thông tin và mời liên hệ lại hoặc đặt lịch tư vấn"
+  ]
+ },
+ {
+  "ma": "so_mieng_03",
+  "mo_ta": "khách hỏi vay tín chấp hai trăm năm mươi triệu, đề nghị kỳ hạn bảy mươi hai tháng vượt khung tối đa sáu mươi tháng, hỏi lý do rồi chốt sáu mươi tháng",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "em ơi cho anh hỏi bên mình vay tín chấp không cần thế chấp đúng không",
+   "anh cần vay khoảng hai trăm năm mươi ý em",
+   "anh muốn vay trong bảy mươi hai tháng được không vì anh muốn trả ít một tháng",
+   "à vậy hả em sao bên mình không cho vay dài hơn vậy",
+   "thôi vậy nếu anh trả sáu mươi tháng thì mỗi tháng tốn bao nhiêu vậy",
+   "ừ được rồi anh cần giấy tờ gì để làm hồ sơ vậy em"
+  ],
+  "mong_doi": [
+   "xác nhận đúng và hỏi thêm số tiền và kỳ hạn cần vay",
+   "hỏi xác nhận đơn vị là triệu đồng và hỏi kỳ hạn mong muốn",
+   "thông báo kỳ hạn tối đa là sáu mươi tháng và giải thích nhẹ nhàng",
+   "giải thích quy định kỳ hạn sản phẩm và gợi ý chọn kỳ hạn tối đa để trả ít nhất",
+   "tư vấn số tiền trả hàng tháng ước tính với hai trăm năm mươi triệu sáu mươi tháng",
+   "hướng dẫn hồ sơ cần thiết và quy trình nộp"
+  ]
+ },
+ {
+  "ma": "so_mieng_04",
+  "mo_ta": "khách hỏi vay mua nhà, nói số tiền 'tầm hai tỷ rưỡi tầm đó', hỏi kỳ hạn hai mươi năm và số tiền trả hàng tháng, rồi đổi sang 'ba tỷ', hỏi điều kiện thu nhập",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "em ơi anh muốn hỏi về gói vay mua nhà bên mình",
+   "anh đang cần tầm hai tỷ rưỡi tầm đó thôi em",
+   "anh muốn vay hai mươi năm có được không",
+   "vậy mỗi tháng anh phải trả bao nhiêu vậy em",
+   "à mà anh nghĩ lại vay ba tỷ luôn thì sao em",
+   "thu nhập anh phải ít nhất bao nhiêu mới được vay ba tỷ vậy",
+   "anh thu nhập khoảng hai mươi lăm triệu một tháng thì có duyệt được không"
+  ],
+  "mong_doi": [
+   "chào và hỏi thêm nhu cầu mua nhà và giá trị bất động sản dự kiến",
+   "hỏi rõ giá trị nhà và số tiền muốn vay để xác nhận trong hạn mức",
+   "xác nhận kỳ hạn hợp lệ và ước tính số tiền trả hàng tháng",
+   "tư vấn con số trả hàng tháng ước tính với hai tỷ rưỡi hai mươi năm",
+   "xác nhận ba tỷ trong hạn mức và tính lại ước tính trả hàng tháng",
+   "nêu điều kiện thu nhập tối thiểu tương ứng với khoản vay ba tỷ",
+   "đánh giá sơ thu nhập có đáp ứng không và tư vấn bước tiếp theo"
+  ]
+ },
+ {
+  "ma": "so_mieng_05",
+  "mo_ta": "khách hỏi vay tín chấp để sửa nhà, chỉ nói 'năm mươi' không kèm đơn vị, kỳ hạn hai năm, hỏi mỗi tháng trả bao nhiêu rồi hỏi có trả trước hạn được không và có mất phí không",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ em ơi cho anh hỏi vay tín chấp bên mình cần điều kiện gì vậy",
+   "anh chỉ cần vay năm mươi thôi em không cần nhiều để sửa nhà",
+   "anh muốn trả trong hai năm thôi có được không",
+   "ờ vậy mỗi tháng anh trả khoảng bao nhiêu vậy em",
+   "ừ được rồi mà anh có thể trả trước hạn được không",
+   "nếu trả trước thì có phí gì không em",
+   "thôi được rồi vậy hồ sơ anh cần gì em hướng dẫn anh với"
+  ],
+  "mong_doi": [
+   "hỏi thêm số tiền và kỳ hạn cần vay trước khi giải thích điều kiện",
+   "hỏi xác nhận đơn vị năm mươi là triệu đồng hay đơn vị khác và hỏi kỳ hạn",
+   "xác nhận kỳ hạn hợp lệ và ước tính số tiền trả hàng tháng",
+   "tư vấn con số trả hàng tháng ước tính với năm mươi triệu hai năm",
+   "xác nhận có thể trả trước hạn và nêu điều kiện liên quan",
+   "giải thích chính sách phí hoặc điều kiện trả trước hạn",
+   "hướng dẫn hồ sơ cần chuẩn bị và thời gian xử lý"
+  ]
+ },
+ {
+  "ma": "so_mieng_06",
+  "mo_ta": "khách nữ hỏi làm thẻ tín dụng, nói muốn hạn mức 'vài chục triệu', nêu thu nhập 'mười mấy triệu' không rõ số, hỏi thanh toán tối thiểu hàng tháng và có nâng hạn mức được không",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "ừ chị muốn hỏi làm thẻ tín dụng bên mình được không",
+   "chị chỉ cần vài chục triệu thôi để mua sắm hàng tháng em",
+   "thu nhập chị mười mấy triệu một tháng thì được hạn mức bao nhiêu vậy",
+   "mỗi tháng chị phải trả tối thiểu bao nhiêu vậy em",
+   "sau này chị muốn nâng hạn mức lên có được không",
+   "thủ tục làm thẻ phức tạp không em cần chuẩn bị giấy tờ gì"
+  ],
+  "mong_doi": [
+   "chào và hỏi thêm nhu cầu sử dụng thẻ và thu nhập hiện tại",
+   "hỏi rõ thu nhập và mục đích dùng thẻ để tư vấn loại thẻ phù hợp",
+   "hỏi xác nhận thu nhập cụ thể hơn và tư vấn hạn mức ước tính phù hợp",
+   "giải thích chính sách thanh toán tối thiểu hàng tháng của thẻ",
+   "xác nhận có thể nâng hạn mức sau thời gian sử dụng tốt và nêu điều kiện",
+   "hướng dẫn hồ sơ cần thiết và thời gian làm thẻ"
+  ]
+ },
+ {
+  "ma": "noi_tiep_01",
+  "mo_ta": "Khách nam muốn vay tín chấp ba trăm triệu, hỏi nối tiếp về lãi suất rồi cách tính rồi hồ sơ rồi thời gian giải ngân",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho anh hỏi bên em có cho vay tín chấp không",
+   "thế à vậy lãi suất bao nhiêu vậy em",
+   "sao cao thế mình vay ba trăm triệu thì mỗi tháng phải trả bao nhiêu",
+   "thì ba mươi sáu tháng thôi cái đó tính sao ra bao nhiêu",
+   "vậy thì cần gì hả em hồ sơ nhiều không",
+   "ừ rồi mấy ngày thì giải ngân",
+   "thế à nhanh vậy thì còn gì nữa không"
+  ],
+  "mong_doi": [
+   "xác nhận có sản phẩm vay tín chấp và hỏi anh cần vay bao nhiêu",
+   "nêu khoảng lãi suất và hỏi thêm thời hạn để tính kỹ hơn",
+   "hỏi lại anh muốn vay bao lâu để ước tính chính xác",
+   "ước tính số tiền trả hàng tháng với ba mươi sáu tháng và xác nhận",
+   "liệt kê ngắn gọn hồ sơ cần thiết gồm cccd hộ khẩu xác nhận thu nhập hợp đồng lao động",
+   "nêu thời gian giải ngân trong vòng hai mươi bốn giờ và mời đặt lịch tư vấn",
+   "hỏi thêm về điều kiện của anh như thu nhập và tình trạng hợp đồng để xác nhận đủ điều kiện"
+  ]
+ },
+ {
+  "ma": "noi_tiep_02",
+  "mo_ta": "Khách nữ đang so sánh lãi suất với ngân hàng khác, hỏi nối tiếp cách tính lãi rồi hạn mức rồi điều kiện thu nhập",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "chị muốn hỏi lãi suất vay tín chấp bên em là bao nhiêu",
+   "cái đó tính theo năm hay theo tháng vậy",
+   "bên kia người ta thấp hơn em ơi sao bên em cao vậy",
+   "thế còn hạn mức tối đa là bao nhiêu",
+   "thu nhập chị năm triệu thì vay được không",
+   "vậy thì vay tối đa được bao nhiêu với thu nhập đó"
+  ],
+  "mong_doi": [
+   "nêu khoảng lãi suất và hỏi chị đang cần vay bao nhiêu để tư vấn phù hợp",
+   "giải thích lãi suất tính theo năm và quy đổi sang tháng cho dễ hình dung",
+   "ghi nhận và giải thích ưu điểm như giải ngân nhanh thủ tục đơn giản không cần tài sản thế chấp",
+   "nêu hạn mức tối đa và điều kiện để đạt được mức cao",
+   "xác nhận thu nhập năm triệu đủ điều kiện tối thiểu và hỏi thêm chị muốn vay bao nhiêu",
+   "giải thích hạn mức phụ thuộc hồ sơ cụ thể và đề nghị đánh giá thêm"
+  ]
+ },
+ {
+  "ma": "noi_tiep_03",
+  "mo_ta": "Khách nam mới đi làm bốn tháng không chắc mình đủ điều kiện, hỏi nối tiếp về hợp đồng rồi số tiền trả rồi cần chuẩn bị gì",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "anh mới đi làm được bốn tháng thôi bên em có cho vay không",
+   "hợp đồng anh ký ba tháng rồi được gia hạn tiếp thế a",
+   "lương anh tám triệu một tháng mấy tháng thì vay được",
+   "thì anh muốn vay một trăm hai mươi triệu cái đó có được không",
+   "hai mươi bốn tháng thôi vậy thì mỗi tháng trả bao nhiêu",
+   "còn gì nữa không anh cần chuẩn bị thêm gì",
+   "ừ vậy bao giờ anh nộp được"
+  ],
+  "mong_doi": [
+   "hỏi thêm về hợp đồng lao động và thu nhập hàng tháng của anh",
+   "giải thích điều kiện hợp đồng lao động còn hiệu lực là đủ và hỏi thu nhập",
+   "xác nhận thu nhập tám triệu đủ điều kiện và hỏi anh muốn vay bao nhiêu",
+   "xác nhận số tiền này trong hạn mức và hỏi anh muốn vay bao lâu",
+   "ước tính số tiền trả hàng tháng với kỳ hạn hai mươi bốn tháng",
+   "liệt kê hồ sơ cần chuẩn bị gồm cccd hộ khẩu xác nhận thu nhập hợp đồng lao động sao kê lương",
+   "mời anh đặt lịch tư vấn trực tiếp hoặc hướng dẫn nộp hồ sơ online"
+  ]
+ },
+ {
+  "ma": "noi_tiep_04",
+  "mo_ta": "Khách nam hỏi về thẻ tín dụng, hỏi nối tiếp về hạn mức rồi phí rồi ưu đãi rồi cashback rồi chê phí loại vàng",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "anh muốn mở thẻ tín dụng bên em thủ tục như nào",
+   "thế à vậy hạn mức tối đa là bao nhiêu",
+   "phí thường niên bao nhiêu một năm vậy",
+   "năm đầu có miễn không",
+   "cái đó tính sao nếu mình hay mua đồ",
+   "sao phí cao thế anh không thích thẻ vàng đâu anh chỉ cần thẻ thường thôi"
+  ],
+  "mong_doi": [
+   "hỏi anh cần hạn mức bao nhiêu để giới thiệu loại thẻ phù hợp",
+   "nêu hạn mức tối đa và điều kiện thu nhập để đạt mức cao",
+   "nêu phí thường niên theo từng hạng thẻ",
+   "xác nhận được miễn phí thường niên năm đầu tiên",
+   "giải thích cashback hoàn tiền phần trăm trên mọi giao dịch",
+   "giới thiệu thẻ classic với phí thấp hơn và hỏi anh cần hạn mức khoảng bao nhiêu"
+  ]
+ },
+ {
+  "ma": "noi_tiep_05",
+  "mo_ta": "Khách nữ hỏi về vay mua nhà hai tỷ, hỏi nối tiếp tỷ lệ cho vay rồi thời hạn rồi lãi suất rồi lãi thả nổi rồi hồ sơ",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "chị muốn hỏi bên em vay mua nhà được không",
+   "nhà chị mua khoảng hai tỷ thế vay được tối đa bao nhiêu",
+   "mấy năm à thời hạn vay tối đa là bao nhiêu năm",
+   "lãi suất mấy phần trăm vậy em",
+   "cái lãi thả nổi đó tính sao",
+   "vậy thì cần hồ sơ gì chị cần chuẩn bị gì"
+  ],
+  "mong_doi": [
+   "xác nhận có sản phẩm vay mua nhà và hỏi nhà giá bao nhiêu chị muốn vay bao nhiêu phần trăm",
+   "nêu tỷ lệ cho vay tối đa và ước tính số tiền tương ứng",
+   "nêu thời hạn tối đa và điều kiện kèm theo",
+   "nêu lãi suất ưu đãi giai đoạn đầu và lãi suất sau kỳ ưu đãi",
+   "giải thích lãi suất thả nổi được điều chỉnh theo thị trường sau khi hết kỳ ưu đãi",
+   "liệt kê hồ sơ cần thiết gồm cccd hộ khẩu xác nhận thu nhập sao kê lương hợp đồng mua bán giấy tờ bất động sản"
+  ]
+ },
+ {
+  "ma": "noi_tiep_06",
+  "mo_ta": "Khách nam chê lãi cao rồi hỏi cách giảm lãi, phát hiện mình đã có tài khoản bên ngân hàng, hỏi có ưu đãi không",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho hỏi vay tín chấp bên em lãi suất bao nhiêu",
+   "cao vậy tháng trả bao nhiêu nếu vay hai trăm triệu",
+   "thì ba năm đi mỗi tháng bao nhiêu",
+   "nhiều quá có cách nào rẻ hơn không",
+   "mình đang có tài khoản bên em rồi lương cũng chuyển qua đây thì sao",
+   "thế à ok vậy còn điều gì nữa không anh cần lưu ý gì"
+  ],
+  "mong_doi": [
+   "nêu khoảng lãi suất và hỏi thêm anh muốn vay bao nhiêu và bao lâu",
+   "hỏi lại thời hạn mong muốn để tính chính xác số tiền trả hàng tháng",
+   "ước tính số tiền trả hàng tháng với kỳ hạn ba năm",
+   "giải thích có ưu đãi giảm lãi khi lương chuyển qua ngân hàng và hỏi anh có tài khoản bên em chưa",
+   "xác nhận anh đủ điều kiện nhận ưu đãi và nêu mức giảm cụ thể",
+   "tóm tắt điều kiện chính và mời anh chuẩn bị hồ sơ để tiến hành"
+  ]
+ },
+ {
+  "ma": "tu_choi_01",
+  "mo_ta": "Khách nghi ngờ cuộc gọi lừa đảo, phòng thủ từ đầu, hỏi dồn về nguồn gốc số điện thoại",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ai đây cho anh biết đi",
+   "sao có số anh vậy anh không nhớ có đăng ký gì đâu",
+   "lừa đảo à nghe nhiều vụ lắm rồi mấy cái kiểu này",
+   "thôi anh bận lắm không có thời gian nghe",
+   "ừ thì cứ nói đi nhưng anh không tin đâu nha",
+   "vay tín chấp là sao không cần tài sản thật không hay lại có điều kiện gì chứ"
+  ],
+  "mong_doi": [
+   "giới thiệu rõ tên ngân hàng và tên nhân viên, không vội chào sản phẩm",
+   "giải thích nguồn thông tin minh bạch, không né tránh",
+   "khẳng định đây là cuộc gọi chính thống, đưa thông tin kiểm chứng được",
+   "xin phép gọi lại lúc khác hoặc giữ khách thêm một câu",
+   "cảm ơn và tiếp tục giới thiệu ngắn gọn không ép",
+   "giải thích vay tín chấp là gì theo cách dễ hiểu, hỏi nhu cầu cụ thể của khách"
+  ]
+ },
+ {
+  "ma": "tu_choi_02",
+  "mo_ta": "Khách đang bận, trả lời cộc lốc, sau đó tò mò hỏi thêm về vay tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ nghe đây đang bận đó",
+   "vay vốn hả thôi gọi lại sau đi",
+   "ừ nói nhanh đi",
+   "bao nhiêu phần trăm vậy nghe cao thế",
+   "bên khác người ta cho vay rẻ hơn nhiều anh biết rồi",
+   "thủ tục có rườm rà không hay lại phải chuẩn bị cả đống giấy tờ",
+   "để anh xem đã rồi tính"
+  ],
+  "mong_doi": [
+   "xin nói ngắn trong một phút, không kéo dài",
+   "tóm tắt ưu điểm nổi bật nhất trong một câu, xin gọi lại",
+   "nêu ngắn gọn lãi suất và ưu đãi không cần giải thích dài",
+   "so sánh nhẹ nhàng, không chê đối thủ, nhấn điểm khác biệt",
+   "nêu điểm mạnh cạnh tranh mà không phủ nhận câu khách",
+   "mô tả hồ sơ đơn giản, không đọc danh sách dài",
+   "tôn trọng quyết định, đề nghị gửi thông tin hoặc gọi lại"
+  ]
+ },
+ {
+  "ma": "tu_choi_03",
+  "mo_ta": "Khách mặc cả lãi suất, so sánh với bên khác, cuối cùng hỏi thêm để tìm hiểu",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "lãi suất bao nhiêu vậy em",
+   "ồ cao thế bên khác người ta cho vay thấp hơn nhiều",
+   "bên em có giảm thêm được không anh cần vay khoảng hai trăm triệu",
+   "anh có lương qua tài khoản thì được ưu đãi không",
+   "thời gian giải ngân bao lâu vậy anh đang cần gấp",
+   "vậy hồ sơ cần gì anh chuẩn bị trước được không"
+  ],
+  "mong_doi": [
+   "báo lãi suất khởi điểm và điều kiện hưởng mức tốt nhất",
+   "không hứa giảm thêm mà hướng khách đến điều kiện ưu đãi sẵn có, hỏi thêm nhu cầu",
+   "xác nhận mức hai trăm triệu được, hỏi thời hạn mong muốn",
+   "xác nhận có ưu đãi lương qua tài khoản và mức giảm cụ thể",
+   "nêu thời gian giải ngân và hỏi khách cần giải ngân trong vòng bao lâu",
+   "liệt kê hồ sơ cơ bản ngắn gọn, đề nghị hỗ trợ đặt lịch"
+  ]
+ },
+ {
+  "ma": "tu_choi_04",
+  "mo_ta": "Khách gật gù ban đầu nhưng dần phủ nhận, nói không cần, sau lại hỏi thêm về thẻ tín dụng",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "ừ ừ nghe em nói đi",
+   "thẻ tín dụng á không cần đâu anh không xài",
+   "dùng tiền mặt quen rồi thẻ rắc rối lắm",
+   "phí thường niên bao nhiêu vậy",
+   "có hoàn tiền không hay chỉ tích điểm không",
+   "thôi để anh nghĩ thêm đã không vội đâu"
+  ],
+  "mong_doi": [
+   "giới thiệu lợi ích thẻ phù hợp với người chưa quen dùng thẻ",
+   "giải thích thẻ không bắt buộc dùng mọi lúc, linh hoạt",
+   "nêu điểm tiện lợi so với tiền mặt không tranh luận",
+   "báo phí thường niên và điều kiện được miễn",
+   "giải thích chương trình hoàn tiền hoặc ưu đãi thực tế",
+   "tôn trọng, đề nghị gửi thông tin qua zalo hoặc gọi lại khi khách sẵn sàng"
+  ]
+ },
+ {
+  "ma": "tu_choi_05",
+  "mo_ta": "Khách hỏi vay mua nhà, nhiều thắc mắc về điều kiện, nghi ngờ lãi suất ưu đãi chỉ là quảng cáo",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "em ơi anh đang tính mua nhà bên em hỗ trợ vay không",
+   "tỷ lệ cho vay tối đa bao nhiêu phần trăm giá trị nhà",
+   "lãi suất ưu đãi mấy tháng đầu thôi rồi lên cao lắm phải không",
+   "anh mua căn chung cư khoảng một tỷ rưỡi vay được không",
+   "thủ tục có mất nhiều thời gian không anh nghe nói ngân hàng thường rất lâu",
+   "vậy anh cần chuẩn bị gì trước khi đến gặp nhân viên"
+  ],
+  "mong_doi": [
+   "xác nhận có hỗ trợ vay mua nhà và hỏi thêm nhu cầu cụ thể",
+   "nêu tỷ lệ cho vay tối đa theo giá trị tài sản",
+   "giải thích cơ chế lãi suất thả nổi trung thực, không né tránh",
+   "xác nhận mức một tỷ rưỡi trong hạn mức, hỏi thêm tình trạng thu nhập",
+   "nêu quy trình và thời gian xử lý thực tế không phóng đại",
+   "hướng dẫn hồ sơ chuẩn bị cơ bản và đề nghị đặt lịch tư vấn trực tiếp"
+  ]
+ },
+ {
+  "ma": "tu_choi_06",
+  "mo_ta": "Khách vừa nghe vừa chất vấn về vay tín chấp, hỏi điều kiện thu nhập, lo ngại về nợ xấu cũ",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "em nói anh nghe thử đi vay tín chấp là sao",
+   "thu nhập tối thiểu bao nhiêu mới vay được",
+   "anh làm tự do không có hợp đồng lao động thì sao",
+   "anh hỏi thật trước đây có nợ xấu nhưng đã thanh toán rồi vay được không",
+   "giải ngân xong có bị gọi điện liên tục không hay chỉ gọi khi đến hạn",
+   "ok anh hiểu rồi nhưng mà anh muốn hỏi thêm một chút được không"
+  ],
+  "mong_doi": [
+   "giải thích vay tín chấp ngắn gọn dễ hiểu, không đọc định nghĩa sách vở",
+   "nêu mức thu nhập tối thiểu theo quy định hiện hành",
+   "giải thích trường hợp thu nhập tự do cần giấy tờ gì thay thế, không từ chối thẳng",
+   "trả lời trung thực về nợ xấu đã xử lý, hướng đến bước kiểm tra CIC",
+   "giải thích chính sách liên lạc sau giải ngân, không hứa hẹn quá mức",
+   "khuyến khích hỏi thêm và hỏi lại câu cụ thể khách muốn biết"
+  ]
+ },
+ {
+  "ma": "dieu_kien_01",
+  "mo_ta": "Anh thợ hồ tự do, nhận tiền mặt, không có hợp đồng lao động, hỏi điều kiện vay tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo em ơi cho anh hỏi vay tín chấp bên mình thì cần giấy tờ gì ạ",
+   "anh đang làm thợ hồ tự do không có hợp đồng lao động thì có vay được không em",
+   "anh nhận tiền mặt hết không có sao kê tài khoản thì sao ạ",
+   "có cách nào để chứng minh thu nhập không em anh làm đều đặn lắm mỗi tháng cũng được kha khá",
+   "vậy anh cần chuẩn bị thêm gì nữa không để hồ sơ được duyệt",
+   "thủ tục thường mất bao lâu để ra kết quả vậy em",
+   "nếu hồ sơ thiếu thì bên mình có tư vấn thêm không hay từ chối thẳng luôn"
+  ],
+  "mong_doi": [
+   "hỏi thêm về công việc và thu nhập hàng tháng của anh để tư vấn phù hợp",
+   "nói điều kiện cần hợp đồng lao động hoặc giấy phép kinh doanh và hỏi anh có đăng ký hộ kinh doanh không",
+   "nói thu nhập tiền mặt cần chứng từ thay thế và hỏi anh có hợp đồng thi công hoặc xác nhận từ chủ công trình không",
+   "gợi ý các giấy tờ thay thế có thể dùng như hợp đồng dự án hoặc sao kê tài khoản ngân hàng",
+   "hướng dẫn danh sách hồ sơ cụ thể và nói bên mình sẽ xem xét tùy hồ sơ thực tế",
+   "nói thời gian xét duyệt thông thường và đề nghị đặt lịch gặp tư vấn trực tiếp",
+   "trấn an rằng bên mình sẽ xem hồ sơ trước rồi tư vấn thêm chứ không từ chối ngay"
+  ]
+ },
+ {
+  "ma": "dieu_kien_02",
+  "mo_ta": "Chị bán hàng online thu nhập tiền mặt, hỏi nhờ chồng đứng tên vay tín chấp thay được không",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "em ơi chị hỏi bên mình có cho vay tín chấp không ạ",
+   "chị bán hàng online thu nhập tiền mặt không có sao kê lương thì có vay được không",
+   "chị không có hóa đơn gì hết chỉ có lịch sử chuyển khoản qua app thôi đủ không",
+   "vậy thì nhờ chồng đứng tên thay được không chồng chị đang đi làm công ty có hợp đồng đàng hoàng",
+   "nếu chồng đứng tên thì hồ sơ cần những gì ạ",
+   "vay tín chấp tối đa được bao nhiêu tháng vậy em"
+  ],
+  "mong_doi": [
+   "hỏi thêm về thu nhập bình quân mỗi tháng và mục đích vay",
+   "nói cần chứng minh thu nhập và hỏi chị có tài khoản kinh doanh hoặc giấy phép hộ cá thể không",
+   "nói sao kê giao dịch ứng dụng có thể dùng làm bằng chứng thu nhập và hỏi thêm về giá trị giao dịch",
+   "xác nhận chồng đứng tên được và hỏi thêm về công việc và thu nhập của chồng",
+   "hướng dẫn hồ sơ cần thiết khi vợ đồng vay hoặc chồng đứng tên",
+   "trả lời về thời hạn vay và hỏi thêm số tiền chị muốn vay"
+  ]
+ },
+ {
+  "ma": "dieu_kien_03",
+  "mo_ta": "Anh có nợ xấu cũ đã tất toán được mấy tháng, lo không vay được tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo em ơi anh muốn hỏi về vay tín chấp",
+   "anh hỏi thật nhé trước đây anh có nợ xấu nhưng đã đóng hết rồi thì vay được không ạ",
+   "anh đóng xong hết từ hồi tháng tư đến giờ là gần sáu tháng rồi",
+   "vậy thì cần đợi bao lâu nữa thì hồ sơ anh mới được xem xét",
+   "nếu cic chưa cập nhật thì có cách nào làm nhanh hơn không em",
+   "thế bên mình có thể kiểm tra cic giúp anh trước không để biết tình trạng hiện tại"
+  ],
+  "mong_doi": [
+   "hỏi thêm về mục đích vay và số tiền muốn vay của anh",
+   "nói rõ nợ đã tất toán cần đủ thời gian nhất định mới xem xét được và hỏi anh tất toán từ bao giờ",
+   "nói sáu tháng chưa đủ điều kiện và giải thích thêm về thời gian cần thiết sau khi tất toán",
+   "giải thích thời gian cập nhật cic và tư vấn anh nên chờ thêm rồi liên hệ lại",
+   "nói cic cập nhật theo lịch của ngân hàng báo cáo và không có cách làm nhanh hơn",
+   "hướng dẫn anh cách kiểm tra cic cá nhân tự tra và gợi ý liên hệ lại khi cic đã sạch"
+  ]
+ },
+ {
+  "ma": "dieu_kien_04",
+  "mo_ta": "Chị đang còn nợ ngân hàng khác, muốn vay thêm tín chấp, lo bị từ chối vì tổng nợ nhiều",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "em ơi chị đang vay bên ngân hàng khác rồi thì bên này có cho vay thêm không ạ",
+   "chị đang còn nợ khoảng năm mươi triệu bên kia nữa",
+   "chị lo là nợ nhiều quá thì bên mình không duyệt đơn phải không",
+   "thu nhập chị tháng được khoảng mười lăm triệu thì vay thêm được không",
+   "chị muốn vay thêm ba mươi triệu để sửa nhà thôi có được không em",
+   "hồ sơ thì cần chuẩn bị những gì ạ"
+  ],
+  "mong_doi": [
+   "xác nhận đang có nợ chỗ khác vẫn có thể xét duyệt và hỏi thêm về công việc của chị",
+   "hỏi chị có đang trả đúng hạn khoản nợ bên kia không",
+   "nói tổng nợ là yếu tố xét duyệt và giải thích về tỷ lệ nợ trên thu nhập",
+   "hỏi thêm loại công việc để đánh giá mức vay phù hợp với hồ sơ",
+   "xác nhận số tiền hợp lý và hỏi thêm về mục đích sử dụng vốn",
+   "hướng dẫn hồ sơ cần thiết và đề nghị đặt lịch tư vấn trực tiếp"
+  ]
+ },
+ {
+  "ma": "dieu_kien_05",
+  "mo_ta": "Cô về hưu, có lương hưu hàng tháng, hỏi có vay tín chấp được không và điều kiện như thế nào",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "cô ơi cô đã về hưu rồi thì vay tín chấp có được không ạ",
+   "cô năm nay sáu mươi lăm tuổi nhận lương hưu hàng tháng",
+   "hồ sơ cô cần chuẩn bị những gì ạ",
+   "cô muốn biết vay được tối đa bao nhiêu năm",
+   "có cần thế chấp tài sản gì không hay tín chấp hoàn toàn",
+   "cô muốn vay để sửa nhà thì có ảnh hưởng đến xét duyệt không",
+   "thủ tục có phải lên chi nhánh trực tiếp không hay làm online được"
+  ],
+  "mong_doi": [
+   "xác nhận người về hưu vẫn có thể xét duyệt và hỏi cô nhận lương hưu qua tài khoản ngân hàng không",
+   "hỏi thêm về mức lương hưu hàng tháng để tư vấn mức vay phù hợp",
+   "hướng dẫn hồ sơ cần thiết như quyết định nghỉ hưu và sổ lương hưu",
+   "nói thời hạn vay phụ thuộc độ tuổi và tư vấn kỳ hạn phù hợp",
+   "xác nhận tín chấp không cần thế chấp và nói điều kiện chính là thu nhập hàng tháng",
+   "xác nhận mục đích sửa nhà không ảnh hưởng xét duyệt tín chấp",
+   "hướng dẫn cách đặt lịch tư vấn tại chi nhánh gần nhà"
+  ]
+ },
+ {
+  "ma": "dieu_kien_06",
+  "mo_ta": "Anh ở tỉnh, vợ làm thành phố, muốn vợ đứng tên vay mua nhà ở tỉnh, hỏi thủ tục và điều kiện",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "em ơi anh muốn hỏi vay mua nhà thì vợ đứng tên thay anh được không",
+   "anh ở dưới tỉnh còn vợ anh đang đi làm ở thành phố hồ chí minh",
+   "nhà anh muốn mua cũng ở dưới tỉnh chứ không phải trên thành phố",
+   "vậy vợ anh có phải về tỉnh để làm hồ sơ hay làm được ở chi nhánh trên thành phố",
+   "hồ sơ cần những gì ạ em nói để anh nhắn vợ chuẩn bị trước",
+   "mua nhà thì thế chấp chính căn nhà đó được không hay phải có tài sản khác",
+   "thủ tục từ lúc nộp hồ sơ đến lúc giải ngân thường mất bao lâu vậy em"
+  ],
+  "mong_doi": [
+   "xác nhận vợ đứng tên được và hỏi thêm về công việc và thu nhập của vợ",
+   "hỏi thêm về hộ khẩu và nơi cư trú của hai vợ chồng để tư vấn chi nhánh phù hợp",
+   "nói thường làm hồ sơ tại chi nhánh nơi có tài sản và hỏi tỉnh nào để tư vấn chi nhánh gần",
+   "giải thích quy trình có thể nộp tại chi nhánh nơi tài sản hoặc nơi làm việc tùy quy định",
+   "hướng dẫn danh sách hồ sơ cần thiết cho vay mua nhà",
+   "xác nhận thế chấp chính là căn nhà mua và nói về điều kiện tài sản bảo đảm",
+   "nói về thời gian xét duyệt thông thường và các bước từ nộp hồ sơ đến giải ngân"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_01",
+  "mo_ta": "Khách đang hỏi vay tín chấp để sửa nhà, giữa chừng hỏi sang thẻ tín dụng xem có lợi hơn không rồi quay lại vay tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho anh hỏi bên em có cho vay tín chấp không ạ",
+   "anh muốn sửa nhà tầm một trăm rưỡi triệu thôi em ơi",
+   "ừ mà thẻ tín dụng với vay tín chấp cái nào lợi hơn em",
+   "thẻ tín dụng thì miễn lãi mấy chục ngày đúng không",
+   "thế sau thời gian đó mà chưa trả thì tính lãi sao em",
+   "ừ nghe có vẻ vay tín chấp ổn hơn cho số tiền đó nhỉ thủ tục khó không em"
+  ],
+  "mong_doi": [
+   "xác nhận có sản phẩm vay tín chấp và hỏi nhu cầu cụ thể",
+   "hỏi thêm thời hạn muốn vay và thu nhập để tư vấn phù hợp",
+   "giải thích sự khác biệt: thẻ tín dụng phù hợp chi tiêu nhỏ lẻ ngắn hạn, vay tín chấp phù hợp số tiền lớn dùng một lần",
+   "xác nhận thời gian miễn lãi của thẻ và điều kiện được miễn",
+   "giải thích lãi suất tính trên toàn khoản nếu không trả đủ trong kỳ miễn lãi, thường cao hơn vay tín chấp",
+   "xác nhận vay tín chấp phù hợp hơn cho nhu cầu này và giới thiệu thủ tục đơn giản không cần tài sản đảm bảo"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_02",
+  "mo_ta": "Khách hỏi vay tín chấp để mua xe, rồi hỏi luôn về vay mua nhà và so sánh hai sản phẩm trước khi quay lại vay tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "em ơi anh muốn vay khoảng ba trăm triệu bên em có không",
+   "anh mua xe với sắm thêm đồ đạc cộng lại thôi",
+   "ừ anh cũng đang tính mua nhà nữa bên em có cho vay mua nhà không",
+   "vay mua nhà với vay tín chấp khác nhau chỗ nào em",
+   "thế lãi suất vay mua nhà với vay tín chấp cái nào thấp hơn",
+   "ừ hiểu rồi thế thì anh cần tư vấn riêng từng cái hả",
+   "thôi em tư vấn vay tín chấp trước đi để anh mua xe trước"
+  ],
+  "mong_doi": [
+   "hỏi mục đích vay để tư vấn sản phẩm phù hợp nhất",
+   "xác nhận vay tín chấp phù hợp với nhu cầu đó và giới thiệu sơ bộ điều kiện",
+   "xác nhận có sản phẩm vay mua nhà và hỏi thêm nhu cầu cụ thể",
+   "giải thích điểm khác biệt chính: vay mua nhà cần tài sản đảm bảo, thời hạn dài hơn",
+   "xác nhận vay mua nhà lãi thấp hơn vì có tài sản đảm bảo",
+   "đề nghị tư vấn từng sản phẩm theo nhu cầu, hỏi khách muốn bắt đầu từ đâu",
+   "hỏi số tiền cụ thể và thời hạn muốn vay cho khoản vay tín chấp mua xe"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_03",
+  "mo_ta": "Khách đang cân nhắc giữa vay tín chấp để bổ sung vốn kinh doanh và gửi tiết kiệm vì có tiền nhàn rỗi",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "cho anh hỏi bên em cái nào lợi hơn vay tín chấp hay gửi tiết kiệm",
+   "anh đang có khoảng năm mươi triệu nhàn rỗi nhưng cũng cần thêm vốn để kinh doanh",
+   "nếu gửi tiết kiệm thì bao lâu lấy ra được không bị phạt",
+   "mà điều kiện vay tín chấp thế nào anh có lương tháng mười lăm triệu",
+   "anh có hợp đồng lao động rồi thế thì vay được bao nhiêu",
+   "anh cần khoảng hai trăm triệu vay ba mươi sáu tháng được không"
+  ],
+  "mong_doi": [
+   "hỏi thêm hoàn cảnh cụ thể vì hai sản phẩm phục vụ mục đích khác nhau",
+   "giải thích gửi tiết kiệm để sinh lời, vay tín chấp khi cần tiền gấp, hỏi thêm số tiền cần vay",
+   "giải thích có thể rút trước hạn nhưng mất phần lãi, kỳ hạn linh hoạt từ một tháng trở lên",
+   "xác nhận thu nhập đủ điều kiện cơ bản và hỏi thêm hợp đồng lao động",
+   "xác nhận đủ điều kiện và giới thiệu hạn mức có thể vay tương ứng với thu nhập",
+   "xác nhận được và ước lượng số tiền trả hàng tháng để khách cân nhắc khả năng trả"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_04",
+  "mo_ta": "Khách gọi hỏi mở thẻ tín dụng, giữa chừng so sánh với vay tín chấp để quyết định cái nào phù hợp hơn cho nhu cầu mua đồ gia đình",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "chị muốn làm thẻ tín dụng bên em hạn mức được bao nhiêu ạ",
+   "chị muốn hạn mức tầm năm mươi đến tám mươi triệu thôi",
+   "thẻ tín dụng với vay tín chấp khác nhau gì em",
+   "nếu cần tiền trăm rưỡi triệu thì dùng thẻ được không",
+   "vay tín chấp thì vay được nhiều hơn thẻ đúng không em",
+   "chị đang muốn mua đồ gia đình tầm trăm rưỡi thì nên làm cái nào"
+  ],
+  "mong_doi": [
+   "giải thích hạn mức phụ thuộc thu nhập và loại thẻ, hỏi thu nhập hàng tháng",
+   "giới thiệu loại thẻ phù hợp với hạn mức đó và điều kiện cơ bản",
+   "giải thích thẻ tín dụng phù hợp chi tiêu hàng ngày linh hoạt, vay tín chấp cho số tiền lớn một lần",
+   "giải thích hạn mức thẻ tín dụng thường không đủ cho số tiền đó và lãi cao nếu trả chậm",
+   "xác nhận vay tín chấp có thể vay số tiền lớn hơn với lãi suất rõ ràng từ đầu",
+   "tư vấn vay tín chấp phù hợp hơn cho nhu cầu mua sắm lớn một lần và hỏi thêm thông tin"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_05",
+  "mo_ta": "Khách hỏi vay mua nhà, tính kết hợp thêm vay tín chấp để lo tiền cọc trước, hỏi làm hai khoản cùng lúc được không",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "bên em có cho vay mua nhà không em",
+   "anh đang xem nhà khoảng hai tỷ rưỡi bên em cho vay được bao nhiêu phần trăm giá trị",
+   "thế phần còn lại anh phải tự chuẩn bị bao nhiêu",
+   "anh chưa đủ tiền cọc thì có thể vay tín chấp để đặt cọc trước không em",
+   "điều kiện vay tín chấp gì anh đi làm lương hai mươi triệu một tháng",
+   "ừ thế làm hai khoản cùng lúc được không hay phải xong cái này rồi mới làm cái kia",
+   "thôi em tư vấn kỹ hơn về vay mua nhà đi anh xem mình có đủ điều kiện không"
+  ],
+  "mong_doi": [
+   "xác nhận có sản phẩm vay mua nhà và hỏi nhu cầu cụ thể",
+   "giải thích tỷ lệ cho vay theo giá trị bất động sản thẩm định",
+   "giải thích phần vốn tự có tối thiểu khách cần chuẩn bị",
+   "giải thích có thể kết hợp nhưng cần đủ điều kiện cả hai, và tổng số tiền trả hàng tháng cần trong giới hạn thu nhập",
+   "xác nhận thu nhập đủ điều kiện cơ bản vay tín chấp và hỏi thêm hợp đồng lao động",
+   "giải thích quy trình có thể làm song song hoặc vay tín chấp trước rồi làm vay mua nhà, tư vấn cân nhắc khả năng trả",
+   "hỏi thêm thông tin thu nhập ổn định và giấy tờ tài sản để đánh giá điều kiện vay mua nhà"
+  ]
+ },
+ {
+  "ma": "san_pham_khac_06",
+  "mo_ta": "Khách gọi hỏi chung bên em có những sản phẩm gì, so sánh vay mua nhà vay tín chấp thẻ tín dụng, rồi xác định cần tiền cấp bách và chọn vay tín chấp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "bên em có những sản phẩm tài chính gì em ơi",
+   "ừ anh đang cần tiền cấp bách khoảng một trăm năm mươi triệu để giải quyết việc gấp",
+   "vay mua nhà với vay tín chấp cái nào lãi thấp hơn",
+   "thẻ tín dụng thì dùng được ngay không cần chờ duyệt lâu không",
+   "nhưng hạn mức thẻ thường thấp hơn vay tín chấp đúng không em",
+   "thế vay tín chấp bao lâu thì có tiền",
+   "ừ được vậy anh muốn thử xem có đủ điều kiện không"
+  ],
+  "mong_doi": [
+   "giới thiệu tổng quan các sản phẩm ngân hàng đang có",
+   "hỏi thêm mục đích để tư vấn sản phẩm nhanh và phù hợp nhất cho nhu cầu cấp bách",
+   "giải thích vay mua nhà lãi thấp hơn nhưng thủ tục phức tạp và thời gian duyệt lâu hơn nhiều",
+   "giải thích thẻ tín dụng có thể dùng nhanh nhưng hạn mức phụ thuộc thu nhập và loại thẻ",
+   "xác nhận vay tín chấp hạn mức cao hơn thẻ, phù hợp hơn cho số tiền đó",
+   "giải thích thời gian giải ngân vay tín chấp sau khi hồ sơ được duyệt",
+   "hỏi thông tin thu nhập và hợp đồng lao động để đánh giá sơ bộ điều kiện"
+  ]
+ },
+ {
+  "ma": "xa_giao_01",
+  "mo_ta": "Khách nam thân thiện, hỏi tên AI, hỏi vay tín chấp để làm vốn, chốt sẽ nghĩ thêm rồi gọi lại",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo em ơi cho anh hỏi thông tin vay tín chấp với nha",
+   "ừ à em tên gì vậy để anh biết xưng hô cho tiện",
+   "ừ vậy à anh đang muốn vay khoảng ba trăm triệu để làm vốn kinh doanh thì bên mình có không em",
+   "vậy thời hạn vay tối đa được bao nhiêu năm em",
+   "ừ nghe cũng ổn đó thôi anh đang bận để anh nghĩ thêm rồi gọi lại nha em",
+   "ừ nha cảm ơn em tạm biệt em"
+  ],
+  "mong_doi": [
+   "chào khách và hỏi nhu cầu cụ thể hơn về số tiền và thời hạn",
+   "giới thiệu là AI tư vấn rồi dẫn lại vào hỏi nhu cầu của khách",
+   "xác nhận có sản phẩm vay tín chấp và hỏi thêm thời hạn mong muốn",
+   "nêu thời hạn tối đa và hỏi thêm về điều kiện khách đáp ứng",
+   "khuyến khích và nói sẵn sàng hỗ trợ khi khách cần",
+   "chào tạm biệt thân thiện"
+  ]
+ },
+ {
+  "ma": "xa_giao_02",
+  "mo_ta": "Khách hoài nghi AI là máy hay người, hỏi vay tín chấp, chốt về bàn với vợ",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo đây là số tư vấn ngân hàng đúng không",
+   "ừ à em là người thật hay là máy vậy nghe giọng lạ lắm",
+   "ừ thôi được rồi anh hỏi thử vậy em ơi anh cần vay tín chấp một khoản khoảng một trăm năm mươi triệu thì được không",
+   "ừ vậy anh cần chuẩn bị hồ sơ gì không em",
+   "ừ ok anh hiểu rồi thôi để anh về bàn với vợ rồi anh gọi lại nha em",
+   "tạm biệt em"
+  ],
+  "mong_doi": [
+   "xác nhận đúng số tư vấn và hỏi khách muốn tư vấn sản phẩm nào",
+   "nói rõ là AI tư vấn nhưng có thể giải đáp đầy đủ và tiếp tục hỏi nhu cầu",
+   "xác nhận có sản phẩm phù hợp và hỏi thêm thời hạn cũng như mục đích vay",
+   "nêu hồ sơ cơ bản cần chuẩn bị",
+   "khuyến khích và nói khách có thể gọi lại bất cứ lúc nào",
+   "chào tạm biệt"
+  ]
+ },
+ {
+  "ma": "xa_giao_03",
+  "mo_ta": "Khách nữ hỏi vay tín chấp sửa nhà, xin gửi thông tin qua Zalo, chốt gọi lại sau",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo em ơi chào em cho chị hỏi chút nhé",
+   "chị đang có nhu cầu vay tiền để sửa nhà thì bên mình có sản phẩm phù hợp không em",
+   "vậy điều kiện để được vay thì như thế nào em",
+   "ừ vậy bên em có gửi thông tin chi tiết qua zalo cho chị được không để chị đọc cho kỹ",
+   "ừ chị hiểu rồi thôi cảm ơn em để chị suy nghĩ thêm rồi gọi lại nha",
+   "thôi tạm biệt em"
+  ],
+  "mong_doi": [
+   "chào và hỏi muốn tư vấn sản phẩm gì",
+   "hỏi thêm nhu cầu cụ thể về số tiền và thời hạn muốn vay",
+   "nêu điều kiện vay cơ bản ngắn gọn",
+   "nói rõ không có kênh Zalo và mời khách gọi lại hoặc đến chi nhánh để được tư vấn trực tiếp",
+   "sẵn sàng hỗ trợ và mời gọi lại",
+   "chào tạm biệt"
+  ]
+ },
+ {
+  "ma": "xa_giao_04",
+  "mo_ta": "Khách nam mở đầu bằng xã giao thời tiết, hỏi thẻ tín dụng, khen tư vấn hay, đăng ký sau",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "alo chào em ơi hôm nay nắng quá trời nóng ghê ha em",
+   "ừ thôi em ơi anh gọi để hỏi về thẻ tín dụng bên mình có mấy loại vậy em",
+   "ừ vậy hạn mức tối đa là bao nhiêu em",
+   "ờ còn có miễn lãi không hay tháng nào cũng phải trả lãi vậy em",
+   "ừ ok tư vấn hay ghê em ơi thôi anh đang bận để hôm khác anh đăng ký nha",
+   "thôi cảm ơn em tạm biệt"
+  ],
+  "mong_doi": [
+   "chào thân thiện và hỏi muốn tư vấn sản phẩm gì",
+   "giới thiệu các loại thẻ và hỏi nhu cầu sử dụng",
+   "nêu hạn mức theo từng hạng thẻ",
+   "giải thích thời gian miễn lãi và điều kiện",
+   "cảm ơn và mời gọi lại khi sẵn sàng đăng ký",
+   "chào tạm biệt"
+  ]
+ },
+ {
+  "ma": "xa_giao_05",
+  "mo_ta": "Khách hỏi em đang ngồi ở đâu, hỏi gửi tiết kiệm, cảm ơn vì tư vấn nhiệt tình",
+  "san_pham": "tiết kiệm",
+  "luot": [
+   "alo em ơi em đang ngồi ở đâu vậy hà nội hay sài gòn",
+   "ừ vậy à thôi em ơi anh muốn hỏi về gửi tiết kiệm bên mình có mấy kỳ hạn vậy em",
+   "ừ gửi ba tháng với sáu tháng thì lãi suất chênh nhau nhiều không em",
+   "vậy gửi online được không hay phải ra quầy em",
+   "ờ hay đó cảm ơn em tư vấn nhiệt tình quá anh sẽ cân nhắc nha",
+   "ok em nha tạm biệt em"
+  ],
+  "mong_doi": [
+   "giải thích là tổng đài hỗ trợ không gắn địa điểm cụ thể và hỏi nhu cầu của khách",
+   "nêu các kỳ hạn tiết kiệm từ ngắn đến dài",
+   "so sánh lãi suất hai kỳ hạn và gợi ý kỳ hạn phù hợp với nhu cầu",
+   "giới thiệu hình thức gửi online và hướng dẫn cách thực hiện",
+   "khuyến khích và sẵn sàng hỗ trợ thêm",
+   "chào tạm biệt"
+  ]
+ },
+ {
+  "ma": "xa_giao_06",
+  "mo_ta": "Khách nam hỏi về vay tín chấp mua xe, xã giao chào hỏi, chốt bằng 'để anh báo lại'",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "alo em ơi anh gọi nhầm số hay đây đúng là ngân hàng vậy",
+   "ừ thôi anh hỏi luôn nha anh muốn vay tín chấp để mua xe ô tô thì bên mình hỗ trợ không em",
+   "ừ vậy thủ tục có phức tạp không em hay là nhanh",
+   "ờ từ lúc nộp hồ sơ đến lúc có tiền thì mất bao lâu em",
+   "ừ ok thôi để anh bàn lại với người nhà rồi anh báo lại cho em nha",
+   "ừ thôi nha cảm ơn em nhé tạm biệt"
+  ],
+  "mong_doi": [
+   "xác nhận đúng số tư vấn và hỏi khách muốn biết thông tin gì",
+   "xác nhận có vay tín chấp và hỏi thêm số tiền cũng như thời hạn mong muốn",
+   "nêu quy trình đơn giản và các giấy tờ cần thiết",
+   "nêu thời gian xử lý và giải ngân dự kiến",
+   "khuyến khích và nói khách có thể gọi lại bất cứ lúc nào",
+   "chào tạm biệt"
+  ]
+ },
+ {
+  "ma": "stt_loi_01",
+  "mo_ta": "Khách nam lần đầu gọi, không biết tín chấp là gì, ngập ngừng hỏi chung rồi mới hé lộ nhu cầu từng bước",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "a lô ơi cho anh hỏi chút được không ạ",
+   "ừ thì anh đang muốn vay tiền nhưng mà nhà anh không có sổ đỏ thì bên em có cho vay được không",
+   "anh cần khoảng ba trăm triệu để sửa nhà ấy",
+   "thì điều kiện cần gì ạ anh đang đi làm công ty",
+   "anh có hợp đồng lao động từ hai năm rồi",
+   "thu nhập anh thì khoảng hai mươi triệu một tháng thôi",
+   "thế thì anh đủ điều kiện không ạ"
+  ],
+  "mong_doi": [
+   "Chào và hỏi khách cần hỗ trợ gì",
+   "Xác nhận có sản phẩm tín chấp không cần thế chấp, hỏi thêm nhu cầu",
+   "Xác nhận số tiền và hỏi thêm thời hạn muốn vay",
+   "Hỏi về thu nhập hàng tháng để đánh giá sơ bộ",
+   "Ghi nhận và hỏi thêm về thu nhập hoặc loại hợp đồng",
+   "Xác nhận thu nhập đủ điều kiện cơ bản và hỏi thêm thời hạn",
+   "Xác nhận đủ điều kiện và hỏi anh muốn tiến hành đăng ký không"
+  ]
+ },
+ {
+  "ma": "stt_loi_02",
+  "mo_ta": "Khách nam gọi lại lần hai sau khi tìm hiểu online, STT nghe sai 'cố định' thành 'tính chấp', dùng từ đệm và câu lặp",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "a lô a lô đây là ngân hàng đúng không ạ",
+   "ừ anh muốn hỏi về cái vay tín chấp ấy",
+   "bên em cho vay tối đa là bao nhiêu ạ",
+   "thế còn lãi suất thì bên em có lãi tính chấp không hay lãi thả nổi đó",
+   "anh không có tài sản gì hết thì vẫn vay được không",
+   "thì cho anh biết cần chuẩn bị gì ạ"
+  ],
+  "mong_doi": [
+   "Xác nhận đúng số và hỏi khách cần hỗ trợ gì",
+   "Giới thiệu sơ lược sản phẩm tín chấp",
+   "Nêu hạn mức tối đa và hỏi anh cần vay bao nhiêu",
+   "Hỏi lại để xác nhận ý khách muốn hỏi về loại lãi gì",
+   "Xác nhận tín chấp không cần tài sản thế chấp",
+   "Hướng dẫn các giấy tờ cần chuẩn bị"
+  ]
+ },
+ {
+  "ma": "stt_loi_03",
+  "mo_ta": "Khách nữ gọi vay tín chấp mở quán ăn, tự sửa lỗi giữa câu, STT nghe 'bốn trăm' thành 'bốn châu', câu dở dang nhiều",
+  "san_pham": "vay tín chấp",
+  "luot": [
+   "ừ cho chị hỏi bên mình có vay tiền không cần thế chấp không",
+   "chị cần bốn châu à không bốn trăm triệu để mở quán ăn ấy",
+   "thì bên em cho vay được không ạ",
+   "chị muốn vay hai mươi bốn tháng hai năm ấy",
+   "thu nhập chị ờ khoảng mười lăm mười sáu triệu gì đó một tháng",
+   "thì giải ngân mất bao lâu ạ chị cần gấp"
+  ],
+  "mong_doi": [
+   "Xác nhận có sản phẩm tín chấp và hỏi thêm nhu cầu",
+   "Hỏi lại để xác nhận số tiền chị muốn vay",
+   "Xác nhận được và hỏi thêm về thời hạn và thu nhập",
+   "Xác nhận thời hạn hai mươi bốn tháng và hỏi thu nhập",
+   "Xác nhận thu nhập và cho biết sơ bộ đủ điều kiện",
+   "Nêu thời gian giải ngân và hỏi chị có muốn đăng ký luôn không"
+  ]
+ },
+ {
+  "ma": "stt_loi_04",
+  "mo_ta": "Khách nam trẻ hỏi về thẻ tín dụng, lặp từ 'thẻ thẻ', dùng từ đệm 'thì' đầu câu, câu ngắn kiểu nhắn tin",
+  "san_pham": "thẻ tín dụng",
+  "luot": [
+   "a lô em ơi anh muốn hỏi về cái thẻ thẻ tín dụng ấy",
+   "bên em có loại thẻ miễn phí thường niên không ạ",
+   "hạn mức tối đa được bao nhiêu ạ",
+   "thế nếu anh mua sắm rồi có hoàn tiền gì không",
+   "thì điều kiện để làm thẻ cần gì ạ",
+   "anh đang đi làm văn phòng thu nhập cũng được"
+  ],
+  "mong_doi": [
+   "Chào và xác nhận dòng thẻ tín dụng, hỏi loại thẻ anh quan tâm",
+   "Nêu thông tin về miễn phí thường niên",
+   "Nêu hạn mức và hỏi anh cần hạn mức bao nhiêu",
+   "Giải thích về ưu đãi hoàn tiền hoặc tích điểm",
+   "Nêu điều kiện cơ bản để làm thẻ",
+   "Xác nhận đủ điều kiện và hỏi anh muốn đăng ký không"
+  ]
+ },
+ {
+  "ma": "stt_loi_05",
+  "mo_ta": "Khách nam hỏi vay mua nhà, nói hai ý một câu, ngập ngừng ở số tiền, dùng 'đây ạ' xác nhận",
+  "san_pham": "vay mua nhà",
+  "luot": [
+   "a lô cho anh hỏi về vay mua nhà với",
+   "anh đang muốn mua căn hộ khoảng một tỉ rưỡi hai tỉ gì đó",
+   "bên em cho vay bao nhiêu phần trăm giá trị nhà ạ",
+   "đây ạ thế lãi suất ưu đãi năm đầu là bao nhiêu ạ",
+   "thế sau hết ưu đãi thì lãi tính như thế nào",
+   "thì hồ sơ cần gì ạ anh đang có sổ hộ khẩu rồi"
+  ],
+  "mong_doi": [
+   "Chào và hỏi thêm về nhu cầu mua nhà của anh",
+   "Xác nhận nhu cầu và hỏi anh đã có bao nhiêu vốn tự có",
+   "Nêu tỷ lệ cho vay và hỏi thêm giá trị tài sản",
+   "Giải thích về lãi suất ưu đãi giai đoạn đầu",
+   "Giải thích lãi suất sau kỳ ưu đãi tính theo thị trường",
+   "Hướng dẫn hồ sơ cần thiết bên cạnh hộ khẩu"
+  ]
+ },
+ {
+  "ma": "stt_loi_06",
+  "mo_ta": "Khách nữ lớn tuổi gọi hỏi gửi tiết kiệm, nói chậm, nhiều từ đệm, kết bằng 'đây ạ' rồi dừng lại suy nghĩ",
+  "san_pham": "tiết kiệm",
+  "luot": [
+   "a lô em ơi cho chị hỏi về gửi tiết kiệm với",
+   "chị muốn gửi khoảng ba trăm triệu thì kỳ hạn nào là tốt nhất ạ",
+   "thế lãi suất mười hai tháng là bao nhiêu ạ",
+   "nếu chị rút trước hạn thì có bị phạt không",
+   "thì gửi online qua app được không hay phải ra quầy",
+   "đây ạ chị hiểu rồi thì để chị suy nghĩ thêm nhé"
+  ],
+  "mong_doi": [
+   "Chào và hỏi chị muốn biết thêm gì về tiết kiệm",
+   "Tư vấn kỳ hạn phổ biến và hỏi chị có cần linh hoạt rút sớm không",
+   "Nêu lãi suất kỳ hạn mười hai tháng hiện tại",
+   "Giải thích rút trước hạn được hưởng lãi không kỳ hạn thấp hơn",
+   "Xác nhận gửi được qua app và hướng dẫn cách thực hiện",
+   "Ghi nhận và hỏi chị có câu hỏi gì thêm không, hẹn chị quay lại bất cứ lúc nào"
+  ]
+ }
+]

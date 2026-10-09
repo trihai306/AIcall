@@ -288,6 +288,26 @@ class RAGService:
                 logger.info("RAG: mang theo mảnh mở đầu của %s (không thắng điểm "
                             "nhưng chứa định nghĩa sản phẩm)", ma_neo)
 
+        # KHÁCH NÊU ĐÍCH DANH SẢN PHẨM KHÁC trong câu ("lãi suất vay mua nhà với
+        # vay tín chấp cái nào thấp hơn"): mang theo mảnh mở đầu của sản phẩm đó
+        # nữa. Bộ lọc theo sản phẩm của phiên đã bỏ hết mảnh của nó, nên mô hình
+        # đáp "em chưa có thông tin về lãi suất vay mua nhà" dù tài liệu ghi rõ
+        # (bộ thử 304 lượt, 08-10-2026 - hai lượt so sánh đều hỏng kiểu này).
+        if not shinhan_query:
+            thap = (query or "").lower()
+            ma_neo = self._ma_san_pham(san_pham) if san_pham else ""
+            co_tl = self._san_pham_co_tai_lieu() or set()
+            for ma, tu_khoa in self._TU_KHOA_SP:
+                if ma == ma_neo or ma not in co_tl or not any(t in thap for t in tu_khoa):
+                    continue
+                mo_dau = self._manh_mo_dau(ma)
+                if mo_dau and mo_dau[:60] not in ngu_canh:
+                    ngu_canh = (ngu_canh + "\n---\n" if ngu_canh else "") + mo_dau
+                    chi_tiet.append({"doan": mo_dau, "diem": None, "nguon": f"{ma}.md",
+                                     "bi_loc": False, "mang_theo": True})
+                    logger.info("RAG: mang theo mảnh mở đầu của %s (khách nêu đích "
+                                "danh trong câu)", ma)
+
         # Ca (c) đã bỏ hết mảnh sản phẩm: NÓI THẲNG cho mô hình biết vì sao ngữ
         # cảnh trống, nếu không nó bịa số từ trí nhớ rồi bị lưới chặn cắt dở.
         # Đo được ngay sau khi thêm ca (c): câu ra "Hạn mức tín dụng

@@ -70,7 +70,12 @@ _SO = r"\d+(?:[.,]\d+)?"
 _GAN_RE = re.compile(
     # "anh/chị có lương ... 3.4"  |  "lương của anh/chị là 3.4"
     rf"(?:{_CHU_THE}\s+(?:có\s+)?{_THU_NHAP}[^.?!]{{0,30}}?{_SO}"
-    rf"|{_THU_NHAP}\s+(?:của\s+)?{_CHU_THE}[^.?!]{{0,30}}?{_SO})",
+    rf"|{_THU_NHAP}\s+(?:của\s+)?{_CHU_THE}[^.?!]{{0,30}}?{_SO}"
+    # "Với thu nhập 5 triệu ..., hồ sơ của anh đã đáp ứng": chủ thể đứng SAU.
+    # Bộ thử 08-10-2026: khách nói lương 20 triệu, Qwen đáp "với thu nhập 5
+    # triệu" (con số của điều kiện sản phẩm) rồi kết luận thay khách. Không bắt
+    # "với thu nhập TỪ 5 triệu" - đó là câu nêu điều kiện, không gán cho ai.
+    rf"|với\s+(?:mức\s+)?{_THU_NHAP}\s+(?!từ\b)(?:khoảng\s+|là\s+)?{_SO})",
     re.IGNORECASE)
 
 CAU_HOI_THU_NHAP = ("Dạ anh chị cho em xin mức thu nhập hàng tháng "
@@ -106,3 +111,80 @@ def chan_gan_thu_nhap(text: str, khach_da_noi: str = "") -> tuple[str, str | Non
     if so_trong_cau and so_trong_cau <= so_khach_noi:
         return text, None
     return CAU_HOI_THU_NHAP, f"gán thu nhập cho khách ({m.group(0)[:40]!r})"
+
+
+# --- Lưới 3: mô hình TỰ TÍNH số tiền phải trả ------------------------------
+
+# Khoản trả hàng tháng / tiền lãi là PHÉP TÍNH, và chỉ `tra_loi_khoan_vay` (luật
+# `tinh_tra_gop`) được làm phép tính đó - nó lấy lãi suất từ tài liệu và số
+# tiền, kỳ hạn từ chính lời khách. Mô hình mà tự tính thì bịa: bộ thử 304 lượt
+# (08-10-2026) khách mới nói "mười hai tháng", CHƯA nói số tiền, Qwen đáp "khoản
+# trả góp khoảng 3,4 triệu mỗi tháng"; khách nói "một tỷ đến hai tỷ" thì ra
+# "hàng tháng trả khoảng 9,5-16,5 triệu". Mấy con số đó tình cờ CÓ ở chỗ khác
+# trong tài liệu nên ba lưới số đều cho qua - phải bắt theo Ý chứ không theo số.
+_TIEN = r"\d+(?:[.,]\d+)?(?:\s*(?:-|đến|tới)\s*\d+(?:[.,]\d+)?)?\s*(?:triệu|tr\b|nghìn|ngàn|tỷ|tỉ|đồng)"
+_KY = r"(?:mỗi tháng|hàng tháng|hằng tháng|một tháng|/\s*tháng|tháng đầu|mỗi kỳ)"
+_TRA = r"(?:trả|góp|đóng|thanh toán|gốc)"
+_TU_TINH_RE = re.compile(
+    rf"(?:{_TRA}[^.?!]{{0,40}}?{_TIEN}[^.?!]{{0,25}}?{_KY}"
+    rf"|{_TRA}[^.?!]{{0,25}}?{_KY}[^.?!]{{0,30}}?{_TIEN}"
+    rf"|{_KY}[^.?!]{{0,25}}?{_TRA}[^.?!]{{0,30}}?{_TIEN}"
+    rf"|(?:tiền lãi|số lãi|tổng lãi|lãi phải trả)[^.?!]{{0,30}}?{_TIEN})",
+    re.IGNORECASE)
+
+CAU_THAY_TU_TINH = ("Dạ số tiền trả hàng tháng phải tính theo số tiền và thời hạn "
+                    "vay cụ thể, anh chị cho em xin hai thông tin đó để em tính ạ.")
+
+
+def chan_tu_tinh_tien(text: str) -> tuple[str, str | None]:
+    """Chặn câu mô hình TỰ NÊU số tiền phải trả theo kỳ hoặc tiền lãi.
+
+    Không chặn câu HỎI, không chặn phần trăm ("trả tối thiểu 5% dư nợ mỗi
+    tháng" là dữ kiện của tài liệu), không chặn mức thu nhập/điều kiện ("thu
+    nhập từ 5 triệu mỗi tháng" không có động từ trả/góp/đóng).
+    """
+    t = text or ""
+    if "?" in t:
+        return text, None
+    m = _TU_TINH_RE.search(t)
+    if not m:
+        return text, None
+    return CAU_THAY_TU_TINH, f"tự tính tiền ({m.group(0)[:50]!r})"
+
+
+# --- Lưới 4: mô hình TỰ KẾT LUẬN khách không được vay ----------------------
+
+# Duyệt hay không là việc của thẩm định, không phải của tư vấn viên - càng không
+# phải của mô hình. Bộ thử 304 lượt (08-10-2026): khách nói "anh chưa có nhà anh
+# đang thuê", Qwen đáp "hồ sơ vay mua nhà sẽ không được xét duyệt" (tài liệu cho
+# dùng chính căn nhà mua làm tài sản đảm bảo); khách nói "đang còn nợ bên kia",
+# Qwen đáp "sẽ ảnh hưởng đến hồ sơ vay mới" (tài liệu không nói vậy). Một câu như
+# thế làm khách bỏ cuộc dù có thể đủ điều kiện.
+#
+# Chỉ áp cho câu MÔ HÌNH SINH. Câu của luật/kho ("hiện bên em chưa có sản phẩm
+# bảo hiểm") không đi qua lưới này.
+_TU_CHOI_RE = re.compile(
+    r"(?:không|chưa|khó)\s+(?:được\s+|thể\s+)?(?:xét\s+duyệt|duyệt|phê\s+duyệt)"
+    r"|(?:không|chưa)\s+đủ\s+điều\s+kiện"
+    r"|không\s+(?:thể\s+)?vay\s+được|không\s+được\s+vay"
+    r"|sẽ\s+(?:bị\s+từ\s+chối|ảnh\s+hưởng\s+(?:đến|tới)\s+hồ\s+sơ)"
+    r"|(?:chưa|không)\s+(?:có\s+gói\s+)?hỗ\s+trợ",
+    re.IGNORECASE)
+
+CAU_THAY_TU_CHOI = ("Dạ trường hợp này còn tuỳ hồ sơ cụ thể, em xin ghi nhận để "
+                    "chuyên viên kiểm tra kỹ giúp anh chị ạ.")
+
+
+def chan_ket_luan_tu_choi(text: str) -> tuple[str, str | None]:
+    """Chặn câu mô hình tự phán khách không vay được / không được duyệt.
+
+    Không chặn câu HỎI và câu nói "em chưa có thông tin" (đó là nói thật, không
+    phải phán quyết).
+    """
+    t = text or ""
+    if "?" in t:
+        return text, None
+    m = _TU_CHOI_RE.search(t)
+    if not m:
+        return text, None
+    return CAU_THAY_TU_CHOI, f"tự kết luận từ chối ({m.group(0)[:40]!r})"

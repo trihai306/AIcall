@@ -137,6 +137,25 @@ BANG = [
       r"\bnhan tin (cho|qua) (anh|chi|toi)\b"],
      "Dạ vâng ạ. Em cảm ơn anh chị, khi nào tiện anh chị gọi lại bên em nhé."),
 
+    # "Ô kê em nhá" sau khi nghe tư vấn: khách xác nhận đã nắm, KHÔNG phải câu
+    # hỏi. Kho không có đáp án cho kiểu này nên ở chế độ chỉ chọn trong kho AI
+    # đáp "em chưa có thông tin chính xác..." cho một câu chẳng hỏi gì (cuộc
+    # d1086216, 08-10-2026). Chỉ nhận họ "ok" đứng MỘT MÌNH; "được", "ừ" có thể
+    # là câu trả lời cho câu AI vừa hỏi nên để đường cũ lo.
+    ("xac_nhan_ok",
+     [r"^\s*(u+ |vang |da )?(ok|oke|okie|okay|o ke|o kay|o key)"
+      r"( roi| em| nhe| nha| a| ban| cam on)*\s*$"],
+     "Dạ vâng ạ. Anh chị còn cần em hỗ trợ thêm thông tin nào nữa không ạ?"),
+
+    # Lời chào MỞ ĐẦU ("xin chào", "chào em"). Chỉ dùng ở lượt đầu: giữa cuộc
+    # gọi thì "chào em" là lời tạm biệt, để kho trả lời (xem `tra_loi_san`).
+    # Thiếu luật này, "xin chào" ở lượt đầu rơi xuống kho và bộ chọn ghép nó với
+    # câu CHÀO KẾT THÚC "em chào anh chị ạ" - mở lời đã nghe lời tạm biệt.
+    ("chao_hoi",
+     [r"^\s*(xin )?chao( em| ban| chau| co)?( a| ah)?\s*$", r"^\s*(em|ban|chau) oi\s*$",
+      r"^\s*(a\s*lo|alo)\s+(xin )?chao( em| ban)?\s*$"],
+     None),
+
     # Để CUỐI: "alo" trần trụi, sau khi các ý định cụ thể hơn đã xét xong.
     ("chao_bat_may",
      [r"^\s*(a\s*lo\s*)+$", r"^\s*(alo\s*)+$", r"^\s*(nghe|toi nghe|noi di)\s*$",
@@ -146,6 +165,7 @@ BANG = [
 
 CHAO_DAU = ("Dạ em chào anh chị ạ. Em là {agent} bên {bank}, em gọi để giới "
             "thiệu chương trình {product} ưu đãi ạ.")
+CHAO_LAI = "Dạ em chào anh chị ạ. Em là {agent} bên {bank}, anh chị cần em hỗ trợ gì ạ?"
 CHAO_GIUA = "Dạ em vẫn nghe anh chị ạ."
 
 
@@ -177,7 +197,24 @@ def tra_loi_san(text: str, *, bank: str, agent: str, product: str,
     ten = nhan_dang(text)
     if ten is None:
         return None
+    if ten == "xac_nhan_ok" and luot_thu <= 1:
+        # "Ok" ngay sau lời chào là bảo "em nói đi", chưa có gì để xác nhận.
+        ten = "moi_noi_tiep"
     mau = next(c for t, _, c in BANG if t == ten)
-    if mau is None:      # chao_bat_may
-        mau = CHAO_DAU if luot_thu == 0 else CHAO_GIUA
+    if ten == "chao_hoi":
+        # `turn_count` đã tính cả lượt đang xét (add_turn chạy trước), nên lượt
+        # đầu của khách là 1 chứ không phải 0.
+        if luot_thu > 1:
+            return None  # giữa cuộc gọi là lời tạm biệt: để kho trả lời
+        mau = CHAO_LAI
+    elif mau is None:    # chao_bat_may
+        # "A lô" ở LƯỢT ĐẦU của khách = họ chưa nghe được lời chào (nhấc máy
+        # chưa kịp áp tai, đường tiếng chưa thông). Đáp "em vẫn nghe" thì cả
+        # cuộc khách không biết ai gọi - cuộc 08-10-2026 khách báo "không thấy
+        # lời chào luôn". Nên xưng danh lại. `luot_thu` đã tính lượt đang xét
+        # (xem `chao_hoi`), trước đây so `== 0` nên nhánh này chưa từng chạy.
+        if luot_thu <= 1:
+            mau = CHAO_DAU if (product or "").strip() else CHAO_LAI
+        else:
+            mau = CHAO_GIUA
     return ten, mau.format(bank=bank, agent=agent, product=product)

@@ -56,3 +56,11 @@ def test_khach_hen_tu_goi_lai_khong_hua_gui_tin_nhan():
     cau = _tra("được rồi mai anh gọi lại cho em nhé")
     assert "gọi lại bên em" in cau
     assert "gửi" not in cau.lower() and "sẽ" not in cau.lower()
+
+
+def test_ok_dung_mot_minh_la_xac_nhan_khong_phai_cau_hoi():
+    assert nhan_dang("ô kê em nhá") == "xac_nhan_ok"
+    assert nhan_dang("ok") == "xac_nhan_ok"
+    # Có nội dung đi kèm thì không được nuốt.
+    assert nhan_dang("ok vậy lãi suất bao nhiêu") != "xac_nhan_ok"
+    assert nhan_dang("được") != "xac_nhan_ok"
