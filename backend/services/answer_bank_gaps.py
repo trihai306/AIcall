@@ -340,7 +340,7 @@ def danh_sach_cho_duyet(limit: int = 300) -> list[dict]:
         "FROM answer_bank_pending p JOIN hoi_dap h ON h.id=p.hoi_dap_id "
         "LEFT JOIN answer_bank_entries e ON e.hoi_dap_id=p.hoi_dap_id "
         "WHERE h.bat=0 ORDER BY p.created_at DESC, p.hoi_dap_id LIMIT ?",
-        (max(1, min(int(limit), 1000)),)).fetchall()
+        (max(1, min(int(limit), 20000)),)).fetchall()
     ra = []
     for r in rows:
         try:
@@ -361,7 +361,7 @@ def so_cho_duyet() -> int:
 
 
 def cau_hoi_cho_duyet() -> list[str]:
-    return [q for row in danh_sach_cho_duyet(1000) for q in row["cau_hoi"]]
+    return [q for row in danh_sach_cho_duyet(20000) for q in row["cau_hoi"]]
 
 
 def duyet(ids, chap_nhan: bool) -> list[str]:

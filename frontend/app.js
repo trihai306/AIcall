@@ -4562,11 +4562,12 @@ async function knTuHoiXem() {
 }
 
 async function knTuHoiChay() {
-  const soCau = Math.max(5, Math.min(200, Number(document.getElementById('knTuHoiSo')?.value) || 40));
+  const kieu = document.getElementById('knTuHoiKieu')?.value || 'doi_thuong';
+  const soCau = Math.max(3, Math.min(200, Number(document.getElementById('knTuHoiSo')?.value) || 10));
   try {
     const d = await knAutoRequest('/api/knowledge/tu-hoi', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ so_cau: soCau })
+      body: JSON.stringify({ so_cau: soCau, kieu })
     });
     if (d.ok === false) thongBao(d.error || 'Chưa chạy được.', 'loi');
     else thongBao('AI bắt đầu tự đặt câu hỏi. Việc này chạy nền và tự nhường khi có cuộc gọi.');

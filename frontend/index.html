@@ -2291,10 +2291,15 @@
             <div class="lk-well" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
               <div style="flex:1;min-width:260px">
                 <strong style="font-size:13px">AI tự đặt câu hỏi để làm đầy kho</strong>
-                <div class="lk-hint">AI đóng vai khách, nghĩ ra các câu hay hỏi về từng tài liệu rồi soạn đáp án có căn cứ. Câu tài liệu không trả lời được sẽ hiện bên dưới để bạn soạn tay.</div>
+                <div class="lk-hint">Hai AI nói chuyện với nhau theo luật: một bên đóng 6 kiểu khách khác nhau và hỏi, bên kia là tư vấn viên chỉ được trả lời bằng nội dung có trong tài liệu, kèm câu trích làm căn cứ. Đáp án đạt vào hàng chờ duyệt; câu tài liệu không có hiện bên dưới để soạn tay.</div>
                 <div class="lk-hint" id="knTuHoiStatus" role="status" aria-live="polite"></div>
               </div>
-              <label class="lk-hint" for="knTuHoiSo">Số câu mới / tài liệu <input id="knTuHoiSo" type="number" min="5" max="200" value="40" class="inp" style="width:84px;margin-left:6px"></label>
+              <label class="lk-hint" for="knTuHoiSo">Số lượt / vai khách (hoặc số câu / tài liệu) <input id="knTuHoiSo" type="number" min="3" max="200" value="10" class="inp" style="width:84px;margin-left:6px"></label>
+              <select id="knTuHoiKieu" class="inp" aria-label="Cách tạo" onchange="document.getElementById('knTuHoiSo').value = this.value === 'tu_hoi' ? 40 : 10">
+                <option value="doi_thuong">Hai AI nói chuyện đời thường (người với người)</option>
+                <option value="doi_thoai">Hai AI đối thoại về sản phẩm (theo tài liệu)</option>
+                <option value="tu_hoi">Một AI liệt kê câu hỏi</option>
+              </select>
               <button id="knTuHoiBtn" onclick="knTuHoiChay()" class="btn btn-soft">Bắt đầu</button>
             </div>
             <details class="kn-home-details" id="knDuyetBox" ontoggle="if(this.open) loadKnDuyet()">

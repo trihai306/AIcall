@@ -113,8 +113,11 @@ def cac_nhom() -> dict[str, str]:
 
 @router.get("/thu-vien-tu-dong")
 async def thu_vien_tu_dong_status():
+    # Chạy ở luồng riêng: trang Tri thức AI gọi hàm này mỗi 2,5 giây, không
+    # được để nó giữ vòng sự kiện (xem `_dem_tieng_da_nho`).
+    import asyncio
     from backend.services.answer_bank_learning import bo_hoc_tra_loi
-    return bo_hoc_tra_loi.trang_thai()
+    return await asyncio.to_thread(bo_hoc_tra_loi.trang_thai)
 
 
 @router.post("/thu-vien-tu-dong")
@@ -714,8 +717,9 @@ async def cau_chua_co_them(key: str, body: CauThieuThem):
 
 
 class TuHoi(BaseModel):
-    so_cau: int = Field(default=40, ge=5, le=200)
+    so_cau: int = Field(default=40, ge=3, le=200)
     tai_lieu: str = Field(default="", max_length=300)
+    kieu: str = Field(default="tu_hoi", pattern="^(tu_hoi|doi_thoai|doi_thuong)$")
 
 
 @router.get("/tu-hoi")
@@ -724,15 +728,37 @@ async def tu_hoi_trang_thai():
     return selfask.trang_thai()
 
 
+class NhapDoiThuong(BaseModel):
+    dong: list[dict] = Field(min_length=1, max_length=3000)
+
+
+@router.post("/tu-hoi/nhap-doi-thuong")
+async def tu_hoi_nhap_doi_thuong(body: NhapDoiThuong):
+    """Nhập hàng loạt câu giao tiếp đời thường soạn bên ngoài; câu đạt luật vào hàng chờ duyệt."""
+    from backend.services import answer_bank_selfask as selfask
+    return await selfask.nhap_doi_thuong(body.dong)
+
+
+@router.get("/tu-hoi/luat")
+async def tu_hoi_luat():
+    """Bộ luật của hai vai trong chế độ đối thoại, để người vận hành đọc được."""
+    from backend.services import answer_bank_selfask as selfask
+    return {"vai_khach": [{"la": v[0], "quan_tam": v[1]} for v in selfask.VAI_KHACH],
+            "luat_khach": selfask.LUAT_KHACH, "luat_tu_van": selfask.LUAT_TU_VAN,
+            "canh_doi_thuong": [{"nhom": c[0], "canh": c[1]} for c in selfask.CANH_DOI_THUONG],
+            "luat_khach_doi_thuong": selfask.LUAT_KHACH_DOI_THUONG,
+            "luat_tu_van_doi_thuong": selfask.LUAT_TU_VAN_DOI_THUONG}
+
+
 @router.post("/tu-hoi")
 async def tu_hoi_bat_dau(body: TuHoi):
     """Qwen đóng vai khách tự đặt câu hỏi, soạn đáp án có căn cứ cho câu kho chưa có."""
     from backend.services import answer_bank_selfask as selfask
-    return selfask.bat_dau(body.so_cau, body.tai_lieu)
+    return selfask.bat_dau(body.so_cau, body.tai_lieu, body.kieu)
 
 
 class DuyetDapAn(BaseModel):
-    ids: list[str] = Field(min_length=1, max_length=500)
+    ids: list[str] = Field(min_length=1, max_length=3000)
     chap_nhan: bool
 
 
