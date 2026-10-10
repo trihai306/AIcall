@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 
 TOI_DA_TU = 8
 
+Y_DINH_TU_CHOI = "tu_choi"
+Y_DINH_HEN_LAI = "hen_lai"
+Y_DINH_DANG_BAN = "dang_ban"
+
 
 def bo_dau(s: str) -> str:
     s = unicodedata.normalize("NFD", s.lower())
@@ -48,9 +52,190 @@ def _chuan(s: str) -> str:
     return re.sub(r"\s+", " ", bo_dau(s))
 
 
+def _cac_ve(s: str) -> list[str]:
+    """Chuẩn hóa nhưng giữ ranh giới mệnh đề cho suy luận attribution."""
+    # Tách trước khi bỏ dấu để không biến dấu câu thành khoảng trắng và không
+    # cho phủ định/chủ thể ở vế trước chi phối ứng viên thuộc vế sau.
+    s = re.sub(r"[,.;:!?]+", " | ", (s or "").lower())
+    s = re.sub(r"\b(?:nhưng|nhung|mà|ma)\b", " | nhung ", s)
+    return [ve for ve in (_chuan(x) for x in s.split("|")) if ve]
+
+
+_PHU_DINH_Y_DINH = re.compile(
+    r"\b(?:khong phai|dau phai|khong he|dau co)\b.{0,38}$"
+    r"|\b(?:khong|chua tung|chua bao gio)\s+(?:noi|bao|yeu cau|de nghi)\b.{0,38}$"
+    r"|\bkhong\s+can\b.{0,24}$")
+_NOI_VE_CAU_CHU = re.compile(
+    r"(?:\b(?:cum|vi du|nhac lai|trich dan)\b|(?<!nhu )\bcau\b).{0,45}$"
+    r"|\b(?:nghia la gi|co nghia gi|hieu sao)\b.{0,35}$")
+_YEU_CAU_TIEP_TUC = re.compile(
+    r"\b(?:nhung|ma|con|thi)\b.{0,35}\b(?:muon|can)\b.{0,22}"
+    r"\b(?:vay(?=\b|\d)|lam\b|mo\b|dang ky\b|hoi\b|biet\b|nghe\b|tu van\b|noi\b)"
+    r"|\b(?:nhung|ma|con|thi)\b.{0,35}\b(?:quan tam|co nhu cau)\b"
+    r"|\b(?:nhung|ma|con|thi)\b.{0,35}\bcan(?=\d)"
+    r"|\b(?:anh|chi|toi|tui|co|chu|bac|minh|chau|em)\s+(?:van\s+)?(?:muon|can)\b.{0,22}"
+    r"\b(?:vay(?=\b|\d)|lam\b|mo\b|dang ky\b|hoi\b|biet\b|nghe\b|tu van\b|noi\b)"
+    r"|\b(?:anh|chi|toi|tui|co|chu|bac|minh|chau|em)\s+(?:van\s+)?"
+    r"(?:quan tam|co nhu cau)\b"
+    r"|\b(?:cu|hay)\s+(?:tu van|noi|hoi)\b.{0,18}\b(?:tiep|di)\b"
+    r"|\btiep tuc\s+(?:tu van|noi|hoi)\b"
+    r"|\b(?:tu van|noi|hoi)\s+tiep(?:\s+di)?\b")
+_HUY_TRANG_THAI_BAN = re.compile(
+    r"\b(?:(?:anh|chi|toi|tui|co|chu|bac|minh|chau|em)\s+)?(?:gio\s+)?"
+    r"(?:khong\s+con|khong|het)\s+(?:ban|lai xe|chay xe|di duong)(?:\s+nua)?\b")
+_CHU_THE_NGUOI_KHAC = re.compile(
+    r"\b(?:(?:vo|chong|bo|me|ba|con trai|con gai|sep|dong nghiep|nguoi nha|nguoi ta)"
+    r"(?:\s+(?:anh|chi|toi|tui|co|chu|bac|em))?"
+    r"|ban\s+(?:anh|chi|toi|tui|co|chu|bac|em))\b")
+_CHU_THE_KHACH = re.compile(r"\b(?:anh|chi|toi|tui|co|chu|bac|minh|chau|em)\b")
+_LOI_TU_CHOI = re.compile(
+    r"\b(?:khong|chua)\s+(?:co\s+)?(?:nhu cau|quan tam)\b"
+    r"|\bkhong\s+muon\s+vay(?:\b|(?=\d))"
+    r"|\bkhong\s+vay(?:\s+(?:dau|gi))?\b"
+    r"|\bkhong\s+thich(?:\s+nua)?\b"
+    r"|\bchua\s+can\s+(?:vay|mo|lam|dang ky)\b"
+    r"|\bkhong\s+can(?:\s+(?:vay|tu van|nghe|mo the|lam the))?(?:\s+(?:dau|nua))?(?:$|[.!?,])")
+_DUNG_RO_RANG = re.compile(
+    r"\b(?:dung|ngung)\s+(?:cuoc\s+goi|goi\s+(?:nua|lai|cho\s+(?:anh|chi|toi|tui|co|chu|bac|em))|"
+    r"lien\s+he\s+(?:nua|lai))\b"
+    r"|\b(?:dung|thoi)\s+(?:moi|doc|tu van|noi)\b.{0,45}\b(?:nua|tiep)\b"
+    r"|\b(?:dung|thoi)\s+hoi(?:\s+(?:anh|chi|toi|tui|co|chu|bac|em))?\s+nua\b"
+    r"|^\s*thoi(?:\s+(?:nhe|nha|em|di))?\s*$")
+_HEN_LAI = re.compile(
+    r"\b(?:goi|lien he)\s+lai\s+(?:sau|luc|vao|tam|mai|hom khac|khi khac|gio khac)\b"
+    r"|\bgoi\s+(?:lai\s+)?(?:luc|vao|tam)\s*\d"
+    r"|\bmai\s+(?:anh|chi|toi|tui|co|chu|bac|em)\s+goi\s+lai\b"
+    r"|\bkhi nao\s+(?:ranh|can|tien)\b.{0,35}\b(?:goi|bao|lien he)\b"
+    r"|\bnhan\s+tin\s+(?:cho|qua)\s+(?:anh|chi|toi|tui|co|chu|bac|em)\b"
+    r"|\b(?:phai|de)\s+hoi\s+(?:vo|chong|bo|me|con|gia dinh|nguoi nha)\b"
+    r"|\bde\s+(?:hom|ngay|buoi|luc)\s+khac\b"
+    r"|\bde\s+(?:anh|chi|toi|tui|co|chu|bac|minh|em)\s+"
+    r"(?:xem|nghi|suy nghi|tinh(?:\s+lai)?|hoi\s+(?:vo|chong|bo|me|con|gia dinh|nguoi nha))\b"
+    r"|\bchua\s+quyet\s+dinh\b")
+_DANG_BAN = re.compile(
+    r"\b(?:dang\s+(?:ban|hop|lai xe|chay xe|di duong|di lam)|ban\s+(?:lam|qua|roi|viec|hop)|"
+    r"hoi\s+ban|khong\s+(?:ranh|tien\s+(?:nghe|noi chuyen)))\b"
+    r"|^\s*(?:anh|chi|toi|tui|co|chu|bac|em)?\s*ban\s*$")
+
+
+def _la_y_dinh_cua_khach(t: str, m: re.Match[str], ten: str) -> bool:
+    """Ứng viên điều khiển là lời trực tiếp của khách, không phải phủ định/trích dẫn."""
+    truoc = t[max(0, m.start() - 60):m.start()]
+    if _PHU_DINH_Y_DINH.search(truoc) or _NOI_VE_CAU_CHU.search(truoc):
+        return False
+    if ten == Y_DINH_HEN_LAI and re.search(r"\b(?:dung|ngung|khong)\s*$", truoc):
+        # "đừng gọi lại sau" là cấm gọi, không phải một lịch hẹn.
+        return False
+    nguoi_khac = list(_CHU_THE_NGUOI_KHAC.finditer(truoc))
+    khach = list(_CHU_THE_KHACH.finditer(truoc))
+    if nguoi_khac and (not khach or nguoi_khac[-1].end() >= khach[-1].end()):
+        return False
+    if nguoi_khac:
+        sau_nguoi_khac = truoc[nguoi_khac[-1].end():]
+        if re.search(r"\b(?:bao|noi|muon|de nghi|yeu cau)\b", sau_nguoi_khac):
+            # "vợ bảo tôi gọi lại" vẫn là ý của vợ dù chữ "tôi" đứng gần hơn.
+            return False
+    return True
+
+
+def y_dinh_dung_tu_van(text: str) -> str | None:
+    """Nhận diện điều khiển cuộc gọi, không phụ thuộc độ dài hay dấu tiếng Việt.
+
+    Giá trị trả về dùng chung cho các tầng ưu tiên: ``tu_choi`` là dừng hẳn,
+    ``hen_lai`` là khách hoãn/hẹn lại, ``dang_ban`` là đang bận và cần khép
+    nhanh hoặc hỏi thời gian tiện. ``None`` nghĩa là tiếp tục phân luồng nội
+    dung bình thường. Chỉ lời trực tiếp, không bị phủ định của chính khách mới
+    có hiệu lực; nếu khách đổi ý trong cùng lượt thì ý trực tiếp sau cùng thắng.
+    Riêng đang điều khiển phương tiện luôn trả ``dang_ban`` để khép nhanh.
+    """
+    cac_ve = _cac_ve(text)
+    if not cac_ve:
+        return None
+    ung_vien: list[tuple[int, int, str, str, int]] = []
+    tiep_tuc: list[int] = []
+    huy_ban: list[int] = []
+    # Số thứ hai chỉ phá hòa khi hai regex bắt cùng vị trí: dừng rõ ràng mạnh
+    # hơn từ chối, hẹn lại, rồi mới đến trạng thái bận.
+    vi_tri = 0
+    for ve in cac_ve:
+        for ten, uu_tien, mau in (
+            (Y_DINH_TU_CHOI, 4, _DUNG_RO_RANG),
+            (Y_DINH_TU_CHOI, 3, _LOI_TU_CHOI),
+            (Y_DINH_HEN_LAI, 2, _HEN_LAI),
+            (Y_DINH_DANG_BAN, 1, _DANG_BAN),
+        ):
+            for m in mau.finditer(ve):
+                if _la_y_dinh_cua_khach(ve, m, ten):
+                    ung_vien.append((vi_tri + m.start(), uu_tien, ten,
+                                     m.group(0), vi_tri + m.end()))
+        tiep_tuc.extend(
+            vi_tri + m.start() for m in _YEU_CAU_TIEP_TUC.finditer(ve)
+            if _la_y_dinh_cua_khach(ve, m, "tiep_tuc")
+        )
+        huy_ban.extend(
+            vi_tri + m.start() for m in _HUY_TRANG_THAI_BAN.finditer(ve)
+            if _la_y_dinh_cua_khach(ve, m, "tiep_tuc")
+        )
+        vi_tri += len(ve) + 1
+    if not ung_vien:
+        return None
+
+    cuoi = max(ung_vien, key=lambda x: (x[0], x[1]))
+    if (cuoi[2] == Y_DINH_DANG_BAN
+            and huy_ban and max(huy_ban) >= cuoi[4]):
+        return None
+    if cuoi[2] == Y_DINH_DANG_BAN and re.search(
+            r"\b(?:lai xe|chay xe|di duong)\b", cuoi[3]):
+        # Đang điều khiển phương tiện luôn khép nhanh dù khách muốn nghe tiếp.
+        return Y_DINH_DANG_BAN
+    if tiep_tuc and max(tiep_tuc) >= cuoi[4]:
+        return None
+
+    # Hoãn để cân nhắc rồi "đừng hỏi nữa" vẫn là hoãn, không phải cấm liên hệ.
+    if cuoi[2] == Y_DINH_TU_CHOI and re.match(r"(?:dung|thoi) hoi", cuoi[3]):
+        hen_truoc = [x for x in ung_vien if x[2] == Y_DINH_HEN_LAI and x[0] < cuoi[0]]
+        if hen_truoc:
+            return Y_DINH_HEN_LAI
+    return cuoi[2]
+
+
+_HOI_AI = re.compile(
+    r"\b(?:em|ban|chau)\s+(?:co phai\s+)(?:la\s+)?(?:ai|robot|may)\b"
+    r"|\b(?:em|ban|chau)\s+(?:la\s+)?(?:robot|may|nguoi that)\b"
+    r"|\b(?:ai|robot|may)\s+hay\s+(?:nguoi|nguoi that)\b"
+    r"|\b(?:nguoi|nguoi that)\s+hay\s+(?:ai|robot|may)\b"
+    r"|\b(?:dang noi chuyen|noi chuyen)\s+voi\s+(?:robot|may|nguoi that)\b")
+_HOI_NGUON_SO = re.compile(
+    r"\b(?:sao|tai sao)\s+(?:em|minh|ben em)?\s*(?:lai\s+)?co\s+(?:so|sdt)\b"
+    r"|\b(?:so|sdt)\b.{0,30}\b(?:o dau ra|tu dau|nguon nao)\b"
+    r"|\b(?:lay|co)\s+(?:so|sdt)\b.{0,25}\b(?:o dau|tu dau)\b"
+    r"|\bai\s+cho\s+(?:so|sdt)\b")
+
+
+def _y_dinh_danh_tinh_nguon(text: str) -> str | None:
+    t = _chuan(text)
+    hoi_ai = bool(_HOI_AI.search(t))
+    hoi_nguon = bool(_HOI_NGUON_SO.search(t))
+    if hoi_ai and hoi_nguon:
+        return "danh_tinh_va_nguon"
+    if hoi_ai:
+        return "danh_tinh_tu_dong"
+    if hoi_nguon:
+        return "sao_co_so"
+    return None
+
+
 # (tên ý định, các mẫu nhận dạng, câu trả lời)
 # Mẫu so bằng `re.search` trên chuỗi ĐÃ BỎ DẤU.
 BANG = [
+    ("danh_tinh_va_nguon", [],
+     "Dạ em là trợ lý tư vấn tự động sử dụng AI của VoiceBankAI ạ. "
+     "Em không có thông tin đã được xác minh về nguồn số điện thoại này; nếu "
+     "anh chị không muốn được liên hệ tiếp, em xin phép ghi nhận ạ."),
+
+    ("danh_tinh_tu_dong", [],
+     "Dạ em là trợ lý tư vấn tự động sử dụng AI của VoiceBankAI ạ."),
+
     ("nghe_ro_khong",
      # Cố ý để khoảng giữa "co nghe" và "khong" tự do: kênh 8kHz cho phiên âm
      # sai chính giữa câu ("có nghe TIẾNG anh nói không" -> "có nghe THEO anh
@@ -80,10 +265,8 @@ BANG = [
     ("sao_co_so",
      [r"\bsao (em |minh )?(lai )?co (so|sdt)", r"\b(so|sdt) .*o dau (ra|the|vay)",
       r"\blay so .*o dau\b", r"\bai cho (so|sdt)\b"],
-     # Câu này CHẮC CHẮN phải cho nghiệp vụ duyệt lại cho khớp thực tế.
-     "Dạ số của anh chị có trong danh sách khách hàng đã đồng ý nhận thông tin "
-     "của bên em ạ. Nếu anh chị không muốn nhận nữa, em xin phép ghi nhận để "
-     "bên em không liên hệ lại ạ."),
+     "Dạ em không có thông tin đã được xác minh về nguồn số điện thoại này ạ. "
+     "Nếu anh chị không muốn được liên hệ tiếp, em xin phép ghi nhận ạ."),
 
     ("sao_biet_ten",
      [r"\bsao (em |minh )?(lai )?biet (ten )?(anh|chi|toi)\b",
@@ -174,18 +357,30 @@ def nhan_dang(text: str) -> str | None:
     t = _chuan(text)
     if not t:
         return None
+    # Quyền điều khiển cuộc gọi phải thắng mọi luật sản phẩm và không chịu trần
+    # 8 từ. Danh tính tự động/nguồn số cũng cần trả lời thẳng, kể cả câu ghép.
+    dieu_khien = y_dinh_dung_tu_van(text)
+    if dieu_khien:
+        return dieu_khien
+    danh_tinh_nguon = _y_dinh_danh_tinh_nguon(text)
+    if danh_tinh_nguon:
+        return danh_tinh_nguon
     so_tu = len(t.split())
     # Hai mẫu chắc chắn dưới đây dài hơn một lượt dò hỏi thông thường. Cho riêng
     # chúng tới 12 từ; các ý định khác vẫn giữ trần 8 để không chặn nhầm câu có
     # nội dung thật.
     if so_tu > TOI_DA_TU:
         if so_tu <= 12:
-            for ten_dai in ("hen_lai", "chua_ro_nhu_cau"):
+            for ten_dai in ("chua_ro_nhu_cau",):
                 ten, mau, _ = next(x for x in BANG if x[0] == ten_dai)
                 if any(re.search(m, t) for m in mau):
                     return ten
         return None
     for ten, mau, _ in BANG:
+        if ten in (Y_DINH_TU_CHOI, Y_DINH_HEN_LAI, Y_DINH_DANG_BAN):
+            # Helper ở trên sở hữu ba ý này để guard phủ định/đổi sản phẩm
+            # không bị bảng regex cũ bắt lại.
+            continue
         if any(re.search(m, t) for m in mau):
             return ten
     return None

@@ -154,3 +154,19 @@ def test_chan_mo_hinh_tu_ket_luan_khach_khong_vay_duoc():
         "Dạ lãi suất từ 7.9%/năm ạ.",
     ):
         assert chan_ket_luan_tu_choi(cau) == (cau, None), cau
+
+
+def test_luat_chi_nhuong_khi_cau_cua_kho_dung_chu_de():
+    """"thế cần giấy tờ gì" sau lượt nói thời hạn: kho chọn câu thời hạn thì giữ câu của luật."""
+    from backend.pipeline.streaming_pipeline import kho_cung_chu_de
+    assert not kho_cung_chu_de(
+        "ho_so_can_thiet", "Dạ, anh chị được vay với thời hạn từ 12 đến 60 tháng ạ.")
+    assert not kho_cung_chu_de(
+        "ho_so_can_thiet", "Dạ, hạn mức vay lên đến 500 triệu đồng ạ. Anh chị cần chuẩn bị "
+                           "hồ sơ để em kiểm tra điều kiện xét duyệt cụ thể ạ.")
+    assert kho_cung_chu_de(
+        "ho_so_can_thiet", "Dạ anh chị cần CMND/CCCD, hộ khẩu hoặc KT3 và hợp đồng lao động ạ.")
+    assert kho_cung_chu_de("lai_suat_san_pham", "Dạ, lãi suất từ 7.9%/năm ạ.")
+    assert not kho_cung_chu_de("lai_suat_san_pham", "Dạ anh chị được vay từ 12 đến 60 tháng ạ.")
+    # Mã luật không nằm trong bảng soát thì kho vẫn được ưu tiên như cũ.
+    assert kho_cung_chu_de("uu_dai_hien_tai", "Dạ câu nào cũng được ạ.")

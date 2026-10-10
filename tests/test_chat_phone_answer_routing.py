@@ -254,14 +254,32 @@ def test_static_rule_yields_to_prepared_answer(pipeline, monkeypatch):
     # 05-10-2026: kho có sẵn câu của người vận hành mà trang Nhắn tin vẫn đọc
     # câu của luật "lãi suất của gói vay là từ 7.9%/năm".
     from backend.pipeline import streaming_pipeline as sp
+    # Dùng một mã luật KHÔNG bị soát chủ đề: câu mẫu của bộ thử này nói về khoá
+    # thẻ, mà từ 09-10-2026 luật lãi suất chỉ nhường khi câu của kho có nêu lãi
+    # (xem `test_static_rule_keeps_answer_when_bank_pick_is_off_topic`).
     monkeypatch.setattr(sp, "tra_loi_khoan_vay",
-                        lambda *_a, **_k: ("lai_suat_san_pham", "Dạ lãi suất của gói vay là từ 7.9%/năm ạ."))
+                        lambda *_a, **_k: ("uu_dai_hien_tai", "Dạ câu của luật ạ."))
     session, sink = _session(), Sink()
     asyncio.run(pipeline.process_text_turn(QUESTION, session, sink, soi=True))
     complete = next(e for e in sink.events if e["type"] == "turn_complete")
     assert complete["full_response"] == ANSWER
     assert complete["metrics"]["answer_route"]["mode"] == "answer_bank"
-    assert complete["metrics"]["luat_nhuong_kho"] == "lai_suat_san_pham"
+    assert complete["metrics"]["luat_nhuong_kho"] == "uu_dai_hien_tai"
+
+
+def test_static_rule_keeps_answer_when_bank_pick_is_off_topic(pipeline, monkeypatch):
+    # 09-10-2026: "thế cần giấy tờ gì" sau lượt nói thời hạn, kho chọn câu thời
+    # hạn và đè lên câu hồ sơ đúng của luật. Câu của kho không nêu giấy tờ nào
+    # thì luật giữ câu của mình.
+    from backend.pipeline import streaming_pipeline as sp
+    monkeypatch.setattr(sp, "tra_loi_khoan_vay",
+                        lambda *_a, **_k: ("ho_so_can_thiet", "Dạ hồ sơ chính gồm căn cước công dân ạ."))
+    session, sink = _session(), Sink()
+    asyncio.run(pipeline.process_text_turn(QUESTION, session, sink, soi=True))
+    complete = next(e for e in sink.events if e["type"] == "turn_complete")
+    assert "căn cước công dân" in complete["full_response"]
+    assert complete["metrics"]["answer_route"]["mode"] == "rule"
+    assert complete["metrics"]["kho_lac_chu_de"] == "ho_so_can_thiet"
 
 
 @pytest.mark.parametrize("code, question", [

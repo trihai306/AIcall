@@ -50,3 +50,7 @@ nghe/
 # File tạm của SQLite (WAL)
 *.db-shm
 *.db-wal
+
+# Bản thu tạm khi thử cuộc gọi
+/*.wav
+/data/tu_goi/

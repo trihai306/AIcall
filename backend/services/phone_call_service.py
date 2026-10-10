@@ -845,8 +845,13 @@ class PhoneCallBridge:
         vong.create_task(_dap())
         threading.Thread(target=_canh, daemon=True).start()
 
-    async def start(self, ghi_am: bool = True):
-        await self._mo_o_cam()
+    async def start(self, ghi_am: bool = True, mo_o_cam: bool = True):
+        """`mo_o_cam=False`: dựng mọi thứ nhưng CHƯA nối ổ cắm xuống máy - xem
+        `mo_duong_tieng` cho lý do. Chưa nối thì chưa có vòng đọc/ghi nào chạy."""
+        self._da_mo_o_cam = False
+        if mo_o_cam:
+            await self._mo_o_cam()
+            self._da_mo_o_cam = True
         self.running = True
         if settings.phone_canh_vong_su_kien:
             self._canh_vong_su_kien()
@@ -863,12 +868,51 @@ class PhoneCallBridge:
             # thật không có bản ghi nào" mà log không hề nhắc tới ghi âm — không
             # phân biệt được "ai đó tắt ghi âm" với "bộ ghi chạy rồi hỏng".
             logger.warning(f"{self.tag} ghi âm TẮT cho cuộc này — sẽ không có bản ghi")
+        if not self._da_mo_o_cam:
+            logger.info(f"{self.tag} cầu tiếng sẵn sàng, CHƯA nối xuống máy "
+                        "(chờ nối máy + đặt đường tiêm)")
+            return
+        self._chay_cac_vong()
+        logger.info(f"{self.tag} đã nối cầu tiếng {self.host}:{self.port}")
+
+    def _chay_cac_vong(self):
         self._tasks = [
             asyncio.create_task(self._read_loop(), name="phone-read"),
             asyncio.create_task(self._write_loop(), name="phone-write"),
             asyncio.create_task(self._nhac_loop(), name="phone-nhac"),
         ]
-        logger.info(f"{self.tag} đã nối cầu tiếng {self.host}:{self.port}")
+
+    async def mo_duong_tieng(self) -> bool:
+        """Nối ổ cắm xuống máy SAU KHI đường tiêm đã đặt. Gọi lại nhiều lần vô hại.
+
+        VÌ SAO PHẢI HOÃN (đo 09-10-2026, logcat của chính máy AI). App cầu tiếng
+        tạo AudioTrack và `play()` ngay khi máy tính nối vào; AudioFlinger lập
+        tức mở luồng phát `primary_out` (pcmC0D0p) dù chưa có tiếng nào. Nối từ
+        lúc QUAY SỐ thì luồng đó mở TRƯỚC khi đường tiêm được đặt, và ABOX chỉ
+        nối một luồng vào đường tiêm LÚC LUỒNG MỞ: luồng đang chạy không ăn theo
+        control vừa đổi. Nó chỉ tự đóng sau ~6 giây không có tiếng. Khách nhấc
+        máy nhanh thì lời chào rơi đúng vào luồng cũ - đầu bên kia im lặng cho
+        tới khi AI ngừng nói đủ lâu để luồng đóng rồi mở lại:
+
+            AI nói suốt từ lúc đổ chuông   -> máy kia KHÔNG nghe gì suốt 26 giây
+            luồng đóng ở +0,94s, chào +1,47 -> máy kia nghe từ +2,1 giây
+            ba cuộc gọi vào máy người dùng 08-10: tiếng AI chỉ vào cuộc gọi sau
+            quãng AI im 5-12 giây đầu tiên (giây 9, 16, 16) - "gọi mất 20s mới
+            bắt đầu nói"
+
+        Nối SAU khi đặt đường tiêm thì luồng mở ra đã nằm đúng tuyến.
+        """
+        if getattr(self, "_da_mo_o_cam", True):
+            return True
+        try:
+            await self._mo_o_cam()
+        except Exception as e:
+            logger.warning(f"{self.tag} không nối được cầu tiếng sau khi nối máy: {e}")
+            return False
+        self._da_mo_o_cam = True
+        self._chay_cac_vong()
+        logger.info(f"{self.tag} đã nối cầu tiếng {self.host}:{self.port} (sau khi đặt đường tiêm)")
+        return True
 
     async def _nhac_loop(self):
         """Nhắc khách khi hai bên cùng im sau lúc AI trả lời xong.
@@ -2005,8 +2049,22 @@ class PhoneCallManager:
         # nghe đúng lúc đó thì nghe thấy tiếng lạo xạo chứ không phải lời chào.
         # `chao_khi_bat_may` mở nghe lại sau khi đã chào.
         bridge.tam_dung_nghe = cho_bat_may
+        # ĐƯỜNG TIÊM PHẢI ĐẶT TRƯỚC KHI NỐI CẦU - xem `PhoneCallBridge.mo_duong_tieng`.
+        #   - gọi RA: hoãn nối ổ cắm, `chao_khi_bat_may` nối sau khi đã đặt.
+        #   - cuộc ĐÃ nối máy (gọi đến, bật tiếng giữa cuộc): đặt ngay ở đây rồi
+        #     mới nối.
+        hoan_noi = cho_bat_may and settings.phone_noi_cau_sau_tiem
+        da_tiem = False
+        if inject and not cho_bat_may and settings.phone_noi_cau_sau_tiem:
+            ma, _ = await adb_service.precise_call_state(serial)
+            if ma == 1:
+                da_tiem = True
+                ok_i, msg_i = await adb_service.set_uplink_injection(serial, True)
+                logger.info(f"{bridge.tag} %s (trước khi nối cầu)", msg_i)
+                if not ok_i:
+                    warn += " | KHÔNG đặt được đường tiêm -> khách sẽ không nghe thấy AI"
         try:
-            await bridge.start(ghi_am=ghi_am)
+            await bridge.start(ghi_am=ghi_am, mo_o_cam=not hoan_noi)
         except Exception as e:
             await adb_service.stop_bridge(serial, port=port)
             return False, f"Không nối được cầu tiếng: {e}"
@@ -2032,7 +2090,7 @@ class PhoneCallManager:
         #
         # Tham số `inject` trước đây chỉ nằm ở dòng khai báo, KHÔNG được dùng ở
         # đâu cả - `devices.py` truyền vào và tưởng mình tắt/bật được.
-        if inject and not cho_bat_may:
+        if inject and not cho_bat_may and not da_tiem:
             ma, _ = await adb_service.precise_call_state(serial)
             if ma == 1:
                 ok_i, msg_i = await adb_service.set_uplink_injection(serial, True)
@@ -2185,16 +2243,27 @@ class PhoneCallManager:
         # sang ACTIVE là đặt luôn, trễ cỡ một lượt dumpsys tại chỗ. 0,25s sau
         # soát lại một lần, HAL có ghi đè thì đặt lại đúng một lần nữa.
         da_dat_tai_cho = False
+        da_cho_pcm_ms = 0       # đã chờ luồng phát cũ của máy đóng bao lâu sau khi nối máy
         if vo is not None and settings.phone_do_noi_may_tai_cho:
             lenh, so, duong = adb_service.lenh_duong_tiem(True)
             soat = ("" if duong != "codec" else
                     f'; sleep 0.25; if ! {adb_service.MIXCTL} get "AIF1TX1 Input 2" '
                     f'| grep -q AIF1RX1; then {lenh}; echo DAT_LAI; fi')
             vong = int(cho_toi_da / 0.07)
+            # Sau khi đặt xong: nếu luồng phát chính (pcm0p) còn đang mở từ TRƯỚC
+            # lúc đặt (tiếng của app khác) thì chờ nó đóng, tối đa 4 giây - luồng
+            # mở trước đường tiêm không mang được tiếng AI vào cuộc gọi, xem
+            # `PhoneCallBridge.mo_duong_tieng`. Bình thường nó đã đóng, vòng thoát ngay.
+            cho_pcm = (
+                "; m=0; while [ $m -lt 80 ]; do "
+                "s=$(head -1 /proc/asound/card0/pcm0p/sub0/status 2>/dev/null); "
+                'if [ "$s" = closed ] || [ -z "$s" ]; then break; fi; '
+                "m=$((m+1)); sleep 0.05; done; echo PCM0_CHO=$m"
+                if settings.phone_noi_cau_sau_tiem else "")
             kich_ban = (
                 f"n=0; while [ $n -lt {vong} ]; do "
                 'if dumpsys telephony.registry | grep -q "Foreground call state: 1"; '
-                f"then {lenh}; echo NOI_MAY{soat}; break; fi; "
+                f"then {lenh}; echo NOI_MAY{soat}{cho_pcm}; break; fi; "
                 "n=$((n+1)); sleep 0.05; done")
             viec = asyncio.create_task(vo.chay(kich_ban, cho=cho_toi_da + 10))
             while not viec.done():
@@ -2214,6 +2283,15 @@ class PhoneCallManager:
                 ok_inj = True
                 msg_inj = (f"Đường lên [{duong}]: đặt ngay trên máy khi nối máy"
                            + (" (HAL ghi đè, đã đặt lại)" if "DAT_LAI" in ra else ""))
+                m_pcm = re.search(r"PCM0_CHO=(\d+)", ra)
+                if m_pcm and int(m_pcm.group(1)) > 0:
+                    # Thường là TIẾNG HỒI CHUÔNG do chính máy phát lúc đổ chuông:
+                    # nó giữ `primary_out` mở tới ~1-2 giây sau khi nối máy.
+                    da_cho_pcm_ms = int(m_pcm.group(1)) * 50
+                    logger.info(
+                        f"{bridge.tag} luồng phát của máy còn mở từ trước lúc đặt đường "
+                        "tiêm (tiếng hồi chuông) - đã chờ %dms cho nó đóng%s", da_cho_pcm_ms,
+                        "" if da_cho_pcm_ms < 4000 else " (QUÁ 4s, vẫn mở: lời chào có thể không tới khách)")
                 asyncio.create_task(vo.dong())
             # ra None (vỏ hỏng) hoặc đặt thiếu: rơi xuống đường dò cũ bên dưới.
 
@@ -2256,6 +2334,16 @@ class PhoneCallManager:
         if not ok_inj:
             logger.warning(f"{bridge.tag} KHÔNG đặt được đường tiêm -> khách sẽ không "
                            "nghe thấy AI")
+        # Đường tiêm đã đặt: GIỜ mới nối cầu tiếng xuống máy, để luồng phát mở ra
+        # đã nằm đúng tuyến - xem `PhoneCallBridge.mo_duong_tieng`.
+        if not await bridge.mo_duong_tieng():
+            # Cầu được dựng ở trạng thái trì hoãn từ lúc quay số. Nếu nối ổ
+            # cắm thất bại sau khi khách bắt máy thì phiên đó không còn đường
+            # đọc/ghi nào để tự hồi phục; giữ nó trong `_calls` chỉ tạo một
+            # cuộc gọi "đang chạy" giả và lời chào sẽ bị xếp vào hàng vô chủ.
+            logger.warning(f"{bridge.tag} dừng phiên vì không nối được cầu tiếng")
+            await self.stop(serial)
+            return
         # Đọc lại để chắc HAL không giật lại ngay. Đọc là thao tác vô hại, khác
         # hẳn ghi - xem chú thích ở `PhoneCallManager.start`. Chạy NỀN: lượt đọc
         # mất ~1s adb, để nó chắn trước lời chào là khách chờ thêm 1s im lặng.
@@ -2289,7 +2377,11 @@ class PhoneCallManager:
         # một nằm trọn trong lời chào, khách phải "a lô" thêm hai lần, 9-15 giây
         # sau mới được đáp. Nên: chờ một nhịp ngắn xem khách có lên tiếng không;
         # có thì đợi họ dứt rồi mới chào, không thì chào luôn.
+        # Quãng vừa chờ luồng phát cũ đóng cũng là quãng khách đã kịp "a lô":
+        # không bắt họ chờ thêm trọn một nhịp nữa, chỉ nghe ngóng 300ms.
         cho_ms = settings.phone_cho_alo_ms
+        if cho_ms > 0 and da_cho_pcm_ms > 0:
+            cho_ms = max(300, cho_ms - da_cho_pcm_ms)
         if cho_ms > 0 and wav:
             bridge._khung_tieng_khach = 0
             t_cho = time.monotonic()

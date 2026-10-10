@@ -1495,8 +1495,14 @@ class F5TTSService:
                     dem: dict[str, int] | None = None,
                     id_tinh_huong: str | None = None,
                     chi_duoi: set[str] | None = None,
+                    loc_chu_chung=None,
                     ) -> tuple[bytes | None, str | None, str | None]:
         """Chọn clip câu đệm ĐÃ CÓ TIẾNG. Trả (wav, id_đuôi, id_tình_huống_dùng).
+
+        `loc_chu_chung`: hàm nhận CHỮ của một mẩu, trả True nếu mẩu đó được
+        dùng. Chỉ áp cho NHÓM CHUNG (mẩu theo chủ đề do bộ phân loại chọn, không
+        lọc lại). Câu đệm muộn dùng nó để lấy đúng kiểu mẩu hợp lời khách - xem
+        `pipeline/noi_truoc.py`.
 
         Chỉ lấy từ cache, không bao giờ sinh: chờ sinh tiếng là phá đúng mục
         đích của câu đệm (che khoảng im lặng trong khi LLM đang chạy).
@@ -1534,7 +1540,9 @@ class F5TTSService:
             # số 0 của hạn mức và mẩu số 0 của lãi suất giẫm chung một bộ đếm.
             ung_vien = [(f"{th}|{k[2]}|{k[3]}", self._filler_ms[k]) for k in self._filler_cache
                         if k[0] == name and k[1] == th
-                        and (chi_duoi is None or k[3] in chi_duoi)]
+                        and (chi_duoi is None or k[3] in chi_duoi)
+                        and (loc_chu_chung is None or th != MA_NHOM_CHUNG
+                             or loc_chu_chung(self._chu_cua_filler(kho, th, k[2], k[3])))]
             if not ung_vien:
                 continue
             cac_nhom.append((th, ung_vien))

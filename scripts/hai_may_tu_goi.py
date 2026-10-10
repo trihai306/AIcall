@@ -169,7 +169,12 @@ async def main() -> int:
     ap.add_argument("--giong-ai", default="default")
     ap.add_argument("--san-pham", default="vay tín chấp")
     ap.add_argument("--port", type=int, default=8124)
+    ap.add_argument("--kich-ban", default="",
+                    help="tệp JSON chứa danh sách câu khách hỏi, thay cho bộ mặc định")
     a = ap.parse_args()
+    global CAU_HOI
+    if a.kich_ban:
+        CAU_HOI = json.loads(Path(a.kich_ban).read_text(encoding="utf-8"))
     s2 = a.may_khach
     # Chốt chặn cứng: dù script kẹt ở đâu, sau 4 phút cả hai máy bị cúp.
     def _chot():
@@ -230,6 +235,19 @@ async def main() -> int:
         print(f"   bắt máy sau {lan + 1} lần bấm")
         print("   cầu tiếng:", await ad.start_bridge(s2, port=a.port))
         print("   tiêm đường lên:", (await ad.set_uplink_injection(s2, True))[1])
+        # Luồng phát của máy khách còn mở từ TRƯỚC lúc đặt đường tiêm (tiếng
+        # chuông vừa tắt) thì câu hỏi tiêm vào không lên được cuộc gọi, mà
+        # `CauKhach` gửi khung liên tục nên luồng đó không bao giờ tự đóng - cả
+        # cuộc AI không nghe thấy "khách". Chờ nó đóng rồi mới nối. Xem
+        # `PhoneCallBridge.mo_duong_tieng` cho cùng lỗi ở phía máy AI.
+        t_c = time.time()
+        while time.time() - t_c < 6:
+            _, tt_pcm, _ = await ad._run("-s", s2, "shell", "su", "-c",
+                                         "head -1 /proc/asound/card0/pcm0p/sub0/status")
+            if "closed" in tt_pcm or not tt_pcm.strip():
+                break
+            await asyncio.sleep(0.2)
+        print(f"   luồng phát máy khách đã đóng sau {time.time() - t_c:.1f}s")
         cau = CauKhach(a.port)
         await asyncio.sleep(1.0)
         nen = cau.muc(0.5)

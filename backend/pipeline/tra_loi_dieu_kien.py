@@ -12,6 +12,8 @@ Không phán khách có đủ điều kiện hay không - chỉ đọc điều k
 import re
 import unicodedata
 
+from backend.pipeline.du_kien_khoan_vay import quantities
+
 TEN_SP = {"vay_tin_chap": "vay tín chấp", "vay_mua_nha": "vay mua nhà",
           "the_tin_dung": "mở thẻ tín dụng", "tiet_kiem": "gửi tiết kiệm"}
 TEN_GON = {"vay_tin_chap": "vay tín chấp", "vay_mua_nha": "vay mua nhà",
@@ -82,6 +84,25 @@ def _dong_khop(sp_doc: str, tu_khoa: tuple[str, ...]) -> list[tuple[str, str]]:
     return ra
 
 
+def _tuoi_khach(text: str) -> int | None:
+    cac = []
+    for q in quantities(text or ""):
+        if q.value is None or q.value != q.value.to_integral():
+            continue
+        if re.search(r"\btuổi\b", q.raw.lower()) or re.match(
+                r"\s*tuổi\b", (text or "")[q.end:].lower()):
+            cac.append(int(q.value))
+    return cac[0] if len(cac) == 1 else None
+
+
+def _khung_tuoi(cap: list[tuple[str, str]]) -> tuple[int, int] | None:
+    for _, dong in cap:
+        m = re.search(r"\btu\s+(\d+)\s*[-–]\s*(\d+)\s*tuoi\b", _bo_dau(dong))
+        if m:
+            return int(m.group(1)), int(m.group(2))
+    return None
+
+
 def tra_loi_dieu_kien(text: str, ma_sp: str, sp_doc: str) -> tuple[str, str] | None:
     ten_sp = TEN_SP.get(ma_sp)
     t = _bo_dau(text)
@@ -92,9 +113,33 @@ def tra_loi_dieu_kien(text: str, ma_sp: str, sp_doc: str) -> tuple[str, str] | N
     if re.search(r"\b(lam tu do|tu kinh doanh|kinh doanh tu do)\b", t):
         return None
 
-    if re.search(r"\btuoi\b", t):
+    if re.search(r"\b(sao hoa|mat trang|hanh tinh|ngoai vu tru)\b", t) and re.search(
+            r"\b(dat|nha|tai san|the chap|dam bao)\b", t):
+        return "tai_san_khong_co_chinh_sach", (
+            "Dạ tài liệu sản phẩm hiện không có chính sách cho loại tài sản này, "
+            "nên em chưa thể xác nhận có thể dùng làm tài sản đảm bảo ạ.")
+
+    # "em bao nhiêu tuổi rồi, có người yêu chưa": khách hỏi tuổi của NHÂN VIÊN,
+    # không phải điều kiện tuổi vay (bộ thử 10-10-2026 từng đọc "từ 22 đến 60 tuổi").
+    hoi_tuoi_nhan_vien = bool(re.search(
+        r"\b(em|ban|chau|co)\b(?: \w+){0,2} (?:bao nhieu|may) tuoi\b|\bnguoi yeu\b|"
+        r"\b(?:lay|co) (?:vo|chong) chua\b", t))
+    if re.search(r"\btuoi\b", t) and not hoi_tuoi_nhan_vien:
         cap = _dong_khop(sp_doc, ("tuoi",))
         if cap:
+            tuoi = _tuoi_khach(text)
+            khung = _khung_tuoi(cap)
+            if tuoi is not None and khung:
+                dau, cuoi = khung
+                if tuoi < dau or tuoi > cuoi:
+                    huong = "dưới" if tuoi < dau else "vượt"
+                    return "dieu_kien_tuoi_khong_khop", (
+                        f"Dạ điều kiện tuổi của {ten_sp} là từ {dau} đến {cuoi} tuổi ạ. "
+                        f"Tuổi {tuoi} đang {huong} giới hạn này, nên em chưa thể xác nhận "
+                        "hồ sơ phù hợp; việc xét hồ sơ vẫn cần thẩm định cụ thể ạ.")
+                return "dieu_kien_tuoi_khop", (
+                    f"Dạ tuổi {tuoi} nằm trong khung từ {dau} đến {cuoi} tuổi ạ. "
+                    "Việc đủ điều kiện vay vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.")
             return "dieu_kien_tuoi", _cau(ten_sp, cap)
 
     if (re.search(r"\b(thu nhap|luong)\b", t) and not co_so

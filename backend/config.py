@@ -126,6 +126,22 @@ class Settings(BaseSettings):
     # giá: lượt phải nhờ mô hình sinh câu trả lời sẽ IM trong lúc chờ (0,6-2s).
     # Bật lại bằng CAU_DEM_BAT=true; mã và kho câu đệm vẫn còn nguyên.
     cau_dem_bat: bool = False
+    # NÓI TRƯỚC - chỉ cho lượt mô hình phải TỰ VIẾT câu trả lời. Khi luật và kho
+    # đều không có đáp án, AI phát ngay một mẩu mở đầu đã có tiếng lấy từ kho
+    # câu đệm ("Dạ em trả lời anh chị ạ," khi khách hỏi, "Dạ vâng ạ," khi khách
+    # kể) trong lúc mô hình viết. Lượt kho/luật không bị đụng tới, nên không
+    # vướng lý do bên A tắt câu đệm ở trên. Mô hình không được báo gì về mẩu
+    # này: câu nó viết không đổi. Đo 09-10-2026: lượt Qwen viết im 1,27-1,78s
+    # trước tiếng đầu; có mẩu nói trước thì tiếng ra sau ~0,45s.
+    # Tắt: CAU_DEM_LUOT_SINH=false. Xem `_noi_truoc_luot_sinh`, `noi_truoc.py`.
+    cau_dem_luot_sinh: bool = True
+    # Khách nói số tiền KHÔNG kèm đơn vị ("vay hai trăm", "ba trăm rưỡi", "lương
+    # hai chục") thì hiểu là TRIỆU thay vì hỏi lại "triệu hay tỷ". Chỉ áp cho số
+    # tiền vay từ 10 đến 999 và thu nhập dưới 1000; câu trả lời luôn đọc lại con
+    # số kèm đơn vị ("Dạ 200 triệu đồng thì...") để khách sửa nếu sai. Bộ thử nói
+    # như người thường 10-10-2026: 17/38 lượt sai là do không hiểu cách nói số.
+    # Tắt (quay về hỏi lại đơn vị): SUY_DON_VI_TRIEU=false.
+    suy_don_vi_trieu: bool = True
     # CHỈ CHỌN TRONG KHO (bên A chốt 07-10-2026): kho trả lời và các luật không
     # có đáp án thì AI KHÔNG tự viết câu trả lời nữa mà hẹn liên hệ hỗ trợ sau
     # (`streaming_pipeline.CAU_KHO_KHONG_CO`). Đổi lấy: không bao giờ nói sai tài
@@ -325,6 +341,16 @@ class Settings(BaseSettings):
     # Quãng im dài nhất còn được giữ BÊN TRONG một câu tiếng dựng sẵn, xem
     # `tieng_san.rut_quang_im`. 0 là tắt (phát nguyên tệp).
     tieng_san_im_toi_da_ms: int = 220
+    # KHO MẢNH của tiếng sẵn (`tieng_san.KhoTiengSan.tra_phan`): câu của luật có
+    # con số và câu hỏi dẫn dắt được cất theo từng câu ngắn, ghép lại cho mọi tổ
+    # hợp. Tắt thì về cách cũ (cả câu một tệp theo mã, trượt là sinh lại tại chỗ).
+    tieng_san_theo_manh: bool = True
+    # Trần số tệp trong kho mảnh của MỖI giọng; vượt thì bỏ tệp cũ nhất. Một mảnh
+    # ~150KB nên 8.000 tệp ~1,2GB.
+    tieng_san_manh_toi_da: int = 8000
+    # Dựng sẵn mảnh cho các con số hay gặp lúc backend rảnh (xem
+    # `services/dung_san_manh_so.py`). Tắt thì mảnh chỉ có sau lần đầu được nói.
+    tieng_san_dung_san_so: bool = True
     # Bộ canh vòng sự kiện trong lúc gọi, xem `PhoneCallBridge._canh_vong_su_kien`.
     phone_canh_vong_su_kien: bool = True
     # Sau khi nối máy, chờ ngần này xem khách có "a lô" không rồi mới chào (có
@@ -339,6 +365,12 @@ class Settings(BaseSettings):
     # Dò "đã nối máy" và đặt đường tiêm bằng vòng lặp chạy ngay trên điện thoại
     # (xem chao_khi_bat_may). Tắt thì quay về dò từ máy tính qua adb.
     phone_do_noi_may_tai_cho: bool = True
+    # Nối cầu tiếng xuống máy SAU khi đã đặt đường tiêm (xem
+    # `PhoneCallBridge.mo_duong_tieng`). Nối từ lúc quay số thì luồng phát trên
+    # máy mở trước đường tiêm và không mang được tiếng AI vào cuộc gọi cho tới
+    # khi nó tự đóng: khách nhấc máy nhanh nghe im 10-20 giây đầu. Tắt chỉ để
+    # so sánh với hành vi cũ.
+    phone_noi_cau_sau_tiem: bool = True
     phone_doc_lai_duong_tiem: bool = False
     # Số ms khung im đẩy xuống máy trước lời chào, cho tuyến tiếng kịp ổn định.
     phone_dem_im_truoc_chao_ms: int = 0

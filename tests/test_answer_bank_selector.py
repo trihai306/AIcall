@@ -811,3 +811,150 @@ def test_general_row_about_another_product_is_not_served():
         row = _choose(llm, question=q, product="vay mua nhà", bank=bank, vector_bank=vectors)
         assert row["id"] == "ab_ca_hai"
     assert _choose(llm, question=q, product="vay tín chấp", bank=bank, vector_bank=vectors)["id"] in bank
+
+
+@pytest.mark.parametrize(("question", "answer", "blocked"), [
+    ("ơ gửi năm chục triệu thì có được tặng chi không",
+     "Dạ số tiền gửi tối thiểu là 1 triệu đồng ạ.", True),
+    ("ơ gửi năm chục triệu thì có được tặng chi không",
+     "Dạ gửi từ 50 triệu được tặng voucher 500 nghìn đồng ạ.", False),
+    ("thế bao lâu thì có tiền mà có mất phí gì không",
+     "Dạ trả nợ trước hạn được miễn phí ạ.", True),
+    ("trả nợ trước hạn có mất phí không",
+     "Dạ trả nợ trước hạn được miễn phí ạ.", False),
+    ("à không hay là chị vay nhỉ bên em có cho vay không",
+     "Dạ em hiểu ạ, em xin phép không làm phiền thêm ạ.", True),
+    ("chị không vay đâu em",
+     "Dạ em hiểu ạ, em xin phép không làm phiền thêm ạ.", False),
+    ("phí hàng năm của thẻ là bao nhiêu",
+     "Dạ phí thường niên là 499.000 đồng ạ.", False),
+    ("phí năm thứ hai là bao nhiêu",
+     "Dạ thẻ được miễn phí thường niên năm đầu ạ.", True),
+    ("phí phí thế nào ấy nhỉ phí năm ấy",
+     "Dạ thẻ có hạn mức 100 triệu và được miễn phí thường niên năm đầu ạ.", True),
+    ("phí phí thế nào ấy nhỉ phí năm ấy",
+     "Dạ phí thường niên năm đầu được miễn ạ.", True),
+    ("phí phí thế nào ấy nhỉ phí năm ấy",
+     "Dạ năm đầu được miễn phí thường niên ạ.", True),
+    ("phí phí thế nào ấy nhỉ phí năm ấy",
+     "Dạ phí thường niên từ năm thứ hai áp dụng theo biểu phí hiện hành ạ.", True),
+    ("phí năm thứ hai là bao nhiêu",
+     "Dạ miễn phí thường niên năm đầu, từ năm thứ hai là 499.000 đồng ạ.", False),
+    ("năm đầu có được miễn phí thường niên không",
+     "Dạ thẻ được miễn phí thường niên năm đầu ạ.", False),
+])
+def test_semantic_topic_guard_blocks_only_mismatched_answers(question, answer, blocked):
+    from backend.services.answer_bank_selector import _thieu_chu_de
+
+    row = {"id": "manual", "san_pham": "", "cau_hoi": [], "tra_loi": answer}
+    assert _thieu_chu_de(row, question) is blocked
+
+
+def test_promotion_guard_covers_fast_remembered_cosine_and_qwen_paths():
+    from backend.services import answer_bank_selector as selector
+
+    question = "ơ gửi năm chục triệu thì có được tặng chi không"
+    answer = "Dạ số tiền gửi tối thiểu là 1 triệu đồng ạ."
+    bank = {"minimum": {"id": "minimum", "san_pham": "tiết kiệm",
+                         "cau_hoi": [question], "tra_loi": answer}}
+    vectors = {"minimum": _vec(0.99)}
+
+    assert selector.fast_direct(question, bank, product="tiết kiệm") is None
+    row, _ = selector.best_candidate(
+        rag=RagFake(), bank=bank, vector_bank=vectors,
+        question=question, product="tiết kiệm")
+    assert row is None
+    llm = LLMFake()
+    assert _choose(llm, question=question, product="tiết kiệm",
+                   bank=bank, vector_bank=vectors) is None
+    assert llm.prompts == []
+
+    # Sổ nhớ cũng phải đi qua đúng cổng, kể cả dòng không còn câu mẫu trực tiếp.
+    remembered_bank = {"minimum": {**bank["minimum"], "cau_hoi": []}}
+    selector.quen_lua_chon()
+    selector._chi_muc_cua(remembered_bank)
+    key = (selector._norm("tiết kiệm"), "", selector.khoa_cau_hoi(question))
+    selector._da_chon[key] = ("minimum", answer)
+    assert selector.fast_direct(question, remembered_bank, product="tiết kiệm") is None
+
+
+def test_qwen_choice_is_rechecked_if_answer_loses_topic_during_wait():
+    question = "ơ gửi năm chục triệu thì có được tặng chi không"
+    bank = {"promo": {"id": "promo", "san_pham": "tiết kiệm",
+                       "cau_hoi": [],
+                       "tra_loi": "Dạ gửi từ 50 triệu được tặng voucher ạ."}}
+
+    class ChangingLLM(LLMFake):
+        async def generate_simple(self, prompt, num_predict=100):
+            bank["promo"]["tra_loi"] = "Dạ số tiền gửi tối thiểu là 1 triệu đồng ạ."
+            return await super().generate_simple(prompt, num_predict)
+
+    assert _choose(ChangingLLM(), question=question, product="tiết kiệm",
+                   bank=bank, vector_bank={"promo": _vec(0.9)}) is None
+
+
+@pytest.mark.parametrize(("answer", "has_fee"), [
+    ("Dạ phí thường niên thẻ Classic 200.000đ/năm, Gold 400.000đ/năm ạ.", True),
+    ("Dạ phí thường niên Classic hai trăm nghìn đồng/năm ạ.", True),
+    ("Dạ phí thường niên Classic 200.000đ/năm, hoàn tiền 3% ạ.", True),
+    ("Dạ thẻ có hạn mức 100 triệu và được miễn phí thường niên năm đầu ạ.", False),
+    ("Dạ miễn phí thường niên năm đầu nếu giao dịch từ 100 triệu đồng ạ.", False),
+    ("Dạ phí thường niên được miễn năm đầu, 10 triệu là hạn mức tối thiểu ạ.", False),
+    ("Dạ phí thường niên được miễn năm đầu, hoàn tiền tối đa 500 nghìn đồng ạ.", False),
+    ("Dạ phí thường niên được miễn năm đầu 10 triệu là hạn mức tối thiểu ạ.", False),
+    ("Dạ phí thường niên được miễn năm đầu 500 nghìn đồng hoàn tiền ạ.", False),
+    ("Dạ phí thường niên năm đầu được miễn ạ.", False),
+    ("Dạ năm đầu được miễn phí thường niên ạ.", False),
+    ("Dạ phí thường niên từ năm thứ hai áp dụng theo biểu phí hiện hành ạ.", False),
+])
+def test_annual_fee_amount_must_be_lexically_tied_to_fee(answer, has_fee):
+    from backend.services.answer_bank_selector import co_muc_phi_thuong_nien
+
+    assert co_muc_phi_thuong_nien(answer) is has_fee
+
+
+@pytest.mark.parametrize("answer", [
+    "Dạ phí thường niên được miễn năm đầu, 10 triệu là hạn mức tối thiểu ạ.",
+    "Dạ phí thường niên được miễn năm đầu, hoàn tiền tối đa 500 nghìn đồng ạ.",
+    "Dạ phí thường niên năm đầu được miễn ạ.",
+    "Dạ năm đầu được miễn phí thường niên ạ.",
+    "Dạ phí thường niên từ năm thứ hai áp dụng theo biểu phí hiện hành ạ.",
+])
+def test_annual_fee_guard_covers_fast_cosine_and_qwen_paths(answer):
+    from backend.services import answer_bank_selector as selector
+
+    question = "phí phí thế nào ấy nhỉ phí năm ấy"
+    bank = {"waiver": {"id": "waiver", "san_pham": "thẻ tín dụng",
+                        "cau_hoi": [question],
+                        "tra_loi": answer}}
+    vectors = {"waiver": _vec(0.99)}
+
+    assert selector.fast_direct(question, bank, product="thẻ tín dụng") is None
+    row, _ = selector.best_candidate(
+        rag=RagFake(), bank=bank, vector_bank=vectors,
+        question=question, product="thẻ tín dụng")
+    assert row is None
+    llm = LLMFake()
+    assert _choose(llm, question=question, product="thẻ tín dụng",
+                   bank=bank, vector_bank=vectors) is None
+    assert llm.prompts == []
+
+
+@pytest.mark.parametrize("question", ["co qua gi khong", "co qua khong"])
+def test_unaccented_gift_question_rejects_irrelevant_minimum_answer(question):
+    from backend.services import answer_bank_selector as selector
+
+    bank = {"minimum": {"id": "minimum", "san_pham": "tiết kiệm",
+                         "cau_hoi": [question],
+                         "tra_loi": "Dạ số tiền gửi tối thiểu là 1 triệu đồng ạ."}}
+    vectors = {"minimum": _vec(0.99)}
+
+    assert selector.fast_direct(question, bank, product="tiết kiệm") is None
+    row, _ = selector.best_candidate(
+        rag=RagFake(), bank=bank, vector_bank=vectors,
+        question=question, product="tiết kiệm")
+    assert row is None
+    llm = LLMFake()
+    assert _choose(llm, question=question, product="tiết kiệm",
+                   bank=bank, vector_bank=vectors) is None
+    assert llm.prompts == []

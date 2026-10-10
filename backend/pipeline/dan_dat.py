@@ -49,18 +49,49 @@ THEO_SAN_PHAM = {
 # Ý định của `luot_thuong_gap` mà sau đó KHÔNG được hỏi dồn.
 KHONG_HOI_SAU = frozenset({
     "tu_choi", "dang_ban", "hen_lai", "sao_co_so", "sao_biet_ten", "ai_day",
+    "danh_tinh_tu_dong", "danh_tinh_va_nguon",
     "chao_hoi", "chao_bat_may", "nghe_ro_khong", "moi_noi_tiep",
 })
 
 # Khách đang khép cuộc gọi hoặc gạt đi - nhìn trên chính lời khách.
+# Từ chối/hẹn/bận do `y_dinh_dung_tu_van` ở dưới sở hữu vì cần xét phủ định,
+# người thứ ba và thứ tự các vế; không dò lại các từ đó một cách mất ngữ cảnh.
 _KHEP = re.compile(
-    r"\b(cảm ơn|cám ơn|tạm biệt|thôi nhé|thôi em|để (anh|chị|tôi) (xem|nghĩ|suy nghĩ|tính)"
-    r"|không cần|không quan tâm|bận|gọi lại|khi nào cần|lừa đảo|đừng gọi)\b", re.IGNORECASE)
+    r"\b(cảm ơn|cám ơn|tạm biệt|thôi nhé|thôi em|lừa đảo)\b", re.IGNORECASE)
+
+# Chính CÂU TRẢ LỜI đã khép cuộc hoặc hẹn chuyên viên: hỏi tiếp là tự mâu thuẫn.
+# Bộ thử 10-10-2026: "em xin ghi nhận để bên em không liên hệ lại nữa ạ. Anh chị
+# dự định vay khoảng bao nhiêu ạ?" và "em chào anh chị ạ. Anh chị muốn vay trong
+# bao lâu ạ?".
+_CAU_DA_KHEP = re.compile(
+    r"em chào|tạm biệt|liên hệ lại|gọi lại|không làm phiền|không liên hệ"
+    r"|khi nào (?:tiện|cần|có nhu cầu)", re.IGNORECASE)
+
+# Khách đang kêu KHÔNG NGHE KỊP / xin nhắc lại: việc cần làm là nói lại, không
+# phải hỏi sang ý mới.
+_XIN_NOI_LAI = re.compile(
+    r"\b(nói (?:nhanh|chậm|lại|to)|nhắc lại|không nghe (?:rõ|kịp|được|thấy)|nghe không (?:rõ|kịp))\b",
+    re.IGNORECASE)
 
 _CO_THU_NHAP = re.compile(r"\b(lương|thu nhập)\b", re.IGNORECASE)
 
 
-def _da_biet(ma: str, trang_thai, loi_khach: str) -> bool:
+def _khach_da_neu(loi_khach: str, loai: str) -> bool:
+    """Khách đã nói ra một số tiền / một kỳ hạn ở đâu đó trong cuộc chưa."""
+    from backend.pipeline.du_kien_khoan_vay import khoang_ky_han, quantities
+    if loai == "duration" and khoang_ky_han(loi_khach or ""):
+        return True
+    return any(q.kind == loai and q.value for q in quantities(loi_khach or ""))
+
+
+def _da_biet(ma: str, trang_thai, loi_khach: str, ma_san_pham: str = "") -> bool:
+    # Gửi tiết kiệm không đi qua sổ dữ kiện KHOẢN VAY (nó chỉ nhận con số có chữ
+    # "vay" neo trước): khách nói "gửi hai trăm triệu kỳ hạn sáu tháng" xong vẫn
+    # bị hỏi lại "dự định gửi bao nhiêu / kỳ hạn bao lâu". Với tiết kiệm, số tiền
+    # và kỳ hạn khách nói ra ở đâu trong cuộc cũng là của khoản gửi.
+    if ma_san_pham == "tiet_kiem" and ma in ("so_tien", "ky_han"):
+        if _khach_da_neu(loi_khach, "money" if ma == "so_tien" else "duration"):
+            return True
     if ma == "so_tien":
         return trang_thai.amount.status != "unknown"
     if ma == "ky_han":
@@ -84,22 +115,30 @@ def cau_hoi_tiep(*, ma_san_pham: str, trang_thai, loi_khach_ca_cuoc: str,
     buoc = THEO_SAN_PHAM.get(ma_san_pham)
     if not buoc:
         return None
+    # Dùng cùng quyết định ưu tiên với tầng trả lời sẵn. Không phụ thuộc metrics
+    # đã được streaming gắn kịp hay chưa, và phủ cả câu dài/ASCII.
+    from backend.pipeline.luot_thuong_gap import y_dinh_dung_tu_van
+    if y_dinh_dung_tu_van(loi_khach_luot_nay or ""):
+        return None
     if "?" in (cau_tra_loi or ""):
         return None
-    if y_dinh_thuong_gap in KHONG_HOI_SAU or ma_luat.startswith(("kho_khong_co", "xac_nhan_")):
+    if y_dinh_thuong_gap in KHONG_HOI_SAU or ma_luat.startswith(
+            ("kho_khong_co", "xac_nhan_", "thieu_du_kien", "vuot_han_muc")):
         return None
-    if _KHEP.search(loi_khach_luot_nay or ""):
+    if _KHEP.search(loi_khach_luot_nay or "") or _XIN_NOI_LAI.search(loi_khach_luot_nay or ""):
+        return None
+    if _CAU_DA_KHEP.search(cau_tra_loi or ""):
         return None
     # Lượt TRƯỚC vừa hỏi một ý mà khách chưa trả lời (họ hỏi lại chuyện khác):
     # lượt này không hỏi dồn sang ý kế tiếp. Bản đầu hỏi "vay bao nhiêu", khách
     # nói "vay tiêu dùng ấy", AI hỏi luôn "vay trong bao lâu" - nghe như máy
     # đọc danh sách. Lượt sau nữa mới hỏi tiếp.
-    if vua_hoi and not _da_biet(vua_hoi, trang_thai, loi_khach_ca_cuoc):
+    if vua_hoi and not _da_biet(vua_hoi, trang_thai, loi_khach_ca_cuoc, ma_san_pham):
         return None
     for ma, cau in buoc:
         if ma in da_hoi:
             continue
-        if _da_biet(ma, trang_thai, loi_khach_ca_cuoc):
+        if _da_biet(ma, trang_thai, loi_khach_ca_cuoc, ma_san_pham):
             continue
         if ma == "ghi_nhan" and len(da_hoi) == 0 and trang_thai.amount.status == "unknown":
             # Chưa trao đổi được gì mà đã mời làm hồ sơ là hối khách.

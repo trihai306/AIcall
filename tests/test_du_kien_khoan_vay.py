@@ -5,7 +5,19 @@ import random
 
 import pytest
 
-from backend.pipeline.du_kien_khoan_vay import quantities, resolve
+from backend.pipeline.du_kien_khoan_vay import is_readback, quantities, resolve
+
+
+@pytest.fixture(autouse=True)
+def _che_do_hoi_lai_don_vi(monkeypatch):
+    """Các test trong tệp này canh chế độ CHẶT: số không kèm đơn vị thì hỏi lại.
+
+    Mặc định từ 10-10-2026 là suy ra "triệu" (`config.suy_don_vi_trieu`); chế độ
+    chặt vẫn bật lại được nên vẫn phải đúng. Chế độ mặc định có test riêng ở
+    `test_noi_nhu_nguoi_thuong.py`.
+    """
+    from backend.config import settings
+    monkeypatch.setattr(settings, "suy_don_vi_trieu", False)
 
 
 def users(*texts):
@@ -76,7 +88,7 @@ def test_corrections_and_negated_numbers(sentence, expected):
 @pytest.mark.parametrize("sentence", [
     "anh vay 250 hoặc 350 triệu", "anh vay ba bốn trăm triệu",
     "anh muốn vay 250 triệu hay 350 triệu", "anh muốn vay 300-400 triệu",
-    "anh vay hai triệu ba", "đổi sang số khác", "không phải 650 triệu",
+    "đổi sang số khác", "không phải 650 triệu",
 ])
 def test_unresolved_replacement_blocks_stale_amount(sentence):
     state = resolve(users("anh vay 650 triệu"), sentence)
@@ -205,6 +217,45 @@ def test_readback_questions_do_not_modify_facts(question):
     history = users("anh vay 275 triệu trong 24 tháng", "lương anh 18 triệu")
     before = resolve(history)
     assert resolve(history, question).evidence() == before.evidence()
+
+
+@pytest.mark.parametrize("history", [
+    [{"role": "assistant", "content": "Anh cần vay bao nhiêu tiền ạ?"}],
+    users("anh vay 200 triệu"),
+    users("anh vay trong 24 tháng"),
+])
+def test_numeric_what_did_you_say_is_readback_without_fact_update(history):
+    text = "ừ anh nghe ờ mà cái gì ba trăm cơ"
+    before = resolve(history)
+    assert is_readback(text)
+    assert [(q.value, q.kind) for q in quantities(text)] == [(Decimal(300), "bare")]
+    assert resolve(history, text).evidence() == before.evidence()
+
+
+@pytest.mark.parametrize("text", [
+    "anh muốn vay ba trăm",
+    "à không anh vay ba trăm cơ",
+])
+def test_explicit_numeric_amount_is_not_mistaken_for_readback(text):
+    assert not is_readback(text)
+    state = resolve(users("anh vay 200 triệu"), text)
+    assert state.amount.status == "missing_unit", state.evidence()
+    assert state.amount.coefficient == 300
+
+
+@pytest.mark.parametrize("text", [
+    "vay để sửa nhà",
+    "đợi vợ anh về đã",
+])
+def test_non_correction_conversation_does_not_invalidate_amount(text):
+    assert resolve(users("anh vay 200 triệu"), text).amount.value == 200_000_000
+
+
+def test_company_may_six_years_is_employment_not_loan_term():
+    history = users("anh vay 200 triệu trong 24 tháng")
+    state = resolve(history, "anh làm ở công ty may được sáu năm")
+    assert state.amount.value == 200_000_000
+    assert state.term.value == 24
 
 
 @pytest.mark.parametrize("sentence, field", [

@@ -2,6 +2,18 @@
 import pytest
 from backend.pipeline.tra_loi_khoan_vay import tra_loi
 
+
+@pytest.fixture(autouse=True)
+def _che_do_hoi_lai_don_vi(monkeypatch):
+    """Các test trong tệp này canh chế độ CHẶT: số không kèm đơn vị thì hỏi lại.
+
+    Mặc định từ 10-10-2026 là suy ra "triệu" (`config.suy_don_vi_trieu`); chế độ
+    chặt vẫn bật lại được nên vẫn phải đúng. Chế độ mặc định có test riêng ở
+    `test_noi_nhu_nguoi_thuong.py`.
+    """
+    from backend.config import settings
+    monkeypatch.setattr(settings, "suy_don_vi_trieu", False)
+
 DOC = """# Vay tín chấp
 ## Thông tin
 - Hạn mức: 500 triệu đồng

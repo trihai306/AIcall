@@ -51,7 +51,9 @@ def test_nhu_cau_moi_chi_dung_tran_san_pham_khong_tron_ho_so_rieng():
         {"han_muc_da_duyet": "300.000.000 đồng"}, xung_ho="anh")
     assert got and got[0] == "nhu_cau_vay"
     cau = got[1]
-    assert "500 triệu" in cau and "400 triệu" in cau
+    # Câu đáp nói thẳng nhu cầu này bên em có cho vay (09-10-2026: bỏ đoạn đọc
+    # lại cả trần lẫn khung thời hạn vì khách chê trả lời không rõ ràng).
+    assert "vay 12 tháng thì được" in cau and "Số tiền 400 triệu đồng cũng trong hạn mức" in cau
     assert "300 triệu" not in cau
     assert "cần thẩm định" in cau
     assert "vay mua nhà" not in cau
@@ -70,8 +72,10 @@ def test_tinh_tra_gop_tu_so_tien_luot_truoc_khong_de_llm_doan():
     assert "7,4 triệu" not in got[1]
 
 
-def test_tinh_di_khong_cho_phep_bot_tu_xac_nhan_don_vi_thay_khach():
+def test_tinh_di_khong_cho_phep_bot_tu_xac_nhan_don_vi_thay_khach(monkeypatch):
     """A previous assistant's invented unit is not customer confirmation."""
+    from backend.config import settings
+    monkeypatch.setattr(settings, "suy_don_vi_trieu", False)   # chế độ chặt
     history = [
         {"role": "user", "content": "anh muốn vay bốn trăm trong mười hai tháng thì"},
         {"role": "assistant", "content":

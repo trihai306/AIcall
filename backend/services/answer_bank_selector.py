@@ -79,14 +79,21 @@ def _is_follow_up(question: str) -> bool:
     # thành "the", nên "vay tín chấp lãi bao nhiêu" hay "thẻ tín dụng phí bao
     # nhiêu" bị coi là câu nối tiếp - mất đường đọc thẳng, lần nào cũng qua Qwen
     # (đo 05-10-2026). Câu gõ không dấu thì đành xét trên chữ đã bỏ dấu.
+    #
+    # Chữ chỉ trỏ ("đó", "này", "kia") cũng vậy: bỏ dấu thì "tự do" có chữ "do",
+    # nên "anh làm tự do" bị coi là câu nối tiếp, bị neo vào lượt trước và nhận
+    # lại đúng câu AI vừa nói (đo 09-10-2026).
     if raw.isascii():
         noi_dau = q.startswith(("the ", "con ", "vay "))
+        chi_tro = any(w in {"do", "nay", "kia"} for w in words)
     else:
         noi_dau = raw.startswith(("thế ", "còn ", "vậy ", "thế thì ", "vậy thì "))
+        chi_tro = bool(re.search(r"(?<!\w)(?:đó|này|kia)(?!\w)",
+                                 unicodedata.normalize("NFC", raw)))
     return len(words) <= 7 and (
         noi_dau
         or q.endswith((" thi sao", " sao", " nua"))
-        or any(w in {"do", "nay", "kia"} for w in words)
+        or chi_tro
     )
 
 
@@ -118,17 +125,22 @@ def _covers_all_intents(row: Mapping[str, Any], question: str) -> bool:
 # và Qwen đều coi "ứng tiền mặt bằng thẻ có miễn lãi không" gần với "thời gian
 # miễn lãi lên đến 55 ngày" và đã đọc câu đó cho khách (02-10-2026) - sai, vì
 # ứng tiền mặt không được miễn lãi. Thà rơi về RAG còn hơn đọc nhầm chủ đề.
+_TRA_NO_TRUOC_HAN = ("tra no truoc han", "tra truoc han", "tat toan truoc", "tat toan som")
+_PHI_THUONG_NIEN = ("thuong nien", "phi nam", "phi hang nam")
+
+
 _CHU_DE_HEP = (
     ("ung tien", "ung truoc", "rut tien mat", "tien mat"),
     ("thau chi",),
     ("classic",),
     ("gold",),
     ("platinum", "bach kim"),
-    ("tra no truoc han", "tra truoc han", "tat toan truoc", "tat toan som"),
+    _TRA_NO_TRUOC_HAN,
     ("rut truoc han", "rut tien truoc", "rut truoc ky han"),
     ("no xau", "cic"),
-    ("thuong nien",),
+    _PHI_THUONG_NIEN,
     ("bao hiem",),
+    ("dong the", "huy the", "cham dut the"),
 )
 
 
@@ -159,17 +171,155 @@ def _noi_san_pham_khac(row: Mapping[str, Any], product: str) -> bool:
 _CHU_DE_NGOAI_LE = (_CHU_DE_HEP[0], _CHU_DE_HEP[1])
 
 
+def _hoi_uu_dai(question: str) -> bool:
+    """Khách đang hỏi quà/khuyến mại, không nhầm ``tăng`` với ``tặng``."""
+    raw = unicodedata.normalize("NFC", (question or "").casefold())
+    q = f" {_norm(question)} "
+    return (bool(re.search(r"(?<!\w)tặng(?!\w)", raw))
+            or any(f" {phrase} " in q for phrase in (
+                "khuyen mai", "uu dai", "qua tang", "voucher", "hoan tien",
+                # ASR không dấu thường giữ cả động từ và đại từ hỏi.
+                "duoc tang gi", "duoc tang chi", "co qua gi khong",
+                "co qua khong",
+            )))
+
+
+def _dap_an_co_uu_dai(row: Mapping[str, Any]) -> bool:
+    raw = unicodedata.normalize(
+        "NFC", str(row.get("tra_loi") or "").casefold())
+    answer = f" {_norm(str(row.get('tra_loi') or ''))} "
+    return (bool(re.search(r"(?<!\w)tặng(?!\w)", raw))
+            or any(f" {phrase} " in answer for phrase in (
+                "khuyen mai", "uu dai", "qua tang", "voucher", "hoan tien",
+                "mien phi", "giam gia",
+            )))
+
+
+def _hoi_muc_phi_thuong_nien(question: str) -> bool:
+    q = f" {_norm(question)} "
+    annual = any(f" {phrase} " in q for phrase in _PHI_THUONG_NIEN)
+    detail = any(f" {phrase} " in q for phrase in (
+        "bao nhieu", "muc phi", "phi la", "nam thu hai", "nam thu 2",
+        "tu nam thu hai", "tu nam thu 2", "sau nam dau", "cac nam sau",
+        "the nao", "tinh sao", "ra sao", "nhu nao",
+    ))
+    return annual and detail
+
+
+_SO_TIEN_CHU = (
+    "mot", "hai", "ba", "bon", "tu", "nam", "sau", "bay", "tam", "chin",
+    "muoi", "tram", "nghin", "trieu", "le", "linh",
+)
+_TIEN_BANG_SO_RE = re.compile(
+    r"\d+(?:\s+\d+)*\s*(?:d|dong|nghin|trieu|k)(?!\w)")
+_TIEN_BANG_CHU_RE = re.compile(
+    rf"(?:{'|'.join(_SO_TIEN_CHU)})(?:\s+(?:{'|'.join(_SO_TIEN_CHU)})){{0,7}}"
+    r"\s+dong(?!\w)")
+_PHI_THUONG_NIEN_RE = re.compile(
+    r"(?<!\w)(?:" + "|".join(re.escape(term) for term in _PHI_THUONG_NIEN)
+    + r")(?!\w)")
+_CHU_DE_TIEN_KHAC = (
+    "han muc", "so tien gui", "tien gui", "giao dich", "chuyen khoan",
+    "rut tien", "chi tieu", "doanh so", "gia tri", "toi thieu", "toi da",
+    "nguong", "hoan tien", "voucher", "qua tang", "tang",
+)
+
+
+def _menh_de_giu_so(text: str) -> list[str]:
+    """Tách mệnh đề trước khi chuẩn hoá, không chẻ dấu trong ``200.000``."""
+    raw = unicodedata.normalize("NFC", (text or "").casefold())
+    raw = re.sub(r"(?<!\d)[,;.!?](?!\d)", " | ", raw)
+    raw = re.sub(r"\s+(?:và|nhưng|còn|đồng thời)\s+", " | ", raw)
+    return [normalized for part in raw.split("|") if (normalized := _norm(part))]
+
+
+def co_muc_phi_thuong_nien(answer: str) -> bool:
+    """Đáp án có số tiền gắn với phí thường niên, không phải số tiền chủ đề khác.
+
+    Chấp nhận lịch phí bằng chữ số hoặc chữ Việt sau ``phí thường niên``,
+    ``phí năm`` hay ``phí hàng năm``. Một hạn mức/ngưỡng giao dịch ở gần đó
+    không được dùng làm bằng chứng cho mức phí.
+    """
+    clauses = _menh_de_giu_so(answer)
+    candidates = list(clauses)
+    continuation = (
+        "tu nam thu hai", "tu nam thu 2", "nam thu hai", "nam thu 2",
+        "sau nam dau", "cac nam sau", "nam tiep theo",
+    )
+    for index, clause in enumerate(clauses[:-1]):
+        if (_PHI_THUONG_NIEN_RE.search(clause)
+                and clauses[index + 1].startswith(continuation)):
+            candidates.append(f"{clause} {clauses[index + 1]}")
+
+    for clause in candidates:
+        text = f" {clause} "
+        for annual in _PHI_THUONG_NIEN_RE.finditer(text):
+            tail = text[annual.end():]
+            amounts = [match for pattern in (_TIEN_BANG_SO_RE, _TIEN_BANG_CHU_RE)
+                       if (match := pattern.search(tail)) is not None]
+            if not amounts:
+                continue
+            amount = min(amounts, key=lambda match: match.start())
+            # Số tiền phải ở gần nhãn phí. Kiểm tra thêm tối đa sáu từ sau số
+            # để bắt "10 triệu là hạn mức" và "500 nghìn đồng hoàn tiền".
+            if len(tail[:amount.start()].split()) > 8:
+                continue
+            after_amount = " ".join(tail[amount.end():].split()[:6])
+            context = f" {tail[:amount.end()].strip()} {after_amount} "
+            if not any(f" {topic} " in context for topic in _CHU_DE_TIEN_KHAC):
+                return True
+    return False
+
+
+def _la_sua_y_khong_phai_tu_choi(question: str) -> bool:
+    q = _norm(question)
+    return q.startswith(("a khong hay la ", "a khong hay "))
+
+
+def _la_dap_an_tu_choi(row: Mapping[str, Any]) -> bool:
+    """Nhận diện câu kết thúc do khách từ chối bằng nhãn hoặc lời đáp rõ ràng."""
+    situation = _norm(_nhom_tinh_huong(row))
+    answer = f" {_norm(str(row.get('tra_loi') or ''))} "
+    return ("tu choi" in situation
+            or any(f" {phrase} " in answer for phrase in (
+                "khong lam phien", "khong lien he lai", "xin phep dung",
+                "em chao anh chi", "khi nao co nhu cau",
+            )))
+
+
 def _thieu_chu_de(row: Mapping[str, Any], question: str) -> bool:
     """Đáp án lệch chủ đề hẹp của câu hỏi, theo một trong hai chiều.
 
     Câu hỏi nêu chủ đề hẹp mà đáp án không nhắc; hoặc đáp án nói một ngoại lệ
-    (ứng tiền mặt, thấu chi) mà câu hỏi không hề hỏi tới.
+    (ứng tiền mặt, thấu chi, trả nợ trước hạn) mà câu hỏi không hề hỏi tới.
     """
     q = f" {_norm(question)} "
     answer = f" {_norm(str(row.get('tra_loi') or ''))} "
     has = lambda text, group: any(f" {w} " in text for w in group)  # noqa: E731
+    # Hỏi số tiền lãi cần phép tính hoặc hỏi dữ kiện còn thiếu. Một câu chỉ
+    # báo % không trả lời được ý này, dù ví dụ của dòng có chính câu khách.
+    tien_lai = bool(re.search(r"\blai\b", q) and re.search(
+        r"\b(?:bao nhieu tien|tien lai|so lai|nhan duoc bao nhieu)\b", q))
+    earned_money = re.search(
+        r"\b(?:tien lai|so lai|lai (?:duoc|nhan|nhan duoc)|nhan lai)\b"
+        r".{0,45}\b\d+(?:\s+\d+)*\s*(?:d|dong|nghin|ngan|trieu|ty|ti)\b", answer)
+    only_rate = tien_lai and "%" in str(row.get("tra_loi") or "") and not earned_money
+    giai_ngan = bool(re.search(r"\b(?:giai ngan|co tien|nhan tien|nhan duoc tien|tien ve)\b", q))
+    hoi_phi = bool(re.search(r"\bphi\b", q))
+    thieu_phi = giai_ngan and hoi_phi and not re.search(r"\bphi\b", answer)
     return (any(has(q, g) and not has(answer, g) for g in _CHU_DE_HEP)
-            or any(has(answer, g) and not has(q, g) for g in _CHU_DE_NGOAI_LE))
+            or any(has(answer, g) and not has(q, g) for g in (
+                *_CHU_DE_NGOAI_LE,
+                # Phí trả trước hạn không trả lời được câu hỏi chung về thời
+                # gian giải ngân và phí; chỉ giữ khi khách thật sự hỏi trả sớm.
+                _TRA_NO_TRUOC_HAN,
+            ))
+            or (_hoi_uu_dai(question) and not _dap_an_co_uu_dai(row))
+            or (_hoi_muc_phi_thuong_nien(question)
+                and not co_muc_phi_thuong_nien(str(row.get("tra_loi") or "")))
+            or (_la_sua_y_khong_phai_tu_choi(question)
+                and _la_dap_an_tu_choi(row))
+            or only_rate or thieu_phi)
 
 
 def rank_candidates(
@@ -897,7 +1047,8 @@ async def choose(
     # không thể trả một ID thật hoặc kéo lại dòng đã bị lọc.
     score_by_id = dict(eligible)
     row = dict(bank[chosen_id])
-    if (not _covers_all_intents(row, question)
+    if (_thieu_chu_de(row, question)
+            or not _covers_all_intents(row, question)
             or not _is_current(is_current, chosen_id, after_await=True, snapshot=row)):
         return None
     row["diem"] = score_by_id[chosen_id]

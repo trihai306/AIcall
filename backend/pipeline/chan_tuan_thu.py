@@ -13,6 +13,7 @@ hỏng ba kiểu khác nhau (xem chú thích `prefill` trong `llm_service`). V�
 tài chính thì "phần lớn lượt sẽ đúng" không phải một bảo đảm.
 """
 import re
+import unicodedata
 
 # --- Lưới 1: chữ không được phép nói -------------------------------------
 
@@ -82,7 +83,13 @@ CAU_HOI_THU_NHAP = ("Dạ anh chị cho em xin mức thu nhập hàng tháng "
                     "để em tư vấn hạn mức chính xác ạ?")
 
 
-def chan_gan_thu_nhap(text: str, khach_da_noi: str = "") -> tuple[str, str | None]:
+CAU_GHI_NHAN_THU_NHAP = "Dạ em ghi nhận mức thu nhập anh chị vừa cho biết ạ."
+CAU_GHI_NHAN_THU_NHAP_GIA_DINH = (
+    "Dạ em ghi nhận thông tin thu nhập gia đình anh chị vừa cho biết ạ.")
+
+
+def chan_gan_thu_nhap(text: str, khach_da_noi: str = "",
+                      khach_da_noi_thu_nhap: bool = False, facts=None) -> tuple[str, str | None]:
     """Chặn AI KHẲNG ĐỊNH thu nhập của khách khi khách chưa từng nêu con số đó.
 
     `khach_da_noi` là toàn bộ lời khách trong cuộc (nối lại), KHÔNG phải ngữ cảnh
@@ -95,22 +102,116 @@ def chan_gan_thu_nhap(text: str, khach_da_noi: str = "") -> tuple[str, str | Non
       - câu nói về ĐIỀU KIỆN sản phẩm, không gán cho ai
       - câu HỎI thu nhập (hỏi thì được, khẳng định thay khách mới là lỗi)
 
-    Thay bằng câu HỎI chứ không phải "em xin phép kiểm tra lại": thứ còn thiếu ở
-    đây đúng là con số của khách, hỏi thẳng là cách gỡ nhanh nhất và cũng là việc
-    một tư vấn viên thật sẽ làm.
+    Khi đã có dữ kiện typed nhưng mô hình nhắc sai số, thay bằng lời ghi nhận
+    trung tính và không lặp lại số sai. Chỉ hỏi lại khi chưa có thu nhập đúng
+    chủ thể; thu nhập hộ gia đình dùng một lời ghi nhận riêng.
     """
     t = text or ""
-    if "?" in t:
-        return text, None
     m = _GAN_RE.search(t)
     if not m:
         return text, None
-    # Con số khách tự nêu thì AI nhắc lại là đúng.
-    so_trong_cau = set(re.findall(_SO, m.group(0)))
-    so_khach_noi = set(re.findall(_SO, khach_da_noi or ""))
-    if so_trong_cau and so_trong_cau <= so_khach_noi:
+    # Chỉ CÂU chứa lời gán mới quyết định: câu đó là câu hỏi thì cho qua. Trước
+    # đây cả mảnh có một dấu "?" ở bất kỳ đâu là cho qua, nên "Với thu nhập 10
+    # triệu, hồ sơ đáp ứng ạ. Chị có cần em tính không?" lọt (khách nói 40 triệu).
+    cuoi_cau = re.search(r"[.?!]", t[m.end():])
+    if cuoi_cau and cuoi_cau.group() == "?":
         return text, None
-    return CAU_HOI_THU_NHAP, f"gán thu nhập cho khách ({m.group(0)[:40]!r})"
+    from backend.pipeline.du_kien_khoan_vay import fold, resolve
+    facts = facts if facts is not None else resolve(text=khach_da_noi)
+    household_echo = bool(re.search(
+        r"\b(?:tong thu nhap|thu nhap.{0,25}(?:vo chong|gia dinh|ca nha))\b", fold(t)))
+    reply_income = resolve(text=t).income
+    da_noi = _gia_tri_khach_noi(khach_da_noi, facts, household_echo)
+    if reply_income.value is not None and float(reply_income.value) / 1e6 in da_noi:
+        return text, None
+    # Chọn câu thay theo provenance đã chiếu từ lời khách. Boolean cũ chỉ là
+    # dấu hiệu tầng gọi từng phát hiện chữ "thu nhập", không chứng minh được
+    # con số thuộc về ai nên tuyệt đối không dùng làm quyền cho qua / ghi nhận.
+    if facts.income.owner == "self" and facts.income.status == "known":
+        thay = CAU_GHI_NHAN_THU_NHAP
+    elif facts.income.owner == "household" and facts.income.status == "known":
+        thay = CAU_GHI_NHAN_THU_NHAP_GIA_DINH
+    else:
+        thay = CAU_HOI_THU_NHAP
+    return thay, f"gán thu nhập cho khách ({m.group(0)[:40]!r})"
+
+
+_CHU_THE_THU_NHAP_CUC_BO = re.compile(
+    r"(?P<spouse>\b(?:vo|chong) (?:anh|chi|toi|em)\b)|"
+    r"(?P<self>\b(?:luong|thu nhap)(?: cua)? (?:anh|chi|toi|em)\b|"
+    r"\b(?:anh|chi|toi|em)(?: co)? (?:luong|thu nhap)\b)")
+
+
+def _cap_thu_nhap_rieng(khach_da_noi: str, facts) -> list[float]:
+    """Return exactly a qualified caller/spouse pair, otherwise no pair.
+
+    Role and ownership come from the same typed projection helpers as the
+    reducer. The local subject is still required because an implicit salary is
+    valid personal input but cannot participate in an inferred household sum.
+    """
+    from backend.pipeline.du_kien_khoan_vay import (
+        _income_owner, _menh_de_chua_so, _role, _suy_don_vi, fold, quantities,
+    )
+
+    normal = fold(khach_da_noi)
+    if re.search(r"\b(?:hay|hoac)\b", normal):
+        return []
+    qualified: list[tuple[str, float]] = []
+    for q in quantities(khach_da_noi):
+        if _role(khach_da_noi, q, False) != "income":
+            continue
+        owner = _income_owner(khach_da_noi, q)
+        if owner not in ("self", "") or q.value is None:
+            continue
+        clause, local_start = _menh_de_chua_so(khach_da_noi, q)
+        before = clause[:local_start]
+        before = re.sub(r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", before)
+        subjects = list(_CHU_THE_THU_NHAP_CUC_BO.finditer(before))
+        if not subjects:
+            continue
+        subject = subjects[-1].lastgroup
+        # The reducer deliberately ignores spouse income (`owner == ""`). A
+        # self marker must agree with its typed owner; this rejects bank quotes.
+        if (subject == "self") != (owner == "self"):
+            continue
+        if q.kind == "money":
+            value = float(q.value) / 1e6
+        elif q.kind == "bare" and _suy_don_vi():
+            value = float(q.value)
+        else:
+            continue
+        qualified.append((subject, value))
+    if len(qualified) != 2 or {subject for subject, _ in qualified} != {"self", "spouse"}:
+        return []
+    own = next(value for subject, value in qualified if subject == "self")
+    if (facts.income.owner != "self" or facts.income.value is None
+            or abs(own - float(facts.income.value) / 1e6) >= 1e-6):
+        return []
+    return [value for _, value in qualified]
+
+
+def _gia_tri_khach_noi(khach_da_noi: str, facts=None, household: bool = False) -> set[float]:
+    """Chỉ thu nhập có đúng chủ thể; tiền vay/giá nhà/điều kiện không bảo chứng."""
+    from backend.pipeline.du_kien_khoan_vay import resolve
+    facts = facts if facts is not None else resolve(text=khach_da_noi)
+    income = facts.income
+    if not household and income.owner == "self" and income.value is not None:
+        return {float(income.value) / 1e6}
+    if household and income.owner == "household" and income.value is not None:
+        return {float(income.value) / 1e6}
+    if household:
+        pair = _cap_thu_nhap_rieng(khach_da_noi, facts)
+        if pair:
+            return {sum(pair)}
+    return set()
+
+
+def _la_so_da_noi(so: str, da_noi: set[float]) -> bool:
+    try:
+        v = float(so.replace(",", "."))
+    except ValueError:
+        return False
+    return any(abs(v - x) < 1e-6 for x in da_noi)
 
 
 # --- Lưới 3: mô hình TỰ TÍNH số tiền phải trả ------------------------------
@@ -123,12 +224,13 @@ def chan_gan_thu_nhap(text: str, khach_da_noi: str = "") -> tuple[str, str | Non
 # "hàng tháng trả khoảng 9,5-16,5 triệu". Mấy con số đó tình cờ CÓ ở chỗ khác
 # trong tài liệu nên ba lưới số đều cho qua - phải bắt theo Ý chứ không theo số.
 _TIEN = r"\d+(?:[.,]\d+)?(?:\s*(?:-|đến|tới)\s*\d+(?:[.,]\d+)?)?\s*(?:triệu|tr\b|nghìn|ngàn|tỷ|tỉ|đồng)"
-_KY = r"(?:mỗi tháng|hàng tháng|hằng tháng|một tháng|/\s*tháng|tháng đầu|mỗi kỳ)"
+_KY = r"(?:mỗi tháng|hàng tháng|hằng tháng|một tháng|/\s*tháng|tháng đầu|mỗi kỳ|mỗi triệu vay)"
 _TRA = r"(?:trả|góp|đóng|thanh toán|gốc)"
 _TU_TINH_RE = re.compile(
     rf"(?:{_TRA}[^.?!]{{0,40}}?{_TIEN}[^.?!]{{0,25}}?{_KY}"
     rf"|{_TRA}[^.?!]{{0,25}}?{_KY}[^.?!]{{0,30}}?{_TIEN}"
     rf"|{_KY}[^.?!]{{0,25}}?{_TRA}[^.?!]{{0,30}}?{_TIEN}"
+    rf"|(?:khoản trả góp|tiền trả góp|số tiền trả góp)[^.?!]{{0,40}}?{_TIEN}"
     rf"|(?:tiền lãi|số lãi|tổng lãi|lãi phải trả)[^.?!]{{0,30}}?{_TIEN})",
     re.IGNORECASE)
 
@@ -144,12 +246,57 @@ def chan_tu_tinh_tien(text: str) -> tuple[str, str | None]:
     nhập từ 5 triệu mỗi tháng" không có động từ trả/góp/đóng).
     """
     t = text or ""
-    if "?" in t:
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    # Model đôi khi viết tiền bằng chữ. Dùng cùng bộ đọc số của khách để xét
+    # ý tính tiền; không sửa câu trả lời bình thường chỉ vì nó chứa một số tiền.
+    for quantity in reversed(quantities(t)):
+        if (quantity.kind == "money" and quantity.value is not None
+                and not quantity.raw[:1].isdigit()):
+            t = t[:quantity.start] + f"{quantity.value} đồng" + t[quantity.end:]
+    # Một câu hỏi nối đuôi không miễn trừ lời khẳng định ở câu trước. Giữ dấu
+    # chấm/phẩy nằm giữa các chữ số để 3.4 triệu không bị chẻ mất.
+    for sentence in re.split(r"(?<=[.!?])\s+", t):
+        m = _TU_TINH_RE.search(sentence)
+        if not m:
+            continue
+        # Chỉ miễn câu hỏi về khoản khách ĐANG/MUỐN trả, không miễn câu hỏi
+        # xác nhận số tiền do mô hình vừa tự tính ("khoản trả là X đúng không?").
+        if sentence.rstrip().endswith("?") and re.search(
+                r"\b(?:anh|chị|anh chị|anh/chị)\s+(?:đang|muốn|dự định)\s+(?:trả|đóng)\b",
+                sentence, re.I):
+            continue
+        return CAU_THAY_TU_TINH, f"tự tính tiền ({m.group(0)[:50]!r})"
+    return text, None
+
+
+def chan_gan_nhu_cau(text: str, facts) -> tuple[str, str | None]:
+    """Lời model không được biến con số đang mơ hồ thành nhu cầu đã chốt."""
+    if facts is None:
         return text, None
-    m = _TU_TINH_RE.search(t)
-    if not m:
-        return text, None
-    return CAU_THAY_TU_TINH, f"tự tính tiền ({m.group(0)[:50]!r})"
+    from backend.pipeline.du_kien_khoan_vay import fold, quantities
+
+    normal = fold(text or "")
+    for quantity in quantities(text or ""):
+        if quantity.kind != "money" or quantity.value is None:
+            continue
+        prefix = normal[max(0, quantity.start - 100):quantity.start]
+        person = r"(?:anh|chi|anh chi|anh/chi)"
+        assignment = (
+            rf"\b{person}\b.{{0,55}}\b(?:muon|can|du dinh|dang can nhac)\b.{{0,30}}\bvay\b"
+            r"(?:\s+(?:khoang|tam|chung|so tien|la))*\s*$"
+            rf"|\b(?:khoan vay|nhu cau(?: vay)?|so tien vay)\b.{{0,25}}\b{person}\b"
+            r"(?:\s+(?:can|muon|la|khoang|tam|chung))*\s*$"
+            rf"|\b{person}\b\s+dang vay(?:\s+(?:so tien|la|khoang|tam|chung))*\s*$")
+        if not re.search(assignment, prefix):
+            continue
+        # Một ví dụ giả định không phải lời gán nhu cầu cho khách; phép tính
+        # trong ví dụ vẫn phải qua chan_tu_tinh_tien ở tầng trước.
+        if re.search(r"\b(?:neu|gia su)\b", prefix):
+            continue
+        if facts.amount.value is None or facts.amount.value != quantity.value:
+            return ("Dạ anh chị chốt giúp em số tiền cụ thể muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ?",
+                    "gán số tiền vay chưa được khách xác nhận")
+    return text, None
 
 
 # --- Lưới 4: mô hình TỰ KẾT LUẬN khách không được vay ----------------------
@@ -188,3 +335,29 @@ def chan_ket_luan_tu_choi(text: str) -> tuple[str, str | None]:
     if not m:
         return text, None
     return CAU_THAY_TU_CHOI, f"tự kết luận từ chối ({m.group(0)[:40]!r})"
+
+
+# Mô hình trộn hai cụm đứng cạnh nhau trong tài liệu ("hợp đồng lao động hoặc
+# giấy phép kinh doanh") thành một cụm không có thật. Đo 09-10-2026: khách chạy
+# xe ôm công nghệ hỏi vay, câu sinh ra đòi "hợp đồng kinh doanh".
+_THUAT_NGU_LAI = (("hợp đồng kinh doanh", "giấy phép kinh doanh"),)
+
+
+def sua_thuat_ngu_lai(text: str, tai_lieu: str) -> tuple[str, str | None]:
+    """Đổi cụm lai về đúng cụm của tài liệu.
+
+    Chỉ đổi khi tài liệu KHÔNG có cụm lai và CÓ cụm đúng: tài liệu nào thật sự
+    nói "hợp đồng kinh doanh" thì câu được để nguyên.
+    """
+    tl = unicodedata.normalize("NFC", tai_lieu or "").casefold()
+    ra, sua = unicodedata.normalize("NFC", text or ""), []
+    for lai, dung in _THUAT_NGU_LAI:
+        if lai in tl or dung not in tl:
+            continue
+        moi = re.sub(re.escape(lai),
+                     lambda m: dung.capitalize() if m.group(0)[:1].isupper() else dung,
+                     ra, flags=re.IGNORECASE)
+        if moi != ra:
+            ra = moi
+            sua.append(f"{lai!r} -> {dung!r}")
+    return (ra, ", ".join(sua)) if sua else (text, None)

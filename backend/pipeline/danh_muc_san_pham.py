@@ -107,6 +107,22 @@ def tra_loi(text: str, ma_co_tai_lieu: set[str] | None,
     if not t:
         return None
 
+    # "à không hay là chị vay nhỉ, bên em có cho vay không": khách đang cân
+    # nhắc chuyển từ gửi sang vay. Chỉ câu hỏi có-cho-vay chung mới vào đây;
+    # "chị có vay được không" vẫn thuộc nhánh xét điều kiện cá nhân.
+    hoi_dieu_kien = re.search(
+        r"\b(luong|thu nhap|tuoi|no xau|cic|ho so|hop dong|dieu kien|"
+        r"nghi huu|that nghiep|lam tu do|tu kinh doanh)\b", t)
+    if not hoi_dieu_kien and re.search(
+            r"\bco\s+(?:cho|ho tro)\s+vay\s+(?:khong|ko)"
+            r"(?:\s+(?:a|nhi|the|vay|em|chi|anh|ban|nhe))*$", t):
+        cac = _sap(ma_co_tai_lieu, True)
+        if cac:
+            ten = _noi([TEN[ma] for ma in cac])
+            return "danh_muc_vay", (
+                f"Dạ bên em có {ten} ạ. Anh chị đang cần vay để làm gì ạ?")
+        return "chua_co_san_pham", "Dạ hiện bên em chưa có sản phẩm vay trong danh mục ạ."
+
     # 1) "có X không" - X là một sản phẩm cụ thể.
     for ma, cum in _CUM:
         m = re.search(rf"\bco\s+{_DEM_CO}(?:{cum}){_DUOI_CO}", t)

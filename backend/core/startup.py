@@ -311,7 +311,8 @@ async def startup(state: AppState):
     logger.info("[6/6] Loading F5-TTS Vietnamese...")
     try:
         state.tts.load()
-        if settings.cau_dem_bat:
+        if settings.cau_dem_bat or settings.cau_dem_luot_sinh:
+            # Câu đệm muộn (`cau_dem_luot_sinh`) dùng chung kho clip này.
             await state.tts.dung_fillers(lay_kho())
         else:
             logger.info("  Câu đệm đang TẮT (CAU_DEM_BAT=false): bỏ qua dựng tiếng câu đệm")
@@ -413,6 +414,12 @@ async def startup(state: AppState):
             logger.warning("  Đường xuống: hâm không được (%s)", e)
 
     asyncio.create_task(_ham_duong_xuong())
+
+    # Dựng sẵn tiếng cho câu của luật có con số hay gặp (số tiền, kỳ hạn), để
+    # mọi tổ hợp ghép ra tiếng ngay - xem `services/dung_san_manh_so.py`. Chạy
+    # nền, từng câu một, nghỉ khi đang có cuộc gọi.
+    from backend.services import dung_san_manh_so
+    state._viec_dung_san_manh = asyncio.create_task(dung_san_manh_so.chay_nen(state))
 
     # Build pipeline
     state.pipeline = StreamingPipeline(
