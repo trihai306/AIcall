@@ -889,6 +889,25 @@ def _tri_phan_tram(s: str) -> set[float]:
     return ra
 
 
+def _tri_sau_cong_them(tai_lieu: str) -> set[float]:
+    """Các mức phần trăm có được khi áp dụng dòng "cộng thêm X%" của tài liệu.
+
+    Tài liệu tiết kiệm ghi bảng lãi theo kỳ hạn và một dòng "Lãi suất cộng thêm
+    0.2%/năm so với gửi tại quầy". Mô hình cộng đúng 5,5% + 0,2% = 5,7% thì lưới
+    coi 5,7% là bịa (không có nguyên văn trong tài liệu) và thay cả câu bằng "em
+    xin phép kiểm tra lại" - bộ thử 12-10-2026, lượt "online". Phép cộng này do
+    chính tài liệu cho phép nên kết quả của nó là có căn cứ.
+    """
+    cong: set[float] = set()
+    for dong in (tai_lieu or "").splitlines():
+        if re.search(r"cộng thêm|cao hơn", dong, re.IGNORECASE):
+            cong |= _tri_phan_tram(dong)
+    if not cong:
+        return set()
+    goc = _tri_phan_tram(tai_lieu) - cong
+    return {round(g + c, 4) for g in goc for c in cong}
+
+
 def chan_lai_suat_bia(text: str, tai_lieu: str,
                       can_cu_them: str = "") -> tuple[str, str | None]:
     """Câu trả lời nêu một mức phần trăm KHÔNG có trong tài liệu -> con số đó BỊA.
@@ -931,6 +950,9 @@ def chan_lai_suat_bia(text: str, tai_lieu: str,
     # lượt này lôi về mảnh khác - đo được trên cuộc gọi thật `009d9fb3`.
     co_can_cu = _tri_phan_tram(tai_lieu) | _tri_phan_tram(can_cu_them)
     la_bia = sorted(trong_cau - co_can_cu)
+    if la_bia:
+        sau_cong = _tri_sau_cong_them(tai_lieu)
+        la_bia = [v for v in la_bia if round(v, 4) not in sau_cong]
     if not la_bia:
         return text, None
     return CAU_KIEM_TRA_LAI, (

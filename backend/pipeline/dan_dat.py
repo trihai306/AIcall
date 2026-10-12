@@ -51,6 +51,7 @@ KHONG_HOI_SAU = frozenset({
     "tu_choi", "dang_ban", "hen_lai", "sao_co_so", "sao_biet_ten", "ai_day",
     "danh_tinh_tu_dong", "danh_tinh_va_nguon",
     "chao_hoi", "chao_bat_may", "nghe_ro_khong", "moi_noi_tiep",
+    "xin_gui_qua_kenh", "lam_qua_dien_thoai", "noi_cham_lai", "don_vi_lai", "gat_dau_hoi_lai",
 })
 
 # Khách đang khép cuộc gọi hoặc gạt đi - nhìn trên chính lời khách.
@@ -64,8 +65,8 @@ _KHEP = re.compile(
 # dự định vay khoảng bao nhiêu ạ?" và "em chào anh chị ạ. Anh chị muốn vay trong
 # bao lâu ạ?".
 _CAU_DA_KHEP = re.compile(
-    r"em chào|tạm biệt|liên hệ lại|gọi lại|không làm phiền|không liên hệ"
-    r"|khi nào (?:tiện|cần|có nhu cầu)", re.IGNORECASE)
+    r"em chào|tạm biệt|liên hệ lại|gọi lại|không làm phiền|không liên hệ|kết(?: thúc)? cuộc gọi|dừng cuộc gọi"
+    r"|khi nào (?:tiện|cần|có nhu cầu)|chưa có sản phẩm", re.IGNORECASE)
 
 # Khách đang kêu KHÔNG NGHE KỊP / xin nhắc lại: việc cần làm là nói lại, không
 # phải hỏi sang ý mới.

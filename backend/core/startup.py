@@ -232,6 +232,20 @@ async def startup(state: AppState):
         prepare_sources()
     except Exception as e:
         logger.warning("Không kiểm tra được độ mới thư viện trả lời: %s", e)
+    # Lập lại mẫu con số cho kho (đo 11-10-2026: 0,65s cho 8.548 đáp án). Phải
+    # đứng SAU `prepare_sources`: bước đó dùng mẫu cũ để viết lại đáp án khi tài
+    # liệu đổi con số trong lúc app tắt; lập mẫu trước thì mẫu cũ bị xoá mất.
+    try:
+        from backend.models import db as _db_mau
+        from backend.services import kho_theo_tai_lieu
+        with _db_mau.write_lock:
+            kq_mau = kho_theo_tai_lieu.lap_mau(
+                _db_mau.connection(), str(settings.project_dir))
+        logger.info("  Kho trả lời: %d đáp án có con số theo tài liệu, %d chép cứng, "
+                    "%d nói con số tài liệu không có", kq_mau["co_mau"],
+                    kq_mau["chep_cung_con_dung"], kq_mau["so_khong_co_trong_tai_lieu"])
+    except Exception as e:
+        logger.warning("Không lập được mẫu con số cho kho trả lời: %s", e)
     # An install upgraded from before scenarios existed has none at all, and a
     # campaign with no scenario would lose the worked examples that used to be
     # hard-coded in the prompt. Seed the shipped one from .env, once.

@@ -1,0 +1,764 @@
+{
+ "diem": {
+  "ngap_ngung_01": "120000",
+  "ngap_ngung_02": "22002",
+  "ngap_ngung_03": "12102",
+  "ngong_ln_01": "212120",
+  "ngong_ln_02": "22202",
+  "giong_nam_01": "20121",
+  "giong_nam_02": "20212",
+  "giong_trung_01": "22122",
+  "long_tien_01": "00000",
+  "long_tien_02": "00222",
+  "long_tien_03": "2122",
+  "tu_sua_01": "00220",
+  "tu_sua_02": "120",
+  "hoi_don_01": "100",
+  "hoi_don_02": "11",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "21222",
+  "hoi_lai_01": "2221222",
+  "stt_that_01": "1202222",
+  "stt_that_02": "22122",
+  "ke_le_01": "1121",
+  "cam_xuc_01": "022021",
+  "ngoai_le_01": "20212",
+  "so_mieng_x1": "010010",
+  "so_mieng_x2": "0000",
+  "lon_tuoi_01": "222121",
+  "chem_anh_01": "2222",
+  "nhieu_01": "1102",
+  "chot_01": "22112",
+  "cat_doi_01": "122221",
+  "cat_doi_02": "02221"
+ },
+ "ly_do": {
+  "ngap_ngung_01#1": [
+   "kho",
+   "khách xin hỏi, AI lại hỏi 'tiện nghe không'"
+  ],
+  "ngap_ngung_01#3": [
+   "so",
+   "'hai trăm gì đấy' không được hiểu là 200 triệu, hỏi lại y câu cũ"
+  ],
+  "ngap_ngung_01#4": [
+   "so",
+   "'hai ba năm gì đó' không ghi nhận (câu không có chữ 'vay')"
+  ],
+  "ngap_ngung_01#5": [
+   "so",
+   "'ừ thì ba năm đi' không ghi nhận, đáp lạc sang tính trả góp"
+  ],
+  "ngap_ngung_01#6": [
+   "so",
+   "dây chuyền: mất cả 200 triệu lẫn 3 năm nên không tính được"
+  ],
+  "ngap_ngung_02#3": [
+   "kho",
+   "lặp nguyên câu lượt trước, không nêu điểm khác biệt khách vừa hỏi"
+  ],
+  "ngap_ngung_02#4": [
+   "qwen",
+   "'chưa có thông tin về phí' dù tài liệu có phí thường niên"
+  ],
+  "ngap_ngung_03#1": [
+   "kho",
+   "câu kho lệch ý (khách chưa nói xong)"
+  ],
+  "ngap_ngung_03#3": [
+   "dan_dat",
+   "đúng 4,5% nhưng hỏi lại kỳ hạn khách vừa nói"
+  ],
+  "ngap_ngung_03#4": [
+   "kho",
+   "'thế một năm' nhận lại câu của kỳ hạn 6 tháng (sai: phải 5,5%)"
+  ],
+  "ngong_ln_01#2": [
+   "kho",
+   "khẳng định 'đủ điều kiện' chỉ theo thu nhập"
+  ],
+  "ngong_ln_01#4": [
+   "so",
+   "'hai lăm' (hai năm nói ngọng) bị hỏi lại tháng hay năm - chấp nhận được"
+  ],
+  "ngong_ln_01#6": [
+   "chu_thanh_so",
+   "khách cảm ơn chào, AI đòi 'nhắc lại số tiền kèm đơn vị' (dư âm của 'hai lăm')"
+  ],
+  "ngong_ln_02#4": [
+   "thu_nhap",
+   "'bốn mươi chiệu' -> hỏi lại thu nhập khách vừa nói, câu tự mâu thuẫn"
+  ],
+  "giong_nam_01#2": [
+   "so",
+   "'hai trăm chai được hông' không được đáp được/không, nói lạc sang tính trả góp"
+  ],
+  "giong_nam_01#3": [
+   "dan_dat",
+   "có số 6,8 triệu nhưng hỏi lại 'vay trong bao lâu' khi khách vừa nói ba năm"
+  ],
+  "giong_nam_01#5": [
+   "qwen",
+   "khách than 'kỳ dậy', AI hỏi lại khô khan"
+  ],
+  "giong_nam_02#2": [
+   "thu_nhap",
+   "'lương chị có bảy triệu' (nói rõ) vẫn bị hỏi lại thu nhập"
+  ],
+  "giong_nam_02#4": [
+   "kho",
+   "chỉ nói miễn năm đầu, không nêu mức phí"
+  ],
+  "giong_trung_01#3": [
+   "dan_dat",
+   "hỏi lại kỳ hạn khách đã nói"
+  ],
+  "long_tien_01#1": [
+   "so",
+   "'trăm củ' không hiểu"
+  ],
+  "long_tien_01#2": [
+   "qwen",
+   "'trăm rưỡi' -> bịa 'khoảng 500 triệu' và nói 'chưa có thông tin hạn mức'"
+  ],
+  "long_tien_01#3": [
+   "so",
+   "'năm rưỡi' (18 tháng) bị coi là số tiền thiếu đơn vị"
+  ],
+  "long_tien_01#4": [
+   "thu_nhap",
+   "'lương anh hai chục' -> hỏi lại thu nhập"
+  ],
+  "long_tien_01#5": [
+   "so",
+   "dây chuyền"
+  ],
+  "long_tien_02#1": [
+   "qwen",
+   "'ba tỏi hai' -> bịa tên 'chung cư Ba Đình II'"
+  ],
+  "long_tien_02#2": [
+   "so",
+   "'có sẵn một tỷ, vay thêm hai tỷ hai' -> đòi nhắc lại số tiền"
+  ],
+  "long_tien_03#2": [
+   "thu_nhap",
+   "gợi ý đúng thẻ nhưng bị chèn câu hỏi thu nhập vào đầu"
+  ],
+  "tu_sua_01#1": [
+   "so",
+   "'ba trăm à không hai trăm triệu thôi' -> đòi nhắc lại"
+  ],
+  "tu_sua_01#2": [
+   "so",
+   "'ba năm à mà thôi bốn năm đi' -> đòi nhắc lại"
+  ],
+  "tu_sua_01#5": [
+   "so",
+   "'hai trăm ba năm thì tháng trả bao nhiêu' -> đòi đơn vị"
+  ],
+  "tu_sua_02#1": [
+   "dan_dat",
+   "đúng 5,5% nhưng hỏi lại số tiền khách vừa nói"
+  ],
+  "tu_sua_02#3": [
+   "kho",
+   "'à không hay là chị vay nhỉ' nhận câu từ chối 'em xin ghi nhận'"
+  ],
+  "hoi_don_01#1": [
+   "hoi_don",
+   "hỏi 3 ý, bỏ ý giấy tờ"
+  ],
+  "hoi_don_01#2": [
+   "hoi_don",
+   "hỏi 'vay được không, được bao nhiêu' chỉ nhận 'em ghi nhận thu nhập 12 triệu'"
+  ],
+  "hoi_don_01#3": [
+   "kho",
+   "hỏi bao lâu có tiền + phí -> đáp phí trả trước hạn của cả vay mua nhà"
+  ],
+  "hoi_don_02#1": [
+   "hoi_don",
+   "bỏ ý phí từng loại"
+  ],
+  "hoi_don_02#2": [
+   "hoi_don",
+   "chỉ nêu điều kiện tuổi, không nói được hay không, bỏ thu nhập"
+  ],
+  "noi_cut_02#2": [
+   "qwen",
+   "khách nói 'lãi', AI không nêu lãi"
+  ],
+  "hoi_lai_01#4": [
+   "dan_dat",
+   "xin lỗi nói chậm rồi hỏi sang ý khác, không nhắc lại"
+  ],
+  "stt_that_01#1": [
+   "qwen",
+   "'khoảng tay bên mình' -> 'chưa có thông tin về khoản vay của anh chị'"
+  ],
+  "stt_that_01#3": [
+   "qwen",
+   "'xuất bao nhiêu' không đoán ra lãi suất"
+  ],
+  "stt_that_02#3": [
+   "qwen",
+   "không nêu mức phí"
+  ],
+  "ke_le_01#1": [
+   "qwen",
+   "hứa 'để em kiểm tra' rồi hỏi số tiền, chưa giới thiệu gì"
+  ],
+  "ke_le_01#2": [
+   "so",
+   "chỉ ghi nhận 6 năm làm việc, bỏ 'lương chín mười triệu'"
+  ],
+  "ke_le_01#4": [
+   "kho",
+   "'trăm triệu, hai năm' nhận câu thời hạn chung, không xác nhận"
+  ],
+  "cam_xuc_01#1": [
+   "dan_dat",
+   "khách nói không có nhu cầu, AI xin lỗi rồi hỏi 'dự định vay bao nhiêu'"
+  ],
+  "cam_xuc_01#4": [
+   "chu_thanh_so",
+   "'tư vấn' bị đọc thành số: 'anh chị vừa nói tư, triệu hay tỷ'"
+  ],
+  "cam_xuc_01#6": [
+   "qwen",
+   "chê lãi cao -> hỏi ngược 'so với bên nào'"
+  ],
+  "ngoai_le_01#2": [
+   "chu_thanh_so",
+   "khách hỏi tuổi của AI -> AI đọc điều kiện tuổi vay"
+  ],
+  "ngoai_le_01#4": [
+   "dan_dat",
+   "hỏi 'vay trong bao lâu' sau câu danh mục"
+  ],
+  "so_mieng_x1#1": [
+   "so",
+   "'ba trăm rưỡi' -> đòi nhắc lại"
+  ],
+  "so_mieng_x1#2": [
+   "so",
+   "'ba sáu tháng' không xác nhận"
+  ],
+  "so_mieng_x1#3": [
+   "thu_nhap",
+   "'lương mười lăm mười sáu' -> hỏi lại thu nhập"
+  ],
+  "so_mieng_x1#4": [
+   "so",
+   "'bốn lăm tháng' -> '4 đến 5 tháng thì chưa được' [ĐÃ SỬA 10-10]"
+  ],
+  "so_mieng_x1#5": [
+   "hoi_don",
+   "nêu khung tuổi, không nói 32 tuổi là được"
+  ],
+  "so_mieng_x1#6": [
+   "so",
+   "'một tỷ hai' -> đòi nhắc lại"
+  ],
+  "so_mieng_x2#1": [
+   "so",
+   "'bảy mươi phần trăm' bị coi là số tiền: 'bảy mươi, triệu hay tỷ'"
+  ],
+  "so_mieng_x2#2": [
+   "so",
+   "'trả mười lăm năm' không ghi nhận"
+  ],
+  "so_mieng_x2#3": [
+   "thu_nhap",
+   "'lương anh ba chục vợ anh hai chục' -> hỏi lại thu nhập"
+  ],
+  "so_mieng_x2#4": [
+   "chu_thanh_so",
+   "'mấy năm' bị đọc thành số: 'anh chị vừa nói năm, triệu hay tỷ'"
+  ],
+  "lon_tuoi_01#4": [
+   "dan_dat",
+   "hỏi lại số tiền bác vừa nói"
+  ],
+  "lon_tuoi_01#6": [
+   "qwen",
+   "'gọi đến quầy', lẫn 'anh/chị' với 'bác'"
+  ],
+  "nhieu_01#1": [
+   "qwen",
+   "khách bảo 'em nói đi', AI bảo khách nói tiếp"
+  ],
+  "nhieu_01#2": [
+   "qwen",
+   "'Anh đang nghe ạ' lủng củng"
+  ],
+  "nhieu_01#3": [
+   "dan_dat",
+   "chào tạm biệt xong lại hỏi 'vay trong bao lâu'"
+  ],
+  "chot_01#3": [
+   "qwen",
+   "'chưa có số Zalo của anh, anh để lại số điện thoại' khi đang gọi vào số đó"
+  ],
+  "chot_01#4": [
+   "dan_dat",
+   "ghi nhận xong lại hỏi 'vay trong bao lâu'"
+  ],
+  "cat_doi_01#1": [
+   "kho",
+   "'anh muốn vay ờ' nhận câu 'mở ứng dụng để đăng ký'"
+  ],
+  "cat_doi_01#6": [
+   "kho",
+   "câu vỡ đôi nên khách nghe hai lần nguyên câu tính trả góp"
+  ],
+  "cat_doi_02#1": [
+   "kho",
+   "'chị muốn gửi' nhận câu 'nhận nội dung bằng chữ'"
+  ],
+  "cat_doi_02#5": [
+   "kho",
+   "đã chọn 6 tháng mà vẫn đọc dải lãi 3,5-6%"
+  ]
+ },
+ "diem_sau": {
+  "ngap_ngung_01": "122222",
+  "ngap_ngung_02": "22202",
+  "ngap_ngung_03": "12222",
+  "ngong_ln_01": "212122",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22221",
+  "giong_nam_02": "22212",
+  "giong_trung_01": "22202",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2122",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "220",
+  "hoi_don_01": "120",
+  "hoi_don_02": "11",
+  "noi_cut_01": "12122222",
+  "noi_cut_02": "21222",
+  "hoi_lai_01": "2221222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22122",
+  "ke_le_01": "2212",
+  "cam_xuc_01": "222221",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222212",
+  "so_mieng_x2": "1222",
+  "lon_tuoi_01": "222212",
+  "chem_anh_01": "2222",
+  "nhieu_01": "1022",
+  "chot_01": "22122",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "diem_11_10": {
+  "ngap_ngung_01": "122222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "12222",
+  "ngong_ln_01": "212122",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22220",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2122",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "122",
+  "hoi_don_02": "11",
+  "noi_cut_01": "22122212",
+  "noi_cut_02": "22220",
+  "hoi_lai_01": "2221212",
+  "stt_that_01": "1202222",
+  "stt_that_02": "22122",
+  "ke_le_01": "1212",
+  "cam_xuc_01": "222221",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222212",
+  "so_mieng_x2": "1222",
+  "lon_tuoi_01": "012212",
+  "chem_anh_01": "2222",
+  "nhieu_01": "0122",
+  "chot_01": "22102",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_11_10": "Chấm trên ra_noi_that_11_10b.json: mã = commit 4478ca9 + sửa 11-10 (kỳ hạn bỏ lửng, đáp cụt thu nhập, chốt không đè số tiền). Lượt không đổi chữ so với ra_noi_that_sau.json thì giữ điểm cũ.",
+ "diem_12_10": {
+  "ngap_ngung_01": "122222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "12222",
+  "ngong_ln_01": "212122",
+  "ngong_ln_02": "22122",
+  "giong_nam_01": "22220",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2020",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "022",
+  "hoi_don_01": "122",
+  "hoi_don_02": "11",
+  "noi_cut_01": "22122212",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2211222",
+  "stt_that_01": "0212221",
+  "stt_that_02": "22222",
+  "ke_le_01": "1212",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222212",
+  "so_mieng_x2": "1222",
+  "lon_tuoi_01": "021212",
+  "chem_anh_01": "2222",
+  "nhieu_01": "1122",
+  "chot_01": "22212",
+  "cat_doi_01": "222121",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10": "Chấm trên ra_noi_that_12_10.json (backend Win sau khi thêm kho_theo_tai_lieu, 12-10). 109 lượt chữ y hệt 11_10b giữ điểm cũ; 47 lượt đổi chữ chấm lại bằng tay theo mong_doi.",
+ "diem_12_10b": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222122",
+  "ngong_ln_02": "12222",
+  "giong_nam_01": "22220",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "12222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "122",
+  "hoi_don_02": "11",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2121222",
+  "stt_that_01": "0212221",
+  "stt_that_02": "12122",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222212",
+  "so_mieng_x2": "0222",
+  "lon_tuoi_01": "021212",
+  "chem_anh_01": "2220",
+  "nhieu_01": "1122",
+  "chot_01": "21122",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10b": "Sau khi đổi bộ chọn sang chấm riêng từng câu + tắt 59 câu khẳng định + xoá sổ nhớ. 67 lượt đổi chữ chấm lại tay, còn lại giữ điểm 12_10.",
+ "diem_12_10d": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222122",
+  "ngong_ln_02": "12122",
+  "giong_nam_01": "22220",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "12222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "122",
+  "hoi_don_02": "11",
+  "noi_cut_01": "21222212",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2221222",
+  "stt_that_01": "0212221",
+  "stt_that_02": "22122",
+  "ke_le_01": "2212",
+  "cam_xuc_01": "222221",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222212",
+  "so_mieng_x2": "0222",
+  "lon_tuoi_01": "021212",
+  "chem_anh_01": "2222",
+  "nhieu_01": "1122",
+  "chot_01": "21122",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10d": "Sau lưới kênh + phủ nhận sản phẩm + tắt 70/54/28 câu kho. 42 lượt đổi chữ (đều là Qwen tự viết) chấm lại tay.",
+ "diem_12_10f": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222122",
+  "ngong_ln_02": "22122",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "12222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "122",
+  "hoi_don_02": "12",
+  "noi_cut_01": "22122212",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2221222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22212",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "122212",
+  "chem_anh_01": "2222",
+  "nhieu_01": "1122",
+  "chot_01": "21122",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10f": "Sau sửa nghe sai/nói cụt, luật tuổi, luật tỷ lệ vay mua nhà, 'không rành', ba lưới tự chế. Chấm tay các lượt đổi so với 12_10d trên ra_noi_that_12_10f.json; lượt còn lại giữ điểm cũ.",
+ "diem_12_10l": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222122",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "12222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222212",
+  "stt_that_02": "22222",
+  "ke_le_01": "2212",
+  "cam_xuc_01": "222221",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "122222",
+  "chem_anh_01": "2221",
+  "nhieu_01": "2122",
+  "chot_01": "22222",
+  "cat_doi_01": "222221",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10l": "Sau đợt xử lý 16 lượt tạm (hỏi gộp, nối lượt cắt đôi, nhắc lại, gật đầu, xin gửi Zalo, suy kỳ từ lãi...). Chấm tay trên ra_noi_that_12_10l.json; 5/9 lượt tạm là lượt Qwen tự viết, đổi theo từng lần chạy.",
+ "diem_12_10t": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222212",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10t": "Sau đợt xử lý 9 lượt tạm. Chấm tay trên ra_noi_that_12_10t.json (đã đọc mọi lượt Qwen viết và mọi lượt đổi đường). Lần chạy liền trước (s) cũng 155/1 nhưng lượt tạm khác: giong_nam_01#4 lọt câu 'xin phép kết cuộc gọi' (đã vá sau đó).",
+ "diem_12_10zb": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "diem_12_10zc": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "12222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10zb": "Sau khi tắt học lịch sử + 838 câu, thêm luật can_so_do / goi_y_the_theo_chi_tieu / gioi_thieu_vay. Hai lần chạy liền: zb 156/0, zc 155/1 (stt_that_02#0 Qwen viết lủng củng). Chấm tay: đọc mọi lượt Qwen viết và mọi lượt đổi đường so với lần trước.",
+ "diem_12_10zf": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "diem_12_10zg": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22221222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10zf": "Sau luật moi_tu_van + lời dặn lượt ngắn. zf 156/0; zg 155/1 (noi_cut_01#4 'giấy tờ': kho không chọn, Qwen liệt kê thiếu hợp đồng lao động).",
+ "diem_12_10zs": {
+  "ngap_ngung_01": "222222",
+  "ngap_ngung_02": "22222",
+  "ngap_ngung_03": "22222",
+  "ngong_ln_01": "222222",
+  "ngong_ln_02": "22222",
+  "giong_nam_01": "22222",
+  "giong_nam_02": "22222",
+  "giong_trung_01": "22222",
+  "long_tien_01": "22222",
+  "long_tien_02": "22222",
+  "long_tien_03": "2222",
+  "tu_sua_01": "22222",
+  "tu_sua_02": "222",
+  "hoi_don_01": "222",
+  "hoi_don_02": "22",
+  "noi_cut_01": "22222222",
+  "noi_cut_02": "22222",
+  "hoi_lai_01": "2222222",
+  "stt_that_01": "2222222",
+  "stt_that_02": "22222",
+  "ke_le_01": "2222",
+  "cam_xuc_01": "222222",
+  "ngoai_le_01": "22222",
+  "so_mieng_x1": "222222",
+  "so_mieng_x2": "2222",
+  "lon_tuoi_01": "222222",
+  "chem_anh_01": "2222",
+  "nhieu_01": "2222",
+  "chot_01": "22222",
+  "cat_doi_01": "222222",
+  "cat_doi_02": "22222"
+ },
+ "ghi_chu_12_10zs": "Sau khi tóm tắt nhường cuộc gọi + luật ghi_nhan_tien_gui / ky_han_tiet_kiem. Bốn lần chạy liền zp-zs: 0 lượt đổi đường, kho 45/45/45/45. Chấm tay zs (đọc 16 lượt Qwen viết + lượt đổi đường): 156/0."
+}

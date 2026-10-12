@@ -15,6 +15,7 @@ phẩm, điều kiện, câu hỏi thường gặp.
 """
 
 import io
+import json
 import hashlib
 import logging
 import re
@@ -536,6 +537,43 @@ async def hoi_thu(cau_hoi: str, san_pham: str = "", top_k: int = 4) -> dict:
         "so_bi_loc": sum(1 for m in manh if m["bi_loc"]),
         "ms": round((time.perf_counter() - t0) * 1000),
     }
+
+
+@router.post("/chon-thu")
+async def chon_thu(cau_hoi: str = Form(""), san_pham: str = Form(""),
+                   lich_su: str = Form("[]"), so_ung_vien: int = Form(0),
+                   bo_qua_nho: bool = Form(False)):
+    """Soi bộ chọn câu của kho cho MỘT câu: ứng viên, prompt, mô hình chọn gì.
+
+    Cùng tham số với đường gọi thật (`streaming_pipeline`), trừ hai thứ thuộc
+    về phiên: câu hỏi không qua `_cau_hoi_kho` và không có danh sách loại trừ
+    theo tình huống. Không ghi gì vào phiên hay báo cáo.
+    """
+    from backend.main import app_state
+    from backend.models import scenarios_db
+    from backend.services import answer_bank_selector as bo_chon
+    from backend.services.answer_bank_learning import active_provenance, row_is_current
+
+    try:
+        history = [h for h in json.loads(lich_su or "[]") if isinstance(h, dict)]
+    except json.JSONDecodeError:
+        return {"error": "lich_su không phải JSON"}
+    bang = getattr(app_state, "hoi_dap", None) or {}
+    trace: dict = {"bo_qua_nho": bo_qua_nho}
+    t0 = time.perf_counter()
+    dong = await bo_chon.choose(
+        rag=getattr(app_state, "rag", None), llm=getattr(app_state, "llm", None),
+        bank=bang, vector_bank=getattr(app_state, "hoi_dap_vector", None) or {},
+        question=cau_hoi, product=san_pham, bank_name=scenarios_db.ten_to_chuc(None),
+        provenance=getattr(app_state, "hoi_dap_provenance", None) or active_provenance(),
+        history=history, is_current=row_is_current, timeout_s=20.0,
+        max_candidates=so_ung_vien or None, trace=trace)
+    for muc in trace.get("ranked", []):
+        muc["tra_loi"] = str((bang.get(muc["id"]) or {}).get("tra_loi") or "")[:200]
+    return {"chon": ({"id": dong.get("id"), "tra_loi": dong.get("tra_loi"),
+                      "diem": dong.get("diem"), "qwen_chon": bool(dong.get("qwen_chon"))}
+                     if dong else None),
+            "ms": round((time.perf_counter() - t0) * 1000), **trace}
 
 
 @router.post("/hoi-thu")

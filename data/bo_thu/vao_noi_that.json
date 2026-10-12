@@ -1,0 +1,624 @@
+[
+ {
+  "ma": "ngap_ngung_01",
+  "kieu": "ngap_ngung",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "ờ à liên tục, số tiền và thời hạn nói ước chừng",
+  "luot": [
+   "ờ ừm em ơi cho anh hỏi cái",
+   "à thì ờ anh đang ờ muốn vay ít tiền ấy mà",
+   "ờ thì tầm tầm ờ khoảng ờ hai trăm gì đấy",
+   "thì ờ chắc là ờ hai ba năm gì đó",
+   "ừ thì ba năm đi",
+   "thế ờ thì mỗi tháng ờ anh phải đóng bao nhiêu"
+  ],
+  "mong_doi": [
+   "mời khách hỏi, không tuôn thông tin",
+   "hỏi muốn vay khoảng bao nhiêu",
+   "hiểu 200 triệu, KHÔNG hỏi triệu hay tỷ",
+   "hiểu 2-3 năm, nói được, xin chốt một thời hạn",
+   "ghi nhận 3 năm",
+   "tính trả góp 200 triệu 36 tháng ~6,8 triệu"
+  ]
+ },
+ {
+  "ma": "ngap_ngung_02",
+  "kieu": "ngap_ngung",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "khách lưỡng lự, đã có thẻ",
+  "luot": [
+   "a lô ờ em gọi có việc gì đấy",
+   "à thẻ à ờ thẻ thì ờ anh có dùng rồi mà",
+   "thế thẻ bên em ờ nó có cái gì ờ hơn không",
+   "phí phí thế nào ấy nhỉ phí năm ấy",
+   "ừm để ờ để anh xem đã"
+  ],
+  "mong_doi": [
+   "giới thiệu ngắn lý do gọi",
+   "nhận lời, nêu điểm khác biệt hoặc hỏi nhẹ, không ép",
+   "nêu ưu đãi: miễn phí năm đầu, miễn lãi 55 ngày, hoàn tiền",
+   "phí thường niên 200/400/800 nghìn, năm đầu miễn",
+   "khép nhẹ, không hỏi dồn thu nhập"
+  ]
+ },
+ {
+  "ma": "ngap_ngung_03",
+  "kieu": "ngap_ngung",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "bỏ lửng câu",
+  "luot": [
+   "em ơi chị có ít tiền ờ muốn ờ",
+   "thì gửi ấy gửi tiết kiệm ấy lãi thế nào",
+   "sáu tháng thì ờ được bao nhiêu phần trăm",
+   "thế một năm",
+   "ờ mà chị rút sớm thì ờ có mất gì không"
+  ],
+  "mong_doi": [
+   "hỏi lại chị muốn gửi tiết kiệm phải không",
+   "nêu lãi theo kỳ hạn hoặc hỏi kỳ hạn",
+   "4,5%/năm",
+   "5,5%/năm",
+   "phần rút chỉ hưởng 0,5%/năm"
+  ]
+ },
+ {
+  "ma": "ngong_ln_01",
+  "kieu": "ngong",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "l<->n: nãi suất, nàm, nương, lăm",
+  "luot": [
+   "em ơi cho anh hỏi nãi suất vay bên em nà bao nhiêu",
+   "thế anh nàm công nhân nương tám triệu thì có vay được không",
+   "anh muốn vay một trăm lăm mươi triệu",
+   "vay trong hai lăm được không",
+   "thế cần những giấy tờ gì hả em nói anh nghe lào",
+   "ừ thế nà được dồi anh cảm ơn"
+  ],
+  "mong_doi": [
+   "7,9%/năm",
+   "thu nhập 8 triệu đạt mức tối thiểu 5 triệu, còn cần hợp đồng lao động; không hứa duyệt",
+   "hiểu 150 triệu",
+   "hiểu 2 năm, được",
+   "CCCD, hộ khẩu/KT3, sao kê lương 3 tháng, hợp đồng lao động",
+   "cảm ơn, chào hoặc mời ghi nhận hồ sơ"
+  ]
+ },
+ {
+  "ma": "ngong_ln_02",
+  "kieu": "ngong",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "l/n + tr/ch + s/x",
+  "luot": [
+   "chị muốn hỏi vay mua nhà thì nãi xuất thế lào",
+   "nhà chị định mua nà ba tỷ thì vay được bao nhiêu",
+   "chả trong hai mươi lăm thì mỗi tháng chả bao nhiêu",
+   "thu nhập hai vợ chồng chị nà bốn mươi chiệu một tháng",
+   "thế có cần xổ đỏ không em"
+  ],
+  "mong_doi": [
+   "6,5%/năm 2 năm đầu, sau đó thả nổi 8-10%",
+   "tối đa 80% giá trị nhà (2,4 tỷ), trần 10 tỷ",
+   "hiểu 20 hoặc 25 NĂM (hoặc hỏi lại năm), không hiểu thành tháng",
+   "ghi nhận 40 triệu",
+   "cần giấy tờ pháp lý của nhà (sổ đỏ/sổ hồng)"
+  ]
+ },
+ {
+  "ma": "giong_nam_01",
+  "kieu": "vung_mien",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "v->d, hông, nhiêu, chai",
+  "luot": [
+   "alo em hả cho anh hỏi day tín chấp bên em lãi nhiêu dậy",
+   "dậy anh muốn day chừng hai trăm chai được hông",
+   "trả góp ba năm thì mỗi tháng đóng nhiêu",
+   "anh chạy xe ôm công nghệ hổng có hợp đồng lao động thì sao",
+   "dậy thôi hả kỳ dậy"
+  ],
+  "mong_doi": [
+   "7,9%/năm",
+   "hiểu 200 triệu, trong hạn mức",
+   "~6,8 triệu/tháng",
+   "cần hợp đồng lao động hoặc giấy phép kinh doanh; không hứa",
+   "đồng cảm, đề nghị ghi nhận để chuyên viên xem"
+  ]
+ },
+ {
+  "ma": "giong_nam_02",
+  "kieu": "vung_mien",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "mần, hông, nhiêu",
+  "luot": [
+   "em ơi chị muốn mần cái thẻ tín dụng",
+   "lương chị có bảy triệu à mần được hông",
+   "hạn mức được nhiêu",
+   "dzậy phí thường niên tính sao em",
+   "có quẹt thẻ trả góp được hông"
+  ],
+  "mong_doi": [
+   "hỏi thu nhập hoặc nêu điều kiện",
+   "thu nhập từ 5 triệu là đạt điều kiện thu nhập",
+   "10-500 triệu tuỳ hạng thẻ/hồ sơ",
+   "200/400/800 nghìn, miễn năm đầu",
+   "trả góp 0% tại đối tác"
+  ]
+ },
+ {
+  "ma": "giong_trung_01",
+  "kieu": "vung_mien",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "răng, rứa, chi, o",
+  "luot": [
+   "em ơi o muốn gửi tiết kiệm thì lãi răng em",
+   "gửi một năm thì được mấy phần trăm",
+   "rứa gửi online có khác chi không",
+   "o gửi năm chục triệu thì có được tặng chi không",
+   "rứa à thôi để o tính lại đã"
+  ],
+  "mong_doi": [
+   "nêu lãi theo kỳ hạn / hỏi kỳ hạn",
+   "5,5%/năm",
+   "cộng thêm 0,2%/năm",
+   "bảo hiểm tai nạn chỉ cho sổ từ 100 triệu; 50 triệu chưa có",
+   "khép nhẹ"
+  ]
+ },
+ {
+  "ma": "long_tien_01",
+  "kieu": "long_tien",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "củ, trăm rưỡi, năm rưỡi, hai chục",
+  "luot": [
+   "anh cần vay tầm trăm củ",
+   "à không chắc phải trăm rưỡi",
+   "vay năm rưỡi được không",
+   "lương anh hai chục một tháng",
+   "thế mỗi tháng anh mất mấy củ"
+  ],
+  "mong_doi": [
+   "hiểu 100 triệu",
+   "hiểu 150 triệu",
+   "hiểu 18 tháng, được",
+   "ghi nhận 20 triệu",
+   "tính trả góp 150 triệu 18 tháng"
+  ]
+ },
+ {
+  "ma": "long_tien_02",
+  "kieu": "long_tien",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "tỏi, tỷ hai, hai chục năm, mấy chấm",
+  "luot": [
+   "anh định mua căn chung cư ba tỏi hai",
+   "anh có sẵn một tỷ rồi cần vay thêm hai tỷ hai",
+   "vay hai chục năm",
+   "lãi mấy chấm",
+   "sau hai năm thì lãi lên bao nhiêu"
+  ],
+  "mong_doi": [
+   "hiểu nhà 3,2 tỷ",
+   "hiểu vay 2,2 tỷ, trong mức 80%",
+   "hiểu 20 năm",
+   "6,5%/năm 2 năm đầu",
+   "thả nổi 8-10%/năm"
+  ]
+ },
+ {
+  "ma": "long_tien_03",
+  "kieu": "long_tien",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "mấy chục, củ",
+  "luot": [
+   "thẻ bên em hạn mức mấy chục",
+   "anh xài mỗi tháng chừng mười lăm hai chục củ thì nên làm thẻ gì",
+   "phí thường niên hai trăm nghìn hả",
+   "hoàn tiền là hoàn sao"
+  ],
+  "mong_doi": [
+   "10-500 triệu theo hạng",
+   "gợi ý Classic (10-50 triệu) hoặc Gold",
+   "đúng với Classic, miễn năm đầu",
+   "1-3% mọi giao dịch, 3% ăn uống"
+  ]
+ },
+ {
+  "ma": "tu_sua_01",
+  "kieu": "tu_sua",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "à không, mà thôi",
+  "luot": [
+   "anh muốn vay ba trăm à không hai trăm triệu thôi",
+   "vay ba năm à mà thôi bốn năm đi cho nhẹ",
+   "à mà khoan lãi suất bao nhiêu đã",
+   "thế thôi vay ba năm vậy",
+   "vậy hai trăm ba năm thì tháng trả bao nhiêu"
+  ],
+  "mong_doi": [
+   "ghi nhận 200 triệu (không phải 300)",
+   "ghi nhận 4 năm",
+   "7,9%/năm",
+   "đổi lại 3 năm",
+   "~6,8 triệu"
+  ]
+ },
+ {
+  "ma": "tu_sua_02",
+  "kieu": "tu_sua",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "đổi kỳ hạn rồi đổi sản phẩm",
+  "luot": [
+   "chị muốn gửi hai trăm triệu kỳ hạn sáu tháng à nhầm mười hai tháng",
+   "mà thôi chị gửi sáu tháng thôi",
+   "à không hay là chị vay nhỉ bên em có cho vay không"
+  ],
+  "mong_doi": [
+   "12 tháng: 5,5%/năm",
+   "6 tháng: 4,5%/năm",
+   "có vay tín chấp / vay mua nhà, hỏi nhu cầu"
+  ]
+ },
+ {
+  "ma": "hoi_don_01",
+  "kieu": "hoi_don",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "2-3 ý một câu",
+  "luot": [
+   "lãi suất bao nhiêu vay được tối đa bao nhiêu với lại cần giấy tờ gì em nói luôn một thể",
+   "anh ba mươi tuổi lương mười hai triệu có hợp đồng lao động rồi thì vay được không và được bao nhiêu",
+   "thế bao lâu thì có tiền mà có mất phí gì không"
+  ],
+  "mong_doi": [
+   "đáp đủ: 7,9%, 500 triệu, giấy tờ (ít nhất 2 ý, báo ý còn lại)",
+   "đạt điều kiện cơ bản, hạn mức đến 500 triệu tuỳ thẩm định; không hứa số",
+   "24 giờ sau phê duyệt; miễn phí tư vấn thẩm định"
+  ]
+ },
+ {
+  "ma": "hoi_don_02",
+  "kieu": "hoi_don",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "nhiều ý",
+  "luot": [
+   "thẻ có mấy loại phí từng loại bao nhiêu và hạn mức thế nào",
+   "chị lương sáu triệu mười chín tuổi làm được không"
+  ],
+  "mong_doi": [
+   "3 hạng, phí 200/400/800 nghìn, hạn mức từng hạng",
+   "đủ tuổi (18+) và thu nhập (5 triệu+)"
+  ]
+ },
+ {
+  "ma": "noi_cut_01",
+  "kieu": "noi_cut",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "một hai chữ",
+  "luot": [
+   "vay",
+   "lãi",
+   "nhiêu",
+   "tối đa",
+   "giấy tờ",
+   "bao lâu",
+   "ừ",
+   "thôi"
+  ],
+  "mong_doi": [
+   "hỏi muốn vay bao nhiêu / giới thiệu ngắn",
+   "7,9%/năm",
+   "hiểu theo mạch (lãi) hoặc hỏi lại ngắn",
+   "500 triệu",
+   "liệt kê hồ sơ",
+   "thời hạn 12-60 tháng hoặc giải ngân 24 giờ (một trong hai, hoặc hỏi lại)",
+   "đẩy cuộc nói chuyện đi tiếp",
+   "khép lịch sự"
+  ]
+ },
+ {
+  "ma": "noi_cut_02",
+  "kieu": "noi_cut",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "một hai chữ",
+  "luot": [
+   "gửi",
+   "lãi",
+   "ba tháng",
+   "một năm",
+   "online"
+  ],
+  "mong_doi": [
+   "hỏi số tiền/kỳ hạn",
+   "nêu lãi / hỏi kỳ hạn",
+   "3,8%/năm",
+   "5,5%/năm",
+   "cộng 0,2%, mở sổ 5 phút trên ứng dụng"
+  ]
+ },
+ {
+  "ma": "hoi_lai_01",
+  "kieu": "hoi_lai",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "hả, gì cơ, nói lại",
+  "luot": [
+   "lãi suất bao nhiêu em",
+   "hả",
+   "gì cơ em nói lại xem nào",
+   "em nói nhanh quá anh không nghe kịp",
+   "bảy phẩy chín á",
+   "một tháng hay một năm",
+   "alo alo em có nghe không"
+  ],
+  "mong_doi": [
+   "7,9%/năm",
+   "nhắc lại 7,9%",
+   "nhắc lại 7,9%",
+   "xin lỗi, nhắc lại chậm",
+   "xác nhận đúng 7,9%/năm",
+   "một năm",
+   "xác nhận đang nghe"
+  ]
+ },
+ {
+  "ma": "stt_that_01",
+  "kieu": "stt_sai",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "câu STT nghe sai lấy từ cuộc gọi thật",
+  "luot": [
+   "ờ cho anh thông tin về khoảng tay bên mình",
+   "vay tín chóp thì cần những giấy tờ gì",
+   "xuất bao nhiêu",
+   "ở anh gần vay năm trăm triệu",
+   "anh mượn vay bốn trăm triệu cho vòng mười sáu tháng được không",
+   "cũng như nào",
+   "sâu giờ bấy nhiêu"
+  ],
+  "mong_doi": [
+   "hiểu là khoản vay, giới thiệu",
+   "liệt kê hồ sơ",
+   "hiểu lãi suất 7,9%",
+   "hiểu cần vay 500 triệu, trong hạn mức",
+   "400 triệu 16 tháng: được",
+   "hỏi lại ngắn gọn, không trả lời bừa",
+   "hỏi lại ngắn gọn, không trả lời bừa"
+  ]
+ },
+ {
+  "ma": "stt_that_02",
+  "kieu": "stt_sai",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "sai chính tả kiểu STT",
+  "luot": [
+   "ừ tư vấn với anh về sản phẩm thẻ tính dụng",
+   "hạng mức tối đa là bao nhiêu",
+   "phí thường liên thế nào",
+   "miễn lải bao nhiêu ngày",
+   "có hoàn tiền hông"
+  ],
+  "mong_doi": [
+   "giới thiệu thẻ",
+   "500 triệu",
+   "200/400/800 nghìn, miễn năm đầu",
+   "55 ngày",
+   "1-3%"
+  ]
+ },
+ {
+  "ma": "ke_le_01",
+  "kieu": "ke_le",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "kể dài rồi mới hỏi",
+  "luot": [
+   "chả là thế này em ạ nhà anh đang sửa cái bếp mà thợ nó báo giá cao quá vợ anh thì cứ giục mà tiền thì đang kẹt nên anh mới tính hỏi xem bên em cho vay thế nào",
+   "thì anh làm ở công ty may được sáu năm rồi lương thì cũng không cao lắm tầm chín mười triệu thôi nhưng mà ổn định tháng nào cũng có",
+   "sửa bếp thì chắc hết tầm tám chục triệu mà anh muốn vay dư ra tí cho chắc",
+   "ừ thì trăm triệu đi trả dần hai năm"
+  ],
+  "mong_doi": [
+   "giới thiệu ngắn vay tín chấp, hỏi cần bao nhiêu",
+   "ghi nhận thu nhập ~9-10 triệu, đạt mức tối thiểu",
+   "hỏi chốt số cụ thể hoặc ghi nhận ~80 triệu",
+   "ghi nhận 100 triệu, 24 tháng"
+  ]
+ },
+ {
+  "ma": "cam_xuc_01",
+  "kieu": "cam_xuc",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bực, nghi ngờ, so sánh",
+  "luot": [
+   "lại gọi mời vay à tôi không có nhu cầu",
+   "mà sao em có số tôi",
+   "em là máy hay người đấy",
+   "thế máy thì biết gì mà tư vấn",
+   "ờ thế lãi bao nhiêu nói nghe coi",
+   "cao thế bên kia có sáu phẩy mấy thôi"
+  ],
+  "mong_doi": [
+   "xin lỗi, khép lịch sự, không ép",
+   "trả lời trung thực, không bịa nguồn",
+   "nói thật là trợ lý tự động",
+   "khiêm tốn, nói cung cấp thông tin và có chuyên viên hỗ trợ",
+   "7,9%/năm",
+   "câu xử lý chê lãi cao, không bịa so sánh"
+  ]
+ },
+ {
+  "ma": "ngoai_le_01",
+  "kieu": "ngoai_le",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "chuyện phiếm, hỏi ngoài phạm vi",
+  "luot": [
+   "em ăn cơm chưa",
+   "em bao nhiêu tuổi rồi có người yêu chưa",
+   "hôm nay giá vàng bao nhiêu em",
+   "thế bên em có bán bảo hiểm không",
+   "à thế thôi quay lại chuyện vay nhé lãi bao nhiêu"
+  ],
+  "mong_doi": [
+   "đáp xã giao ngắn rồi quay lại",
+   "né khéo, quay lại việc",
+   "không có thông tin, không bịa",
+   "theo danh mục: không có sản phẩm bảo hiểm riêng",
+   "7,9%/năm"
+  ]
+ },
+ {
+  "ma": "so_mieng_x1",
+  "kieu": "so_mieng",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "ba trăm rưỡi, ba sáu tháng, bốn lăm tháng, tỷ hai",
+  "luot": [
+   "anh vay ba trăm rưỡi",
+   "ba sáu tháng",
+   "à lương anh mười lăm mười sáu gì đấy",
+   "vay bốn lăm tháng được không",
+   "anh ba hai tuổi",
+   "thế vay một tỷ hai được không"
+  ],
+  "mong_doi": [
+   "hiểu 350 triệu",
+   "hiểu 36 tháng",
+   "ghi nhận ~15-16 triệu",
+   "hiểu 45 tháng, được",
+   "32 tuổi, trong độ tuổi",
+   "vượt hạn mức 500 triệu"
+  ]
+ },
+ {
+  "ma": "so_mieng_x2",
+  "kieu": "so_mieng",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "hai tỷ tám, bảy mươi phần trăm, ba chục",
+  "luot": [
+   "nhà hai tỷ tám anh vay bảy mươi phần trăm",
+   "trả mười lăm năm",
+   "lương anh ba chục vợ anh hai chục",
+   "thế lãi sáu rưỡi là cố định mấy năm"
+  ],
+  "mong_doi": [
+   "hiểu ~1,96 tỷ, trong mức 80%",
+   "15 năm, trong 25 năm",
+   "ghi nhận 50 triệu (hoặc 30 và 20)",
+   "2 năm đầu"
+  ]
+ },
+ {
+  "ma": "lon_tuoi_01",
+  "kieu": "lon_tuoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "bác lớn tuổi, hỏi lại, cần tính tiền lãi",
+  "luot": [
+   "cháu ơi bác già rồi không rành cháu nói chậm thôi nhé",
+   "bác có trăm triệu để trong nhà sợ mất muốn gửi thì làm thế nào",
+   "thế gửi rồi lúc cần bác lấy ra được không",
+   "lãi là bao nhiêu cháu nhỉ bác quên rồi",
+   "năm phẩy năm là sao bác không hiểu một trăm triệu thì được bao nhiêu tiền",
+   "bác không biết dùng điện thoại thông minh thì có gửi được không"
+  ],
+  "mong_doi": [
+   "nhận lời, hỏi bác cần gì",
+   "hướng dẫn gửi tại quầy/online, hỏi kỳ hạn",
+   "rút được, phần rút hưởng 0,5%",
+   "nêu lãi theo kỳ hạn",
+   "100 triệu gửi 12 tháng lãi 5,5 triệu",
+   "gửi tại quầy"
+  ]
+ },
+ {
+  "ma": "chem_anh_01",
+  "kieu": "chem_anh",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "credit, free, cashback, limit, apply",
+  "luot": [
+   "thẻ credit bên em free năm đầu hả",
+   "cashback bao nhiêu phần trăm",
+   "limit max bao nhiêu",
+   "ok fine thế apply online được không"
+  ],
+  "mong_doi": [
+   "đúng, miễn phí thường niên năm đầu",
+   "1-3%",
+   "500 triệu",
+   "không bịa kênh online; mời ghi nhận để chuyên viên hỗ trợ"
+  ]
+ },
+ {
+  "ma": "nhieu_01",
+  "kieu": "nhieu",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "nói với người khác, đang lái xe",
+  "luot": [
+   "chờ anh tí con ơi đừng nghịch ừ em nói đi",
+   "ừ anh nghe ờ mà cái gì ba trăm cơ",
+   "à à anh đang lái xe em nói nhanh lên",
+   "thôi thôi gọi lại sau nhé anh đang bận"
+  ],
+  "mong_doi": [
+   "nói tiếp ngắn gọn",
+   "không nhận 300 là số tiền vay; giải thích/hỏi lại",
+   "nói thật ngắn hoặc hẹn gọi lại",
+   "xin phép gọi lại, chào"
+  ]
+ },
+ {
+  "ma": "chot_01",
+  "kieu": "chot",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "khách muốn làm, hỏi bước tiếp",
+  "luot": [
+   "ờ được đấy thế giờ làm thế nào",
+   "làm luôn qua điện thoại được không",
+   "thế em gửi zalo cho anh đi",
+   "số anh là số này luôn nhé",
+   "ừ ừ ô kê cảm ơn em nhá"
+  ],
+  "mong_doi": [
+   "hướng dẫn hồ sơ / ghi nhận để chuyên viên liên hệ",
+   "không bịa kênh; ghi nhận, chuyên viên hỗ trợ",
+   "không hứa gửi Zalo; ghi nhận để chuyên viên liên hệ",
+   "xác nhận ghi nhận",
+   "chào kết"
+  ]
+ },
+ {
+  "ma": "cat_doi_01",
+  "kieu": "cat_doi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "mỗi câu vỡ làm hai lượt",
+  "luot": [
+   "anh muốn vay ờ",
+   "hai trăm triệu",
+   "trả trong ờ",
+   "ba năm",
+   "thế mỗi tháng",
+   "trả bao nhiêu"
+  ],
+  "mong_doi": [
+   "hỏi muốn vay khoảng bao nhiêu",
+   "ghi nhận 200 triệu",
+   "hỏi muốn trả trong bao lâu",
+   "ghi nhận 3 năm",
+   "chờ/hỏi lại ngắn, hoặc hiểu là hỏi trả góp",
+   "tính trả góp 200 triệu 36 tháng ~6,8 triệu"
+  ]
+ },
+ {
+  "ma": "cat_doi_02",
+  "kieu": "cat_doi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "mỗi câu vỡ làm hai lượt",
+  "luot": [
+   "chị muốn gửi",
+   "năm chục triệu",
+   "kỳ hạn",
+   "sáu tháng",
+   "lãi bao nhiêu"
+  ],
+  "mong_doi": [
+   "hỏi gửi bao nhiêu / kỳ hạn",
+   "ghi nhận 50 triệu",
+   "hỏi kỳ hạn nào",
+   "4,5%/năm",
+   "4,5%/năm cho 6 tháng"
+  ]
+ }
+]

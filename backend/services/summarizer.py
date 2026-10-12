@@ -13,11 +13,13 @@ offline 100%" của hợp đồng.
 """
 
 import asyncio
+import time
 import json
 import logging
 import re
 
 from backend.models import db, reports_db
+from backend.services.llm_service import mo_hinh_dang_ranh
 
 logger = logging.getLogger(__name__)
 
@@ -225,8 +227,30 @@ async def tom_tat_phien(session_id: str, llm) -> dict | None:
     return sach
 
 
+# Tóm tắt không gấp, còn lượt trả lời của cuộc đang gọi thì gấp. Chờ tối đa
+# chừng này rồi vẫn làm, để hàng đợi không dồn mãi khi máy gọi liên tục.
+CHO_CUOC_GOI_TOI_DA_S = 600.0
+# Chờ hết cuộc gọi chừng này mà vẫn còn cuộc đang mở thì chuyển sang lựa khe rảnh.
+CHO_KHE_SAU_S = 180.0
+
+
+def _co_cuoc_dang_dien_ra() -> bool:
+    try:
+        from backend.main import app_state
+        return bool(app_state.sessions._sessions)
+    except Exception:
+        return False
+
+
 class BoTomTat:
-    """Hàng đợi tóm tắt, chạy tuần tự một worker."""
+    """Hàng đợi tóm tắt, chạy tuần tự một worker.
+
+    NHƯỜNG CUỘC ĐANG GỌI. Ollama chạy một lời gọi một lúc. Đo 12-10-2026: tóm
+    tắt cuộc vừa xong (1-2 giây mỗi cuộc) chen trước lượt chấm câu kho của cuộc
+    kế tiếp, lượt chấm vượt hạn 1,2 giây và kho coi như không có câu - cùng một
+    lời khách, cùng một kho mà lúc 46 lúc 39 lượt được kho trả lời. Nên chỉ tóm
+    tắt khi không còn phiên gọi nào đang mở.
+    """
 
     def __init__(self):
         self._hang: asyncio.Queue[str] = asyncio.Queue()
@@ -253,6 +277,7 @@ class BoTomTat:
         while True:
             session_id = await self._hang.get()
             try:
+                await self._cho_het_cuoc_goi()
                 ket_qua = await tom_tat_phien(session_id, self._llm)
                 if ket_qua:
                     self.da_lam += 1
@@ -265,6 +290,26 @@ class BoTomTat:
                 logger.warning(f"[tóm tắt] hỏng ở {session_id}: {e}")
             finally:
                 self._hang.task_done()
+
+    @staticmethod
+    async def _cho_het_cuoc_goi(toi_da_s: float = CHO_CUOC_GOI_TOI_DA_S, nhip_s: float = 1.0,
+                                cho_khe_sau_s: float = CHO_KHE_SAU_S):
+        """Chờ tới lúc tóm tắt được mà không chen vào lượt trả lời của cuộc đang gọi.
+
+        Tốt nhất là khi không còn cuộc nào. Máy gọi liên tục thì không bao giờ
+        tới lúc đó, nên sau `cho_khe_sau_s` giây chuyển sang lựa KHE: không việc
+        gấp nào đang dùng mô hình và việc gấp gần nhất đã xong được một giây (AI
+        vừa trả lời xong, đang phát tiếng hoặc khách đang nói). Quá `toi_da_s`
+        thì làm luôn.
+        """
+        bat_dau = time.monotonic()
+        while _co_cuoc_dang_dien_ra():
+            da_cho = time.monotonic() - bat_dau
+            if da_cho >= toi_da_s:
+                return
+            if da_cho >= cho_khe_sau_s and mo_hinh_dang_ranh(1.0):
+                return
+            await asyncio.sleep(nhip_s if da_cho < cho_khe_sau_s else min(nhip_s, 0.2))
 
     async def dung(self):
         if self._task is not None and not self._task.done():

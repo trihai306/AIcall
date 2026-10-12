@@ -84,23 +84,61 @@ def _dong_khop(sp_doc: str, tu_khoa: tuple[str, ...]) -> list[tuple[str, str]]:
     return ra
 
 
+_HAI_CHU_SO = dict(zip("một hai ba bốn năm sáu bảy tám chín".split(), range(1, 10)))
+_HAI_CHU_SO.update({"mốt": 1, "tư": 4, "lăm": 5})
+
+
 def _tuoi_khach(text: str) -> int | None:
     cac = []
     for q in quantities(text or ""):
-        if q.value is None or q.value != q.value.to_integral():
+        co_tuoi = re.search(r"\btuổi\b", q.raw.lower()) or re.match(
+            r"\s*tuổi\b", (text or "")[q.end:].lower())
+        if not co_tuoi:
             continue
-        if re.search(r"\btuổi\b", q.raw.lower()) or re.match(
-                r"\s*tuổi\b", (text or "")[q.end:].lower()):
+        if q.value is None:
+            # "anh ba hai tuổi": hai chữ số đọc rời. Với tiền thì mơ hồ, còn với
+            # TUỔI thì chỉ có một cách hiểu là hàng chục và hàng đơn vị.
+            chu = [c for c in q.raw.lower().split() if c != "tuổi"]
+            if len(chu) == 2 and all(c in _HAI_CHU_SO for c in chu):
+                cac.append(_HAI_CHU_SO[chu[0]] * 10 + _HAI_CHU_SO[chu[1]])
+            continue
+        if q.value == q.value.to_integral():
             cac.append(int(q.value))
     return cac[0] if len(cac) == 1 else None
 
 
-def _khung_tuoi(cap: list[tuple[str, str]]) -> tuple[int, int] | None:
+def _khung_tuoi(cap: list[tuple[str, str]]) -> tuple[int, int | None] | None:
+    """(tuổi nhỏ nhất, tuổi lớn nhất); lớn nhất là None khi tài liệu ghi "trở lên"."""
     for _, dong in cap:
-        m = re.search(r"\btu\s+(\d+)\s*[-–]\s*(\d+)\s*tuoi\b", _bo_dau(dong))
+        d = _bo_dau(dong)
+        m = re.search(r"\btu\s+(\d+)\s*[-–]\s*(\d+)\s*tuoi\b", d)
         if m:
             return int(m.group(1)), int(m.group(2))
+        m = re.search(r"\btu\s+(\d+)\s*tuoi\s+tro\s+len\b", d)
+        if m:
+            return int(m.group(1)), None
     return None
+
+
+def _noi_khung(dau: int, cuoi: int | None) -> str:
+    return f"từ {dau} đến {cuoi} tuổi" if cuoi else f"từ {dau} tuổi trở lên"
+
+
+def nhan_xet_tuoi(text: str, sp_doc: str) -> str:
+    """Một câu đối chiếu TUỔI khách vừa nêu với tài liệu, "" khi không đủ căn cứ.
+
+    Dùng để ghép vào câu của luật khác: "lương sáu triệu mười chín tuổi làm được
+    không" hỏi cả hai điều kiện mà luật thu nhập chỉ đáp một (bộ thử 12-10-2026).
+    """
+    tuoi = _tuoi_khach(text)
+    khung = _khung_tuoi(_dong_khop(sp_doc, ("tuoi",)))
+    if tuoi is None or not khung:
+        return ""
+    dau, cuoi = khung
+    if tuoi < dau or (cuoi and tuoi > cuoi):
+        return (f"Riêng về tuổi thì bên em yêu cầu {_noi_khung(dau, cuoi)}, "
+                f"{tuoi} tuổi chưa nằm trong khung này ạ.")
+    return f"{tuoi} tuổi cũng nằm trong độ tuổi {_noi_khung(dau, cuoi)} ạ."
 
 
 def tra_loi_dieu_kien(text: str, ma_sp: str, sp_doc: str) -> tuple[str, str] | None:
@@ -131,15 +169,15 @@ def tra_loi_dieu_kien(text: str, ma_sp: str, sp_doc: str) -> tuple[str, str] | N
             khung = _khung_tuoi(cap)
             if tuoi is not None and khung:
                 dau, cuoi = khung
-                if tuoi < dau or tuoi > cuoi:
+                if tuoi < dau or (cuoi and tuoi > cuoi):
                     huong = "dưới" if tuoi < dau else "vượt"
                     return "dieu_kien_tuoi_khong_khop", (
-                        f"Dạ điều kiện tuổi của {ten_sp} là từ {dau} đến {cuoi} tuổi ạ. "
+                        f"Dạ điều kiện tuổi của {ten_sp} là {_noi_khung(dau, cuoi)} ạ. "
                         f"Tuổi {tuoi} đang {huong} giới hạn này, nên em chưa thể xác nhận "
                         "hồ sơ phù hợp; việc xét hồ sơ vẫn cần thẩm định cụ thể ạ.")
                 return "dieu_kien_tuoi_khop", (
-                    f"Dạ tuổi {tuoi} nằm trong khung từ {dau} đến {cuoi} tuổi ạ. "
-                    "Việc đủ điều kiện vay vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.")
+                    f"Dạ tuổi {tuoi} nằm trong khung {_noi_khung(dau, cuoi)} ạ. "
+                    "Việc đủ điều kiện vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.")
             return "dieu_kien_tuoi", _cau(ten_sp, cap)
 
     if (re.search(r"\b(thu nhap|luong)\b", t) and not co_so

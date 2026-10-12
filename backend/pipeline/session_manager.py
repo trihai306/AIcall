@@ -159,6 +159,7 @@ class CallSession:
         self.spec_answer: str = ""    # câu trả lời LLM đã soạn sẵn (CHƯA thành tiếng)
         self.spec_model: str = ""
         self.answer_route: dict = {}
+        self.grounded_state = None
         # Câu đệm LLM soạn trong lúc khách nói, dùng khi kho tình huống không
         # khớp. Đã qua `filler_pick.loc_cau_dem_llm` nên chuỗi ở đây là chuỗi
         # SẴN SÀNG ĐỌC - nơi dùng không phải lọc lại.
@@ -302,6 +303,7 @@ class CallSession:
         self.transferred_to = self.transfer_reason = ""
         self.da_doc_not = False
         self.answer_route = {}
+        self.grounded_state = None
         self.dem_filler.clear()
         for key in ("_answer_bank_provenance", "_answer_bank_vector"):
             self.__dict__.pop(key, None)

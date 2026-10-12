@@ -18,9 +18,14 @@ Sửa ở tầng THẤP NHẤT có thể: ghi vào chính `session.product`. M�
 trường đó đều được hưởng - neo truy vấn RAG, trọn tài liệu nạp vào prompt, tài
 liệu đối chiếu của lưới thuộc tính, và dòng "Sản phẩm quan tâm" trong prompt.
 """
+import asyncio
+
 import pytest
 
 from backend.services.rag_service import RAGService
+from backend.pipeline.session_manager import CallSession
+from test_chat_phone_answer_routing import Sink, pipeline
+from test_pipeline_stress_repairs import financial_pipeline
 
 CO_TAI_LIEU = {"vay_tin_chap", "vay_mua_nha", "the_tin_dung", "tiet_kiem"}
 
@@ -76,12 +81,28 @@ def test_duong_sinh_co_neo_san_pham():
     assert "neo_moi_tu_cau" in inspect.getsource(streaming_pipeline)
 
 
-def test_neo_TRUOC_khi_nap_tron_tai_lieu():
+def test_neo_TRUOC_khi_nap_tron_tai_lieu(financial_pipeline):
     """Neo xong mới nạp tài liệu, không thì lượt neo được vẫn dùng tài liệu cũ."""
-    import inspect
-    from backend.pipeline import streaming_pipeline
-    ma = inspect.getsource(streaming_pipeline)
-    assert ma.index("neo_moi_tu_cau") < ma.index("_toan_van_tai_lieu(session.product)")
+    financial_pipeline.rag.neo_moi_tu_cau = RAGService.neo_moi_tu_cau
+    financial_pipeline.rag._san_pham_co_tai_lieu = lambda: CO_TAI_LIEU
+    source_for = financial_pipeline._product_context_for
+    observed_products = []
+
+    def source_after_product_selection(session):
+        observed_products.append(session.product)
+        return source_for(session)
+
+    financial_pipeline._product_context_for = source_after_product_selection
+    session = CallSession(product="vay tín chấp")
+    session.so_can_cu = None
+    sink = Sink()
+    asyncio.run(financial_pipeline.process_text_turn(
+        "Giờ tôi hỏi thẻ tín dụng Gold, hạn mức bao nhiêu?", session, sink, soi=True))
+    reply = next(e["full_response"] for e in sink.events if e["type"] == "turn_complete")
+    assert session.product == "thẻ tín dụng"
+    assert observed_products and observed_products[0] == "thẻ tín dụng"
+    assert "Gold" in reply and "30-200 triệu" in reply
+    assert "500 triệu" not in reply
 
 
 def test_nghe_nham_tinh_chap_van_neo_vay_tin_chap():

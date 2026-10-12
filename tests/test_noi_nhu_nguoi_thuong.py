@@ -444,3 +444,135 @@ def test_khong_ket_cau_la_loi_hoi_khong_phai_so_khong():
     so = resolve(text="anh muốn vay tầm bốn trăm triệu không")       # 7 lần trong cuộc gọi thật
     assert so.amount.value == 400 * TR
     assert quantities("hai không năm")[0].raw == "hai không năm"        # giữa dãy số thì vẫn là chữ số
+
+
+# --- Kỳ hạn không kèm "tháng/năm", câu bỏ lửng, và đáp cụt cho câu AI hỏi thu nhập ----------
+
+HOI_HAN = "Dạ 300 triệu đồng thì trong hạn mức ạ. Anh chị muốn vay trong bao lâu ạ?"
+HOI_THU_NHAP = ("Dạ vay 2 năm thì được ạ. Bên em cho vay từ 1 đến 5 năm. "
+                "Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?")
+
+
+def _da_vay(*sau):
+    lich_su = [{"role": "user", "content": "anh muốn vay ba trăm triệu"},
+               {"role": "assistant", "content": HOI_HAN}]
+    for khach, ai in sau:
+        lich_su += [{"role": "user", "content": khach}, {"role": "assistant", "content": ai}]
+    return lich_su
+
+
+@pytest.mark.parametrize("tai_lieu, cau, thang", [
+    (TIN_CHAP, "ba mươi sáu", 36),      # 36 NĂM vô lý với gói dài nhất 60 tháng
+    (TIN_CHAP, "mười hai", 12),
+    (MUA_NHA, "bốn mươi", 40),          # 40 năm vượt xa 25 năm
+])
+def test_ky_han_tran_suy_theo_thoi_han_san_pham(tai_lieu, cau, thang):
+    from backend.pipeline.tra_loi_khoan_vay import du_kien_cua_luot
+    so = du_kien_cua_luot(_da_vay(), cau, tai_lieu)
+    assert (so.term.status, so.term.value) == ("known", thang)
+    assert so.amount.value == 300 * TR
+
+
+@pytest.mark.parametrize("tai_lieu, cau", [
+    (TIN_CHAP, "hai"),          # 2 tháng hay 2 năm đều có thể
+    (TIN_CHAP, "hai lăm"),      # người nói ngọng l/n dùng đúng chữ này cho "hai NĂM"
+    (MUA_NHA, "hai mươi"),      # 20 tháng hay 20 năm đều nằm trong 25 năm
+])
+def test_ky_han_tran_con_hai_nghia_thi_hoi_lai(tai_lieu, cau):
+    got = tra_loi(cau, tai_lieu, history=_da_vay())
+    assert got and got[0] == "xac_nhan_ky_han_vay", got
+
+
+def test_khach_bo_lung_trong_vong_roi_noi_not_con_so():
+    # Cuộc gọi thật e2ef1be5: máy cắt lượt giữa câu, "mười hai" từng thành vay 12 triệu.
+    (_, ky_han, tra_gop), _ = _noi([
+        "thế anh muốn vay ba trăm triệu trong vòng", "mười hai", "thế mỗi tháng trả bao nhiêu"])
+    assert ky_han[0] == "ky_han_trong_khung" and "12 tháng thì được" in ky_han[1]
+    assert tra_gop[0] == "tinh_tra_gop" and "300 triệu đồng trong 12 tháng" in tra_gop[1]
+
+
+def test_tai_may_nghe_sai_chu_thang_van_ra_ky_han():
+    # Cuộc gọi thật bc4d83e7: "tháng" bị nghe thành "tạng".
+    got = tra_loi("anh vốn vay tầm bốn trăm triệu trong vòng mười hai tạng", TIN_CHAP)
+    assert got and "12 tháng thì được" in got[1] and "400 triệu" in got[1], got
+
+
+@pytest.mark.parametrize("cau, mong", [
+    ("mười lăm", "thu nhập 15 triệu đồng một tháng"),
+    ("tầm hai chục triệu", "thu nhập 20 triệu đồng một tháng"),
+    ("mười lăm mười sáu gì đấy", "thu nhập khoảng 15 đến 16 triệu đồng một tháng"),
+])
+def test_dap_cut_cho_cau_ai_hoi_thu_nhap_la_thu_nhap_khong_de_len_so_tien(cau, mong):
+    lich_su = _da_vay(("hai năm", HOI_THU_NHAP))
+    so = resolve(lich_su, cau)
+    assert so.amount.value == 300 * TR and so.term.value == 24
+    assert so.income.status != "unknown" and so.income_updated
+    got = tra_loi(cau, TIN_CHAP, history=lich_su)
+    assert got and got[0] == "ghi_nhan_thu_nhap" and mong in got[1], got
+
+
+@pytest.mark.parametrize("cau, trieu", [
+    ("à không anh vay hai trăm thôi", 200),
+    ("anh vay bốn trăm triệu được không", 400),
+])
+def test_ai_hoi_thu_nhap_ma_khach_doi_so_tien_thi_van_la_so_tien(cau, trieu):
+    so = resolve(_da_vay(("hai năm", HOI_THU_NHAP)), cau)
+    assert so.amount.value == trieu * TR and so.income.status == "unknown"
+
+
+def test_so_tran_tro_troi_khong_lang_le_de_len_so_tien_da_chot():
+    # AI không vừa hỏi tiền/hạn/thu nhập: "hai mươi" chưa rõ là gì - hỏi lại, không tự
+    # đổi 300 triệu thành 20 triệu rồi tính trả góp trên số đó.
+    lich_su = _da_vay(("hai năm", HOI_THU_NHAP), ("cái gì cơ", "Dạ em hỏi về thu nhập của anh ạ."))
+    got = tra_loi("hai mươi", TIN_CHAP, history=lich_su)
+    assert got and got[0] == "xac_nhan_don_vi_vay", got
+    # Có lời chốt ("vay ... thôi") hoặc con số không thể là tháng/thu nhập thì vẫn đổi.
+    assert resolve(lich_su, "anh vay hai trăm thôi").amount.value == 200 * TR
+    assert resolve(_da_vay(), "hai trăm thôi").amount.value == 200 * TR
+
+
+def test_sua_bep_doi_xe_la_muc_dich_vay_khong_phai_loi_sua_thu_nhap():
+    # Bộ thử 11-10-2026: khách mới khai lương, rồi "sửa bếp hết tầm tám chục triệu"
+    # bị coi là SỬA thu nhập và AI đọc "em ghi nhận thu nhập 80 triệu một tháng".
+    lich_su = [{"role": "user", "content": "lương anh mười hai triệu"},
+               {"role": "assistant", "content": "Dạ em ghi nhận anh chị thu nhập 12 triệu đồng một tháng ạ."}]
+    for cau in ("sửa bếp thì chắc hết tầm tám chục triệu mà anh muốn vay dư ra tí cho chắc",
+                "đổi xe thì cần hai trăm triệu"):
+        so = resolve(lich_su, cau)
+        assert so.income.value == 12 * TR, cau
+        got = tra_loi(cau, TIN_CHAP, history=lich_su)
+        assert not got or "thu nhập" not in got[1], got
+    # Lời sửa thật thì vẫn sửa.
+    assert resolve(lich_su, "anh sửa lại là mười lăm triệu").income.value == 15 * TR
+
+
+def test_khong_hoi_dan_dat_sau_cau_xin_ket_thuc_cuoc_goi():
+    got = cau_hoi_tiep(
+        ma_san_pham="vay_tin_chap", trang_thai=resolve(text="dậy thôi hả kỳ dậy"),
+        loi_khach_ca_cuoc="dậy thôi hả kỳ dậy", loi_khach_luot_nay="dậy thôi hả kỳ dậy",
+        cau_tra_loi="Em ghi nhận yêu cầu của anh ạ. Em xin phép kết thúc cuộc gọi lần này.",
+        da_hoi=set())
+    assert got is None
+
+
+def test_mot_thang_sau_tra_it_la_tan_suat_khong_phai_ky_han():
+    # Bộ thử 304 lượt: câu có "bảy mươi hai tháng" rõ ràng vẫn bị hỏi lại "bao nhiêu tháng hoặc năm".
+    lich_su = [{"role": "user", "content": "anh cần vay khoảng hai trăm năm mươi triệu"},
+               {"role": "assistant", "content": HOI_HAN}]
+    cau = "anh muốn vay trong bảy mươi hai tháng được không vì anh muốn trả ít một tháng"
+    assert resolve(lich_su, cau).term.value == 72
+    got = tra_loi(cau, TIN_CHAP, history=lich_su)
+    assert got and got[0] != "xac_nhan_ky_han_vay" and "72 tháng" in got[1], got
+    assert resolve(text="anh vay trong một tháng").term.value == 1      # kỳ hạn thật thì vẫn là kỳ hạn
+
+
+def test_dang_can_tam_la_dap_cau_ai_hoi_so_tien():
+    lich_su = [{"role": "assistant", "content": "Dạ vâng ạ. Anh chị dự định vay khoảng bao nhiêu ạ?"}]
+    luot = ["anh đang cần tầm hai tỷ rưỡi tầm đó thôi em", "anh muốn vay hai mươi năm có được không",
+            "vậy mỗi tháng anh phải trả bao nhiêu vậy em"]
+    for cau in luot:
+        got = tra_loi(cau, MUA_NHA, history=list(lich_su))
+        lich_su += [{"role": "user", "content": cau},
+                    {"role": "assistant", "content": got[1] if got else "(đường khác)"}]
+    assert resolve(lich_su).amount.value == 2500 * TR
+    assert got and got[0] == "tinh_tra_gop" and "2,5 tỷ" in got[1], got

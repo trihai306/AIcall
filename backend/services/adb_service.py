@@ -126,6 +126,19 @@ def _telecom_cuoc_dang_song(tele: str) -> str:
     return (m.group(2) if m else tele).upper()
 
 
+def _telecom_co(t: str, *trang_thai: str) -> bool:
+    """`t` (đã viết hoa) có cuộc gọi ở một trong các trạng thái này không.
+
+    Ba cách viết: `state=ACTIVE` / `State: ACTIVE` (Android 9 và 15) và
+    `[TC@15, ACTIVE, com.android.phone/...` - ROM gốc Android 10 (cài lại
+    11-10-2026) chỉ in kiểu cuối. Thiếu kiểu này thì cuộc đã nhấc máy vẫn đọc
+    ra "đang đổ chuông", vòng theo dõi hết 35s chờ bắt máy rồi tự đóng cầu
+    tiếng giữa lúc AI đang nói.
+    """
+    return any(f"STATE={x}" in t or f"STATE: {x}" in t or f", {x}," in t
+               for x in trang_thai)
+
+
 # Chỉ tính khi `InCallActivity` đang GIỮ FOCUS. Tìm nó trong toàn bộ `dumpsys
 # window` là sai: cửa sổ vẫn nằm trong ngăn xếp sau khi cúp máy, nên trạng thái
 # kẹt ở "offhook" vĩnh viễn - đã đo, báo offhook cả trước khi gọi lẫn sau khi cúp.
@@ -161,12 +174,11 @@ async def call_state(serial: str) -> tuple[str, str]:
     code2, tele, _ = await _run("-s", serial, "shell", "dumpsys", "telecom")
     if code2 == 0:
         t = _telecom_cuoc_dang_song(tele)
-        if "STATE=RINGING" in t or "STATE: RINGING" in t:
+        if _telecom_co(t, "RINGING"):
             return "ringing", "telecom: có cuộc gọi đến"
-        if "STATE=ACTIVE" in t or "STATE: ACTIVE" in t:
+        if _telecom_co(t, "ACTIVE"):
             return "offhook", "telecom: đang nói chuyện"
-        if any(k in t for k in ("STATE=DIALING", "STATE: DIALING",
-                                "STATE=CONNECTING", "STATE=RINGING")):
+        if _telecom_co(t, "DIALING", "CONNECTING"):
             return "offhook", "telecom: đang gọi/đổ chuông"
 
     if await _man_hinh_cuoc_goi_dang_hien(serial):
@@ -190,11 +202,12 @@ async def precise_call_state(serial: str) -> tuple[int, str]:
     code, out, err = await _run("-s", serial, "shell", "dumpsys", "telephony.registry")
     if code != 0:
         return -1, err.strip() or "Không đọc được trạng thái cuộc gọi"
+    # Máy hai khe SIM in trường này MỖI KHE một dòng; khe trống luôn là 0. Lấy
+    # dòng đầu thì SIM nằm ở khe 2 không bao giờ ra "đã nhấc máy".
     m = _PRECISE_FG.search(out)
-    if m:
-        value = int(m.group(1))
-        if value > 0:
-            return value, PRECISE_CALL_STATES.get(value, f"mã {value}")
+    value = next((v for v in map(int, _PRECISE_FG.findall(out)) if v > 0), 0)
+    if value > 0:
+        return value, PRECISE_CALL_STATES.get(value, f"mã {value}")
 
     # telephony.registry BÁO 0 CẢ KHI ĐANG GỌI. Bắt được 2026-08-06 trên máy
     # thật: màn hình hiện "Calling… 0396130621" mà mPreciseCallState in ra
@@ -212,10 +225,9 @@ async def precise_call_state(serial: str) -> tuple[int, str]:
     code2, tele, _ = await _run("-s", serial, "shell", "dumpsys", "telecom")
     if code2 == 0:
         t = _telecom_cuoc_dang_song(tele)
-        if "STATE=ACTIVE" in t or "STATE: ACTIVE" in t:
+        if _telecom_co(t, "ACTIVE"):
             return 1, "Khách đã nhấc máy (telecom: ACTIVE)"
-        if any(k in t for k in ("STATE=DIALING", "STATE: DIALING",
-                                "STATE=CONNECTING", "STATE=RINGING")):
+        if _telecom_co(t, "DIALING", "CONNECTING", "RINGING"):
             return 3, "Đang đổ chuông (telecom)"
 
     # Không coi là đã nhấc máy: bật đường tiêm sớm thì tiếng AI phát lúc chưa

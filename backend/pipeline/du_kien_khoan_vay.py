@@ -255,6 +255,12 @@ def chuan_hoa_so_khong_dau(text: str) -> str:
             continue
         before = words[i - 1] if i else ""
         after = words[i + 1] if i + 1 < len(words) else ""
+        if word == "muoi":
+            # ASCII mất phân biệt "mười" và "mươi": sau chữ số hàng chục
+            # (hai muoi, ba muoi...) phải là "mươi"; ở đầu cụm vẫn là "mười".
+            chu_so_truoc = _DIGIT.get(_ASCII_SO.get(before, before))
+            if chu_so_truoc is not None and 2 <= chu_so_truoc <= 9:
+                replacement = "mươi"
         if word == "sau":
             # "sau thang" is six months, while "năm sau" and "sau một
             # năm" or "sau thang nay/toi/sau" use the ordinary preposition /
@@ -367,7 +373,15 @@ def quantities(text: str) -> list[Quantity]:
                 continue
         kind = "bare"
         multiplier = 1
-        if following in ("tháng", "năm"):
+        if (words == ["một"] and following == "tháng" and not an_mot
+                and truoc in ("ít", "nhẹ", "nhiều", "nhiêu", "hơn")):
+            # "muốn trả ÍT MỘT THÁNG", "đóng bao nhiêu một tháng": "một tháng" là
+            # tần suất (mỗi tháng), không phải kỳ hạn 1 tháng. Từng làm "vay bảy
+            # mươi hai tháng ... trả ít một tháng" thành hai kỳ hạn và AI hỏi lại
+            # "bao nhiêu tháng hoặc năm" (bộ thử 304 lượt).
+            kind = "other"
+            j += 1
+        elif following in ("tháng", "năm"):
             kind, multiplier = "duration", 12 if following == "năm" else 1
             j += 1
         elif following in _CURRENCY:
@@ -376,7 +390,9 @@ def quantities(text: str) -> list[Quantity]:
         elif following == "%" or following in ("tuổi", "ngày", "giờ", "phút"):
             kind = "other"
             j += 1
-        elif (following in _DANH_TU_DEM and len(words) == 1 and words[0] in _DIGIT
+        elif (fold(following) in _DANH_TU_DEM_BO_DAU
+              and len(words) == 1
+              and (words[0] in _DIGIT or words[0][:1].isdigit())
               and not an_mot):
             kind = "other"
         elif following == "phần":
@@ -475,6 +491,8 @@ class LoanState:
     income: Fact = field(default_factory=Fact)
     amount_updated: bool = False
     term_updated: bool = False
+    # Lượt này khách vừa nêu THU NHẬP (kể cả đáp cụt "mười lăm" cho câu AI hỏi).
+    income_updated: bool = False
     unit_confirmed: bool = False
     # Lượt này khách GẬT với thời hạn AI vừa đề nghị - xem `_DE_NGHI_KY_HAN`.
     nhan_de_nghi: bool = False
@@ -535,14 +553,21 @@ def khoang_ky_han(text: str) -> tuple[int, int, Decimal, Decimal, str] | None:
 # These are semantic roles, not lists of observed bad transcriptions or amounts.
 _ANCHORS = re.compile(
     r"\b(?P<income>thu nhap|luong|doanh thu|tien cong)\b|"
-    r"\b(?P<identifier>dien thoai|can cuoc|cccd|cmnd|ma so|so tai khoan)\b|"
+    r"\b(?P<identifier>dien thoai|can cuoc|cccd|cmnd|ma so|ma ho so|so ho so|"
+    r"ma khach hang|ma giao dich|so tai khoan|bien so)\b|"
+    # Con số có vai rõ ràng ngoài ba dữ kiện đang thu thập. Nhánh này đứng
+    # trước ``correction`` để "đội bóng" không bị bỏ dấu thành "doi" = đổi.
+    r"\b(?P<nonloan>doi bong|tran dau|ti so|ty so|ghi ban|hoc lop|sinh vien|"
+    r"nam hoc|khoa hoc|no xau|nhom no|cham tra|tre han|qua han|cic)\b|"
     r"\b(?P<employment>lam viec|lam (?:o |tai |cho |ben )?(?:cong ty|co quan|xuong|nha may)|"
     r"di lam|lam duoc|vao lam|tham nien|cong tac|sao ke)\b|"
     r"\b(?P<payoff>tat toan|tra truoc|tra som)\b|"
-    r"\b(?P<payment>tien lai|tien phi|moi thang dong|moi thang tra|tra moi thang)\b|"
+    r"\b(?P<payment>tien lai|tien phi|phi|khoan tra|so tien tra|tra dung|tra khoang|"
+    r"tra tam|moi thang dong|moi thang tra|tra moi thang)\b|"
     r"\b(?P<existing>khoan vay cu|hop dong|du no)\b|"
     r"\b(?P<limit>han muc(?: vay)?|vay toi da|tran san pham)\b|"
-    r"\b(?P<term>ky han|thoi han|trong vong|trong|tra gop|tra dan|gop trong|tra(?=\s*$))\b|"
+    r"\b(?P<term>ky han|thoi han|trong vong|trong|tra gop|tra dan|gop trong|"
+    r"tra(?=\s+trong\b|\s*$))\b|"
     # "may" là "vay" bị nghe nhầm - nhưng "công ty may", "thợ may" thì không.
     r"\b(?P<amount>vay|(?<!cong ty )(?<!nha )(?<!xuong )(?<!tho )(?<!nganh )(?<!nghe )may|"
     r"nhu cau|so tien)\b|"
@@ -566,12 +591,16 @@ _DAY_LA_VAY = re.compile(r"\b(muon|can|dinh|xin|duoc|cho) day\b")
 # "thu nhập HAI vợ chồng chị là bốn mươi triệu" từng thành hai mức thu nhập.
 _DANH_TU_DEM = frozenset({"vợ", "người", "đứa", "lần", "bên", "con", "cái", "căn", "chiếc",
                           "khoản", "nơi", "chỗ", "loại", "sổ", "thẻ", "ông", "bà", "bạn",
+                          # Đơn vị đếm kết quả/học tập: con số mang vai số lượng,
+                          # không phải câu trả lời cụt cho một dữ kiện khoản vay.
+                          "bàn", "điểm", "môn", "trận", "đội",
                           # "vay MỘT SỐ tiền", "một ít", "một chút": "một" là từ chỉ lượng
                           # phỏng chừng - từng thành "anh chị vừa nói một, triệu hay tỷ".
                           "số", "ít", "chút", "tí", "món", "lúc", "vài",
                           # "nói lại MỘT LƯỢT": câu này xuất hiện 38 lần trong các
                           # cuộc gọi thật đã lưu và lần nào cũng bị đọc ra số 1.
                           "lượt", "lần", "thể", "mạch", "hơi", "câu", "ý"})
+_DANH_TU_DEM_BO_DAU = frozenset(fold(word) for word in _DANH_TU_DEM)
 _CO_DAU = re.compile(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]")
 # Khách TỰ SỬA giữa câu: "ba trăm à không hai trăm triệu", "ba năm à mà thôi bốn
 # năm". Chỉ xét ở KHOẢNG GIỮA hai con số cùng vai, không xét cả câu - "mà thôi để
@@ -584,8 +613,14 @@ def _co_y_sua(text: str) -> bool:
     goc = unicodedata.normalize("NFC", (text or "").lower())
     if _CO_DAU.search(goc):
         return bool(_CORRECTION_CO_DAU.search(goc))
-    return bool(_CORRECTION.search(fold(goc)))
+    # Với câu ASCII, che đúng cụm ``sua|doi + danh từ mục đích`` trước khi tìm
+    # lời sửa. Nếu không, "sua bep" còn có thể xoá khoản vay cũ dù con số phía
+    # sau đã được loại khỏi vai thu nhập/số tiền trong `_role`.
+    return bool(_CORRECTION.search(_prefix_neo(goc)))
 _CANCEL = re.compile(r"\b(khong (?:muon |can )?vay nua|huy (?:khoan )?vay|thoi khong vay)\b")
+_SUA_DON_VI_THU_NHAP_NAM = re.compile(
+    r"\b(?:noi )?(?:nham|sai)\s+(?:mat )?don vi\b.{0,60}"
+    r"\b(?:mot nam|hang nam|moi nam|theo nam)\b")
 _CALC = re.compile(r"\b(?:moi thang|hang thang|mot thang|tien lai)\b.{0,40}\bbao nhieu\b|\b(?:tra|dong) bao nhieu\b")
 # "khoảng / tầm / chắc" là từ rào đón trước con số trả lời cụt: thiếu chúng thì
 # "khoảng 300 triệu", "tầm hai năm" đáp cho câu AI vừa hỏi bị bỏ qua hẳn.
@@ -593,18 +628,24 @@ _CALC = re.compile(r"\b(?:moi thang|hang thang|mot thang|tien lai)\b.{0,40}\bbao
 # tầm ờ khoảng ờ hai trăm gì đấy" (bộ thử 10-10-2026: cả hai đều không được ghi).
 _ONLY_NUMBER = re.compile(
     r"^(?:(?:a|da|vang|o|u|um|uh|the|anh|chi|toi|em|la|chi|muon|xin|lay|thoi|nhe|nha|chu|"
-    r"khoang|tam|chung|chac|can|di|thi|gi|day|do|ay|dau|vay|cho|ne|phai)\s*)*$")
+    r"khoang|tam|chung|chac|can|di|thi|gi|day|do|ay|dau|vay|cho|ne|phai|dang)\s*)*$")
 # AI vừa HỎI số tiền / thời hạn: câu đáp cụt của khách là đáp cho đúng ý đó, dù
 # trước đó chưa có dữ kiện nào. Chỉ nhìn AI hỏi GÌ, không lấy con số nào của AI.
 _AI_HOI_TIEN = re.compile(r"\b(?:vay|gui|can)\b.{0,24}\bbao nhieu\b|\bso tien\b.{0,30}\?")
 _AI_HOI_KY_HAN = re.compile(r"\b(?:bao lau|may thang|bao nhieu thang|may nam|thoi han)\b")
+# "Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?" (câu dẫn dắt của `dan_dat`).
+_AI_HOI_THU_NHAP = re.compile(
+    r"\b(?:thu nhap|luong)\b.{0,40}\b(?:bao nhieu|khoang nao|the nao|ra sao)\b")
 # Rút lại một con số vừa nói hoặc nói thẳng là chưa chốt tiền. Đây là trạng
 # thái dữ kiện mơ hồ có chủ ý, không phải "không có cập nhật" để rồi số cũ sống
 # lại hoặc mô hình tự coi số đầu câu là khoản vay đã chốt.
 _CHUA_CHOT_TIEN = re.compile(r"\bchua (?:quyet dinh|chot|xac dinh)\b.{0,24}\bso tien\b")
 _RUT_LAI_TIEN = re.compile(
     r"\b(?:a )?khoan\b.{0,30}\b(?:khong|thoi)\b.{0,30}\bmay (?:tram|trieu|ty)\b|"
-    r"\bchua (?:quyet dinh|chot|xac dinh)\b.{0,24}\bso tien\b")
+    r"\bchua (?:quyet dinh|chot|xac dinh)\b.{0,24}\bso tien\b|"
+    # Rút lại chính GIÁ TRỊ vừa nêu: xoá độ chắc chắn của số tiền nhưng không
+    # biến thành huỷ cả nhu cầu vay và cũng không đụng tới kỳ hạn đã chốt.
+    r"\b(?:rut|bo|thu hoi) lai\b.{0,24}\b(?:so tien|muc tien|con so)\b")
 
 
 def _suy_don_vi() -> bool:
@@ -635,7 +676,7 @@ def voi_tran_san_pham(tran: float | None, ky_han_dai: int | None = None):
         _KY_HAN_DAI.reset(token_ky)
 
 
-def ky_han_suy_ra(he_so: Decimal) -> int | None:
+def ky_han_suy_ra(he_so: Decimal, raw: str = "") -> int | None:
     """Số THÁNG của một kỳ hạn nói không kèm "tháng/năm" ("mười hai", "ba mươi sáu"), hoặc None.
 
     Chỉ suy khi hiểu là NĂM thì dài phi lý so với sản phẩm (quá 1,5 lần thời hạn
@@ -644,6 +685,10 @@ def ky_han_suy_ra(he_so: Decimal) -> int | None:
     """
     dai = _KY_HAN_DAI.get()
     if not _suy_don_vi() or not dai or he_so is None or he_so != he_so.to_integral():
+        return None
+    # "hai lăm": người nói ngọng l/n dùng đúng chữ này cho "hai NĂM". 25 tháng là
+    # kỳ hạn hiếm, 2 năm thì rất thường - không đoán, để hỏi lại như trước.
+    if he_so == 25 and fold(raw).strip() == "hai lam":
         return None
     if 1 <= he_so <= Decimal(dai) * 3 / 2 and he_so * 12 > Decimal(dai) * 3 / 2:
         return int(he_so)
@@ -718,46 +763,172 @@ def is_readback(text: str) -> bool:
         normal) or (quantities(text) and _HOI_LAI_CON_SO.search(normal)))
 
 
-# Bỏ dấu thì "mấy", "máy", "mày" đều thành "may" - trùng chữ neo số tiền ở trên.
-_TRUNG_MAY = re.compile(r"\b(?:mấy|máy|mày|mây)\b")
+# Bỏ dấu thì "mấy/máy/mày/mây" thành ``may`` và "vậy/vầy" thành ``vay`` -
+# đều trùng neo số tiền dù chỉ là đại từ/trợ từ trong câu.
+_TRUNG_MAY = re.compile(r"\b(?:mấy|máy|mày|mây|vậy|vầy)\b", re.IGNORECASE)
+_CON_LA_CON_CAI = re.compile(
+    r"\bcon\b(?=\s+(?:toi|anh|chi|em|co|chu|bac)\b)")
+# "SỬA bếp thì hết tầm tám chục triệu", "ĐỔI xe cần hai trăm": sửa/đổi MỘT THỨ là
+# mục đích vay. Dùng cùng biểu diễn bỏ dấu cho lời có dấu và không dấu, nhưng chỉ
+# che ``sua|doi`` khi ngay sau nó là đúng ngữ pháp danh từ mục đích. Vì vậy
+# ``sua lai 15 trieu`` vẫn là lời sửa dữ kiện. Đây chỉ là bản sao prefix dùng tìm
+# neo ngữ nghĩa; offset Quantity vẫn trỏ vào nguyên văn của khách.
+_SUA_SANG_CHUA_LA_MUC_DICH = re.compile(r"\bsửa\s+(?=sang\b|chữa\b)")
+_SUA_LA_MUC_DICH = re.compile(
+    r"\b(?:sua|doi)\s+(?=(?:lai\s+)?(?:(?:cai|can|con|chiec)\s+)?"
+    r"(?:nha|bep|xe|mai|phong|cua|san|tuong|tran|be|dien|nuoc|quan|vuon|chuong|do|"
+    r"noi that|tivi|tu|laptop|viec|nghe)\b)")
+
+
+def _prefix_neo(text: str) -> str:
+    """Prefix đã chuẩn hoá chỉ để phân loại neo; không dùng làm offset."""
+    goc = unicodedata.normalize("NFC", (text or "").lower())
+    semantic = fold(_SUA_SANG_CHUA_LA_MUC_DICH.sub("_ ", goc))
+    return _SUA_LA_MUC_DICH.sub("_ ", semantic)
 
 
 _SAU_CHU_LAI = re.compile(r"\blãi(?:\s+suất)?(?:\s+(?:là|từ|khoảng|tầm|có|chỉ|đấy|đó))*\s*$")
+_NGU_CANH_GIAO_DUC = re.compile(
+    r"\b(?:hoc|hoc tap|hoc phi|mon hoc|lop hoc|hoc sinh|sinh vien|dao tao)\b")
+_NEO_DU_KIEN_TU_KHACH = re.compile(
+    r"\b(?:vay|nhu cau|so tien(?: vay)?|khoan vay|ky han|thoi han|"
+    r"thu nhap|luong|doanh thu|tien cong)\b|"
+    r"\b(?:doi|sua|chot)\s+(?:lai|sang|thanh|qua|so|khoan|ky han|thoi han|"
+    r"thu nhap|luong)\b")
+_TU_CHOI_GAN_THU_NHAP = re.compile(
+    r"\b(?:dung|khong)\s+(?:coi|xem|tinh|ghi(?: nhan)?|lay)\b")
+_NEO_THU_NHAP = re.compile(r"\b(?:luong|thu nhap)\b")
+
+
+def _la_muc_thu_nhap_bi_tu_choi(text: str, q: Quantity) -> bool:
+    """Con số được nhắc để nói rõ KHÔNG ghi nhận làm thu nhập hiện tại."""
+    if q.kind not in ("bare", "money"):
+        return False
+    clause, local_start = _menh_de_chua_so(text, q)
+    local_end = local_start + (q.end - q.start)
+    before = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause[:local_start])
+    after = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause[local_end:])
+    rejection = list(_TU_CHOI_GAN_THU_NHAP.finditer(before))
+    if not rejection:
+        return False
+    tail = before[rejection[-1].end():]
+    # ``đừng coi 6 triệu là thu nhập`` / ``không tính 6 triệu vào lương``.
+    if len(tail) <= 48 and re.match(
+            r"^.{0,40}\b(?:la|vao|lam)?\s*(?:muc\s+)?(?:luong|thu nhap)\b",
+            after):
+        return True
+    # ``không ghi nhận thu nhập hiện tại của tôi là 6 triệu``.
+    return len(tail) <= 64 and bool(_NEO_THU_NHAP.search(tail))
+
+
+def _so_thuoc_ngu_canh_giao_duc(text: str, q: Quantity) -> bool:
+    """Con số thuộc mệnh đề học tập, trừ khi khách đã chuyển sang neo vay rõ ràng.
+
+    So vị trí neo trong chính mệnh đề chứa số để ``học ... 6 tháng`` không thành
+    kỳ hạn vay, nhưng ``học xong muốn vay 100 triệu`` vẫn là nhu cầu của khách.
+    Ranh giới mệnh đề cũng ngăn chủ thể ``con tôi`` lan sang phần ``còn tôi đổi
+    khoản vay...`` ở sau.
+    """
+    clause, local_start = _menh_de_chua_so(text, q)
+    before = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause[:local_start])
+    education = list(_NGU_CANH_GIAO_DUC.finditer(before))
+    if not education:
+        return False
+    loan = list(_NEO_DU_KIEN_TU_KHACH.finditer(before))
+    return not loan or education[-1].start() > loan[-1].start()
 
 
 def _role(text: str, q: Quantity, established: bool, ai_hoi: str = "",
           correction_target: str | None = None) -> str | None:
     """Vai của một con số trong câu. `established`: cuộc đã có số tiền/kỳ hạn;
-    `ai_hoi`: AI vừa hỏi "amount" hay "term" (câu đáp cụt là đáp cho ý đó)."""
+    `ai_hoi`: AI vừa hỏi "amount", "term" hay "income" (câu đáp cụt là đáp cho ý đó)."""
     # "lãi bảy phẩy chín", "lãi suất là sáu rưỡi": con số đi liền sau chữ LÃI là lãi
     # suất, không phải tiền vay. Xét trên chữ CÓ DẤU - bỏ dấu thì "lại" (sửa lại
     # 200 triệu) cũng thành "lai".
     if q.kind == "bare" and _SAU_CHU_LAI.search(text[:q.start].lower()):
         return None
+    if _la_muc_thu_nhap_bi_tu_choi(text, q):
+        return None
+    if _so_thuoc_ngu_canh_giao_duc(text, q):
+        return None
     if q.kind == "money":
         clause, local_start = _menh_de_chua_so(text, q)
         local_before = re.sub(
             r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause[:local_start])
-        if _GIA_TRI_TAI_SAN.search(local_before):
-            # Giá/trị giá tài sản là dữ kiện về tài sản, không được kế thừa neo
-            # lương/thu nhập của mệnh đề trước thành thu nhập của khách.
+        # Dùng đoạn gốc có dấu cho cùng bước che ``máy/mấy/vậy`` như prefix
+        # chính. Nếu fold trước, ``xe máy`` thành ``xe may`` và ``may`` bị hiểu
+        # nhầm là ASR của ``vay``. Với văn bản ASCII, che riêng danh từ máy móc
+        # nhưng giữ ``may`` trong ``cần may 50 triệu`` làm neo vay theo ASR.
+        original_clause_start = q.start - local_start
+        local_anchor_prefix = _prefix_neo(
+            _TRUNG_MAY.sub("_", text[original_clause_start:q.start]))
+        local_anchor_prefix = _MAY_MOC_ASCII.sub("_", local_anchor_prefix)
+        local_anchor_prefix = re.sub(
+            r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", local_anchor_prefix)
+        local_asset_anchors = list(_ANCHORS.finditer(local_anchor_prefix))
+        local_has_financial_owner = any(
+            anchor.lastgroup in ("amount", "income") for anchor in local_asset_anchors)
+        local_has_purchase_need = bool(re.search(
+            r"\b(?:muon|can|dinh|tinh)\b.{0,32}\b(?:mua|sam)\b", local_before))
+        if (_GIA_TRI_TAI_SAN.search(local_before)
+                or (_DANH_TU_TAI_SAN.search(local_before)
+                    and not local_has_financial_owner
+                    and not local_has_purchase_need)):
+            # Giá tài sản có thể được nói gọn chỉ bằng danh từ + số tiền
+            # (``căn nhà 2,5 tỷ``). Khi mệnh đề này không có neo vay/thu nhập
+            # riêng, không cho neo thu nhập ở mệnh đề trước sở hữu con số đó.
             return None
-    prefix = _DAY_LA_VAY.sub(r"\1 vay", fold(_TRUNG_MAY.sub("_", text[:q.start].lower())))
+    prefix = _DAY_LA_VAY.sub(r"\1 vay", _CON_LA_CON_CAI.sub(
+        "_", _prefix_neo(_TRUNG_MAY.sub("_", text[:q.start]))))
     # ASR/chat text sometimes glues words and digits ("vay200trieu24thang").
     # Virtual boundaries are only for semantic anchors; Quantity offsets remain
     # tied to the untouched utterance.
     prefix = re.sub(r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", prefix)
+    clause, local_start = _menh_de_chua_so(text, q)
+    local_prefix = _DAY_LA_VAY.sub(
+        r"\1 vay", _CON_LA_CON_CAI.sub(
+            "_", _prefix_neo(_TRUNG_MAY.sub("_", clause[:local_start]))))
+    local_prefix = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", local_prefix)
+    if q.kind == "duration":
+        # Một liên từ có thể mở vị ngữ mới mà không lặp chủ ngữ: ``tôi vay 95
+        # triệu và điều trị 6 tháng``. Chỉ mang neo từ phần trước qua liên từ
+        # khi phần đó đã nói rõ kỳ hạn/trả góp; neo số tiền đơn thuần không sở
+        # hữu mọi duration ở vị ngữ sau.
+        breaks = list(re.finditer(r"\b(?:va|roi|sau do)\b", local_prefix))
+        if breaks:
+            before_break = local_prefix[:breaks[-1].start()]
+            explicit_term_before = any(
+                a.lastgroup == "term" and a.group() not in ("trong", "trong vong")
+                for a in _ANCHORS.finditer(before_break))
+            if not explicit_term_before:
+                local_prefix = local_prefix[breaks[-1].end():]
     da_co = established            # lời sửa chỉ có nghĩa khi ĐÃ có dữ kiện để sửa
     established = established or bool(ai_hoi)
-    anchors = list(_ANCHORS.finditer(prefix))
+    # Kỳ hạn phải được sở hữu bởi chính mệnh đề chứa nó. Nếu dùng toàn bộ prefix,
+    # "tôi vay 95 triệu; tôi điều trị 6 tháng" sẽ nhập neo ``vay`` của mệnh đề
+    # trước và biến thời gian điều trị thành kỳ hạn mới.
+    anchors = list(_ANCHORS.finditer(local_prefix if q.kind == "duration" else prefix))
     role = anchors[-1].lastgroup if anchors else None
+    if q.kind in ("bare", "money") and _la_thu_nhap_viet_tat_theo_chu_the(
+            text, q, ai_hoi):
+        return "income"
     if role == "term" and anchors[-1].group() in ("trong", "trong vong"):
-        # A temporal preposition does not change the owner of a duration:
-        # 'old contract ... within 48 months' and 'early payoff within six
-        # months' are not new loan terms.
+        # ``trong / trong vòng`` chỉ nối một thời lượng với vai đã rõ trong cùng
+        # mệnh đề; bản thân giới từ thời gian không tạo ra kỳ hạn khoản vay.
         owners = [a.lastgroup for a in anchors[:-1] if a.lastgroup not in ("term", "correction")]
-        if owners and owners[-1] in ("income", "employment", "identifier", "payment", "payoff", "existing", "limit"):
-            role = owners[-1]
+        explicit_term = any(
+            a.lastgroup == "term" and a.group() not in ("trong", "trong vong")
+            for a in anchors[:-1])
+        if owners:
+            role = "term" if owners[-1] == "amount" else owners[-1]
+        elif explicit_term or _co_y_sua(local_prefix):
+            role = "term"
+        else:
+            role = None
     if role == "correction":
         preceding = [a.lastgroup for a in anchors[:-1] if a.lastgroup != "correction"]
         role = preceding[-1] if preceding else (correction_target or ("amount" if da_co else None))
@@ -768,23 +939,54 @@ def _role(text: str, q: Quantity, established: bool, ai_hoi: str = "",
     if q.kind == "duration":
         if role in ("amount", "term"):
             return "term"
-        if role in ("income", "employment", "identifier", "payment", "payoff", "existing", "limit"):
+        if role in (
+                "income", "employment", "identifier", "nonloan", "payment", "payoff",
+                "existing", "limit"):
             return None
-        rest = fold(text[:q.start] + " " + text[q.end:])
+        local_end = local_start + (q.end - q.start)
+        rest = (clause[:local_start] + " " + clause[local_end:]).strip(" .,!?:")
+        rest_without_temporal = re.sub(r"\b(?:trong vong|trong)\b", " ", rest)
+        # Hai trường tài chính viết gọn: ``275 trong 24 tháng``. Sau khi bỏ
+        # mọi quantity và giới từ thời gian, mệnh đề không còn nội dung khác;
+        # vì vậy duration thứ hai vẫn thuộc phương án vay đang sửa.
+        clause_quantities = quantities(clause)
+        has_earlier_quantity = any(
+            item.end <= local_start and item.kind in ("bare", "money")
+            for item in clause_quantities)
+        compact_rest = clause
+        for item in sorted(clause_quantities, key=lambda item: -item.start):
+            compact_rest = compact_rest[:item.start] + " " + compact_rest[item.end:]
+        compact_rest = re.sub(
+            r"\b(?:trong vong|trong)\b", " ", compact_rest).strip(" .,!?:")
+        compact_financial_fields = (has_earlier_quantity
+                                    and bool(_ONLY_NUMBER.fullmatch(compact_rest)))
         # "không, anh chỉ cần 4 tháng thôi": chữ "không" ĐẦU CÂU là gạt lời AI
         # vừa đề nghị rồi nêu lại kỳ hạn của mình ("không phải / không cần /
         # không vay" thì là phủ định chính con số, để nguyên).
         rest = re.sub(r"^\s*khong\b(?!\s+(?:phai|can|muon|vay)\b)[\s,.]*", "", rest)
+        rest_without_temporal = re.sub(r"\b(?:trong vong|trong)\b", " ", rest)
         # "ba sáu tháng thì mỗi tháng bao nhiêu": kỳ hạn đứng một mình đầu câu
         # hỏi tính - phần còn lại chính là câu hỏi tính, không phải câu khác.
-        if established and (_ONLY_NUMBER.fullmatch(rest.strip(" .,!?:"))
-                            or _CALC.search(rest)):
+        earlier_loan_anchor = any(
+            a.lastgroup == "amount" or (
+                a.lastgroup == "term" and a.group() not in ("trong", "trong vong"))
+            for a in _ANCHORS.finditer(prefix))
+        if has_earlier_quantity and _CALC.search(fold(text)):
+            return "term"
+        if (established or earlier_loan_anchor) and (
+                _ONLY_NUMBER.fullmatch(rest_without_temporal.strip(" .,!?:"))
+                or compact_financial_fields or _CALC.search(rest)):
             return "term"
         if _CHUA_CHOT_TIEN.search(rest):
             return "term"
         return None
     if q.kind == "other":
         return None
+    if (role is None and q.kind in ("bare", "money")
+            and _CALC.search(fold(text[q.end:]))
+            and any(item.start >= q.end and item.kind == "duration"
+                    for item in quantities(text))):
+        return "amount"
     if role in ("amount", "income"):
         return role
     # Numeric answers to an ongoing loan discussion, not numbers in arbitrary
@@ -803,6 +1005,11 @@ def _role(text: str, q: Quantity, established: bool, ai_hoi: str = "",
         if (ai_hoi == "term" and q.kind == "bare" and not tu_sua
                 and q.value is not None and q.value <= 72):
             return "term"
+        # AI vừa hỏi THU NHẬP mà khách đáp cụt "mười lăm" / "tầm hai chục triệu":
+        # đó là thu nhập. Không có nhánh này con số đè lên số tiền vay đã chốt
+        # ("vay ba trăm triệu" ... "mười lăm" -> "Dạ 15 triệu thì trong hạn mức").
+        if ai_hoi == "income" and q.kind in ("bare", "money") and not tu_sua:
+            return "income"
         return "amount"
     if (established or q.kind == "money") and _ONLY_NUMBER.fullmatch(prefix.strip()) and re.match(
             r"\s*(?:(?:di|thoi|nhe|nha|a)\s+)?"
@@ -832,11 +1039,19 @@ def _negated(text: str, q: Quantity) -> bool:
 
 
 _RANH_GIOI_MENH_DE = re.compile(
-    r"[;!?]|(?<!\d)[,.]|[,.](?!\d)|\b(?:con|nhung)\b|"
+    r"[;!?]|(?<!\d)[,.]|[,.](?!\d)|\bnhung\b|"
     r"\bva\b(?=\s+(?:anh|chi|toi|em|ban|vo|chong|me|bo|dong nghiep)\b)")
+_RANH_GIOI_CON_CO_DAU = re.compile(r"\bcòn\b", re.IGNORECASE)
+_RANH_GIOI_CON_ASCII = re.compile(
+    r"\bcon\b(?=\s+(?:toi|anh|chi|em)(?=\s|\d)\s*(?:\d|"
+    r"mot|hai|ba|bon|tu|nam|sau|bay|tam|chin|muoi|tram))")
+_CO_SO_TRUOC_CON_ASCII = re.compile(
+    r"\d|\b(?:mot|hai|ba|bon|tu|nam|sau|bay|tam|chin|muoi|chuc|tram|"
+    r"nghin|trieu|ty)\b")
 _THU_NHAP_HO_GIA_DINH = re.compile(
     r"\b(?:thu nhap|luong)?\s*(?:cua )?(?:hai |ca )?vo chong\b|"
-    r"\b(?:tong )?thu nhap (?:cua )?(?:gia dinh|ca nha)\b")
+    r"\b(?:(?:tong )?thu nhap(?: (?:chung|tong))?) (?:cua )?"
+    r"(?:gia dinh|ca nha|nha (?:toi|anh|chi|em))\b")
 _HO_GIA_DINH_NGUOI_KHAC = re.compile(
     r"\bvo chong (?:ban|ho|nguoi (?:than|quen)|dong nghiep|anh trai|chi gai|em trai|em gai)\b")
 _CHU_THE_THU_NHAP_KHAC = re.compile(
@@ -847,6 +1062,20 @@ _CHU_THE_THU_NHAP_KHAC = re.compile(
     # coi là thân nhân khi theo sau là sở hữu ngôi thứ nhất rõ ràng (`chị tôi`).
     r"\b(?:anh|chi)\s+(?:toi|em)\b|"
     r"\b(?:anh|chi)\s+cua\s+(?:toi|em|co|chu|bac)\b")
+_CHU_THE_THU_NHAP_KHAC_DAU_MENH_DE = re.compile(
+    r"^\s*(?:(?:rieng|ve phia)\s+)?(?:vo|chong|me|bo|ba|con|anh trai|chi gai|"
+    r"em trai|em gai|dong nghiep|sep|quan ly|nhan vien|doi tac|khach hang|nguoi than)\b|"
+    r"^\s*(?:luong|thu nhap)(?: cua)?\s+(?:vo|chong|me|bo|ba|con|anh trai|chi gai|"
+    r"em trai|em gai|dong nghiep|sep|quan ly|nhan vien|doi tac|khach hang|nguoi than)\b")
+# Danh xưng + tên riêng là người được nhắc tới; ``anh/chị lương...`` không có
+# tên xen giữa nên vẫn là cách xưng hô với chính người gọi.
+_TEN_NGUOI_KHAC_DAU_MENH_DE = re.compile(
+    r"^\s*(?:rieng\s+)?(?:anh|chi|co|chu|bac)\s+"
+    r"(?!(?:co|dang|duoc|khong|la|lam|hien|luong|thu nhap|muon|can|vay|xin|"
+    r"noi|bao|hoi|nghe|thay|biet|tinh|du tinh)\b)"
+    r"[a-z]+(?:\s+[a-z]+)?\b.{0,80}\b(?:luong|thu nhap)\b")
+_DIEU_KIEN_THU_NHAP_GIA_DINH = re.compile(
+    r"\b(?:neu(?: nhu)?|gia su|vi du(?: nhu)?|truong hop)\b")
 _DIEU_KIEN_THU_NHAP_TRICH_DAN = re.compile(
     r"\b(?:nghe\s+(?:(?:ho|nguoi ta|ai do)\s+)?(?:noi|bao)|"
     r"(?:ho|nguoi ta|ai do)\s+(?:noi|bao|yeu cau))\b.{0,70}\b(?:luong|thu nhap)\b|"
@@ -860,19 +1089,200 @@ _DIEU_KIEN_THU_NHAP_SAU_SO = re.compile(
     r"\b(?:toi thieu|it nhat)\b")
 _GIA_TRI_TAI_SAN = re.compile(
     r"\b(?:gia|gia tri|tri gia)(?:\s+(?:la|khoang|tam|chung|het|den))?\s*$")
+_DANH_TU_TAI_SAN = re.compile(
+    r"\b(?:can nha|ngoi nha|nha dat|can ho|chung cu|biet thu|"
+    r"lo dat|mieng dat|thua dat|bat dong san|tai san|"
+    r"o to|xe hoi|xe may|may moc|may cong nghiep|may san xuat|"
+    r"vang|bitcoin|tien ma hoa)\b")
+_MAY_MOC_ASCII = re.compile(
+    r"\b(?:xe\s+may|may\s+(?:moc|cong nghiep|san xuat))\b")
+
+
+def _cac_ranh_gioi_menh_de(text: str) -> list[tuple[int, int]]:
+    """Clause boundaries with accent-aware handling of ``con``/``còn``.
+
+    Folding is safe for ordinary boundaries but would turn noun ``Con``
+    (child) into linker ``còn``. Accented ``còn`` is always a boundary; ASCII
+    ``con`` is one only in a compact numeric contrast such as
+    ``vo30trieu con toi12trieu``.
+    """
+    normal = fold(text)
+    boundaries = {
+        (match.start(), match.end())
+        for match in _RANH_GIOI_MENH_DE.finditer(normal)
+    }
+    original = unicodedata.normalize("NFC", (text or "").lower())
+    boundaries.update(
+        (match.start(), match.end())
+        for match in _RANH_GIOI_CON_CO_DAU.finditer(original)
+    )
+    for match in _RANH_GIOI_CON_ASCII.finditer(normal):
+        if _CO_SO_TRUOC_CON_ASCII.search(normal[:match.start()]):
+            boundaries.add((match.start(), match.end()))
+    return sorted(boundaries)
 
 
 def _menh_de_chua_so(text: str, q: Quantity) -> tuple[str, int]:
     """Return the local clause and quantity offset inside it."""
     normal = fold(text)
     start, end = 0, len(normal)
-    for match in _RANH_GIOI_MENH_DE.finditer(normal):
-        if match.end() <= q.start:
-            start = match.end()
-        elif match.start() >= q.end:
-            end = match.start()
+    for boundary_start, boundary_end in _cac_ranh_gioi_menh_de(text):
+        if boundary_end <= q.start:
+            start = boundary_end
+        elif boundary_start >= q.end:
+            end = boundary_start
             break
     return normal[start:end], q.start - start
+
+
+def _menh_de_lien_truoc(text: str, q: Quantity) -> str:
+    """Mệnh đề có nội dung ngay trước mệnh đề chứa ``q``.
+
+    Bỏ qua các dấu liên tiếp để ``... lương 20 triệu`` vẫn kế thừa đúng chủ
+    thể ở trước dấu ba chấm, nhưng không đi lùi qua thêm một mệnh đề có nội
+    dung khác.
+    """
+    normal = fold(text)
+    _, local_start = _menh_de_chua_so(text, q)
+    current_start = q.start - local_start
+    separators = [
+        boundary for boundary in _cac_ranh_gioi_menh_de(text)
+        if boundary[1] <= current_start
+    ]
+    if not separators:
+        return ""
+    previous_end = separators[-1][0]
+    while previous_end and normal[previous_end - 1] in " \t\r\n.,;:!?":
+        previous_end -= 1
+    previous_start = 0
+    for _, boundary_end in _cac_ranh_gioi_menh_de(text):
+        if boundary_end > previous_end:
+            break
+        previous_start = boundary_end
+    return normal[previous_start:previous_end].strip()
+
+
+_CHU_THE_TU_XUNG_DAU_MENH_DE = re.compile(r"^\s*(?:toi|em)\b")
+_CHU_THE_NGUOI_GOI_DAU_MENH_DE = re.compile(r"^\s*(?:toi|em|anh|chi)\b")
+_THU_NHAP_TU_XUNG_TRONG_MENH_DE = re.compile(
+    r"\b(?:luong|thu nhap)(?:\s+(?:rieng|thuc te))?(?:\s+cua)?\s+(?:toi|em|anh|chi)\b")
+_CHU_THE_KHAC_SAU_RANH_GIOI = re.compile(
+    r"(?:^|\b(?:con|nhung)\b)\s*(?:vo|chong|me|bo|ba|con|anh trai|chi gai|"
+    r"em trai|em gai|dong nghiep|sep|quan ly|nhan vien|doi tac|khach hang|nguoi than)\b")
+_CHU_THE_TU_XUNG_SAU_RANH_GIOI = re.compile(
+    r"(?:^|\b(?:con|nhung)\b)\s*(?:toi|em)\b")
+_NEO_KHOAN_VAY_RO_RANG = re.compile(
+    r"\b(?:vay|nhu cau|so tien(?: vay)?|khoan vay|ky han|thoi han|tra gop|tra dan)\b")
+
+
+def _nguon_hoac_gia_dinh_thu_nhap_lien_ke(
+        text: str, q: Quantity, semantic_clause: str) -> bool:
+    """Nguồn/giả định ở mệnh đề ngay trước vẫn chi phối câu thu nhập nối tiếp."""
+    previous = _menh_de_lien_truoc(text, q)
+    if not previous:
+        return False
+    continuation = f"{previous} {semantic_clause}".strip()
+    return bool(
+        _DIEU_KIEN_THU_NHAP_GIA_DINH.search(previous)
+        or _DIEU_KIEN_THU_NHAP_TRICH_DAN.search(continuation))
+
+
+def chu_the_thu_nhap_nguoi_khac(text: str, q: Quantity) -> bool:
+    """True khi ``q`` là thu nhập của một người khác được nêu rõ.
+
+    Chủ thể có thể nằm trong chính mệnh đề thu nhập hoặc trong mệnh đề việc làm
+    ngay trước nó (``Mẹ tôi làm giáo viên, lương 20 triệu``). Chủ thể tự xưng,
+    tổng thu nhập hộ, giả định và con số trích dẫn từ nguồn chính sách luôn trả
+    False để nơi gọi không đánh đồng chúng với thu nhập của người thân.
+    """
+    clause, local_start = _menh_de_chua_so(text, q)
+    before = clause[:local_start]
+    semantic_clause = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause)
+    semantic_before = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", before)
+    local_end = local_start + (q.end - q.start)
+    semantic_after = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause[local_end:])
+
+    if (_THU_NHAP_HO_GIA_DINH.search(semantic_clause)
+            or _DIEU_KIEN_THU_NHAP_GIA_DINH.search(semantic_before)
+            or _DIEU_KIEN_THU_NHAP_TRICH_DAN.search(semantic_before)
+            or _DIEU_KIEN_THU_NHAP_SAU_SO.search(semantic_after)
+            or _HO_GIA_DINH_NGUOI_KHAC.search(semantic_before)):
+        return False
+
+    caller_age_lead = re.search(
+        r"^\s*(?:anh|chi)\b.{0,36}\btuoi\b", semantic_before)
+    named_other = (_TEN_NGUOI_KHAC_DAU_MENH_DE.search(semantic_before)
+                   if not caller_age_lead else None)
+    other_positions = [
+        match.start() for pattern in (
+            _CHU_THE_THU_NHAP_KHAC_DAU_MENH_DE,
+            _CHU_THE_THU_NHAP_KHAC,
+        ) for match in pattern.finditer(semantic_before)
+    ]
+    if named_other:
+        other_positions.append(named_other.start())
+    if (re.search(r"\bcua\s+", semantic_after)
+            and _CHU_THE_THU_NHAP_KHAC.search(semantic_after)):
+        other_positions.append(len(semantic_before))
+
+    self_positions = [
+        match.start()
+        for match in _THU_NHAP_TU_XUNG_TRONG_MENH_DE.finditer(semantic_before)
+    ]
+    caller_at_start = _CHU_THE_NGUOI_GOI_DAU_MENH_DE.search(semantic_before)
+    if caller_at_start and not named_other:
+        self_positions.append(caller_at_start.start())
+    # Trong câu có nhiều mức lương, chủ thể gần con số nhất sở hữu con số đó:
+    # ``lương anh 30, vợ anh 20`` giữ 30 là của người gọi và bỏ 20 của vợ.
+    last_other = max(other_positions, default=-1)
+    last_self = max(self_positions, default=-1)
+    if last_other > last_self:
+        return True
+    if last_self >= 0:
+        return False
+
+    previous = _menh_de_lien_truoc(text, q)
+    if not previous:
+        return False
+    # Điều kiện/trích dẫn ở mệnh đề chủ thể chi phối chính câu thu nhập kế tiếp,
+    # nhưng các mệnh đề xa hơn không được phép lan quyền sở hữu tới đây.
+    if _nguon_hoac_gia_dinh_thu_nhap_lien_ke(text, q, semantic_clause):
+        return False
+    continuation = f"{previous} {semantic_clause}".strip()
+    named_other = _TEN_NGUOI_KHAC_DAU_MENH_DE.search(continuation)
+    previous_caller_age = re.search(
+        r"^\s*(?:anh|chi)\b.{0,60}\btuoi\b", previous)
+    return bool(
+        _CHU_THE_THU_NHAP_KHAC_DAU_MENH_DE.search(previous)
+        or _CHU_THE_THU_NHAP_KHAC.search(previous)
+        or named_other and not previous_caller_age)
+
+
+def _la_thu_nhap_viet_tat_theo_chu_the(text: str, q: Quantity, ai_hoi: str) -> bool:
+    """Nhận câu đáp thu nhập rút gọn theo chủ thể, không đoán câu tiền vay.
+
+    ``Bố 30 triệu còn tôi 12`` là hai mức thu nhập khi AI vừa hỏi thu nhập hoặc
+    khi chính cấu trúc đối chiếu người thân/người gọi đã định vai. Một neo khoản
+    vay rõ ràng trong câu luôn thắng suy luận viết tắt này.
+    """
+    normal = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", fold(text))
+    if _NEO_KHOAN_VAY_RO_RANG.search(normal):
+        return False
+    clause, _ = _menh_de_chua_so(text, q)
+    semantic_clause = re.sub(
+        r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)", " ", clause)
+    direct_subject = (_CHU_THE_THU_NHAP_KHAC_DAU_MENH_DE.search(semantic_clause)
+                      or _CHU_THE_TU_XUNG_DAU_MENH_DE.search(semantic_clause))
+    if not direct_subject:
+        return False
+    if ai_hoi == "income":
+        return True
+    return bool(_CHU_THE_KHAC_SAU_RANH_GIOI.search(normal)
+                and _CHU_THE_TU_XUNG_SAU_RANH_GIOI.search(normal))
 
 
 def _income_owner(text: str, q: Quantity) -> str:
@@ -889,18 +1299,19 @@ def _income_owner(text: str, q: Quantity) -> str:
     # A quoted eligibility threshold stays quoted even if it happens to name
     # a couple. Household ownership is local to this quantity's clause, so it
     # cannot leak onto a later personal-income clause.
-    if (_DIEU_KIEN_THU_NHAP_TRICH_DAN.search(semantic_before)
+    if (_DIEU_KIEN_THU_NHAP_GIA_DINH.search(semantic_before)
+            or _DIEU_KIEN_THU_NHAP_TRICH_DAN.search(semantic_before)
             or _DIEU_KIEN_THU_NHAP_SAU_SO.search(semantic_after)
-            or _HO_GIA_DINH_NGUOI_KHAC.search(semantic_before)):
+            or _HO_GIA_DINH_NGUOI_KHAC.search(semantic_before)
+            or _nguon_hoac_gia_dinh_thu_nhap_lien_ke(
+                text, q, semantic_clause)):
         return ""
     # Two separately qualified salaries ("lương anh 30, vợ anh 20") are not
     # an aggregate: the caller's amount remains self-owned and the spouse's is
     # ignored below. Only explicit aggregate wording establishes household.
     if _THU_NHAP_HO_GIA_DINH.search(semantic_clause):
         return "household"
-    if (_CHU_THE_THU_NHAP_KHAC.search(semantic_before)
-            or re.search(r"\bcua\s+", semantic_after)
-            and _CHU_THE_THU_NHAP_KHAC.search(semantic_after)):
+    if chu_the_thu_nhap_nguoi_khac(text, q):
         return ""
     # A local first-person marker wins in mixed multi-clause utterances. With
     # no stated subject, a direct "lương 20 triệu" is conventionally the
@@ -936,10 +1347,40 @@ def _fact(q: Quantity, turn: int, owner: str = "") -> Fact:
 _BO_LUNG_KY_HAN = re.compile(r"\b(?:trong vong|trong|ky han|thoi han|tra gop|tra dan|tra)\s*$")
 
 
+_CHI_TIENG_DEM = re.compile(
+    r"^(?:(?:a|da|vang|o|u|um|uh|khoang|tam|chung|chac|gi|day|do|ay|ne|thi|the)\s*)*$")
+
+
+def ai_vua_hoi(ai_truoc: str) -> str:
+    """Câu hỏi CUỐI của AI hỏi ý gì: "term", "income", "amount" hoặc "" (không hỏi ý nào)."""
+    if "?" not in (ai_truoc or ""):
+        return ""
+    cuoi = fold(re.split(r"[.!]\s+", ai_truoc.strip())[-1])
+    return ("term" if _AI_HOI_KY_HAN.search(cuoi) else
+            "income" if _AI_HOI_THU_NHAP.search(cuoi) else
+            "amount" if _AI_HOI_TIEN.search(cuoi + "?") else "")
+
+
+def _so_tran_tro_troi(text: str, q: Quantity) -> bool:
+    """Câu chỉ có một con số trần NHỎ với vài tiếng đệm ("hai mươi", "tầm hai mươi gì đấy").
+
+    Có "vay / lấy / thôi / đi" ("anh vay hai trăm thôi") là khách nói rõ ý chốt
+    số tiền. Từ 100 trở lên thì không thể là số tháng hay thu nhập tính bằng
+    triệu, chỉ còn nghĩa số tiền - cũng không tính.
+    """
+    rest = fold(text[:q.start] + " " + text[q.end:]).strip(" .,!?:")
+    return (q.kind == "bare" and q.value is not None and q.value < 100
+            and bool(_CHI_TIENG_DEM.fullmatch(rest)))
+
+
+def luot_truoc_bo_lung_ky_han(khach_truoc: str) -> bool:
+    return bool(_BO_LUNG_KY_HAN.search(fold(khach_truoc or "").strip(" .,!?")))
+
+
 def _apply(state: LoanState, text: str, turn: int, ai_truoc: str = "",
            khach_truoc: str = "") -> None:
     state.amount_updated = state.term_updated = state.unit_confirmed = False
-    state.nhan_de_nghi = False
+    state.income_updated = state.nhan_de_nghi = False
     normal = fold(text).strip(" .,!?:")
     if is_readback(text):
         return
@@ -963,6 +1404,19 @@ def _apply(state: LoanState, text: str, turn: int, ai_truoc: str = "",
         state.amount_updated = state.term_updated = True
         state.request = ""
         return
+    # Khách sửa tần suất của đúng mức thu nhập đã khai từ tháng sang năm. Không
+    # thể tiếp tục giữ đó là thu nhập tháng, cũng không được lấy ``một năm`` làm
+    # kỳ hạn vay hay lấy số tiền này đè principal. Để trạng thái mơ hồ cho tầng
+    # hội thoại hỏi lại mức thu nhập theo tháng.
+    if (state.income.status == "known" and state.income.value is not None
+            and _SUA_DON_VI_THU_NHAP_NAM.search(normal)
+            and not _NEO_KHOAN_VAY_RO_RANG.search(normal)):
+        annual_money = next((q for q in quantities(text)
+                             if q.kind == "money" and q.value == state.income.value), None)
+        if annual_money:
+            state.income = Fact("ambiguous", raw=text, turn=turn, owner=state.income.owner)
+            state.income_updated = True
+            return
     # Confirm a missing unit by an explicit unit response, not an unrelated
     # 'yes' and never a bank/product number that only the assistant supplied.
     unit_match = re.fullmatch(
@@ -983,13 +1437,9 @@ def _apply(state: LoanState, text: str, turn: int, ai_truoc: str = "",
         state.unit_confirmed = True
         return
     ai = fold(ai_truoc or "")
-    ai_hoi = ""
-    if "?" in (ai_truoc or ""):
-        # Câu hỏi CUỐI của AI mới là thứ khách đang đáp.
-        cuoi = fold(re.split(r"[.!]\s+", (ai_truoc or "").strip())[-1])
-        ai_hoi = ("term" if _AI_HOI_KY_HAN.search(cuoi) else
-                  "amount" if _AI_HOI_TIEN.search(cuoi + "?") else "")
-    if _BO_LUNG_KY_HAN.search(fold(khach_truoc or "").strip(" .,!?")):
+    # Câu hỏi CUỐI của AI mới là thứ khách đang đáp.
+    ai_hoi = ai_vua_hoi(ai_truoc)
+    if luot_truoc_bo_lung_ky_han(khach_truoc):
         ai_hoi = "term"
     da_co_du_kien = state.amount.status != "unknown" or state.term.status != "unknown"
     # A bare correction can refer to income when it is the only established
@@ -1008,16 +1458,27 @@ def _apply(state: LoanState, text: str, turn: int, ai_truoc: str = "",
     # Khoảng kỳ hạn xét TRƯỚC từng con số: các số trong khoảng không được đem đi
     # làm số tiền hay một kỳ hạn lẻ. Vai của cả khoảng vẫn do `_role` quyết, nên
     # "đi làm được 4-5 tháng" hay "tất toán 4-5 tháng rồi" không thành kỳ hạn vay.
-    vung = khoang_ky_han(text)
+    # AI vừa hỏi thu nhập, khách đáp chỉ gồm con số ("mười lăm mười sáu gì đấy"):
+    # mọi con số trong câu là thu nhập. Một con số thì `_role` đã lo; ở đây là
+    # trường hợp HAI con số, mỗi số làm "phần còn lại" của số kia hết trống.
+    cac_so = quantities(text)
+    con_lai = text
+    for q in sorted(cac_so, key=lambda x: -x.start):
+        con_lai = con_lai[:q.start] + " " + con_lai[q.end:]
+    chi_co_so_dap_thu_nhap = (ai_hoi == "income" and len(cac_so) >= 2 and bool(
+        _ONLY_NUMBER.fullmatch(fold(con_lai).strip(" .,!?:"))))
+    vung = None if chi_co_so_dap_thu_nhap else khoang_ky_han(text)
     if vung:
         q_khoang = Quantity(text[vung[0]:vung[1]], vung[0], vung[1], None, "duration")
         if _role(text, q_khoang, da_co_du_kien, ai_hoi, correction_target) == "term" and not _negated(text, q_khoang):
             state.term = Fact("ambiguous", raw=vung[4], turn=turn, khoang=(vung[2], vung[3]))
             state.term_updated = True
-    for q in quantities(text):
+    for q in cac_so:
         if vung and q.start < vung[1] and q.end > vung[0]:
             continue
         role = _role(text, q, da_co_du_kien, ai_hoi, correction_target)
+        if role is None and chi_co_so_dap_thu_nhap and q.kind in ("bare", "money"):
+            role = "income"
         if role is None and _xac_nhan_lai_so_cu(text, q, state.amount):
             role = "amount"
         elif role is None and established and re.search(
@@ -1077,17 +1538,23 @@ def _apply(state: LoanState, text: str, turn: int, ai_truoc: str = "",
         # Con số KHÔNG kèm đơn vị: "vay hai trăm", "lương hai chục". Số tiền vay
         # suy theo sản phẩm (`don_vi_suy_ra`); thu nhập tháng thì luôn là triệu.
         if fact.status == "missing_unit" and fact.coefficient is not None:
-            don_vi = (don_vi_suy_ra(fact.coefficient, fact.raw) if name == "amount"
+            # Số tiền ĐÃ chốt mà khách buông một con số trần, không "vay", không lời
+            # sửa, AI cũng không vừa hỏi tiền: chưa chắc là đổi số tiền (có thể là
+            # đáp một câu hỏi khác mà máy không nhận ra). Không lặng lẽ đè - để
+            # nguyên "thiếu đơn vị" cho tầng luật hỏi lại như trước.
+            de_len_so_cu = (name == "amount" and state.amount.status == "known"
+                            and ai_hoi != "amount" and _so_tran_tro_troi(text, choices[-1]))
+            don_vi = (None if de_len_so_cu
+                      else don_vi_suy_ra(fact.coefficient, fact.raw) if name == "amount"
                       else 10**6 if name == "income" and _suy_don_vi()
                       and 1 <= fact.coefficient < 1000 else None)
             if don_vi:
                 fact = Fact("known", fact.coefficient * don_vi, fact.raw, turn, owner=owner)
-            thang = ky_han_suy_ra(fact.coefficient) if name == "term" else None
+            thang = ky_han_suy_ra(fact.coefficient, fact.raw) if name == "term" else None
             if thang:
                 fact = Fact("known", Decimal(thang), fact.raw + " tháng", turn)
         setattr(state, name, fact)
-        if name in ("amount", "term"):
-            setattr(state, name + "_updated", True)
+        setattr(state, name + "_updated", True)
     for name in negated_roles:
         if not candidates[name]:
             setattr(state, name, Fact("ambiguous", raw=text, turn=turn))

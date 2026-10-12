@@ -1,4 +1,6 @@
 import asyncio
+import contextlib
+import functools
 import json
 import logging
 import time
@@ -125,6 +127,50 @@ NHAC_CO_CAU_DEM = ('TRẢ LỜI THẲNG, tự nhiên trong 1-2 câu. Không có 
 # Dùng khi kịch bản không khai ví dụ nào. Không có ví dụ thì mô hình hay trả lời
 # dài gấp đôi - đây là chỗ nó học ĐỘ DÀI, không phải học nội dung.
 _FALLBACK_EXAMPLES: list[dict] = []
+
+
+
+# --- Việc GẤP đang dùng mô hình ------------------------------------------------
+# Ollama chạy một lời gọi một lúc. Lượt trả lời của cuộc đang gọi (sinh câu, chấm
+# câu kho) là việc gấp; việc nền như tóm tắt cuộc đã xong thì phải lựa lúc mô
+# hình rảnh mà chen vào - xem `summarizer.BoTomTat`. Để ở cấp module vì
+# `route_for` trả nhiều đối tượng LLMService cho cùng một máy chủ Ollama.
+_viec_gap = {"dang_chay": 0, "xong_luc": 0.0}
+
+
+@contextlib.contextmanager
+def viec_gap():
+    _viec_gap["dang_chay"] += 1
+    try:
+        yield
+    finally:
+        _viec_gap["dang_chay"] -= 1
+        _viec_gap["xong_luc"] = time.monotonic()
+
+
+def _gap_khi_sinh(ham):
+    """Đánh dấu việc gấp cho một hàm sinh bất đồng bộ. Dùng trang trí thay vì đổi
+    tên hàm vì có test đọc mã nguồn của chính `stream_response`."""
+    @functools.wraps(ham)
+    async def boc(*args, **kwargs):
+        with viec_gap():
+            async for muc in ham(*args, **kwargs):
+                yield muc
+    return boc
+
+
+def _gap_khi_goi(ham):
+    @functools.wraps(ham)
+    async def boc(*args, **kwargs):
+        with viec_gap():
+            return await ham(*args, **kwargs)
+    return boc
+
+
+def mo_hinh_dang_ranh(lang_s: float = 1.0) -> bool:
+    """Không việc gấp nào đang chạy, và việc gấp gần nhất đã xong ít nhất `lang_s` giây."""
+    return (_viec_gap["dang_chay"] <= 0
+            and time.monotonic() - _viec_gap["xong_luc"] >= lang_s)
 
 
 class LLMService:
@@ -543,6 +589,7 @@ class LLMService:
         from backend.pipeline.cong_cu_llm import prompt_tool_bankvn
         return prompt_tool_bankvn(system_prompt, tools)
 
+    @_gap_khi_sinh
     async def stream_response(
         self,
         messages: list[dict],
@@ -696,6 +743,37 @@ class LLMService:
         )
         msg = response.get("message", {}) if isinstance(response, dict) else getattr(response, "message", None)
         return self._extract_content(msg)
+
+    @_gap_khi_goi
+    async def generate_structured(self, messages: list[dict], schema: dict,
+                                  *, num_predict: int = 700,
+                                  timeout: float = 15.0) -> dict:
+        """Propose typed data; callers validate evidence before using it.
+
+        Structured calls reuse the live client/model/context size. Conversation
+        stop strings must not truncate JSON, and no proposed answer is spoken.
+        Cancellation and timeouts propagate to the caller's safe response path.
+        """
+        if num_predict < 1 or timeout <= 0:
+            raise ValueError("Invalid structured generation limits")
+        response = await asyncio.wait_for(
+            self.client.chat(
+                model=self.model, messages=messages, format=schema,
+                stream=False, think=False,
+                options={"num_predict": num_predict, "temperature": 0,
+                         "num_ctx": settings.llm_num_ctx},
+            ), timeout=timeout,
+        )
+        msg = (response.get("message", {}) if isinstance(response, dict)
+               else getattr(response, "message", None))
+        # Speech sanitization can change exact quotes or truncate JSON. Typed
+        # data stays internal and is validated by its consumer before rendering.
+        content = (msg.get("content", "") if isinstance(msg, dict)
+                   else getattr(msg, "content", ""))
+        result = json.loads(content)
+        if not isinstance(result, dict):
+            raise ValueError("Structured response must be an object")
+        return result
 
     async def health_check(self) -> bool:
         try:

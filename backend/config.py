@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     llm_response_model: str = ""
     # Danh sách model dự phòng được duyệt, phân cách bằng dấu phẩy.
     llm_fallback_models: str = ""
+    # Understand customer speech as typed, evidence-backed facts. Financial
+    # values and calculations come from the current source snapshot.
+    # TẮT 11-10-2026: bật lên thì MỌI lượt đều do đường này trả, kho trả lời và
+    # Qwen không bao giờ được chạy; đo trên máy Win trung vị 4,2s/lượt và bộ
+    # thử của chính nó ghi 0/4 đạt. Con số theo tài liệu giờ do
+    # `services/kho_theo_tai_lieu.py` lo.
+    grounded_dialogue_enabled: bool = False
+    # Bộ chọn câu của kho hỏi mô hình RIÊNG từng đáp án (đúng/sai) thay vì bắt
+    # chọn một trong danh sách. Số đo và lý do ở `answer_bank_selector._cham_tung_cau`.
+    answer_bank_cham_tung_cau: bool = True
     # Đo 2026-09-02 (qwen2.5:7b, prompt_eval_count thật): lời dặn + tri thức
     # đã ăn 1414 token. Ở 2048 thì hội thoại chỉ còn 484 token ~ 6 lượt, rồi
     # Ollama cắt bỏ phần đầu KHÔNG BÁO GÌ - đó là lỗi "nói chuyện một lúc là
@@ -51,7 +61,11 @@ class Settings(BaseSettings):
     answer_bank_enabled: bool = True
     answer_bank_questions_per_document: int = 120
     answer_bank_variants_per_answer: int = 4
-    answer_bank_learn_history: bool = True
+    # TẮT từ 12-10-2026: học từ lịch sử ghi thẳng câu Qwen soạn vào kho ở trạng
+    # thái bật, không qua duyệt - một ngày chạy thử sinh 838 câu, trong đó có câu
+    # phán "không đủ điều kiện vì...". Giá trị này chỉ gieo lần đầu; công tắc thật
+    # là cột `answer_bank_config.learn_history` (ô tick ở trang Tri thức AI).
+    answer_bank_learn_history: bool = False
     answer_bank_llm_timeout_s: float = 90.0
     answer_bank_tts_timeout_s: float = 120.0
     answer_bank_scan_interval_s: float = 60.0
@@ -159,6 +173,12 @@ class Settings(BaseSettings):
     chan_tu_tinh_tien: bool = True
     # Chặn mô hình tự phán "không được duyệt / chưa đủ điều kiện" (xem chan_tuan_thu).
     chan_ket_luan_tu_choi: bool = True
+    # Bỏ câu mô hình tự viết có nêu kênh làm việc (online, ứng dụng, Zalo, hứa
+    # gửi link) mà tài liệu của sản phẩm không có - xem pipeline/chan_kenh.py.
+    chan_kenh_la: bool = True
+    # Bỏ câu mô hình tự cúp máy, tự phán hạn mức theo thu nhập, tự bảo lãi suất
+    # tuỳ hồ sơ - xem pipeline/chan_tu_che.py.
+    chan_tu_che: bool = True
     sinh_cau_toi_da: int = 2
     # Nơi giữ vector đã nhúng của kho trả lời (startup._nhung_bang_hoi_dap).
     hoi_dap_vector_cache_dir: str = "data/cache"

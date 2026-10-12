@@ -14,6 +14,15 @@ from backend.pipeline.session_manager import CallSession
 from backend.pipeline.chan_tuan_thu import (chan_gan_nhu_cau, chan_gan_thu_nhap, chan_ket_luan_tu_choi,
                                            chan_tu_cam, chan_tu_tinh_tien,
                                            sua_thuat_ngu_lai)
+from backend.pipeline.bang_du_kien import cac_san_pham
+from backend.pipeline.chan_tu_che import (
+    CAU_GHI_NHAN, CAU_GIU_KHACH, CAU_HIEU, chan_chua_co_thong_tin_sai,
+    chan_phan_theo_thu_nhap, chan_phu_thuoc_bia, chan_tu_cup_may, chan_tu_nhan_la_nguoi)
+from backend.pipeline.sua_nghe_sai import sua_nghe_sai
+from backend.pipeline.loi_dan_luot import loi_dan_luot_ngan
+from backend.pipeline.luot_theo_ngu_canh import rut_gon_neu_lap, tra_loi_theo_ngu_canh
+from backend.pipeline.chan_kenh import (CAU_CHUA_CO_KENH, chan_kenh_la,
+                                        chan_phu_nhan_san_pham)
 from backend.pipeline.thuoc_tinh import (chan_thuoc_tinh_sai,
                                          sua_theo_tai_lieu)
 from backend.pipeline.ngu_canh_tai_lieu import toan_van as _toan_van_tai_lieu
@@ -27,7 +36,7 @@ from backend.pipeline.luot_thuong_gap import tra_loi_san
 from backend.pipeline.danh_muc_san_pham import tra_loi as tra_loi_danh_muc
 from backend.pipeline.tra_loi_ho_so import tra_loi as tra_loi_ho_so
 from backend.pipeline.tra_loi_khoan_vay import tra_loi as tra_loi_khoan_vay
-from backend.pipeline.tra_loi_khoan_vay import du_kien_cua_luot
+from backend.pipeline.tra_loi_khoan_vay import du_kien_cua_luot, _tra_loi_pham_vi_nguon
 from backend.pipeline.du_kien_khoan_vay import doc_lai_tien_long
 from backend.pipeline.du_kien_khoan_vay import resolve as resolve_loan_facts
 from backend.pipeline.text_chunker import (TOI_THIEU_TU_MANH_CUOI, co_manh,
@@ -244,7 +253,7 @@ LUAT_NHUONG_KHO = frozenset({
     "dieu_kien_tuoi", "dieu_kien_thu_nhap", "dieu_kien_giay_to", "dieu_kien_chung",
     "dieu_kien_lam_tu_do", "gioi_thieu_san_pham", "uu_dai_hien_tai", "han_muc_the",
     "phi_the", "loai_the", "hoan_tien_the", "tra_gop_the", "lai_tiet_kiem_khong_ky_han",
-    "no_xau_cau_nen_noi", "no_xau_da_tat_toan",
+    "no_xau_cau_nen_noi", "no_xau_da_tat_toan", "che_lai_cao", "rut_truoc_han", "gioi_thieu_vay", "can_so_do", "moi_tu_van", "ky_han_tiet_kiem",
 })
 
 
@@ -306,6 +315,16 @@ class StreamingPipeline:
                 or org != scenarios_db.ten_to_chuc(None).strip().casefold()):
             return ""
         return _toan_van_tai_lieu(session.product)
+
+    @staticmethod
+    def _grounded_context_for(session: CallSession, product: str) -> str:
+        """Read current bytes while preserving the selected scenario's scope."""
+        scenario = getattr(session, "scenario", None) or {}
+        if (scenario.get("knowledge_tag") or scenarios_db.ten_to_chuc(scenario).strip().casefold()
+                != scenarios_db.ten_to_chuc(None).strip().casefold()):
+            return ""
+        from backend.pipeline.ngu_canh_tai_lieu import toan_van
+        return toan_van(product, fresh=True)
 
     @property
     def _tts_available(self) -> bool:
@@ -2246,6 +2265,11 @@ class StreamingPipeline:
     def _cau_dan_dat(self, session, user_text: str, metrics: dict, cau_tra_loi: str,
                      ma_luat: str = "") -> tuple[str, str] | None:
         """Chọn câu hỏi dẫn dắt cho lượt này và GHI NHỚ là đã hỏi. None nếu không hỏi."""
+        # The grounded executor owns clarification and the next requested
+        # operand. A separate lexical state must not append a sales question
+        # after its privacy, safety, readback, or missing-data response.
+        if metrics.get("grounded_dialogue"):
+            return None
         try:
             from backend.pipeline.dan_dat import cau_hoi_tiep
             da_hoi = getattr(session, "_dan_dat_da_hoi", None)
@@ -2336,6 +2360,17 @@ class StreamingPipeline:
         """
         # Chụp lại bản đoán RỒI dọn ngay: dọn muộn thì đoạn LLM bên dưới đọc phải
         # ô đã bị xoá, còn dọn thiếu thì lượt sau dùng nhầm bản nghĩ của lượt này.
+        # Lời khách bị máy nghe sai ("xuất bao nhiêu", "khoảng tay") hoặc nói cụt
+        # ("lãi"): sửa MỘT lần ở đây để luật, kho và mô hình cùng thấy một câu.
+        khach_truoc = [m.get("content", "") for m in (getattr(session, "history", None) or [])
+                       if m.get("role") == "user"]
+        if khach_truoc and khach_truoc[-1].strip() == (user_text or "").strip():
+            khach_truoc.pop()
+        user_text, da_sua_nghe = sua_nghe_sai(
+            user_text, khach_truoc[-1] if khach_truoc else "", lich_su_khach=khach_truoc)
+        if da_sua_nghe:
+            logger.info("SỬA LỜI NGHE SAI: %s -> %r", da_sua_nghe, user_text)
+            metrics["sua_nghe_sai"] = da_sua_nghe
         spec_transcript = session.spec_transcript
         spec_rag = session.spec_rag
         spec_answer = session.spec_answer
@@ -2349,6 +2384,18 @@ class StreamingPipeline:
         self._chot_toc_doc(self.tts, session, session.voice_name)
         session.clear_speculation()
 
+        dap_san = None
+        if (settings.grounded_dialogue_enabled
+                and callable(getattr(self.llm, "generate_structured", None))):
+            from backend.pipeline.grounded_runtime import respond
+            metrics["grounded_dialogue"] = True
+            interpreter = await self._llm_for("response")
+            grounded = await respond(
+                interpreter, user_text, session,
+                lambda product: self._grounded_context_for(session, product), metrics)
+            dap_san = (f"grounded_{grounded.reason}", grounded.text)
+            metrics["tra_tu_quy_tac_tai_chinh"] = dap_san[0]
+
         # Lượt thường gặp (chào máy, "ai đấy", "đang bận", từ chối...) trả lời
         # bằng bảng có sẵn, KHÔNG qua mô hình - đo được mô hình đóng khuôn
         # 5/10 lượt loại này. Xem `luot_thuong_gap` cho số liệu và lý do.
@@ -2356,11 +2403,16 @@ class StreamingPipeline:
         # Đường LLM đã đọc từ kịch bản (`llm_service.build_system_prompt`), nên
         # để chỗ này đọc `.env` là hai đường xưng tên KHÁC NHAU trong cùng một
         # cuộc: câu chào sẵn nói một tên, câu do mô hình sinh nói tên khác.
-        dap_san = tra_loi_san(
-            user_text,
-            bank=scenarios_db.ten_to_chuc(session.scenario),
-            agent=scenarios_db.ten_nhan_vien(session.scenario),
-            product=session.product, luot_thu=session.turn_count)
+        if not dap_san:
+            dap_san = tra_loi_san(
+                user_text,
+                bank=scenarios_db.ten_to_chuc(session.scenario),
+                agent=scenarios_db.ten_nhan_vien(session.scenario),
+                product=session.product, luot_thu=session.turn_count)
+        # "ừ" sau một câu trả lời, "nói nhanh quá không nghe kịp": phải nhìn câu AI
+        # vừa nói mới đáp đúng - xem `luot_theo_ngu_canh`.
+        if not dap_san:
+            dap_san = tra_loi_theo_ngu_canh(user_text, getattr(session, "history", None))
         # "ok em" đáp cho câu AI vừa đề nghị một thời hạn ("vay 12 tháng được
         # không ạ?") là khách CHỐT thời hạn đó, không phải lời xác nhận suông:
         # nhường cho luật khoản vay ghi nhận.
@@ -2391,8 +2443,8 @@ class StreamingPipeline:
         # Khách vừa nhắc sản phẩm nào thì nhớ neo đó TRƯỚC khi đọc tài liệu
         # chuẩn; đảo thứ tự sẽ lấy tài liệu của neo cũ cho chính lượt vừa đổi.
         try:
-            ten_sp = self.rag.neo_moi_tu_cau(
-                user_text, self.rag._san_pham_co_tai_lieu())
+            ten_sp = (None if metrics.get("grounded_dialogue") else self.rag.neo_moi_tu_cau(
+                user_text, self.rag._san_pham_co_tai_lieu()))
             if ten_sp and ten_sp != session.product:
                 logger.info("Neo sản phẩm theo lời khách: %r -> %r",
                             session.product, ten_sp)
@@ -2451,6 +2503,17 @@ class StreamingPipeline:
         # phải hỏi số tiền trả của hợp đồng cũ. Nếu quy tắc không đủ số tiền +
         # kỳ hạn thì nó trả None và câu hỏi riêng mới rơi xuống hồ sơ như cũ.
         tai_lieu_chuan = self._product_context_for(session)
+        # Phạm vi tiền tệ/tài sản phải được kiểm tra trước phép tính nhanh:
+        # lãi online trong nguồn VND không được áp cho yêu cầu gửi USD.
+        if not dap_san and tai_lieu_chuan:
+            got = _tra_loi_pham_vi_nguon(
+                user_text, tai_lieu_chuan,
+                getattr(session, "history", None) or [])
+            if got:
+                # Trùng nguyên văn câu AI vừa nói (khách hỏi cắt đôi): chỉ nhắc kết quả.
+                got = (got[0], rut_gon_neu_lap(got[1], getattr(session, "history", None)))
+                dap_san = got
+                metrics["tra_tu_quy_tac_tai_chinh"] = got[0]
         # So điều kiện rõ ràng với dữ kiện khách đã nói TRƯỚC bộ quy tắc khoản
         # vay chung. Nếu không, câu "21 tuổi, lương 18 triệu, riêng tuổi đạt
         # chưa?" bị bộ thu nhập bắt nhầm và chỉ được đáp "ghi nhận lương".
@@ -2477,6 +2540,8 @@ class StreamingPipeline:
                 user_text, tai_lieu_chuan, ho_so,
                 getattr(session, "history", None) or [], cach_xung, du_kien=du_kien)
             if got:
+                # Trùng nguyên văn câu AI vừa nói (khách hỏi cắt đôi): chỉ nhắc kết quả.
+                got = (got[0], rut_gon_neu_lap(got[1], getattr(session, "history", None)))
                 dap_san = got
                 metrics["tra_tu_quy_tac_tai_chinh"] = got[0]
                 logger.info("Quy tắc tài chính '%s' -> trả lời xác định, bỏ qua RAG+LLM",
@@ -3152,6 +3217,10 @@ class StreamingPipeline:
                 "model": "", "answer_id": "", "source_path": "",
                 "reason": dap_san[0],
             }
+            if metrics.get("grounded_dialogue"):
+                metrics["answer_route"]["selector_model"] = metrics.get("grounded_model", "")
+                metrics["answer_route"]["source_version"] = metrics.get("grounded_source_version", "")
+                metrics["answer_route"]["evidence_refs"] = metrics.get("grounded_evidence_refs", [])
         elif dong_bang and doc_nguyen_van(dong_bang):
             # Khách hỏi gần đúng cách đã soạn -> đọc NGUYÊN VĂN nội dung đã
             # duyệt, bỏ qua mô hình. Đo được: đưa nội dung vào ngữ cảnh kèm nhãn
@@ -3209,7 +3278,9 @@ class StreamingPipeline:
                 if chuan != lich_su_llm[-1].get("content"):
                     lich_su_llm = lich_su_llm[:-1] + [{**lich_su_llm[-1], "content": chuan}]
             nguon_token = response_llm.stream_response(
-                lich_su_llm, system_prompt,
+                # Lời khách rất ngắn mà tới được đây (không luật, không kho nào nhận):
+                # dặn mô hình hỏi lại khi không hiểu, xem `loi_dan_luot`.
+                lich_su_llm, system_prompt + loi_dan_luot_ngan(user_text),
                 prefill=prefill)
 
         # CÂU DO MÔ HÌNH SINH phải gọn như lời nói qua điện thoại. Đo trên bộ
@@ -3253,6 +3324,12 @@ class StreamingPipeline:
                                 "" if hang_duoi is None else ", phần còn lại dựng trong lúc phát")
 
         da_chan_bia = False
+        da_chan_kenh = False
+        da_giu_khach = False
+        # Phần đã phát của CÂU đang dở: mảnh cắt ở dấu phẩy nên lưới phải nhìn cả câu.
+        cau_do = ""
+        # Câu AI vừa nói xong trong lượt này: mạch để xét câu "mức cụ thể còn tuỳ hồ sơ".
+        cau_truoc_luot = ""
         da_chan_thu_nhap = False
         # Lưới VỪA thay cả mảnh ở lượt gọi này, và mảnh phát ra ngay
         # trước có bỏ lửng câu không. Hai thứ này quyết định câu thay
@@ -3330,7 +3407,7 @@ class StreamingPipeline:
             # nên câu thay vào vẫn đúng ngữ pháp. Chỉ thay MỘT lần mỗi lượt:
             # hai câu cùng nêu phần trăm mà thay cả hai thì khách nghe "em xin
             # phép kiểm tra lại" hai lần liền.
-            nonlocal da_chan_bia, da_chan_thu_nhap
+            nonlocal da_chan_bia, da_chan_thu_nhap, da_chan_kenh, da_giu_khach, cau_do, cau_truoc_luot
             # Cụm LAI của hai cụm trong tài liệu ("hợp đồng kinh doanh") thì đổi
             # về đúng cụm của tài liệu trước khi các lưới khác xét câu.
             doan, sua_lai = sua_thuat_ngu_lai(doan, f"{tai_lieu_chuan or ''}\n{ngu_canh or ''}")
@@ -3346,6 +3423,98 @@ class StreamingPipeline:
                 metrics["chan_tu_cam"] = sua_cam
                 vua_thay_cau[0] = True
                 return ra
+            # Câu nêu kênh làm việc (online, ứng dụng, Zalo, hứa gửi link) mà tài
+            # liệu sản phẩm không có: bỏ câu đó. Câu mẫu chỉ phát MỘT lần mỗi
+            # lượt; câu vi phạm thứ hai trở đi thì chỉ bỏ.
+            if settings.chan_kenh_la:
+                # Câu mẫu "chưa có thông tin chính thức, em ghi nhận để chuyên viên
+                # hướng dẫn" đã khép ý của lượt: phần mô hình viết tiếp sau nó chỉ
+                # còn là câu hỏi lạc đề ("anh đang làm ở đâu để em tư vấn thủ tục").
+                sua_da_khep = da_chan_kenh
+                if sua_da_khep:
+                    return ""
+                ra, sua_kenh = chan_kenh_la(doan, tai_lieu_chuan or "")
+                if sua_kenh:
+                    logger.warning("CHẶN KÊNH LẠ: %s", sua_kenh)
+                    metrics["chan_kenh_la"] = sua_kenh
+                if sua_kenh and ra == CAU_CHUA_CO_KENH and da_chan_kenh:
+                    return ""
+                if sua_kenh and ra == CAU_CHUA_CO_KENH:
+                    da_chan_kenh = True
+                    vua_thay_cau[0] = True
+                    return ra
+                if sua_kenh:
+                    doan = ra
+                # Câu bảo ngân hàng KHÔNG CÓ một sản phẩm đang có tài liệu.
+                ra, sua_phu_nhan = chan_phu_nhan_san_pham(doan, cac_san_pham())
+                if sua_phu_nhan:
+                    logger.warning("CHẶN PHỦ NHẬN SẢN PHẨM: %s", sua_phu_nhan)
+                    metrics["chan_phu_nhan_san_pham"] = sua_phu_nhan
+                if sua_phu_nhan and ra == CAU_CHUA_CO_KENH and da_chan_kenh:
+                    return ""
+                if sua_phu_nhan and ra == CAU_CHUA_CO_KENH:
+                    da_chan_kenh = True
+                    vua_thay_cau[0] = True
+                    return ra
+                if sua_phu_nhan:
+                    doan = ra
+            # Ba kiểu câu mô hình TỰ CHẾ không có con số nên lưới số không thấy:
+            # tự cúp máy khi khách chưa từ chối, tự phán hạn mức theo thu nhập
+            # của khách, tự bảo lãi suất tuỳ hồ sơ. Xem `chan_tu_che`.
+            if settings.chan_tu_che:
+                doan, sua_cup = chan_tu_cup_may(doan, user_text)
+                if sua_cup:
+                    logger.warning("CHẶN TỰ CÚP MÁY: %s", sua_cup)
+                    metrics["chan_tu_cup_may"] = sua_cup
+                if sua_cup and not da_giu_khach:
+                    da_giu_khach = True
+                    vua_thay_cau[0] = True
+                    return f"{CAU_GIU_KHACH} {doan}".strip()
+                if sua_cup:
+                    return doan
+                doan, sua_phan = chan_phan_theo_thu_nhap(doan)
+                if sua_phan:
+                    logger.warning("CHẶN PHÁN THEO THU NHẬP: %s", sua_phan)
+                    metrics["chan_phan_theo_thu_nhap"] = sua_phan
+                if sua_phan and doan == CAU_GHI_NHAN:
+                    vua_thay_cau[0] = True
+                    return doan
+                mach_luot = f"{user_text} {cau_truoc_luot}"
+                doan, sua_phu_thuoc = chan_phu_thuoc_bia(doan, tai_lieu_chuan or "", mach_luot)
+                if sua_phu_thuoc:
+                    logger.warning("CHẶN PHỤ THUỘC BỊA: %s", sua_phu_thuoc)
+                    metrics["chan_phu_thuoc_bia"] = sua_phu_thuoc
+                if sua_phu_thuoc and doan == CAU_GHI_NHAN:
+                    vua_thay_cau[0] = True
+                    return doan
+                doan, sua_chua_co = chan_chua_co_thong_tin_sai(doan, tai_lieu_chuan or "")
+                if sua_chua_co:
+                    logger.warning("CHẶN 'CHƯA CÓ THÔNG TIN' SAI: %s", sua_chua_co)
+                    metrics["chan_chua_co_thong_tin_sai"] = sua_chua_co
+                if sua_chua_co and doan == CAU_HIEU:
+                    vua_thay_cau[0] = True
+                    return doan
+                doan, sua_nguoi = chan_tu_nhan_la_nguoi(doan)
+                if sua_nguoi:
+                    logger.warning("CHẶN TỰ NHẬN LÀ NGƯỜI: %s", sua_nguoi)
+                    metrics["chan_tu_nhan_la_nguoi"] = sua_nguoi
+                    vua_thay_cau[0] = True
+                # Mảnh cắt ở DẤU PHẨY: "Với thu nhập hiện tại," đã phát ở mảnh trước,
+                # mảnh này "anh có thể vay tối đa 500 triệu" một mình thì lưới không
+                # thấy gì (bộ thử 12-10-2026). Ghép với phần đầu câu rồi xét lại;
+                # dính thì bỏ mảnh này.
+                ca_cau = f"{cau_do} {doan}".strip()
+                sua_ghep = (cau_do and (
+                    chan_phan_theo_thu_nhap(ca_cau)[1]
+                    or chan_phu_thuoc_bia(ca_cau, tai_lieu_chuan or "", mach_luot)[1]
+                    or chan_chua_co_thong_tin_sai(ca_cau, tai_lieu_chuan or "")[1])) or ""
+                if re.search(r"[.?!…]\s*$", doan):
+                    cau_truoc_luot = ca_cau
+                cau_do = "" if re.search(r"[.?!…]\s*$", doan) else ca_cau
+                if sua_ghep:
+                    logger.warning("CHẶN CÂU TỰ CHẾ (ghép mảnh): %s", sua_ghep)
+                    metrics["chan_tu_che_ghep"] = sua_ghep
+                    return ""
             # Mô hình tự tính tiền trả hàng tháng/tiền lãi -> thay bằng câu xin
             # dữ kiện. Phép tính đó chỉ luật `tinh_tra_gop` được làm.
             if settings.chan_tu_tinh_tien:

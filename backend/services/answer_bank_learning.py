@@ -21,6 +21,7 @@ from typing import Any, Awaitable
 
 from backend.config import settings
 from backend.models import db
+from backend.services import kho_theo_tai_lieu
 from backend.services import knowledge_qa_service as qa
 from backend.services.rag_service import cat_manh
 
@@ -266,6 +267,15 @@ def prepare_sources(*, full_rebuild: bool = False) -> tuple[list[Document], list
                 conn.execute("UPDATE answer_bank_sources SET status='missing',last_error=?,updated_at=? "
                              "WHERE source_path=?", ("Tài liệu đã bị xóa", now, rel))
                 changed = changed or bool(n)
+            elif (row[5] == "done" and row[3] != doc.fingerprint
+                  and kho_theo_tai_lieu.chi_doi_so(conn, rel, doc.text)):
+                # Chỉ con số đổi (lãi suất, phí, hạn mức): điền lại các đáp án có
+                # mẫu thay vì tắt cả bộ rồi chờ Qwen soạn lại từ đầu.
+                kho_theo_tai_lieu.ap_dung_doi_so(
+                    conn, rel, doc.fingerprint, str(_knowledge_root().parent))
+                conn.execute("UPDATE answer_bank_sources SET content_hash=?,updated_at=? "
+                             "WHERE source_path=?", (doc.fingerprint, now, rel))
+                changed = True
             elif row[5] == "missing" or row[3] != doc.fingerprint:
                 n = _disable_generated(conn, rel, group, stem)
                 conn.execute("DELETE FROM hoi_dap WHERE id IN (SELECT hoi_dap_id FROM "

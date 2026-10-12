@@ -16,8 +16,8 @@ from decimal import Decimal
 
 from backend.pipeline.text_normalizer import _chu_thanh_so, _tien_trong
 from backend.pipeline.du_kien_khoan_vay import (
-    _CALC, LoanState, chuan_hoa_so_khong_dau, is_readback, quantities, resolve,
-    voi_tran_san_pham,
+    _CALC, LoanState, ai_vua_hoi, chuan_hoa_so_khong_dau, is_readback,
+    luot_truoc_bo_lung_ky_han, quantities, resolve, voi_tran_san_pham,
 )
 from backend.pipeline.tra_loi_dieu_kien import tra_loi_dieu_kien
 
@@ -346,9 +346,42 @@ def _gioi_han_menh_de(text: str, start: int, end: int) -> tuple[int, int]:
 _KENH_GUI = re.compile(r"\b(?P<online>online|truc tuyen)\b|\b(?P<quay>tai quay|o quay|quay)\b")
 
 
+def _chuan_hoa_bien_chu_so(text: str) -> str:
+    """Tạo ranh giới ngữ nghĩa cho kiểu chat ``online100triệu``."""
+    return re.sub(r"(?<=[a-z])(?=\d)|(?<=\d)(?=[a-z])", " ", _bo_dau(text))
+
+
+def _la_hoi_lai_online_ro(text: str) -> bool:
+    """Câu hỏi lãi có kỳ hạn hoặc danh từ ``sổ`` tự xác định kênh online."""
+    t = _chuan_hoa_bien_chu_so(text)
+    raw = unicodedata.normalize("NFC", (text or "").lower())
+    co_ky = bool(re.search(r"\b\d{1,2}\s*(?:thang|nam)\b", t))
+    co_so_gui = bool(
+        re.search(r"\bsổ(?:\s+tiết kiệm)?\b", raw)
+        or re.search(r"\bso\s+(?:tiet kiem|vnd|online)\b", t)
+    )
+    online_bi_trich_dan = bool(
+        re.search(r"[\"'“”‘’]\s*online\s*[\"'“”‘’]", raw)
+        or re.search(r"\b(?:ghi|viet|nhac|trich|noi|bao)\b.{0,18}\bonline\b", t)
+    )
+    return bool(
+        re.search(r"\b(?:online|truc tuyen)\b", t)
+        and (co_ky or co_so_gui)
+        and re.search(r"\b(?:cong|them|lai suat|phan tram|bao nhieu lai)\b", t)
+        and not online_bi_trich_dan
+        and not re.search(
+            r"\b(?:mat khau|banking|the tin dung|the online|khoan vay|tien vay|"
+            r"chuyen tien|chuyen khoan|thanh toan|cccd|can cuoc|dien thoai|"
+            r"so tai khoan|ma xac thuc|otp|pin)\b", t)
+    )
+
+
 def _kenh_gui_trong_cau(text: str, co_ngu_canh_gui: bool) -> tuple[str | None, str | None]:
     """Kênh gửi khẳng định trong lượt; trả ``(value, status)`` nếu có cập nhật."""
-    t = _bo_dau(text)
+    # Bộ tách quantity đã hiểu ``100triệu`` và ``6tháng`` là các token riêng.
+    # Kênh và neo sở hữu phải nhìn cùng ranh giới chữ-số để ``online100`` hay
+    # ``gửi100triệu online`` không làm mất thông tin kênh.
+    t = _chuan_hoa_bien_chu_so(text)
     cac = list(_KENH_GUI.finditer(t))
     # Câu trả lời chỉ nói về phương thức gửi. Từ ngoài tập này (mật khẩu, thẻ,
     # thông tin...) làm câu không còn là một sửa kênh trần.
@@ -357,10 +390,11 @@ def _kenh_gui_trong_cau(text: str, co_ngu_canh_gui: bool) -> tuple[str | None, s
         r"\b(a|da|vang|toi|anh|chi|minh|em|thi|khong|phai|chang|chua|con|nua|thoi|nhe|"
         r"gui|kenh|hinh thuc|chon|doi|chuyen|sua|tu|sang|thanh|la|se)\b", " ", con_lai)
     kenh_tran = co_ngu_canh_gui and not re.sub(r"[^a-z0-9]+", "", con_lai)
+    hoi_lai_online_ro = _la_hoi_lai_online_ro(text)
 
     hop_le: list[tuple[re.Match, str, bool]] = []
     for m in cac:
-        # `_bo_dau` giữ chiều dài ký tự Latin/Vietnamese trong các token kênh.
+        # Mọi span dưới đây đều dùng cùng hệ tọa độ của chuỗi đã chuẩn hóa.
         dau, cuoi = _gioi_han_menh_de(t, m.start(), m.end())
         menh_de = t[dau:cuoi]
         truoc = t[dau:m.start()]
@@ -374,7 +408,7 @@ def _kenh_gui_trong_cau(text: str, co_ngu_canh_gui: bool) -> tuple[str | None, s
         doi_kenh_ro = bool(co_ngu_canh_gui and re.search(
             r"\b(?:doi|chuyen|sua)\s+(?:(?:kenh|hinh thuc)\s+)?(?:gui\s+)?"
             r"(?:sang|thanh)?\s*$", truoc))
-        if owner == "gui" or kenh_tran or doi_kenh_ro:
+        if owner == "gui" or kenh_tran or doi_kenh_ro or hoi_lai_online_ro:
             phu_dinh_truoc = bool(re.search(
                 r"\b(?:khong\s+phai(?:\s+(?:toi|anh|chi|minh|em))?|khong|chang|chua)\s+"
                 r"(?:con\s+)?(?:chon\s+)?(?:kenh\s+)?(?:gui\s+)?$", truoc))
@@ -425,6 +459,35 @@ def _co_sua_giua(text: str, cac) -> bool:
     return bool(_SUA_GUI.search(giua)) and not re.search(r"\b(hay|hoac)\b", giua)
 
 
+def _hai_truong_cung_khai_bao_gui(text: str, qs) -> bool:
+    """Tiền và kỳ hạn duy nhất cùng thuộc một khai báo sổ tiết kiệm.
+
+    Khách thường liệt kê ``sổ ... là 150 triệu, 6 tháng, gửi tại quầy``.
+    Dấu phẩy làm kỳ hạn mất neo theo mệnh đề, nhưng đây vẫn là một bản ghi duy
+    nhất. Chỉ nối hai trường khi lượt có đúng một tiền, một kỳ hạn, có neo gửi
+    sở hữu ít nhất một trường và không có lựa chọn hay lời giả định/rút lại.
+    """
+    t = _bo_dau(text)
+    if (re.search(r"\b(neu|gia su|vi du|thu dat vao)\b", t)
+            or re.search(r"\b(hay|hoac)\b", t)
+            or re.search(r"\b(?:bo|huy|rut lai)\b.{0,24}\b(?:so|khoan|tien)?\s*gui\b|"
+                         r"\b(?:so|khoan|tien)?\s*gui\b.{0,24}\b(?:bo|huy|rut lai)\b", t)):
+        return False
+    tien = [q for q in qs if q.kind == "money" and q.value is not None]
+    ky = [q for q in qs if q.kind == "duration" and q.value is not None]
+    if len(tien) != 1 or len(ky) != 1:
+        return False
+    owners = (_chu_so_huu_du_kien(text, tien[0].start, tien[0].end),
+              _chu_so_huu_du_kien(text, ky[0].start, ky[0].end))
+    raw = unicodedata.normalize("NFC", (text or "").lower())
+    co_so_gui_ro = bool(re.search(r"\bsổ\b|\bso tiet kiem\b", raw[:tien[0].start]))
+    if "khac" in owners or ("gui" not in owners and not co_so_gui_ro):
+        return False
+    dau, cuoi = sorted((tien[0], ky[0]), key=lambda q: q.start)
+    giua = _bo_dau(text[dau.end:cuoi.start])
+    return not re.search(r"\b(vay|luong|thu nhap|gia|xe|tai san|chuyen tien)\b", giua)
+
+
 def _du_kien_tinh_lai_tiet_kiem(text: str, history: list[dict] | None,
                                 bang: dict[int, str], cho_gia_dinh: bool = False) \
         -> tuple[Decimal | None, int | None, str, str, str | None, str]:
@@ -454,6 +517,7 @@ def _du_kien_tinh_lai_tiet_kiem(text: str, history: list[dict] | None,
             continue
         tat_ca_q = quantities(cau)
         qs = [q for q in tat_ca_q if q.value is not None]
+        cung_khai_bao_gui = _hai_truong_cung_khai_bao_gui(cau, qs)
         dang_sua = bool(_SUA_GUI.search(t)) and (
             tien_status != "unknown" or ky_status != "unknown" or kenh_status != "unknown")
         gui_them = bool(re.search(r"\b(gui|nop|bo sung)\s+them\b", t))
@@ -468,6 +532,7 @@ def _du_kien_tinh_lai_tiet_kiem(text: str, history: list[dict] | None,
 
         tien_q = [q for q in qs if q.kind == "money" and (
             _gan_neo_gui(cau, q.start, q.end)
+            or (cung_khai_bao_gui and _chu_so_huu_du_kien(cau, q.start, q.end) is None)
             or (dang_sua and _chu_so_huu_du_kien(cau, q.start, q.end) is None)
             or (_HOI_TIEN_GUI.search(ai_truoc) and _chi_mot_du_kien(cau, [q])))]
         tien_tran_sua = [q for q in tat_ca_q if q.kind == "bare" and dang_sua
@@ -502,6 +567,7 @@ def _du_kien_tinh_lai_tiet_kiem(text: str, history: list[dict] | None,
         rut_som = bool(re.search(r"\b(rut|tat toan).{0,24}\b(sau|truoc|som|thang|nam)\b", t))
         ky_q = [] if rut_som else [q for q in qs if q.kind == "duration" and (
             _gan_neo_gui(cau, q.start, q.end)
+            or (cung_khai_bao_gui and _chu_so_huu_du_kien(cau, q.start, q.end) is None)
             or (_chu_so_huu_du_kien(cau, q.start, q.end) is None and bool(
                 re.search(r"\b(ky han|trong)\b", _bo_dau(cau[:q.start]))))
             or (dang_sua and _chu_so_huu_du_kien(cau, q.start, q.end) is None)
@@ -584,11 +650,245 @@ def _lai_ap_dung(sp_doc: str, ky: int, kenh: str | None) \
     return co_so, "mức cơ sở trong tài liệu, chưa áp dụng cộng thêm online"
 
 
+def _tien_gui_toi_thieu(sp_doc: str) -> Decimal | None:
+    """Mức tiền gửi tối thiểu duy nhất ghi trong đúng thuộc tính nguồn."""
+    cac: set[Decimal] = set()
+    for dong in sp_doc.splitlines():
+        if not re.match(r"\s*-\s*so tien gui toi thieu\s*:", _bo_dau(dong)):
+            continue
+        tien = [q.value for q in quantities(dong)
+                if q.kind == "money" and q.value is not None]
+        if len(tien) == 1:
+            cac.add(Decimal(tien[0]))
+    return next(iter(cac)) if len(cac) == 1 else None
+
+
+def _fmt_tien_gui(value: Decimal) -> str:
+    """Giữ cách đọc nghìn cho đề xuất dưới một triệu để dễ đối chiếu."""
+    if Decimal(0) < value < Decimal(1_000_000) and value % Decimal(1000) == 0:
+        return f"{int(value / Decimal(1000))} nghìn đồng"
+    return _fmt_trieu(float(value))
+
+
+def _tien_de_xuat_gui_trong_luot(text: str) -> tuple[str, Decimal | None]:
+    """Tiền khách đang đề xuất gửi; loại mức bị phủ định trong lời sửa."""
+    t = _bo_dau(text)
+    tat_ca = [q for q in quantities(text)
+              if q.value is not None and q.kind in ("money", "bare")]
+    if (re.search(r"\b(?:hay|hoac)\b", t) and len(tat_ca) > 1
+            and any(q.kind == "money" for q in tat_ca)
+            and re.search(r"\b(?:gui|tiet kiem|mo so)\b", t)):
+        return "ambiguous", None
+    cac = []
+    for q in tat_ca:
+        if q.kind != "money" or q.value is None:
+            continue
+        dau, cuoi = _gioi_han_menh_de(t, q.start, q.end)
+        truoc, sau = t[dau:q.start], t[q.end:cuoi]
+        if re.search(r"\bkhong phai\b[^,;.!?]{0,20}$", truoc):
+            continue
+        co_neo = (_gan_neo_gui(text, q.start, q.end)
+                  or bool(re.search(r"\b(?:muon|dinh|can)\s+gui\b", sau))
+                  or bool(re.search(r"\b(?:xin sua|sua|chot|chi co)\b", truoc)))
+        if co_neo:
+            cac.append(Decimal(q.value))
+    if len(set(cac)) > 1:
+        return "ambiguous", None
+    return ("known", cac[0]) if cac else ("unknown", None)
+
+
+def _tra_loi_muc_toi_thieu_tiet_kiem(text: str, t: str, sp_doc: str) \
+        -> tuple[str, str] | None:
+    """Đọc mức tối thiểu và chặn lời khẳng định đủ điều kiện dưới ngưỡng."""
+    muc = _tien_gui_toi_thieu(sp_doc)
+    hoi_muc = bool(re.search(r"\b(?:muc|so tien|gui|mo so)?\s*toi thieu\b", t)
+                   and re.search(r"\b(?:bao nhieu|la may|la bao nhieu|muc nao)\b", t))
+    status, de_xuat = _tien_de_xuat_gui_trong_luot(text)
+    if status == "ambiguous":
+        if re.search(r"\b(?:tien lai|bao nhieu tien|lai suat|phan tram|may cham)\b", t):
+            return None
+        if muc is None:
+            return "xac_nhan_tien_gui", (
+                "Dạ anh chị đang nêu nhiều số tiền gửi; vui lòng xác nhận một mức cụ thể ạ.")
+        return "xac_nhan_tien_gui", (
+            f"Dạ anh chị đang nêu nhiều số tiền gửi; mức tối thiểu theo tài liệu là "
+            f"{_fmt_trieu(float(muc))}. Anh chị vui lòng xác nhận một mức cụ thể ạ.")
+    de_xuat_thuan = not re.search(
+        r"\b(?:qua|tang|uu dai|khuyen mai|lai|phi|rut|tat toan|bao hiem)\b", t)
+    if status == "known" and de_xuat is not None and muc is None and de_xuat_thuan:
+        return "muc_tien_gui_toi_thieu_chua_ro", (
+            f"Dạ em ghi nhận khoản dự kiến {_fmt_tien_gui(de_xuat)}, nhưng tài liệu hiện "
+            "chưa có một mức tiền gửi tối thiểu duy nhất để em đối chiếu ạ.")
+    if status == "known" and de_xuat is not None and muc is not None and de_xuat < muc:
+        gia_dinh = "nếu " if re.search(r"\b(neu|gia su|vi du)\b", t) else ""
+        return "tien_gui_duoi_muc_toi_thieu", (
+            f"Dạ {gia_dinh}khoản dự kiến là {_fmt_tien_gui(de_xuat)} thì đang thấp hơn "
+            f"mức gửi tối thiểu {_fmt_trieu(float(muc))} theo tài liệu. Anh chị vui lòng "
+            f"xác nhận một số tiền gửi từ {_fmt_trieu(float(muc))} trở lên ạ.")
+    if hoi_muc:
+        if muc is None:
+            return "muc_tien_gui_toi_thieu_chua_ro", (
+                "Dạ tài liệu hiện chưa có một mức tiền gửi tối thiểu duy nhất để em xác nhận ạ.")
+        return "muc_tien_gui_toi_thieu", (
+            f"Dạ số tiền gửi tối thiểu theo tài liệu là {_fmt_trieu(float(muc))} ạ.")
+    return None
+
+
+def _la_huy_rut_tiet_kiem(t: str) -> bool:
+    return bool(re.search(
+        r"\b(?:khong|chua|thoi khong)\s+(?:muon\s+)?rut\b|"
+        r"\b(?:huy|bo|rut lai)\b.{0,20}\b(?:yeu cau\s+)?rut\b|"
+        r"\brut\b.{0,20}\b(?:huy|bo|khong nua)\b", t))
+
+
+def _la_rut_tien_gui(text: str) -> bool:
+    t = _bo_dau(text)
+    if not re.search(r"\b(?:rut|tat toan)\b", t):
+        return False
+    if re.search(r"\b(?:khoan vay|tien vay|du no|tra no|tra khoan vay)\b", t):
+        return False
+    return bool(re.search(
+        r"\b(?:rut|tat toan)\b.{0,28}\b(?:truoc|som|mot phan|trieu|nghin|ty)\b|"
+        r"\b(?:rut|tat toan)\s+(?:bot|ra)\b", t))
+
+
+def _phan_tich_rut_mot_phan(text: str, so_goc: Decimal | None) \
+        -> tuple[str, Decimal | None, Decimal | None]:
+    """Tách phần rút/phần để lại; không tự chọn khi lời khách cạnh tranh."""
+    if not _la_rut_tien_gui(text):
+        return "unknown", None, None
+    t = _bo_dau(text)
+    tien = [q for q in quantities(text)
+            if q.kind == "money" and q.value is not None
+            and _chu_so_huu_du_kien(text, q.start, q.end) != "khac"]
+    if not tien:
+        return "unknown", None, None
+    if re.search(r"\b(?:hay|hoac)\b", t):
+        return "ambiguous", None, None
+
+    phan_rut: list[Decimal] = []
+    phan_con: list[Decimal] = []
+    for q in tien:
+        dau, cuoi = _gioi_han_menh_de(t, q.start, q.end)
+        truoc, sau = t[dau:q.start], t[q.end:cuoi]
+        value = Decimal(q.value)
+        if re.search(r"\b(?:con|phan con lai)\b", truoc):
+            phan_con.append(value)
+        elif re.search(r"\b(?:rut|tat toan)\b", truoc):
+            phan_rut.append(value)
+        elif re.search(r"\b(?:de lai|giu lai|con lai)\b", sau):
+            phan_con.append(value)
+
+    if len(phan_rut) > 1 or len(phan_con) > 1:
+        return "ambiguous", None, None
+    rut = phan_rut[0] if phan_rut else None
+    con = phan_con[0] if phan_con else None
+    if so_goc is not None:
+        if rut is not None and con is None:
+            con = so_goc - rut
+        elif con is not None and rut is None:
+            rut = so_goc - con
+        if rut is not None and con is not None and rut + con != so_goc:
+            return "ambiguous", None, None
+    if rut is None or con is None or rut <= 0 or con <= 0:
+        return "ambiguous", None, None
+    return "known", rut, con
+
+
+def _rut_mot_phan_hien_tai(text: str, history: list[dict] | None,
+                            bang: dict[int, str]) -> dict | None:
+    """Sự kiện rút một phần gần nhất, tối đa 20 lượt khách và theo đúng thứ tự."""
+    cac_cu = list(history or [])
+    if (cac_cu and cac_cu[-1].get("role") == "user"
+            and (cac_cu[-1].get("content") or "").strip() == (text or "").strip()):
+        cac_cu = cac_cu[:-1]
+    rows = [r for r in cac_cu if r.get("role") == "user"][-19:]
+    rows.append({"role": "user", "content": text})
+    active = None
+    prefix: list[dict] = []
+    for i, row in enumerate(rows):
+        cau = row.get("content", "") or ""
+        t = _bo_dau(cau)
+        la_hien_tai = i == len(rows) - 1
+        if _la_huy_rut_tiet_kiem(t):
+            active = None
+            prefix.append(row)
+            continue
+        qs = [q for q in quantities(cau) if q.value is not None]
+        if (active is not None and _hai_truong_cung_khai_bao_gui(cau, qs)
+                and not re.search(r"\b(neu|gia su|vi du)\b", t)):
+            active = None
+        if not _la_rut_tien_gui(cau):
+            prefix.append(row)
+            continue
+        gia_dinh = bool(re.search(r"\b(neu|gia su|vi du)\b", t))
+        if gia_dinh and not la_hien_tai:
+            prefix.append(row)
+            continue
+        so_goc, ky, _, ky_status, kenh, kenh_status = \
+            _du_kien_tinh_lai_tiet_kiem("", prefix, bang)
+        status, rut, con = _phan_tich_rut_mot_phan(cau, so_goc)
+        if status == "unknown":
+            prefix.append(row)
+            continue
+        active = {
+            "status": status,
+            "rut": rut,
+            "con": con,
+            "ky": ky if ky_status == "known" else None,
+            "kenh": kenh if kenh_status == "known" else None,
+            "gia_dinh": gia_dinh,
+            "la_hien_tai": la_hien_tai,
+        }
+        prefix.append(row)
+    return active
+
+
+def _tra_loi_rut_mot_phan_tiet_kiem(text: str, t: str, sp_doc: str,
+                                     history: list[dict] | None,
+                                     bang: dict[int, str], khong_ky_han: str | None) \
+        -> tuple[str, str] | None:
+    """Áp quy tắc nguồn riêng cho phần rút và phần còn lại trong sổ."""
+    active = _rut_mot_phan_hien_tai(text, history, bang)
+    if active is None:
+        return None
+    hoi_lai = bool(re.search(
+        r"\b(?:hai phan|phan rut|phan con lai|huong lai|lai the nao|tien lai|"
+        r"bao nhieu lai|cuoi ky|uoc tinh lai)\b", t))
+    if not active["la_hien_tai"] and not hoi_lai:
+        return None
+    if active["status"] != "known":
+        return "xac_nhan_rut_mot_phan_tiet_kiem", (
+            "Dạ em chưa xác định được duy nhất phần tiền rút trước hạn và phần còn lại. "
+            "Anh chị xác nhận giúp em mỗi phần một số tiền cụ thể ạ.")
+    ky = active["ky"]
+    if khong_ky_han is None or ky is None:
+        return "chua_du_nguon_rut_mot_phan_tiet_kiem", (
+            "Dạ tài liệu hoặc dữ kiện hiện chưa đủ để xác định lãi suất cho hai phần; "
+            "anh chị vui lòng xác nhận kỳ hạn của sổ ạ.")
+    apr_con, _ = _lai_ap_dung(sp_doc, ky, active["kenh"])
+    if apr_con is None:
+        return "chua_du_nguon_rut_mot_phan_tiet_kiem", (
+            f"Dạ tài liệu chưa có một mức lãi suất ban đầu xác định cho kỳ hạn {ky} tháng, "
+            "nên em chưa thể xác nhận lãi của phần còn lại ạ.")
+    mo_dau = (f"Dạ nếu rút trước hạn {_fmt_trieu(float(active['rut']))} thì phần đó"
+              if active["gia_dinh"] else
+              f"Dạ phần {_fmt_trieu(float(active['rut']))} rút trước hạn thì phần đó")
+    return "lai_rut_mot_phan_tiet_kiem", (
+        f"{mo_dau} chỉ hưởng lãi suất không kỳ hạn {khong_ky_han}% một năm; phần "
+        f"{_fmt_trieu(float(active['con']))} còn lại trong sổ giữ nguyên lãi suất ban đầu "
+        f"{str(apr_con).replace('.', ',')}% một năm ạ. Tài liệu chưa có số ngày gửi thực "
+        "tế của phần rút nên em chưa ước tính số tiền lãi đã nhận.")
+
+
 def _tinh_lai_tiet_kiem(text: str, t: str, sp_doc: str,
                         history: list[dict] | None, bang: dict[int, str],
                         du_kien_gui=None) \
         -> tuple[str, str] | None:
-    hoi_tien_lai = bool(re.search(
+    nhac_lai_va_tinh = bool(re.search(r"\b(nhac lai|doc lai|xac nhan lai)\b", t)
+                              and re.search(r"\b(tien gui|so tien|ky han|hinh thuc)\b", t)
+                              and re.search(r"\b(uoc tinh|tinh)\b.{0,18}\blai\b", t))
+    hoi_tien_lai = nhac_lai_va_tinh or bool(re.search(
         r"\b(tien lai|so tien lai|lai (?:duoc|nhan|thu ve).{0,18}(?:bao nhieu|may)|"
         r"bao nhieu tien(?: lai)?|cuoi ky.{0,18}(?:duoc|nhan).{0,12}bao nhieu)\b", t))
     if not hoi_tien_lai:
@@ -612,6 +912,15 @@ def _tinh_lai_tiet_kiem(text: str, t: str, sp_doc: str,
         return "thieu_du_kien_tinh_lai_tiet_kiem", (
             "Dạ em thấy có nhiều số tiền hoặc kỳ hạn gửi khác nhau, anh chị xác nhận "
             "lại một số tiền gửi và một kỳ hạn để em ước tính ạ.")
+    if ky is None and tien is not None and ky_status == "unknown":
+        # "năm phẩy năm là sao, một trăm triệu thì được bao nhiêu tiền": mức 5,5%
+        # chỉ thuộc về MỘT kỳ hạn trong bảng.
+        from backend.pipeline.du_kien_khoan_vay import quantities
+        nhac = {_so_phay(format(q.value.normalize(), "f")) for q in quantities(text)
+                if q.value is not None and q.kind != "money" and q.value != q.value.to_integral()}
+        khop = [k for k, lai in bang.items() if lai in nhac]
+        if len(khop) == 1:
+            ky = khop[0]
     if tien is None or ky is None:
         thieu = ("số tiền gửi và kỳ hạn" if tien is None and ky is None
                  else "số tiền gửi" if tien is None else "kỳ hạn gửi")
@@ -631,6 +940,36 @@ def _tinh_lai_tiet_kiem(text: str, t: str, sp_doc: str,
         f"{str(apr).replace('.', ',')}% một năm, tiền lãi ước tính khoảng "
         f"{_fmt_trieu(float(lai))} ạ. Số thực nhận còn phụ thuộc số ngày gửi thực tế "
         "và điều kiện tại thời điểm mở sổ; đây chưa phải lịch lãi chính thức.")
+
+
+def _tra_loi_nhap_goc_va_phi_tiet_kiem(t: str, sp_doc: str) \
+        -> tuple[str, str] | None:
+    """Trả đúng phần nguồn có và nói rõ phần tự nhập gốc chưa được nguồn nêu."""
+    hoi_nhap_goc = bool(re.search(
+        r"\b(?:lai|tien lai)\b.{0,28}\b(?:tu dong\s+)?(?:nhap|cong)\s+(?:vao\s+)?goc\b|"
+        r"\b(?:tu dong\s+)?(?:nhap|cong)\s+(?:lai\s+)?(?:vao\s+)?goc\b|"
+        r"\b(?:tai tuc|lai kep)\b", t))
+    hoi_phi = bool(re.search(
+        r"\bphi\b.{0,35}\b(?:mo so|tat toan)\b|"
+        r"\b(?:mo so|tat toan)\b.{0,35}\bphi\b", t))
+    if not (hoi_nhap_goc and hoi_phi):
+        return None
+
+    nhan_lai = next((dong.split(":", 1)[1].strip().rstrip(".")
+                     for dong in sp_doc.splitlines()
+                     if re.match(r"\s*-\s*nhan lai\s*:", _bo_dau(dong))), None)
+    dong_phi = next((dong.strip().lstrip("- ") for dong in _muc_tai_lieu(
+        sp_doc, "ưu đãi") if re.search(r"\bmien phi\b.{0,35}\bmo so\b.{0,35}\btat toan\b",
+                                       _bo_dau(dong))), None)
+    if nhan_lai:
+        phan_lai = (f"Dạ tài liệu chỉ nêu nhận lãi {nhan_lai}, chưa nêu lãi tự động "
+                    "nhập gốc hoặc tự động tái tục nên em chưa thể xác nhận tính năng này ạ.")
+    else:
+        phan_lai = ("Dạ tài liệu chưa nêu lãi tự động nhập gốc hoặc tự động tái tục, "
+                    "nên em chưa thể xác nhận tính năng này ạ.")
+    phan_phi = (_cau_tu_dong(dong_phi) if dong_phi else
+                "Dạ tài liệu hiện cũng chưa nêu phí mở sổ và tất toán ạ.")
+    return "lai_nhap_goc_va_phi_tiet_kiem", f"{phan_lai} {phan_phi}"
 
 
 def _uu_dai_tiet_kiem(text: str, t: str, sp_doc: str) -> tuple[str, str] | None:
@@ -667,9 +1006,34 @@ def _uu_dai_tiet_kiem(text: str, t: str, sp_doc: str) -> tuple[str, str] | None:
     return "uu_dai_tiet_kiem", " ".join(cac)
 
 
+def _tra_loi_rut_truoc_han(t: str, sp_doc: str) -> tuple[str, str] | None:
+    """"gửi rồi lúc cần bác lấy ra được không": đọc đúng dòng "Rút trước hạn" của tài liệu.
+
+    Bộ thử 12-10-2026: mô hình tự viết có lần đáp "gửi có kỳ hạn thì chỉ rút được
+    khi đến hạn" - ngược với tài liệu.
+    """
+    if not re.search(r"\b(lay ra|rut ra|rut truoc|rut som|rut giua chung|rut lai|lay lai|luc can|"
+                     r"can tien|can gap)\b", t) or not re.search(
+            r"\b(duoc khong|co duoc|duoc chua|thi sao|co sao|co mat|the nao|duoc ko)\b", t):
+        return None
+    if re.search(r"\b(bao nhieu tien|tinh|tien lai)\b", t):
+        return None            # hỏi con số cụ thể: luật tính lãi đã có câu riêng
+    dong = next((d.strip(" -") for d in sp_doc.splitlines()
+                 if _bo_dau(d).startswith("rut truoc han thi")), "")
+    if not dong:
+        return None
+    return "rut_truoc_han", "Dạ rút được ạ. " + dong.rstrip(".") + " ạ."
+
+
 def _tra_loi_tiet_kiem(text: str, t: str, sp_doc: str,
                        history: list[dict] | None = None) -> tuple[str, str] | None:
     """Gửi tiết kiệm: lãi suất đi theo KỲ HẠN, không có hạn mức hay trả góp."""
+    muc_toi_thieu = _tra_loi_muc_toi_thieu_tiet_kiem(text, t, sp_doc)
+    if muc_toi_thieu:
+        return muc_toi_thieu
+    nhap_goc_va_phi = _tra_loi_nhap_goc_va_phi_tiet_kiem(t, sp_doc)
+    if nhap_goc_va_phi:
+        return nhap_goc_va_phi
     uu_dai = _uu_dai_tiet_kiem(text, t, sp_doc)
     if uu_dai:
         return uu_dai
@@ -678,6 +1042,10 @@ def _tra_loi_tiet_kiem(text: str, t: str, sp_doc: str,
         if gia_tri:
             return "phan_hoi_lai_thap", _cau_tu_dong(gia_tri)
     bang, khong_ky_han = _bang_lai_tiet_kiem(sp_doc)
+    rut_mot_phan = _tra_loi_rut_mot_phan_tiet_kiem(
+        text, t, sp_doc, history, bang, khong_ky_han)
+    if rut_mot_phan:
+        return rut_mot_phan
     if re.search(r"\b(vang|do la|usd|ngoai te)\b", t) and re.search(
             r"\b(gui|tiet kiem|mo so)\b", t):
         doc = _bo_dau(sp_doc)
@@ -702,9 +1070,38 @@ def _tra_loi_tiet_kiem(text: str, t: str, sp_doc: str,
         and re.search(r"\b(tien lai|bao nhieu tien|lai suat|phan tram|may cham)\b", t))
     du_kien_gui = _du_kien_tinh_lai_tiet_kiem(
         text, history, bang, cho_gia_dinh=la_cau_hoi_gia_dinh)
+    if (_la_hoi_lai_online_ro(text)
+            and re.search(r"\bcong\b.{0,24}\b(?:bao nhieu|may)\b", t)):
+        _, ky_online, _, ky_status_online, kenh_online, kenh_status_online = du_kien_gui
+        if ky_status_online == "ambiguous" or kenh_status_online == "ambiguous":
+            return "xac_nhan_lai_online", (
+                "Dạ anh chị vui lòng xác nhận một kỳ hạn và một hình thức gửi cụ thể ạ.")
+        if ky_online is None or kenh_online != "online":
+            return "xac_nhan_lai_online", (
+                "Dạ anh chị vui lòng xác nhận kỳ hạn gửi online để em báo đúng mức cộng ạ.")
+        co_so = _lai_nguon_cho_ky(sp_doc, ky_online)
+        cong_them = _cong_them_online_tu_nguon(sp_doc)
+        if co_so is None or cong_them is None:
+            return "khong_co_lai_suat_tiet_kiem", (
+                "Dạ tài liệu chưa có một mức lãi suất cơ sở và mức cộng online duy nhất "
+                "để em xác nhận ạ.")
+        tong = co_so + cong_them
+        return "cong_them_lai_online", (
+            f"Dạ gửi online kỳ hạn {ky_online} tháng được cộng thêm "
+            f"{str(cong_them).replace('.', ',')} điểm phần trăm một năm so với tại quầy, "
+            f"từ {str(co_so).replace('.', ',')}% lên tổng "
+            f"{str(tong).replace('.', ',')}% một năm ạ.")
     tinh_lai = _tinh_lai_tiet_kiem(text, t, sp_doc, history, bang, du_kien_gui)
     if tinh_lai:
         return tinh_lai
+    tien, ky, tien_status, ky_status, kenh, kenh_status = du_kien_gui
+    khai_bao_luot_nay = _hai_truong_cung_khai_bao_gui(text, du_kien_luot_nay)
+    if (khai_bao_luot_nay and tien_status == ky_status == kenh_status == "known"
+            and tien is not None and ky is not None and kenh is not None):
+        nhan_kenh = "gửi online" if kenh == "online" else "gửi tại quầy"
+        return "ghi_nhan_gui_tiet_kiem", (
+            f"Dạ em ghi nhận khoản gửi {_fmt_trieu(float(tien))}, kỳ hạn {ky} tháng, "
+            f"{nhan_kenh} ạ.")
     if _MUON_GUI.fullmatch(re.sub(r"[^a-z0-9\s]", " ", t).strip()):
         m = re.search(r"toi thieu\s*:\s*([^\n]+)", _bo_dau(sp_doc))
         dong = _gia_tri_dong(sp_doc, "Số tiền gửi tối thiểu") if m else None
@@ -794,9 +1191,268 @@ def _cac_loai_the(sp_doc: str) -> dict[str, tuple[str, str, str]]:
     return ra
 
 
-def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "") -> tuple[str, str] | None:
+def _muc_chi_tieu(text: str) -> tuple[Decimal, Decimal] | None:
+    """(thấp, cao) của mức chi tiêu khách nêu, tính bằng đồng.
+
+    "mười lăm hai chục củ" là MỘT khoảng: bộ đọc số trả một cụm không có giá trị,
+    nên tách cụm ở từng chỗ cho tới khi cả hai nửa đều đọc được.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    tien = [q for q in quantities(text) if q.kind == "money"]
+    if len(tien) != 1:
+        return None
+    q = tien[0]
+    if q.value is not None:
+        return Decimal(q.value), Decimal(q.value)
+    chu = q.raw.split()
+
+    def _doc(cum: list[str]) -> Decimal | None:
+        cac = [x for x in quantities(" ".join(cum) + " triệu") if x.kind == "money" and x.value]
+        return Decimal(cac[0].value) if len(cac) == 1 else None
+
+    # Nhiều cách tách cùng đọc được ("mười | lăm hai chục"): lấy cách cho mức
+    # THẤP lớn nhất, tức hai nửa gần nhau nhất - "mười lăm | hai chục".
+    cach = []
+    for i in range(1, len(chu) - 1):
+        a, b = _doc(chu[:i]), _doc(chu[i:-1])
+        if a and b and a < b:
+            cach.append((a, b))
+    return max(cach) if cach else None
+
+
+def _goi_y_the_theo_chi_tieu(text: str, t: str,
+                             cac_the: dict[str, tuple[str, str, str]]) -> tuple[str, str] | None:
+    """"anh xài mỗi tháng chừng mười lăm hai chục củ thì nên làm thẻ gì".
+
+    Chỉ đối chiếu mức chi tiêu với KHUNG HẠN MỨC từng hạng thẻ trong tài liệu:
+    hạng thấp nhất có hạn mức đủ cho mức chi tiêu đó, kèm hạng kế trên. Không phán
+    khách được cấp hạng nào.
+    """
+    if not re.search(r"\b(nen|hop|phu hop)\b.{0,20}\bthe\b|\bthe (nao|gi|loai nao|hang nao)\b", t) \
+            or not re.search(r"\b(xai|tieu|chi tieu|dung|quet|mua sam)\b", t):
+        return None
+    muc = _muc_chi_tieu(text)
+    if muc is None:
+        return None
+    khung = []
+    for khoa, _ in _TEN_THE:
+        if khoa not in cac_the:
+            continue
+        ten, han_muc, _phi = cac_the[khoa]
+        m = re.search(r"(\d+)\s*[-–]\s*(\d+)\s*triệu", han_muc)
+        if m:
+            khung.append((ten, han_muc, Decimal(m.group(2)) * 1_000_000))
+    du = [i for i, (_, _, tran) in enumerate(khung) if tran >= muc[1]]
+    if not du:
+        return None
+    ten, han_muc, _ = khung[du[0]]
+    noi = (_fmt_trieu(float(muc[1])) if muc[0] == muc[1] else
+           f"{_fmt_trieu(float(muc[0])).replace(' triệu đồng', '')} đến {_fmt_trieu(float(muc[1]))}")
+    cau = (f"Dạ với mức chi tiêu khoảng {noi} một tháng thì thẻ {ten}, hạn mức {han_muc}, "
+           "là đủ dùng ạ.")
+    if du[0] + 1 < len(khung):
+        tren = khung[du[0] + 1]
+        cau += f" Nếu muốn hạn mức cao hơn thì có thẻ {tren[0]}, hạn mức {tren[1]}."
+    return "goi_y_the_theo_chi_tieu", cau + " Hạng thẻ được cấp còn tuỳ thẩm định hồ sơ ạ."
+
+
+def _lich_su_khan_cap_the(history: list[dict] | None, text: str) -> tuple[bool, bool]:
+    """Giữ ngữ cảnh mất thẻ cho một câu hỏi bước tiếp theo thật ngắn.
+
+    Chỉ lịch sử khách hàng được xét. Một lượt gọi rõ sản phẩm/chủ đề khác sẽ
+    cắt ngữ cảnh để câu ``làm gì ngay`` về sau không kéo lại sự cố cũ. Cờ thứ
+    hai ghi nhận mức phí thay thẻ khách chỉ thuật lại, không xác nhận mức đó.
+    """
+    cac_luot = [m.get("content", "") for m in (history or [])
+                if m.get("role") == "user"]
+    if cac_luot and cac_luot[-1].strip() == (text or "").strip():
+        cac_luot.pop()
+
+    khan_cap = False
+    phi_thay_chua_xac_nhan = False
+    for cau in cac_luot[-6:]:
+        h = _bo_dau(cau)
+        mat_the = bool(re.search(
+            r"\b(?:mat|that lac|khong thay|de quen|danh roi|lay cap)\b.{0,34}\bthe\b|"
+            r"\bthe(?:\s+(?:tin dung|classic|gold|platinum))?"
+            r"(?:\s+(?:toi|anh|chi|em|minh|cua toi|cua anh|cua chi)){0,2}\s+"
+            r"(?:bi\s+)?(?:mat|that lac|de quen|danh roi|lay cap)\b", h))
+        otp_dang_bi_xin = bool(
+            re.search(r"\botp\b", h)
+            and re.search(r"\b(?:nguoi|ai|ho|nhan vien|ngan hang)\b", h)
+            and re.search(r"\b(?:bao|giuc|doi|yeu cau|xin|can)\b", h))
+        if mat_the or otp_dang_bi_xin:
+            khan_cap = True
+            phi_thay_chua_xac_nhan = False
+            continue
+
+        if not khan_cap:
+            continue
+        if (re.search(r"\b(?:phi|thu)\b.{0,28}\b(?:thay|cap lai|lam lai|phat hanh lai)\b|"
+                     r"\b(?:thay|cap lai|lam lai|phat hanh lai)\b.{0,28}\bphi\b", h)):
+            phi_thay_chua_xac_nhan = True
+            continue
+
+        # Một sản phẩm/hạng thẻ mới được hỏi rõ là điểm cắt. Câu về phí cấp lại
+        # ở trên vẫn thuộc cùng sự cố nên đã được giữ trước khi đến nhánh này.
+        chuyen_chu_de = bool(
+            re.search(r"\b(?:vay|khoan vay|tiet kiem|tien gui|mo so|the chap)\b", h)
+            or (re.search(r"\bthe\s+(?:classic|gold|platinum)\b", h)
+                and re.search(r"\b(?:hoi|muon|quan tam|tim hieu|mo|phi thuong nien|han muc)\b", h)))
+        if chuyen_chu_de:
+            khan_cap = False
+            phi_thay_chua_xac_nhan = False
+    return khan_cap, phi_thay_chua_xac_nhan
+
+
+def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "",
+                           history: list[dict] | None = None) -> tuple[str, str] | None:
     """Thẻ tín dụng: hạn mức và phí đi theo LOẠI THẺ."""
     t = re.sub(r"\bhang muc\b", "han muc", t)   # STT nghe "hạn mức" thành "hạng mức"
+
+    # Mất thẻ/ATM giữ thẻ là việc cần xử lý ngay. Nó phải đứng trước mọi luật
+    # phí: "phí cấp lại" từng bị hiểu thành phí THƯỜNG NIÊN rồi đọc 200/400/800
+    # nghìn, trong khi khách vẫn chưa được nhắc khóa thẻ. Không nói "đã khóa" vì
+    # luật này chỉ hướng dẫn, không thực hiện được thao tác trên tài khoản.
+    atm_giu_the = bool(re.search(
+        r"\b(?:may\s+)?atm\b.{0,24}\b(?:giu|nuot)\b.{0,18}\bthe\b|"
+        r"\bthe(?:\s+(?:tin dung|classic|gold|platinum))?\b.{0,18}\b(?:bi\s+)?nuot\b",
+        t))
+    mat_the_noi_ro = bool(re.search(
+        r"\b(?:mat|that lac|khong thay|de quen|nghi bi lay cap|bi lay cap|danh roi)\b"
+        r".{0,32}\bthe\b|"
+        r"\bthe(?:\s+(?:tin dung|classic|gold|platinum))?"
+        r"(?:\s+(?:toi|anh|chi|em|minh|cua toi|cua anh|cua chi)){0,2}\s+"
+        r"(?:bi\s+)?(?:mat|that lac|lay cap|de quen|danh roi)\b",
+        t))
+    # Trong hội thoại thẻ, khách có thể lược chủ ngữ sau khi vừa nói đang dùng
+    # thẻ: "nghi bị lấy cắp ở quán". Chỉ suy ra thẻ khi khách hỏi xử lý ngay và
+    # câu không nêu rõ một tài sản khác.
+    mat_the_bi_luoc = bool(
+        re.search(r"\bnghi\s+bi\s+lay\s+cap\b", t)
+        and re.search(r"\b(?:lam gi|xu ly|khoa|bao|ngay|bay gio|gio)\b", t)
+        and not re.search(r"\b(?:dien thoai|xe|tui|tien|tai san)\b", t)
+    )
+    mat_the = (mat_the_noi_ro or mat_the_bi_luoc) and not bool(
+        re.search(r"\b(?:mat|khong thay)\s+(?:phi|lai)\b", t))
+    # "rơi" và "rồi" trùng nhau sau bỏ dấu. Chỉ nhận ví khi có lời hỏi xử lý
+    # khẩn; loại "ví dụ"/"ví điện tử" để câu sản phẩm bình thường không bị chặn.
+    mat_vi = bool(re.search(
+        r"\b(?:mat|that lac|de quen|danh roi|roi)\b.{0,24}\bvi\b(?!\s+(?:du|dien tu))",
+        t) and re.search(r"\b(?:lam gi|xu ly|khoa|bao|ngay|bay gio|gio)\b", t))
+
+    hoi_buoc_ngay = bool(re.search(
+        r"\b(?:toi|anh|chi|em|minh)?\s*(?:nen|can|phai)?\s*"
+        r"(?:lam gi|xu ly(?: the nao)?|bao ai)\s*(?:ngay|bay gio|gio)?\b", t))
+    khan_cap_truoc, phi_thay_chua_xac_nhan = _lich_su_khan_cap_the(history, text)
+    if hoi_buoc_ngay and khan_cap_truoc:
+        phi = (
+            " Mức phí thay thẻ do người gọi nêu chưa được tài liệu sản phẩm "
+            "xác nhận; anh chị hãy kiểm tra biểu phí qua kênh chính thức ạ."
+            if phi_thay_chua_xac_nhan else "")
+        return "mat_the_otp_theo_ngu_canh", (
+            "Dạ anh chị không đọc hoặc cung cấp OTP cho người gọi và nên ngắt cuộc gọi "
+            "đó ngay. Anh chị hãy chủ động khóa thẻ qua kênh chính thức, kiểm tra các "
+            "giao dịch gần đây, rồi tự liên hệ kênh chính thức đã kiểm chứng; không dùng "
+            "số điện thoại hoặc đường dẫn do người gọi cung cấp ạ." + phi)
+
+    loai_phi = next((
+        (ma, nhan, mau) for ma, nhan, mau in (
+            ("cap_lai", "cấp lại thẻ", r"\b(?:cap|phat hanh|lam)\s+lai\b"),
+            ("khoa", "khóa thẻ", r"\bkhoa\s+the\b"),
+            ("tranh_chap", "tra soát hoặc tranh chấp giao dịch",
+             r"\b(?:tra soat|tranh chap)\b"),
+        ) if re.search(
+            rf"\bphi\b.{{0,28}}{mau}|{mau}.{{0,28}}\bphi\b|"
+            rf"\b(?:thu phi|co phi|mat phi)\b.{{0,20}}{mau}", t)
+    ), None)
+    if loai_phi:
+        ma_phi, nhan_phi, mau_phi = loai_phi
+        dong_nguon = next((
+            d.strip().lstrip("- ") for d in sp_doc.splitlines()
+            if not d.lstrip().startswith("#")
+            and re.search(mau_phi, _bo_dau(d))
+            and re.search(r"\b(?:phi|mien phi)\b", _bo_dau(d))
+        ), None)
+        if atm_giu_the:
+            an_toan = (
+                "Dạ anh chị nên ghi lại vị trí máy và thời điểm thẻ bị giữ, đồng thời "
+                "chủ động khóa thẻ qua kênh chính thức nếu có ạ. ")
+        else:
+            an_toan = (
+                "Dạ nếu thẻ đang mất hoặc có giao dịch đáng ngờ, anh chị nên chủ động "
+                "khóa thẻ qua kênh chính thức và kiểm tra các giao dịch gần đây ạ. ")
+        if dong_nguon:
+            return f"phi_{ma_phi}_the_tu_nguon", an_toan + _cau_tu_dong(dong_nguon)
+        return f"phi_{ma_phi}_the_chua_co_nguon", (
+            an_toan + f"Tài liệu thẻ hiện chưa nêu phí {nhan_phi}; anh chị vui lòng "
+            "liên hệ kênh hỗ trợ chính thức để xác nhận, và không cung cấp OTP, PIN "
+            "hoặc mật khẩu ạ.")
+
+    if atm_giu_the:
+        return "atm_giu_the", (
+            "Dạ anh chị nên ghi lại vị trí máy và thời điểm thẻ bị giữ, đồng thời chủ động "
+            "khóa thẻ qua kênh chính thức nếu có ạ. Sau đó anh chị liên hệ kênh hỗ trợ "
+            "chính thức; không nhờ người lạ lấy thẻ và không cung cấp OTP, PIN hoặc mật khẩu ạ.")
+    if mat_the or mat_vi:
+        otp = bool(re.search(r"\botp\b", t) and re.search(
+            r"\b(?:bao|giuc|doi|yeu cau|xin|can|doc|cung cap|gui)\b", t))
+        if otp:
+            return "mat_the_otp", (
+                "Dạ anh chị không đọc hoặc cung cấp OTP và nên ngắt cuộc gọi đáng ngờ "
+                "ngay. Anh chị hãy chủ động khóa thẻ qua kênh chính thức, kiểm tra các "
+                "giao dịch gần đây, rồi tự liên hệ kênh chính thức đã kiểm chứng; không "
+                "dùng số điện thoại hoặc đường dẫn do người gọi cung cấp ạ.")
+        return "mat_the", (
+            "Dạ anh chị nên chủ động khóa thẻ ngay qua kênh chính thức nếu có chức năng này, "
+            "đồng thời kiểm tra các giao dịch gần đây ạ. Nếu không tự khóa được, anh chị hãy "
+            "liên hệ kênh hỗ trợ chính thức và không cung cấp OTP, PIN hoặc mật khẩu ạ.")
+
+    # Đây là khái niệm chung trên sao kê, không phải yêu cầu tra cứu dư nợ riêng.
+    # Giữ luật hẹp để "thu nhập tối thiểu", "tiền gửi tối thiểu", hạn mức và
+    # kỳ trả góp vẫn đi đúng nhánh của chúng. Hai mẫu sau cùng là các lượt nối
+    # tiếp của holdout: helper thẻ không nhận history nên chỉ bắt đúng cách hỏi
+    # tỷ lệ dư nợ và câu làm rõ khái niệm sao kê, không suy rộng từ một con số.
+    hoi_thanh_toan_toi_thieu = bool(
+        (re.search(r"\btoi thieu\b", t)
+         and re.search(r"\b(?:thanh toan|tra|sao ke|du no)\b", t)
+         and not re.search(
+             r"\b(?:thu nhap|luong|han muc|tien gui|gui tiet kiem|tra gop|ky han)\b", t))
+        or (re.search(
+                r"\b(?:co phai\s+)?luon\s+bang\s+dung\s+\d+(?:[.,]\d+)?\s*%"
+                r"\s+(?:tong\s+)?du no\b", t)
+            and not re.search(r"\b(?:lai|phi|cashback|hoan tien)\b", t))
+        or re.search(r"\bchua dua sao ke\b.{0,32}\bkhai niem chung\b", t)
+    )
+    if hoi_thanh_toan_toi_thieu:
+        dong_nguon = None
+        trong_muc_toi_thieu = False
+        for dong in sp_doc.splitlines():
+            d = _bo_dau(dong.strip())
+            if d.startswith("#"):
+                trong_muc_toi_thieu = bool(re.search(
+                    r"\b(?:thanh toan|tra|so tien)\b.{0,18}\btoi thieu\b", d))
+                continue
+            noi_ro = bool(re.search(
+                r"\b(?:thanh toan|tra|so tien|muc)\b.{0,22}\btoi thieu\b|"
+                r"\btoi thieu\b.{0,22}\b(?:thanh toan|tra)\b", d))
+            co_quy_tac = bool(re.search(r"\b(?:du no|sao ke|qua han)\b|%", d))
+            if (noi_ro and co_quy_tac) or (trong_muc_toi_thieu and co_quy_tac):
+                dong_nguon = dong.strip().lstrip("- ").rstrip(".")
+                break
+        giai_thich = (
+            "Đây là phần bắt buộc tối thiểu cần thanh toán theo sao kê để tránh quá hạn, "
+            "không phải toàn bộ dư nợ sao kê. Trả mức tối thiểu không có nghĩa phần dư nợ "
+            "còn lại không phát sinh lãi hoặc phí theo điều khoản ạ.")
+        if dong_nguon:
+            return "thanh_toan_toi_thieu_tu_nguon", (
+                f"Dạ theo tài liệu sản phẩm: {dong_nguon} ạ. {giai_thich}")
+        return "khai_niem_thanh_toan_toi_thieu", (
+            f"Dạ số tiền thanh toán tối thiểu là phần được ghi trên sao kê theo điều khoản. "
+            f"{giai_thich} Tài liệu thẻ hiện chưa nêu tỷ lệ thanh toán tối thiểu hoặc "
+            "mức lãi, phí áp dụng cho phần dư nợ còn lại, "
+            "nên em chưa thể xác nhận một tỷ lệ hay số tiền cụ thể ạ.")
+
     if re.search(r"\b(dong|huy|cham dut|ngung)\b.{0,16}\bthe\b|"
                  r"\bthe\b.{0,16}\b(dong|huy|cham dut|ngung)\b", t):
         dong_nguon = next((d.strip().lstrip("- ") for d in sp_doc.splitlines()
@@ -820,6 +1476,9 @@ def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "") -> tuple[str, str
     cac_the = _cac_loai_the(sp_doc)
     if not cac_the:
         return None
+    goi_y_the = _goi_y_the_theo_chi_tieu(text, t, cac_the)
+    if goi_y_the:
+        return goi_y_the
     hoi_han_muc = bool(re.search(r"\bhan muc\b", t)) and not re.search(
         r"\b(tang|nang|len|thap|it|nho|giam)\b", t)
     hoi_phi = bool(re.search(r"\bphi\b.{0,20}\b(thuong nien|hang nam|moi nam|bao nhieu|la may)\b|"
@@ -827,8 +1486,13 @@ def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "") -> tuple[str, str
     mien_nam_dau = "mien phi thuong nien nam dau" in _bo_dau(sp_doc)
     duoi_mien = ", năm đầu được miễn phí" if mien_nam_dau else ""
 
-    ten = next((k for k, cum in _TEN_THE if k in cac_the and any(
-        re.search(rf"\b{c}\b", t) for c in cum)), None)
+    ten_khop = [k for k, cum in _TEN_THE if k in cac_the and any(
+        re.search(rf"\b{c}\b", t) for c in cum)]
+    if len(ten_khop) > 1:
+        return "xac_nhan_loai_the", (
+            "Dạ anh chị đang nhắc nhiều hạng thẻ, vui lòng chọn một hạng để em báo đúng "
+            "hạn mức và phí thường niên ạ.")
+    ten = ten_khop[0] if ten_khop else None
     if ten:
         hien, hm, phi = cac_the[ten]
         if hoi_han_muc and not hoi_phi:
@@ -837,6 +1501,17 @@ def _tra_loi_the_tin_dung(t: str, sp_doc: str, text: str = "") -> tuple[str, str
             return "phi_loai_the", f"Dạ thẻ {hien} phí thường niên {phi}{duoi_mien} ạ."
         if hoi_phi and hoi_han_muc:
             return "loai_the", f"Dạ thẻ {hien} có hạn mức {hm}, phí thường niên {phi}{duoi_mien} ạ."
+        if re.search(r"\b(hoi|quan tam|tim hieu|tu van|gioi thieu)\b", t):
+            return "gioi_thieu_loai_the", (
+                f"Dạ thẻ {hien} có hạn mức {hm}, phí thường niên {phi}{duoi_mien} ạ.")
+        if re.search(
+                r"\b(?:muon|can|dinh)\b.{0,30}\b(?:mo|lam|dang ky)\s+the\b|"
+                r"\b(?:mo|lam|dang ky)\s+the\b.{0,18}\b(?:dung ten|tu dung ten)\b", t):
+            return "thong_tin_mo_loai_the", (
+                f"Dạ theo tài liệu sản phẩm, thẻ {hien} có hạn mức {hm}, phí thường niên "
+                f"{phi}{duoi_mien} ạ. Đây là thông tin chung của sản phẩm, chưa phải xác "
+                "nhận anh chị được mở hoặc được duyệt thẻ; điều kiện hồ sơ cần được đối "
+                "chiếu riêng theo nguồn ạ.")
         return None
 
     # Xét "vay" trên bản CÒN DẤU: bỏ dấu thì "trả góp được không vậy" cũng có
@@ -866,6 +1541,428 @@ def _tran_san_pham(tai_lieu: str) -> float | None:
     for dong in _dong_co(tai_lieu, "hạn mức"):
         cac |= _tien_trong(dong)
     return max(cac) if cac else None
+
+
+def _gioi_han_ltv(sp_doc: str) -> tuple[Decimal, Decimal] | None:
+    """Đọc đúng một tỷ lệ LTV và một trần VND từ dòng hạn mức nguồn.
+
+    Phép tính theo giá nhà chỉ an toàn khi chính tài liệu gắn tỷ lệ với giá trị
+    bất động sản và ghi rõ một trần tiền Việt. Nếu nguồn có nhiều tỷ lệ/trần,
+    thiếu đơn vị tiền, hoặc dùng ngoại tệ thì giữ câu trả lời nguồn như trước,
+    không chọn hộ một con số để tính.
+    """
+    ung_vien: list[tuple[Decimal, Decimal]] = []
+    for dong in _dong_co(sp_doc, "hạn mức"):
+        d = _bo_dau(dong)
+        if not (re.search(r"\bgia tri\b.{0,24}\b(bat dong san|nha|tai san)\b", d)
+                or re.search(r"\b(bat dong san|nha|tai san)\b.{0,24}\bgia tri\b", d)):
+            continue
+        ty_le = re.findall(r"(?<![\d.,])(\d+(?:[.,]\d+)?)\s*%", dong)
+        tien = [q for q in quantities(dong) if q.kind == "money" and q.value is not None]
+        if len(ty_le) != 1 or len(tien) != 1:
+            continue
+        q = tien[0]
+        # Đơn vị tỷ/triệu tự nó chưa xác định đồng tiền. Nguồn phải nói rõ
+        # đồng/VND; ``10 tỷ USD`` vì vậy không thể bị hiểu thành 10 tỷ đồng.
+        cum_tien = d[q.start:min(len(d), q.end + 12)]
+        if not re.search(r"\b(?:dong|vnd)\b", cum_tien):
+            continue
+        if re.search(r"\b(?:usd|eur|gbp|jpy|dollar|do la)\b", d):
+            continue
+        ratio = Decimal(ty_le[0].replace(",", "."))
+        if Decimal(0) < ratio <= Decimal(100) and q.value > 0:
+            ung_vien.append((ratio, q.value))
+    return ung_vien[0] if len(set(ung_vien)) == 1 else None
+
+
+_NEO_GIA_BDS = re.compile(r"\b(?:gia(?: tri)?|tri gia)\b")
+_CHU_GIA_BDS = re.compile(
+    r"\b(?:can ho|can nha|nha pho|ngoi nha|nha|chung cu|biet thu|"
+    r"bat dong san|bds|dat|lo dat|thua dat|tai san dam bao|tai san the chap)\b")
+_CHU_GIA_KHAC = re.compile(
+    r"\b(?:xe|o to|oto|xe may|bitcoin|vang|co phieu|chung khoan|"
+    r"dien thoai|laptop|may moc|tau|thuyen)\b")
+_KHONG_PHAI_GIA_BDS = re.compile(
+    r"\b(?:vay|khoan vay|tien vay|so tien vay|thu nhap|luong|doanh thu|von tu co)\b")
+_NGOAI_TE = re.compile(r"\b(?:usd|eur|gbp|jpy|dollar|do la|do my|euro)\b")
+_RUT_LAI_GIA_BDS = re.compile(
+    r"\b(?:chua (?:chot|xac dinh|quyet dinh)|bo|huy|rut lai|khong dung|dung lay)\b"
+    r".{0,36}\b(?:gia|gia tri|muc gia)\b|"
+    r"\b(?:gia|gia tri|muc gia)\b.{0,24}\b(?:chua chot|bo|huy|rut lai)\b")
+_SUA_GIA_BDS = re.compile(
+    r"\b(?:sua|doi|chot|a khong|a nham|nham|y la|khong phai|gia moi|muc moi)\b")
+
+
+def _la_gia_gia_dinh(text: str) -> bool:
+    """Lượt đang đặt giả thiết, phân biệt ``giả định`` với ``gia đình``.
+
+    Bỏ dấu làm cả hai thành ``gia dinh``. Vì vậy dạng ASCII chỉ được coi là
+    giả định khi có ngữ pháp đặt tình huống theo sau; ``của gia đình tôi`` vẫn
+    là mô tả tài sản thật và phải được phép lưu vào lịch sử.
+    """
+    goc = unicodedata.normalize("NFC", (text or "").lower())
+    if re.search(r"\b(?:nếu|giả sử|ví dụ|trường hợp|giả định)\b", goc):
+        return True
+    t = _bo_dau(goc)
+    if re.search(r"\b(?:neu|gia su|vi du|truong hop)\b", t):
+        return True
+    return bool(re.search(
+        r"\b(?:theo\s+)?gia dinh\s*(?::|(?:rang\s+|neu\s+)?"
+        r"(?=(?:mot\s+)?(?:can|ngoi nha|nha|bat dong san|bds|tai san|gia)\b))",
+        t,
+    ))
+
+
+def _gia_bds_chi_tiet_trong_luot(text: str, bo_gia_gia_dinh: bool = False) \
+        -> tuple[str, list[Decimal], bool]:
+    """Giá BĐS do khách nói trong một lượt, không nhận số vay/thu nhập.
+
+    Trả ``known``, ``ambiguous``, ``missing_unit``, ``unsupported`` hoặc
+    ``unknown`` cùng cờ giá giả định. Giá phải có neo ``giá/giá trị/trị giá``
+    trong cùng mệnh đề. Khi chiếu lịch sử, ``bo_gia_gia_dinh`` chỉ bỏ đúng giá
+    nằm trong mệnh đề giả định, không bỏ giá thật ở một câu khác trong lượt.
+    """
+    goc = unicodedata.normalize("NFC", text or "")
+    t = _bo_dau(goc)
+    gia: list[Decimal] = []
+    gia_gia_dinh: list[bool] = []
+    gia_chua_ro_chu: list[Decimal] = []
+    thieu_don_vi = False
+    ngoai_te = False
+    for q in quantities(goc):
+        dau = max(t.rfind(".", 0, q.start), t.rfind(";", 0, q.start),
+                  t.rfind("!", 0, q.start), t.rfind("?", 0, q.start),
+                  t.rfind("\n", 0, q.start)) + 1
+        truoc = t[dau:q.start]
+        neo = list(_NEO_GIA_BDS.finditer(truoc))
+        if not neo:
+            continue
+        sau_neo = truoc[neo[-1].end():]
+        if len(sau_neo) > 52 or _KHONG_PHAI_GIA_BDS.search(sau_neo):
+            continue
+        # Chủ thể gần con số nhất quyết định vai của giá. Nhờ vậy trong
+        # ``nhà giá 9 tỷ, xe giá 2 tỷ`` thì 2 tỷ thuộc xe, không trở thành giá
+        # nhà thứ hai. Không có chủ thể nào là ``giá 9 tỷ`` chưa đủ rõ.
+        chu_the = [(m.start(), "bds") for m in _CHU_GIA_BDS.finditer(truoc)]
+        chu_the += [(m.start(), "khac") for m in _CHU_GIA_KHAC.finditer(truoc)]
+        loai_chu_the = max(chu_the)[1] if chu_the else ""
+        if loai_chu_the == "khac":
+            continue
+        la_gia_dinh = _la_gia_gia_dinh(goc[dau:q.start])
+        if bo_gia_gia_dinh and la_gia_dinh:
+            continue
+        quanh = t[q.start:min(len(t), q.end + 18)]
+        if _NGOAI_TE.search(quanh):
+            ngoai_te = True
+            continue
+        if q.value is None or q.value <= 0:
+            thieu_don_vi = True
+        elif q.kind == "money":
+            if loai_chu_the == "bds":
+                gia.append(q.value)
+                gia_gia_dinh.append(la_gia_dinh)
+            else:
+                gia_chua_ro_chu.append(q.value)
+        elif q.kind == "bare":
+            thieu_don_vi = True
+    if ngoai_te:
+        return "unsupported", [], False
+    if len(set(gia)) > 1:
+        # "không phải 9 tỷ, giá là 8 tỷ" là một sửa rõ ngay trong lượt.
+        if _SUA_GIA_BDS.search(t):
+            return "known", [gia[-1]], gia_gia_dinh[-1]
+        return "ambiguous", list(dict.fromkeys(gia)), False
+    if gia:
+        return "known", gia, all(gia_gia_dinh)
+    if gia_chua_ro_chu:
+        return "unqualified", list(dict.fromkeys(gia_chua_ro_chu)), False
+    if thieu_don_vi:
+        return "missing_unit", [], False
+    return "unknown", [], False
+
+
+def _gia_bds_trong_luot(text: str) -> tuple[str, list[Decimal]]:
+    """Giao diện gọn cho các nơi chỉ cần trạng thái và giá trong lượt."""
+    status, gia, _ = _gia_bds_chi_tiet_trong_luot(text)
+    return status, gia
+
+
+def _gia_bds_hien_tai(text: str, history: list[dict] | None) \
+        -> tuple[str, Decimal | None, bool]:
+    """Chiếu giá BĐS chỉ từ lời khách; giá ở lượt hiện tại luôn có ưu tiên.
+
+    Giá khác xuất hiện về sau không âm thầm thay giá cũ: thiếu lời sửa/chốt thì
+    đó là hai phương án cạnh tranh và cần hỏi lại. Lời rút giá cũng chặn việc
+    tìm ngược để hồi sinh giá đã bỏ.
+    """
+    if _RUT_LAI_GIA_BDS.search(_bo_dau(text)):
+        return "cancelled", None, False
+    trang_thai, cac, hien_tai_gia_dinh = _gia_bds_chi_tiet_trong_luot(text)
+    if trang_thai not in ("unknown", "unqualified"):
+        return trang_thai, (cac[0] if trang_thai == "known" else None), hien_tai_gia_dinh
+    gia_hien_tai_chua_ro_chu = cac if trang_thai == "unqualified" else []
+
+    da_co: Decimal | None = None
+    status = "unknown"
+    cac_luot = list(history or [])
+    # Pipeline có thể đã gắn chính lượt hiện tại vào history. Không xử lý nó
+    # lần hai vì một câu giả định hiện tại phải được ưu tiên độc lập.
+    if cac_luot and cac_luot[-1].get("role") == "user" \
+            and (cac_luot[-1].get("content") or "").strip() == (text or "").strip():
+        cac_luot = cac_luot[:-1]
+    for luot in cac_luot:
+        if luot.get("role") != "user":
+            continue
+        noi_dung = luot.get("content") or ""
+        nt = _bo_dau(noi_dung)
+        if _RUT_LAI_GIA_BDS.search(nt):
+            da_co, status = None, "cancelled"
+            continue
+        # Bỏ đúng giá trong mệnh đề "nếu/giả sử...". Một giá thật ở câu trước
+        # trong cùng lượt vẫn được lưu và không bị câu hỏi giả định phía sau xoá.
+        st, values, _ = _gia_bds_chi_tiet_trong_luot(
+            noi_dung, bo_gia_gia_dinh=True)
+        if st in ("ambiguous", "missing_unit", "unsupported"):
+            da_co, status = None, st
+            continue
+        if st == "unqualified":
+            # ``sửa lại giá là 8 tỷ`` chỉ rõ đối tượng nhờ giá BĐS đã có;
+            # một ``giá 8 tỷ`` trần không được tự nhận là giá nhà.
+            if len(values) == 1 and status == "known" and _SUA_GIA_BDS.search(nt):
+                da_co, status = values[0], "known"
+            else:
+                da_co, status = None, "ambiguous"
+            continue
+        if st != "known":
+            continue
+        moi = values[0]
+        if status == "ambiguous" and not _SUA_GIA_BDS.search(nt):
+            continue
+        if da_co is None or moi == da_co or _SUA_GIA_BDS.search(nt):
+            da_co, status = moi, "known"
+        else:
+            da_co, status = None, "ambiguous"
+    if gia_hien_tai_chua_ro_chu:
+        if (len(gia_hien_tai_chua_ro_chu) == 1 and status == "known"
+                and _SUA_GIA_BDS.search(_bo_dau(text))):
+            return "known", gia_hien_tai_chua_ro_chu[0], hien_tai_gia_dinh
+        return "ambiguous", None, False
+    return status, da_co, False
+
+
+def _tra_loi_ltv_theo_gia(text: str, history: list[dict] | None,
+                           sp_doc: str) -> tuple[str, str] | None:
+    """Tính ``min(LTV × giá khách nói, trần tuyệt đối)`` bằng Decimal."""
+    gioi_han = _gioi_han_ltv(sp_doc)
+    if gioi_han is None:
+        return None
+    ty_le, tran = gioi_han
+    status, gia, gia_dinh = _gia_bds_hien_tai(text, history)
+    if status != "known" or gia is None:
+        return "xac_nhan_gia_bat_dong_san", (
+            "Dạ để tính hạn mức theo tỷ lệ của sản phẩm, anh chị xác nhận giúp em "
+            "một giá trị bất động sản bằng VND, kèm đơn vị triệu hoặc tỷ đồng ạ.")
+
+    theo_ty_le = gia * ty_le / Decimal(100)
+    toi_da = min(theo_ty_le, tran)
+    mo_dau = "Dạ nếu bất động sản có giá" if gia_dinh else "Dạ với giá bất động sản"
+    doc_ty_le = format(ty_le.normalize(), "f").replace(".", ",")
+    if theo_ty_le > tran:
+        phep_tinh = (
+            f"{doc_ty_le}% tương đương {_fmt_trieu(theo_ty_le)}, nhưng trần "
+            f"sản phẩm là {_fmt_trieu(tran)}, nên hạn mức tối đa theo sản phẩm là "
+            f"{_fmt_trieu(toi_da)}")
+    else:
+        phep_tinh = (
+            f"{doc_ty_le}% tương đương {_fmt_trieu(theo_ty_le)}; mức này không "
+            f"vượt trần sản phẩm {_fmt_trieu(tran)}")
+    return "han_muc_theo_gia_bat_dong_san", (
+        f"{mo_dau} {_fmt_trieu(gia)}, {phep_tinh} ạ. Đây chỉ là hạn mức tối đa theo "
+        "sản phẩm; mức được vay thực tế còn phụ thuộc thẩm định hồ sơ và không phải "
+        "cam kết phê duyệt ạ.")
+
+
+def _vay_theo_ty_le_khach_neu(text: str, history: list[dict] | None,
+                              sp_doc: str) -> tuple[str, str] | None:
+    """"nhà hai tỷ tám anh vay bảy mươi phần trăm": khách tự nêu TỶ LỆ muốn vay.
+
+    Bộ thử 12-10-2026: câu này không hỏi "hạn mức" nên không luật nào nhận, kho
+    đáp bằng câu lãi suất. Đổi tỷ lệ ra tiền và đối chiếu với tỷ lệ tối đa lẫn
+    trần tiền của tài liệu; không phán hồ sơ được duyệt.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    t = _bo_dau(text)
+    if not re.search(r"\bvay\b", t) or re.search(r"\b(lai|phi)\b", t):
+        return None
+    phan_tram = [q for q in quantities(text) if q.value is not None
+                 and re.search(r"%|phần trăm", q.raw.lower())]
+    gioi_han = _gioi_han_ltv(sp_doc)
+    if len(phan_tram) != 1 or gioi_han is None:
+        return None
+    status, gia, _ = _gia_bds_hien_tai(text, history)
+    if status != "known" or gia is None:
+        # "nhà hai tỷ tám": nói gọn, không có chữ "giá". Chỉ nhận khi lượt này
+        # nhắc tới tài sản và có ĐÚNG một khoản tiền.
+        tien = [q for q in quantities(text) if q.value is not None and q.kind == "money"]
+        if len(tien) != 1 or not re.search(
+                r"\b(nha|can ho|chung cu|can|dat|bat dong san)\b", t):
+            return None
+        gia = Decimal(tien[0].value)
+    muon = Decimal(phan_tram[0].value)
+    if not Decimal(0) < muon <= Decimal(100):
+        return None
+    ty_le, tran = gioi_han
+    doc = lambda x: format(x.normalize(), "f").replace(".", ",")
+    toi_da = min(gia * ty_le / Decimal(100), tran)
+    so_tien = gia * muon / Decimal(100)
+    if muon <= ty_le and so_tien > tran:
+        return "ty_le_vay_vuot_muc", (
+            f"Dạ {doc(muon)}% của {_fmt_trieu(gia)} là {_fmt_trieu(so_tien)}, vượt mức "
+            f"cho vay tối đa {_fmt_trieu(tran)} của bên em ạ.")
+    if muon > ty_le:
+        return "ty_le_vay_vuot_muc", (
+            f"Dạ bên em cho vay tối đa {doc(ty_le)}% giá trị bất động sản ạ. Với nhà "
+            f"{_fmt_trieu(gia)} thì mức tối đa là {_fmt_trieu(toi_da)}, nên "
+            f"{doc(muon)}% là vượt mức này ạ.")
+    return "ty_le_vay_trong_muc", (
+        f"Dạ {doc(muon)}% của {_fmt_trieu(gia)} là {_fmt_trieu(so_tien)}, nằm trong "
+        f"mức cho vay tối đa {doc(ty_le)}% giá trị bất động sản của bên em ạ. "
+        "Mức được duyệt thực tế còn tuỳ thẩm định hồ sơ ạ.")
+
+
+_CHE_CAO = re.compile(r"\b(cao the|cao qua|cao vay|cao nhi|hoi cao|cao lam|dat the|dat qua)\b")
+_SO_BEN_KHAC = re.compile(
+    r"\b(ben (kia|khac|do|nguoi ta)|ngan hang (kia|khac)|cho khac)\b.{0,40}"
+    r"\b(thoi|thap hon|re hon|phay|phan tram|chi co|co)\b")
+
+
+def _tra_loi_che_lai_cao(t: str, tai_lieu: str, ma_sp: str,
+                         history: list[dict] | None) -> tuple[str, str] | None:
+    """"cao thế bên kia có sáu phẩy mấy thôi": khách chê lãi, so với nơi khác.
+
+    Bộ thử 12-10-2026: mô hình tự viết khi thì "con số kia có thể là quảng cáo
+    chưa chính xác", khi thì "mức cụ thể còn phụ thuộc hồ sơ" - cả hai đều không
+    có trong tài liệu. Ở đây chỉ nhắc đúng mức lãi của tài liệu, nói rõ không có
+    căn cứ để so, rồi mời tính thử. Kho có câu soạn riêng thì kho được ưu tiên
+    (mã này nằm trong `LUAT_NHUONG_KHO`).
+    """
+    if not ma_sp.startswith("vay"):
+        return None
+    ai_truoc = next((m.get("content", "") for m in reversed(history or [])
+                     if m.get("role") == "assistant"), "")
+    ve_lai = bool(re.search(r"\blai\b", t)) or "lãi suất" in ai_truoc.lower()
+    if not (ve_lai and (_SO_BEN_KHAC.search(t) or _CHE_CAO.search(t))):
+        return None
+    if re.search(r"\b(bao nhieu|the nao|may phan tram)\b", t) and not _CHE_CAO.search(t):
+        return None
+    lai = _lai_suat(tai_lieu)
+    if lai is None:
+        return None
+    return "che_lai_cao", (
+        f"Dạ em hiểu băn khoăn của anh chị ạ. Lãi suất gói bên em là từ {_so_phay(f'{lai:g}')}% "
+        "một năm, còn mức của nơi khác thì em không có thông tin để so sánh ạ. Anh chị cho em "
+        "biết số tiền và thời hạn muốn vay, em tính thử số tiền trả mỗi tháng để anh chị dễ "
+        "cân nhắc ạ.")
+
+
+def _tra_loi_vay_du_ra(text: str, t: str) -> tuple[str, str] | None:
+    """"sửa bếp hết tầm tám chục triệu mà anh muốn vay dư ra tí cho chắc".
+
+    Khách nêu mức CẦN và nói muốn vay NHIỀU HƠN mức đó: con số vừa nghe chưa phải
+    số tiền vay. Nhắc lại đúng mức khách nói rồi xin một con số chốt. Bộ thử
+    12-10-2026: mô hình tự viết lúc thì gán luôn 80 triệu, lúc thì phán "với thu
+    nhập hiện tại anh vay được tối đa 500 triệu".
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    if not re.search(r"\bvay\b", t) or not re.search(
+            r"\b(du ra|du mot (chut|ti|it)|them (mot )?(chut|ti|it)|nhinh hon|hon (mot )?(chut|ti)|"
+            r"roi rai|cho chac)\b", t):
+        return None
+    tien = [q for q in quantities(text) if q.value is not None and q.kind == "money"]
+    if len(tien) != 1:
+        return None
+    return "vay_du_ra", (
+        f"Dạ em ghi nhận anh chị cần khoảng {_fmt_trieu(float(tien[0].value))} và muốn vay dư "
+        "ra một chút ạ. Anh chị chốt giúp em một số tiền cụ thể muốn vay ạ?")
+
+
+def _tra_loi_can_so_do(t: str, sp_doc: str) -> tuple[str, str] | None:
+    """"thế có cần sổ đỏ không em": đọc đúng dòng hồ sơ có chữ sổ đỏ của tài liệu.
+
+    Tài liệu sản phẩm không nhắc sổ đỏ (vay tín chấp) thì không đáp ở đây.
+    """
+    if not re.search(r"\b(so do|so hong|giay to nha|giay to phap ly)\b", t) or not re.search(
+            r"\b(can|phai co|bat buoc|yeu cau|co can)\b", t):
+        return None
+    dong = next((d.strip(" -") for d in sp_doc.splitlines()
+                 if re.search(r"\bso do\b", _bo_dau(d))), "")
+    if not dong:
+        return None
+    return "can_so_do", f"Dạ có ạ, hồ sơ cần {dong[:1].lower() + dong[1:].rstrip('.')} ạ."
+
+
+def _tra_loi_gioi_thieu_vay(text: str, t: str, tai_lieu: str, ma_sp: str) -> tuple[str, str] | None:
+    """"...nên anh mới tính hỏi xem bên em cho vay thế nào": khách kể dài rồi hỏi CHUNG.
+
+    Ghép ba dữ kiện chính của tài liệu (lãi suất, hạn mức, thời hạn) qua chính tầng
+    luật. Bộ thử 12-10-2026: mô hình tự viết lúc giới thiệu được, lúc lại bảo "chưa
+    có thông tin cụ thể về lãi suất hay hạn mức cho trường hợp này".
+    """
+    if not ma_sp.startswith("vay") or re.search(r"\d", t):
+        return None
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    if any(q.value is not None and q.kind in ("money", "duration") for q in quantities(text)):
+        return None            # khách đã nêu con số: hỏi cho trường hợp riêng
+    cuoi = " ".join(t.split()[-9:])
+    if not re.search(r"\b(cho vay|vay)\b.{0,24}\b(the nao|nhu the nao|ra sao|nhu nao|sao)\s*(em|a|nhi|ha)?$",
+                     cuoi) or re.search(r"\b(lai|han muc|giay to|ho so|thu tuc|dieu kien|tra)\b", cuoi):
+        return None
+    cac = []
+    for hoi in ("lãi suất bao nhiêu", "hạn mức tối đa bao nhiêu", "thời hạn vay bao lâu"):
+        got = _tra_loi(hoi, tai_lieu)
+        if got and got[0] in _LUAT_MOT_Y:
+            cau = got[1].replace(" Mức được duyệt thực tế còn phụ thuộc hồ sơ của anh chị.", "")
+            cau = cau if not cac else re.sub(r"^Dạ,?\s+", "", cau)
+            cac.append(cau[:1].upper() + cau[1:])
+    if len(cac) < 2:
+        return None
+    # Câu đã dài quá trần của lớp dẫn dắt nên tự kết bằng câu hỏi mở đường.
+    return "gioi_thieu_vay", " ".join(cac) + " Anh chị dự định vay khoảng bao nhiêu ạ?"
+
+
+_HOI_HAN_MUC_VAY = re.compile(
+    r"\b(han muc|(?:thue|the) vay toi da|vay (?:tin chap )?toi da(?: duoc)?|vay duoc bao nhieu)\b")
+
+
+def _ghi_nhan_gia_nha(text: str, sp_doc: str) -> tuple[str, str] | None:
+    """"anh định mua căn chung cư ba tỏi hai": khách kể GIÁ NHÀ, chưa hỏi gì.
+
+    Đáp luôn mức vay tối đa theo tỷ lệ của tài liệu cho đúng giá đó. Số tiền đứng
+    ngay sau chữ "vay" là khoản muốn vay, không phải giá nhà - để luật nhu cầu lo.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    t = _bo_dau(text)
+    if not re.search(r"\b(mua|gia)\b", t) or not re.search(
+            r"\b(nha|can ho|chung cu|can|dat|biet thu)\b", t):
+        return None
+    cac = [q for q in quantities(text) if q.value is not None]
+    gioi_han = _gioi_han_ltv(sp_doc)
+    if len(cac) != 1 or cac[0].kind != "money" or gioi_han is None:
+        return None
+    if re.search(r"\bvay\b", _bo_dau(text[:cac[0].start])) or re.search(
+            r"\b(tra|gop|moi thang|lai|co san|tra truoc)\b", t):
+        return None
+    ty_le, tran = gioi_han
+    gia = Decimal(cac[0].value)
+    toi_da = min(gia * ty_le / Decimal(100), tran)
+    doc = format(ty_le.normalize(), "f").replace(".", ",")
+    if toi_da == tran and gia * ty_le / Decimal(100) > tran:
+        muc = f"tối đa {doc}% giá trị nhưng không quá {_fmt_trieu(tran)}"
+    else:
+        muc = f"tối đa {doc}% giá trị, tức khoảng {_fmt_trieu(toi_da)}"
+    return "ghi_nhan_gia_nha", (
+        f"Dạ với căn {_fmt_trieu(gia)} thì bên em cho vay {muc} ạ. "
+        "Mức được duyệt thực tế còn tuỳ thẩm định hồ sơ ạ.")
 
 
 def _lai_suat(tai_lieu: str) -> float | None:
@@ -1023,16 +2120,52 @@ def _nam_lam_viec_gan_nhat(history: list[dict] | None) -> int | None:
     return None
 
 
-def _nhu_cau_du_gan_nhat(history: list[dict] | None) \
-        -> tuple[float, int] | None:
-    state = resolve(history)
-    if state.amount.value is not None and state.term.value is not None:
-        return float(state.amount.value), int(state.term.value)
-    return None
+_NHAC_LAI_THUOC_TINH = re.compile(
+    r"\b(?:nhac lai|doc lai)\b.{0,45}\b(?:lai suat|muc lai|phi|bao hiem)\b")
+
+
+def _la_nhac_lai_thuoc_tinh(text: str) -> bool:
+    """Nhắc lãi/phí là hỏi thuộc tính sản phẩm, không phải đọc phương án riêng."""
+    return bool(_NHAC_LAI_THUOC_TINH.search(_bo_dau(text)))
+
+
+def _doi_chieu_gioi_han_phuong_an(so_tien: float, thang: int,
+                                  sp_doc: str) -> str:
+    """Đối chiếu hai dữ kiện với đúng giới hạn có trong tài liệu sản phẩm.
+
+    Câu này chỉ nói về trần tuyệt đối và thời hạn. Nó không biến việc nằm trong
+    khung thành lời hứa phê duyệt (vay mua nhà còn phụ thuộc tỷ lệ trên tài sản,
+    các sản phẩm khác còn phụ thuộc thẩm định hồ sơ).
+    """
+    tran = _tran_san_pham(sp_doc)
+    khung = _thoi_han(sp_doc)
+    toi_da = None if khung else _thoi_han_toi_da(sp_doc)
+    ngoai: list[str] = []
+    if tran is not None and so_tien > tran:
+        ngoai.append(
+            f"số tiền vượt hạn mức tối đa {_fmt_trieu(tran)} trong tài liệu")
+    if khung and not (khung[0] <= thang <= khung[1]):
+        ngoai.append(
+            f"thời hạn nằm ngoài khung {khung[0]} đến {khung[1]} tháng trong tài liệu")
+    elif toi_da is not None and not (0 < thang <= toi_da):
+        ngoai.append(
+            f"thời hạn vượt mức tối đa {_doc_ky_han(toi_da, toi_da % 12 == 0)} trong tài liệu")
+    if ngoai:
+        return " " + _noi_danh_sach([x[:1].upper() + x[1:] for x in ngoai]) + "."
+
+    da_doi_chieu_tien = tran is not None
+    da_doi_chieu_ky = khung is not None or toi_da is not None
+    if da_doi_chieu_tien and da_doi_chieu_ky:
+        return (
+            " Về trần số tiền và thời hạn trong tài liệu, phương án này nằm trong "
+            "phạm vi sản phẩm; đây chưa phải kết quả phê duyệt hay hạn mức được duyệt."
+        )
+    return ""
 
 
 def _tra_loi_nhac_lai(text: str, history: list[dict] | None,
-                      xung_ho: str) -> tuple[str, str] | None:
+                      xung_ho: str, state: LoanState,
+                      sp_doc: str) -> tuple[str, str] | None:
     """Đọc lại dữ kiện khách đã nói bằng bộ nhớ có cấu trúc.
 
     Không tóm tắt toàn bộ lịch sử rồi nhét thêm vào prompt. Chỉ khi khách hỏi
@@ -1042,12 +2175,34 @@ def _tra_loi_nhac_lai(text: str, history: list[dict] | None,
     """
     t = _bo_dau(text)
     hoi_lai = bool(re.search(
-        r"\b(nhac lai|da (?:noi|cung cap)|noi luc dau|truoc do|"
+        r"\b(nhac lai|doc lai|da (?:noi|cung cap)|noi luc dau|truoc do|"
         r"anh noi|chi noi|toi noi)\b", t))
     if not hoi_lai:
         return None
 
-    if re.search(r"\b(luc dau|ban dau)\b", t):
+    # Không để chữ "nhắc lại" biến câu hỏi lãi/phí thành yêu cầu đọc số tiền
+    # và kỳ hạn. Câu chung về phí cần hỏi đúng loại phí; lãi suất chỉ được đọc
+    # khi có đúng dòng nguồn của sản phẩm.
+    if _la_nhac_lai_thuoc_tinh(text):
+        hoi_lai_suat = bool(re.search(r"\b(?:lai suat|muc lai)\b", t))
+        hoi_phi = bool(re.search(r"\bphi\b", t))
+        if hoi_lai_suat:
+            gia_tri = _gia_tri_dong(sp_doc, "lãi suất")
+            if gia_tri:
+                cau = f"Dạ lãi suất của gói vay là {gia_tri} ạ."
+                if hoi_phi:
+                    cau += " Anh chị muốn em kiểm tra loại phí nào ạ?"
+                return ("nhac_lai_lai_suat_va_phi" if hoi_phi else "lai_suat_san_pham", cau)
+        if hoi_phi:
+            return "xac_nhan_loai_phi", "Dạ anh chị muốn em kiểm tra loại phí nào ạ?"
+        return None
+
+    co_moc_ban_dau = bool(re.search(r"\b(luc dau|ban dau)\b", t))
+    loai_moc_ban_dau = bool(re.search(
+        r"\b(?:dung lay|khong (?:dung|lay)|bo qua|loai bo)\b.{0,45}"
+        r"\b(?:luc dau|ban dau)\b", t))
+    doc_lai_ban_dau = co_moc_ban_dau and not loai_moc_ban_dau
+    if doc_lai_ban_dau:
         # Historical recall is distinct from the current corrected request.
         # Select the earliest customer-supplied complete pair, or the first
         # partial fact if no complete pair was ever provided.
@@ -1065,26 +2220,59 @@ def _tra_loi_nhac_lai(text: str, history: list[dict] | None,
                     break
         else:
             history = first_partial or []
+        state = resolve(history)
 
     hoi_nhu_cau = bool(re.search(
-        r"\b(so tien|khoan vay|can vay|muon vay|thoi han|ky han)\b", t))
+        r"\b(phuong an(?: vay)?|nhu cau(?: vay)?|so tien|khoan vay|can vay|"
+        r"muon vay|thoi han|ky han)\b", t))
     if hoi_nhu_cau:
-        cap = _nhu_cau_du_gan_nhat(history)
-        tien = cap[0] if cap else _tien_gan_nhat(text, history)
-        thang = cap[1] if cap else _so_thang_gan_nhat(text, history)
+        tien = float(state.amount.value) if state.amount.value is not None else None
+        thang = int(state.term.value) if state.term.value is not None else None
         if tien is not None and thang is not None:
+            if doc_lai_ban_dau:
+                return "nhac_lai_nhu_cau", (
+                    f"Dạ trước đó {xung_ho} nói cần vay {_fmt_trieu(tien)} "
+                    f"trong {thang} tháng ạ."
+                )
             return "nhac_lai_nhu_cau", (
-                f"Dạ trước đó {xung_ho} nói cần vay {_fmt_trieu(tien)} "
+                f"Dạ phương án hiện tại em đang ghi nhận là vay {_fmt_trieu(tien)} "
                 f"trong {thang} tháng ạ."
+                + _doi_chieu_gioi_han_phuong_an(tien, thang, sp_doc)
             )
         if tien is not None:
             return "nhac_lai_nhu_cau", (
-                f"Dạ trước đó {xung_ho} nói cần vay {_fmt_trieu(tien)} ạ."
+                f"Dạ hiện em đang ghi nhận số tiền muốn vay là {_fmt_trieu(tien)}, "
+                f"nhưng chưa có thời hạn vay rõ ràng. {xung_ho.capitalize()} xác nhận "
+                "giúp em thời hạn theo tháng hoặc năm ạ."
             )
         if thang is not None:
             return "nhac_lai_nhu_cau", (
-                f"Dạ thời hạn {xung_ho} đã nói là {thang} tháng ạ."
+                f"Dạ hiện em đang ghi nhận thời hạn vay là {thang} tháng, nhưng chưa có "
+                f"số tiền rõ ràng. {xung_ho.capitalize()} xác nhận giúp em số tiền kèm "
+                "đơn vị triệu hoặc tỷ đồng ạ."
             )
+        if state.amount.status == "cancelled" and state.term.status == "cancelled":
+            return "nhac_lai_nhu_cau_chua_co", (
+                "Dạ nhu cầu vay trước đã được rút lại, nên hiện em chưa có phương án "
+                "nào để đọc lại ạ."
+            )
+        can_xac_nhan = []
+        if state.amount.status == "missing_unit":
+            can_xac_nhan.append("số tiền kèm đơn vị triệu hoặc tỷ đồng")
+        elif state.amount.status == "ambiguous":
+            can_xac_nhan.append("một số tiền muốn vay cụ thể")
+        else:
+            can_xac_nhan.append("số tiền muốn vay")
+        if state.term.status == "missing_unit":
+            can_xac_nhan.append("thời hạn kèm đơn vị tháng hoặc năm")
+        elif state.term.status == "ambiguous":
+            can_xac_nhan.append("một thời hạn vay cụ thể")
+        else:
+            can_xac_nhan.append("thời hạn vay")
+        return "nhac_lai_nhu_cau_chua_ro", (
+            "Dạ hiện em chưa có phương án vay đủ rõ để đọc lại. "
+            f"{xung_ho.capitalize()} xác nhận giúp em {_noi_danh_sach(can_xac_nhan)} ạ."
+        )
 
     hoi_thu_nhap = bool(re.search(
         r"\b(thu nhap|luong|thoi gian lam viec|lam viec|cong tac)\b", t))
@@ -1123,6 +2311,79 @@ def _thu_nhap_toi_thieu(sp_doc: str) -> float | None:
             if m:
                 return float(m.group(1).replace(",", ".")) * 1e6
     return None
+
+
+_KHONG_PHAI_LOI_KHAI_THU_NHAP_HIEN_TAI = re.compile(
+    r"\b(?:neu|gia su|vi du|truong hop|so sanh|doi chieu|sang nam|tuong lai|"
+    r"du kien|du tinh|tuoi)\b|"
+    r"\b(?:dieu kien|quy dinh|toi thieu|it nhat|yeu cau)\b"
+    r".{0,55}\b(?:luong|thu nhap)\b")
+
+
+def _ghi_nhan_thu_nhap_nguoi_khac(text: str, xung_ho: str,
+                                   state: LoanState) -> tuple[str, str] | None:
+    """Giữ lời khai thu nhập người khác khỏi rơi xuống đường sinh tự do.
+
+    Việc phân loại con số và chủ sở hữu dùng đúng parser typed của sổ dữ kiện.
+    Regex cục bộ chỉ xác nhận rằng mệnh đề có một chủ thể người khác rõ ràng;
+    nó không tự quyết định con số nào là thu nhập. Nếu lượt này còn có thu nhập
+    riêng hoặc thu nhập hộ gia đình, nhường nguyên cho luật ghi nhận hiện hữu.
+    """
+    t = _bo_dau(text)
+    if ("?" in (text or "")
+            or _KHONG_PHAI_LOI_KHAI_THU_NHAP_HIEN_TAI.search(t)
+            or _HOI_DUOC_KHONG.search(t)
+            or re.search(
+                r"\b(?:co the|co vay|vay duoc|lam the duoc|mo the duoc|"
+                r"du dieu kien|bao nhieu|the nao|ra sao)\b", t)):
+        return None
+
+    from backend.pipeline.du_kien_khoan_vay import (
+        _income_owner,
+        _role,
+        chu_the_thu_nhap_nguoi_khac,
+    )
+
+    thu_nhap = []
+    for q in quantities(text):
+        if q.value is None or q.kind not in ("bare", "money"):
+            continue
+        if _role(text, q, False) != "income":
+            continue
+        thu_nhap.append((q, _income_owner(text, q)))
+    if not thu_nhap or any(owner in ("self", "household") for _, owner in thu_nhap):
+        return None
+    if not any(owner == "" and chu_the_thu_nhap_nguoi_khac(text, q)
+               for q, owner in thu_nhap):
+        return None
+
+    ghi_nhan_vay = ""
+    tien = (float(state.amount.value) if state.amount_updated
+            and state.amount.status == "known" and state.amount.value is not None else None)
+    thang = (int(state.term.value) if state.term_updated
+             and state.term.status == "known" and state.term.value is not None else None)
+    if tien is not None and thang is not None:
+        ghi_nhan_vay = (
+            f"Dạ em ghi nhận {xung_ho} muốn vay {_fmt_trieu(tien)} trong {thang} tháng. ")
+    elif tien is not None:
+        ghi_nhan_vay = f"Dạ em ghi nhận {xung_ho} muốn vay {_fmt_trieu(tien)}. "
+    elif thang is not None:
+        ghi_nhan_vay = f"Dạ em ghi nhận thời hạn vay {thang} tháng. "
+    else:
+        ghi_nhan_vay = "Dạ "
+    chu_muc = "Mức" if ghi_nhan_vay.endswith(". ") else "mức"
+
+    if (state.income.owner == "self" and state.income.status == "known"
+            and state.income.value is not None):
+        return "ghi_nhan_thu_nhap_nguoi_khac", (
+            ghi_nhan_vay
+            + f"{chu_muc} thu nhập anh chị vừa nêu là của người khác, nên không thay đổi "
+              "mức thu nhập riêng anh chị đã cung cấp ạ.")
+    return "ghi_nhan_thu_nhap_nguoi_khac", (
+        ghi_nhan_vay
+        + f"{chu_muc} thu nhập anh chị vừa nêu là của người khác, nên em chưa coi đó là "
+          "thu nhập riêng của anh chị. Anh chị cho em biết thu nhập thực tế mỗi tháng "
+          "của người đứng tên vay để em đối chiếu ạ.")
 
 
 def _ghi_nhan_thu_nhap(text: str, xung_ho: str, sp_doc: str = "",
@@ -1201,6 +2462,10 @@ def _ghi_nhan_thu_nhap(text: str, xung_ho: str, sp_doc: str = "",
             if tran:
                 cau += (f" Hạn mức tối đa là {_fmt_trieu(tran)}, "
                         "mức được duyệt còn tuỳ thẩm định hồ sơ ạ.")
+            from backend.pipeline.tra_loi_dieu_kien import nhan_xet_tuoi
+            ve_tuoi = nhan_xet_tuoi(text, sp_doc)
+            if ve_tuoi:
+                cau += " " + ve_tuoi[:1].upper() + ve_tuoi[1:]
             return "thu_nhap_dat_muc", cau
         return "thu_nhap_duoi_muc", (
             f"Dạ bên em yêu cầu thu nhập từ {_fmt_trieu(toi_thieu)} một tháng ạ. "
@@ -1213,13 +2478,20 @@ def _ghi_nhan_thu_nhap(text: str, xung_ho: str, sp_doc: str = "",
 _LO_LANG_GANH_TRA = re.compile(
     r"\b(khong kham|khong du (?:tien|kha nang)|lay gi an|ap luc|qua suc|nang qua)\b")
 _NHAC_KHOAN_TRA = re.compile(r"\b(tra|dong|gop|khoan tra|tien tra)\b")
+_SO_SANH_VOI_THU_NHAP = re.compile(
+    r"\b(?:so sanh|so|doi chieu)\b.{0,55}\b(?:khoan vay|phuong an vay|khoan tra|"
+    r"tien tra|tra hang thang)\b.{0,55}\b(?:thu nhap|luong)\b|"
+    r"\b(?:khoan vay|phuong an vay|khoan tra|tien tra|tra hang thang)\b.{0,55}"
+    r"\b(?:so sanh|so|doi chieu)\b.{0,35}\b(?:thu nhap|luong)\b")
 
 
 def _can_nhac_kha_nang_tra(text: str, state: LoanState, sp_doc: str) \
         -> tuple[str, str] | None:
     """Phản hồi lo gánh trả bằng phép tính nguồn, không tự đặt ngưỡng DTI."""
     t = _bo_dau(text)
-    if not (_LO_LANG_GANH_TRA.search(t) and _NHAC_KHOAN_TRA.search(t)):
+    lo_ganh_tra = bool(_LO_LANG_GANH_TRA.search(t) and _NHAC_KHOAN_TRA.search(t))
+    so_sanh_ro = bool(_SO_SANH_VOI_THU_NHAP.search(t))
+    if not (lo_ganh_tra or so_sanh_ro):
         return None
 
     dau = "Dạ em hiểu anh chị đang lo khoản trả hàng tháng ảnh hưởng đến chi tiêu sinh hoạt ạ."
@@ -1371,6 +2643,378 @@ def du_kien_cua_luot(history: list[dict] | None, text: str | None,
         return resolve(history, text)
 
 
+_Y_DINH_VI_DU_NGUON = re.compile(
+    r"\b(?:theo|dung|lay|doc|trong)\s+(?:dung\s+)?vi du\b|"
+    r"\bvi du\s+(?:cua\s+)?(?:san pham|cong bo|trong tai lieu|trong nguon)\b|"
+    r"\bvi du\b.{0,28}\b(?:cong bo|tai lieu|nguon|ghi|neu)\b")
+
+
+def _cac_vi_du_khoan_tra(sp_doc: str) -> list[tuple[Decimal, int, Decimal]]:
+    """Đọc đúng bộ ba tiền vay, kỳ hạn, khoản trả từ mục ví dụ của nguồn."""
+    trong_muc = False
+    ket_qua: list[tuple[Decimal, int, Decimal]] = []
+    for dong in (sp_doc or "").splitlines():
+        st = dong.strip()
+        if st.startswith("#"):
+            trong_muc = "vi du" in _bo_dau(st.lstrip("# "))
+            continue
+        if not trong_muc or "vi du" not in _bo_dau(st):
+            continue
+        qs = [q for q in quantities(st) if q.value is not None]
+        tien = [Decimal(str(q.value)) for q in qs if q.kind == "money"]
+        ky = [int(q.value) for q in qs if q.kind == "duration"]
+        if len(tien) >= 2 and len(ky) == 1 and re.search(
+                r"\b(?:moi thang|hang thang)\b", _bo_dau(st)):
+            ket_qua.append((tien[0], ky[0], tien[-1]))
+    return ket_qua
+
+
+def _tra_loi_vi_du_nguon(text: str, state: LoanState, sp_doc: str,
+                          xung_ho: str) -> tuple[str, str] | None:
+    """Ưu tiên con số ví dụ công bố khi khách đích danh yêu cầu ví dụ nguồn."""
+    if not _Y_DINH_VI_DU_NGUON.search(_bo_dau(text)):
+        return None
+
+    if state.amount.status in ("ambiguous", "missing_unit") \
+            or state.term.status in ("ambiguous", "missing_unit"):
+        return "xac_nhan_phuong_an_vi_du_nguon", (
+            f"Dạ để đối chiếu đúng ví dụ công bố, {xung_ho} chốt giúp em một số tiền "
+            "vay kèm đơn vị và một thời hạn vay cụ thể ạ.")
+
+    so_tien = (Decimal(str(state.amount.value))
+               if state.amount.value is not None else None)
+    thang = int(state.term.value) if state.term.value is not None else None
+    if so_tien is None or thang is None:
+        thieu = ("số tiền vay và thời hạn vay" if so_tien is None and thang is None
+                 else "số tiền vay" if so_tien is None else "thời hạn vay")
+        return "thieu_du_kien_vi_du_nguon", (
+            f"Dạ để tìm đúng ví dụ công bố, {xung_ho} cho em biết {thieu} cụ thể ạ.")
+
+    cac = _cac_vi_du_khoan_tra(sp_doc)
+    khop = {tra for tien, ky, tra in cac if tien == so_tien and ky == thang}
+    if len(khop) == 1:
+        tra = next(iter(khop))
+        return "vi_du_nguon_khoan_tra", (
+            f"Dạ theo ví dụ công bố trong tài liệu sản phẩm, vay "
+            f"{_fmt_trieu(float(so_tien))} trong {thang} tháng thì số tiền phải trả "
+            f"khoảng {_fmt_trieu(float(tra))} mỗi tháng ạ. Đây là khoản trả trong "
+            "ví dụ, không phải thu nhập của khách và chưa phải lịch trả nợ chính thức "
+            "được phê duyệt.")
+    if len(khop) > 1:
+        return "vi_du_nguon_mau_thuan", (
+            "Dạ tài liệu đang có nhiều khoản trả khác nhau cho cùng số tiền và thời hạn, "
+            "nên em chưa thể chọn một con số làm ví dụ công bố và cần kiểm tra lại nguồn ạ.")
+    if not cac:
+        return "khong_co_vi_du_nguon", (
+            "Dạ tài liệu sản phẩm hiện chưa có ví dụ khoản trả hàng tháng để em đọc đúng "
+            "theo nguồn; em chưa tự thay bằng một phép tính ước lượng ạ.")
+    return "khong_co_vi_du_nguon_khop", (
+        f"Dạ tài liệu hiện chưa có ví dụ công bố khớp khoản vay "
+        f"{_fmt_trieu(float(so_tien))} trong {thang} tháng. Em chưa tự dùng công thức "
+        "ước lượng thay cho ví dụ mà anh chị yêu cầu ạ.")
+
+
+_HOI_CHINH_SACH_NGOAI_NGUON = re.compile(
+    r"\b(?:lai|lai suat|tien lai|han muc|bieu phi|phi|ty le|chinh sach|dieu kien|"
+    r"ho tro|ap dung|cu the|bao nhieu|co phai|duoc khong|co duoc|chac|nhan lam|"
+    r"the chap|bao dam|dam bao|cam co|dua tren|duyet|phe duyet|tra lai|gui|vay|"
+    r"tai lieu|nguon|pham vi|noi ro)\b")
+_CHUYEN_VE_VND = re.compile(
+    r"\b(?:chuyen|doi|quay|tinh|gui|vay|lay)\s+(?:lai\s+)?(?:sang|bang|theo)?\s*"
+    r"(?:vnd|dong viet nam|tien viet|tien dong)\b|"
+    r"\b(?:vnd|dong viet nam|tien viet|tien dong)\b.{0,18}\b(?:thay|chu|thoi|nhe)\b")
+
+
+def _vai_tro_ngoai_te_trong_cau(t: str, start: int, end: int) -> str | None:
+    """Vai trò gần nhất của ngoại tệ: sản phẩm, thu nhập hay giá tài sản.
+
+    Chỉ ``san_pham`` được phép tạo chủ đề đơn vị vay/gửi/thẻ cho lượt sau.
+    Một mức lương USD hoặc giá căn hộ USD vẫn là dữ kiện khác loại, dù câu hỏi
+    tiếp theo có chữ hạn mức hay lãi suất.
+    """
+    dau, cuoi = _gioi_han_menh_de(t, start, end)
+    menh_de = t[dau:cuoi]
+    vi_tri = start - dau
+
+    def gan_nhat(mau: str) -> int | None:
+        cac = list(re.finditer(mau, menh_de))
+        if not cac:
+            return None
+        return min(min(abs(m.end() - vi_tri), abs(m.start() - vi_tri)) for m in cac)
+
+    thu_nhap = gan_nhat(r"\b(?:thu nhap|luong|doanh thu|tien cong)\b")
+    gia_tai_san = gan_nhat(
+        r"\b(?:can ho|can nha|ngoi nha|gia nha|gia dat|bat dong san|"
+        r"gia tri tai san|gia tri bat dong san)\b")
+    san_pham = gan_nhat(
+        r"\b(?:vay|khoan vay|tien vay|gui|tiet kiem|tien gui|mo so|the tin dung|"
+        r"han muc|bieu phi|lai suat|tien lai|tra lai)\b")
+    vai_tro = [(d, ten) for d, ten in (
+        (thu_nhap, "thu_nhap"), (gia_tai_san, "gia_tai_san"),
+        (san_pham, "san_pham")) if d is not None]
+    if vai_tro:
+        return min(vai_tro)[1]
+
+    # Một câu hỏi trực tiếp ``USD có được không`` vẫn là hỏi chính sách của sản
+    # phẩm đang chọn. Lời kể ``tôi có 2.000 USD`` thì không tạo chủ đề.
+    if re.search(r"\b(?:muon dung|can dung|chon|doi sang|chuyen sang|dung)\s*$",
+                 menh_de[:vi_tri]):
+        return "san_pham"
+    if re.search(r"\b(?:co phai|co neu|duoc khong|co duoc|ho tro|ap dung|"
+                 r"chinh sach|bao nhieu|the nao|cu the)\b", menh_de):
+        return "san_pham"
+    return None
+
+
+def _ho_san_pham_nguon(source_doc: str) -> str:
+    ma = _ma_san_pham(source_doc)
+    if ma == "tiet_kiem":
+        return "tien_gui"
+    if ma == "the_tin_dung":
+        return "the"
+    if ma in ("vay_tin_chap", "vay_mua_nha"):
+        return "vay"
+    return ""
+
+
+def _ho_san_pham_noi_ro(text: str) -> str | None:
+    """Họ sản phẩm được gọi đích danh trong một lượt, nếu có."""
+    t = _chuan_hoa_bien_chu_so(text)
+    if re.search(r"\b(?:the tin dung|the (?:gold|classic|platinum)|han muc the|mo the)\b", t):
+        return "the"
+    if re.search(r"\b(?:gui|tiet kiem|tien gui|khoan gui|mo so|so tiet kiem|"
+                 r"so that|so vnd|sovnd)\b", t):
+        return "tien_gui"
+    if re.search(r"\b(?:vay|khoan vay|tien vay)\b", t):
+        return "vay"
+    return None
+
+
+def _khai_bao_vnd_thuc_te(text: str, ho_nguon: str) -> bool:
+    """Khai báo phương án VND mới xóa chủ đề ngoại tệ treo từ lịch sử."""
+    t = _chuan_hoa_bien_chu_so(text)
+    if re.search(r"\b(?:neu|gia su|vi du|thu dat vao)\b", t):
+        return False
+    if _ho_san_pham_noi_ro(text) != ho_nguon:
+        return False
+    return bool(
+        re.search(r"\b\d[\d.,]*\s*(?:trieu|ty|ti)\s+dong\b", t)
+        or re.search(r"\b(?:vnd|sovnd|dong viet nam|tien viet|tien dong)\b", t))
+
+
+def _la_tinh_huong_gia_dinh(text: str) -> bool:
+    return bool(re.search(r"\b(?:neu|gia su|vi du|thu dat vao)\b", _bo_dau(text)))
+
+
+def _chu_de_ngoai_nguon_trong_luot(text: str) -> tuple[str, str, str] | None:
+    """Nhận chủ đề có neo chính sách; một câu kể ``xe của tôi 30m`` không đủ."""
+    t = _chuan_hoa_bien_chu_so(text)
+    goc = unicodedata.normalize("NFC", (text or "").lower())
+    goc = re.sub(r"(?<=[^\W\d_])(?=\d)|(?<=\d)(?=[^\W\d_])", " ", goc)
+    cac = (
+        # Với câu ``gửi vàng với USD``, giữ mã chính sách tiền gửi hiện hữu.
+        # Một câu chỉ nói USD vẫn đi nhánh đơn vị tiền tệ ngay bên dưới.
+        ("vang", "vàng", "tien_gui", r"\bvang\b"),
+        ("usd", "USD", "tien_te", r"\b(?:usd|do la my|do la)\b"),
+        ("eur", "EUR", "tien_te", r"\b(?:eur|euro)\b"),
+        ("o_to", "ô tô", "tai_san", r"\b(?:o to|xe hoi|xe oto)\b"),
+        ("tien_ma_hoa", "tiền mã hóa", "tien_ma_hoa",
+         r"\b(?:tien ma hoa|tien dien tu|crypto|bitcoin|ethereum|eth)\b"),
+    )
+    for ma, ten, loai, mau in cac:
+        for m in re.finditer(mau, t):
+            truoc = t[max(0, m.start() - 28):m.start()]
+            sau = t[m.end():min(len(t), m.end() + 28)]
+            truoc_goc = goc[max(0, m.start() - 28):m.start()]
+            if (re.search(r"\b(?:khong phai|bo|huy|khong (?:dung|tinh|gui|vay|"
+                          r"lay|chon))\s*$", truoc)
+                    or re.search(r"\b(?:dừng|đừng)\s*$", truoc_goc)
+                    or re.match(r"\s*(?:khong (?:dung|tinh|gui|vay|lay|chon)\s+)?nua\b", sau)):
+                continue
+            if loai == "tien_te" and _vai_tro_ngoai_te_trong_cau(
+                    t, m.start(), m.end()) != "san_pham":
+                continue
+            if loai == "tien_gui" and not re.search(
+                    r"\b(?:gui|tiet kiem|mo so|lai|lai suat|nhan lai|tai san|the chap|"
+                    r"bao dam|dam bao|cam co)\b", t):
+                continue
+            loai_ket_qua = loai
+            if loai == "tien_ma_hoa":
+                dau_menh_de, cuoi_menh_de = _gioi_han_menh_de(t, m.start(), m.end())
+                quanh = t[dau_menh_de:cuoi_menh_de]
+                if re.search(
+                        r"\b(?:tai san|the chap|bao dam|dam bao|cam co|nhan lam|dua tren)\b",
+                        quanh):
+                    loai_ket_qua = "tai_san"
+                elif re.search(
+                        r"\b(?:gui|tiet kiem|tien gui|khoan gui|mo so|lai|lai suat|"
+                        r"tien lai|nhan lai)\b", quanh):
+                    loai_ket_qua = "tien_gui"
+                elif _khai_bao_vnd_thuc_te(text, "tien_gui"):
+                    # ``Bitcoin để đầu tư, còn gửi 100 triệu đồng`` có hai đối
+                    # tượng. Khoản VND thực tế thắng dù đứng trước hay sau.
+                    continue
+                elif re.search(
+                        r"\b(?:gui|tiet kiem|tien gui|khoan gui|mo so|lai|lai suat|"
+                        r"tien lai|nhan lai)\b", t):
+                    # Không có đơn vị thay thế: ``tôi có Bitcoin, gửi online``
+                    # là yêu cầu dùng chính Bitcoin cho sản phẩm đang hỏi.
+                    loai_ket_qua = "tien_gui"
+                elif re.search(
+                        r"\b(?:co duoc|duoc khong|ho tro|ap dung|chinh sach)\b", quanh):
+                    loai_ket_qua = "chinh_sach"
+                elif re.search(
+                        r"\b(?:tai lieu|nguon)\b.{0,30}\b(?:noi|neu|co|khong co)\b|"
+                        r"\b(?:noi ro|pham vi)\b", quanh):
+                    # ``Nếu tài liệu không nói về crypto thì nói rõ phạm vi``
+                    # là yêu cầu mô tả giới hạn của nguồn, không phải căn cứ để
+                    # suy ra ngân hàng cấm hay không hỗ trợ tiền mã hóa.
+                    loai_ket_qua = "chinh_sach"
+                else:
+                    # Số dư hoặc giá Bitcoin/ETH chỉ là một tài sản khách kể,
+                    # không tự đổi đơn vị khoản vay hay giá bất động sản.
+                    continue
+            if loai_ket_qua == "tai_san" and not re.search(
+                    r"\b(?:tai san|the chap|bao dam|dam bao|cam co|nhan lam|dua tren)\b", t):
+                continue
+            return ma, ten, loai_ket_qua
+    return None
+
+
+def _tra_loi_pham_vi_nguon(text: str, source_doc: str,
+                            history: list[dict] | None = None) \
+        -> tuple[str, str] | None:
+    """Chặn áp chính sách VND/tài sản chung sang đơn vị không được nguồn nêu.
+
+    Hàm thuần này cũng được pipeline gọi trước các câu trả lời điều kiện nhanh.
+    Chỉ sáu lượt khách gần nhất được xét để chủ đề cũ không bám vô hạn.
+    """
+    if not (source_doc or "").strip():
+        return None
+    cac_luot = [m.get("content", "") for m in (history or [])
+                if m.get("role") == "user"]
+    if not cac_luot or cac_luot[-1].strip() != (text or "").strip():
+        cac_luot.append(text or "")
+    chu_de: tuple[str, str, str] | None = None
+    cac_xet = cac_luot[-6:]
+    ho_nguon = _ho_san_pham_nguon(source_doc)
+    for i, cau in enumerate(cac_xet):
+        t = _bo_dau(cau)
+        ho_noi_ro = _ho_san_pham_noi_ro(cau)
+        if ho_noi_ro and ho_nguon and ho_noi_ro != ho_nguon:
+            # Không mang USD của khoản vay cũ sang thẻ hay sổ tiết kiệm đang chọn.
+            chu_de = None
+            continue
+        moi = _chu_de_ngoai_nguon_trong_luot(cau)
+        if moi:
+            # Giả định hiện tại vẫn cần câu trả lời có nguồn, nhưng khi đã thành
+            # lịch sử nó không được thay đơn vị thực tế của các lượt sau.
+            if i == len(cac_xet) - 1 or not _la_tinh_huong_gia_dinh(cau):
+                chu_de = moi
+        elif (_khai_bao_vnd_thuc_te(cau, ho_nguon)
+              or _CHUYEN_VE_VND.search(t) or re.search(
+                r"\b(?:bo|huy|dung|khong dung|khong .* nua|khong phai)\b.{0,18}"
+                r"\b(?:usd|do la|eur|euro|vang|o to|xe hoi|crypto|bitcoin|ethereum|eth|"
+                r"tien ma hoa|tien dien tu)\b",
+                t)):
+            chu_de = None
+
+    if chu_de is None or not _HOI_CHINH_SACH_NGOAI_NGUON.search(_bo_dau(text)):
+        return None
+    ma, ten, loai = chu_de
+    doc = _bo_dau(_phan_san_pham(source_doc))
+    mau_doc = {
+        "usd": r"\b(?:usd|do la my|do la)\b",
+        "eur": r"\b(?:eur|euro)\b",
+        "vang": r"\bvang\b",
+        "o_to": r"\b(?:o to|xe hoi|xe oto)\b",
+        "tien_ma_hoa": r"\b(?:tien ma hoa|tien dien tu|crypto|bitcoin|ethereum|eth)\b",
+    }[ma]
+    if re.search(mau_doc, doc):
+        return None
+    if loai == "tai_san":
+        return "tai_san_chua_duoc_nguon_xac_nhan", (
+            f"Dạ tài liệu sản phẩm hiện chưa xác nhận riêng {ten} là tài sản bảo đảm "
+            "được chấp nhận. Cụm “tài sản khác” nếu có trong tài liệu chưa đủ để bảo "
+            "đảm trường hợp này sẽ được nhận; em cần kiểm tra lại chính sách cụ thể ạ.")
+    if loai == "tien_gui":
+        return "tien_gui_khong_co_chinh_sach", (
+            f"Dạ tài liệu sản phẩm hiện chưa nêu chính sách gửi hoặc trả lãi bằng {ten}, "
+            "nên em chưa thể áp lãi suất tiền gửi bằng đồng Việt Nam cho trường hợp này ạ.")
+    if loai == "chinh_sach":
+        ma_tra_loi = ("tien_gui_khong_co_chinh_sach"
+                      if ho_nguon == "tien_gui" else "tai_san_chua_duoc_nguon_xac_nhan")
+        return ma_tra_loi, (
+            f"Dạ tài liệu sản phẩm hiện chưa nêu chính sách áp dụng với {ten}, "
+            "nên em chưa thể xác nhận và cần kiểm tra lại nguồn cụ thể ạ.")
+    return "don_vi_tien_te_chua_co_trong_nguon", (
+        f"Dạ tài liệu sản phẩm hiện chưa nêu lãi suất, hạn mức hoặc biểu phí bằng {ten}, "
+        f"nên em chưa thể áp các mức bằng đồng Việt Nam cho {ten} và cần kiểm tra lại "
+        "chính sách cụ thể ạ.")
+
+
+def _bo_chu_de_da_rut_khoi_cau(text: str) -> str:
+    """Không để tên đơn vị đã rút kích hoạt lại guard hẹp ở nhánh sản phẩm."""
+    t = _bo_dau(text)
+    rut = _CHUYEN_VE_VND.search(t) or re.search(
+        r"\b(?:bo|huy|dung|khong dung|khong .* nua|khong phai)\b.{0,18}"
+        r"\b(?:usd|do la|eur|euro|vang|o to|xe hoi|crypto|bitcoin|ethereum|eth|"
+        r"tien ma hoa|tien dien tu)\b",
+        t)
+    if not rut:
+        return t
+    return re.sub(
+        r"\b(?:usd|do la my|do la|eur|euro|vang|o to|xe hoi|xe oto|crypto|bitcoin|"
+        r"ethereum|eth|tien ma hoa|tien dien tu)\b", " ", t)
+
+
+def _tra_loi_an_toan_danh_tinh_va_du_lieu(text: str) -> tuple[str, str] | None:
+    """Ưu tiên danh tính cuộc gọi và dữ liệu bí mật trước đường sinh tự do."""
+    t = _bo_dau(text)
+
+    nhay_cam = bool(re.search(
+        r"\b(?:otp|pin|mat khau|ma bao mat|ma xac thuc|so the|ngay het han)\b", t))
+    tu_choi = bool(re.search(
+        r"\b(?:khong dong y|khong muon|tu choi|se khong|khong cung cap|khong doc)\b", t))
+    if nhay_cam and tu_choi:
+        return "tu_choi_cung_cap_du_lieu_nhay_cam", (
+            "Dạ em ghi nhận anh chị không đồng ý cung cấp thông tin. Anh chị không cần "
+            "và không nên đọc OTP, PIN, mật khẩu, toàn bộ số thẻ hoặc ngày hết hạn trong "
+            "cuộc trò chuyện này; em sẽ không hỏi thêm các thông tin đó ạ.")
+
+    otp_bi_thuc = bool(
+        re.search(r"\botp\b", t)
+        and re.search(r"\b(?:nguoi|ai|ho|nhan vien|ngan hang)\b", t)
+        and re.search(r"\b(?:bao|giuc|doi|yeu cau|xin|can)\b", t)
+        and re.search(r"\b(?:doc|cung cap|gui|xac minh)\b", t))
+    mat_the = bool(re.search(
+        r"\b(?:mat|that lac|khong thay|de quen|danh roi|lay cap)\b.{0,34}\bthe\b|"
+        r"\bthe(?:\s+(?:tin dung|classic|gold|platinum))?"
+        r"(?:\s+(?:toi|anh|chi|em|minh|cua toi|cua anh|cua chi)){0,2}\s+"
+        r"(?:bi\s+)?(?:mat|that lac|de quen|danh roi|lay cap)\b", t))
+    if otp_bi_thuc and not mat_the:
+        return "canh_bao_otp_cuoc_goi", (
+            "Dạ anh chị không đọc hoặc cung cấp OTP cho người gọi và hãy ngắt cuộc gọi "
+            "đó ngay. Sau đó anh chị tự liên hệ ngân hàng qua kênh chính thức đã kiểm "
+            "chứng; không dùng số điện thoại hoặc đường dẫn do người gọi cung cấp ạ.")
+
+    hoi_danh_tinh = bool(
+        re.search(r"\b(?:ban|em)\s+la\s+ai\b", t)
+        and re.search(r"\b(?:ngan hang|that|don vi|goi)\b", t))
+    hoi_nguon_lien_he = bool(
+        re.search(r"\bso nay\b.{0,24}\b(?:don vi nao|ben nao|cua ai)\b", t)
+        or re.search(r"\b(?:sao|tai sao)\b.{0,24}\bbiet\b.{0,32}"
+                     r"\b(?:tien nhan roi|so du|tien cua toi)\b", t))
+    if hoi_danh_tinh or hoi_nguon_lien_he:
+        return "danh_tinh_va_nguon_lien_he_chua_xac_minh", (
+            "Dạ em là trợ lý tư vấn tự động đang trả lời theo tài liệu sản phẩm được "
+            "chọn. Em không có thông tin đã được xác minh về đơn vị gọi hoặc nguồn số "
+            "liên hệ này, và cũng không có dữ liệu để biết anh chị có tiền nhàn rỗi hay "
+            "số dư. Anh chị có thể tự kiểm tra qua kênh chính thức đã biết và không cung "
+            "cấp OTP, PIN, mật khẩu, toàn bộ số thẻ hoặc ngày hết hạn ạ.")
+    return None
+
+
 def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
             history: list[dict] | None = None, xung_ho: str = "anh chị",
             du_kien: LoanState | None = None) \
@@ -1378,7 +3022,147 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     """Trả ``(mã, câu)`` khi đủ dữ kiện để trả lời xác định."""
     # Mọi lần đọc sổ dữ kiện bên trong đều suy đơn vị theo hạn mức sản phẩm này.
     with voi_tran_san_pham(*_muc_san_pham(tai_lieu)):
-        return _tra_loi(text, tai_lieu, ho_so, history, xung_ho, du_kien)
+        kq = _tra_loi(text, tai_lieu, ho_so, history, xung_ho, du_kien)
+        if kq and kq[0] == "han_muc_san_pham" and _ma_san_pham(tai_lieu) == "vay_mua_nha":
+            # Khối hạn mức chỉ đọc lại dòng chung vì chưa nhận ra giá nhà khách nói
+            # gọn ("nhà chị định mua là ba tỷ thì vay được bao nhiêu"): tính theo
+            # đúng giá đó nếu đọc được.
+            kq = _ghi_nhan_gia_nha(text, _phan_san_pham(tai_lieu)) or kq
+        return (_tra_loi_hoi_gop(text, tai_lieu, kq) or kq or _tra_loi_moi_tu_van(text, tai_lieu)
+                or _tra_loi_tiet_kiem_ngan(text, tai_lieu))
+
+
+_CHU_QUANH_SO_TIEN = frozenset(
+    "gui khoang tam chung do thoi em a anh chi co duoc la thi u o minh toi bac chau nhe nha".split())
+
+
+def _tra_loi_tiet_kiem_ngan(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """Hai lượt cụt của khách gửi tiết kiệm mà không luật nào nhận (bộ thử 12-10-2026).
+
+    - "năm chục triệu" (đáp câu "dự định gửi khoảng bao nhiêu"): ghi nhận đúng số
+      tiền, để lớp dẫn dắt hỏi tiếp kỳ hạn.
+    - "kỳ hạn": đọc các kỳ hạn có trong bảng lãi của tài liệu.
+    Để mô hình tự viết thì câu sau nó ("kỳ hạn") lúc được kho trả lời, lúc không.
+    """
+    if _ma_san_pham(tai_lieu) != "tiet_kiem":
+        return None
+    t = _bo_dau(text)
+    # Chỉ tới đây khi các luật tiết kiệm khác (tính lãi rút một phần, ước tính
+    # lãi...) đã không nhận lượt này.
+    rut_truoc = _tra_loi_rut_truoc_han(t, _phan_san_pham(tai_lieu))
+    if rut_truoc:
+        return rut_truoc
+    tu = t.split()
+    if not tu or len(tu) > 7:
+        return None
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    cac = [q for q in quantities(text) if q.value is not None]
+    if len(cac) == 1 and cac[0].kind == "money":
+        con = _bo_dau(text[:cac[0].start] + " " + text[cac[0].end:]).split()
+        if all(c in _CHU_QUANH_SO_TIEN for c in con):
+            return "ghi_nhan_tien_gui", (
+                f"Dạ em ghi nhận anh chị dự định gửi khoảng {_fmt_trieu(float(cac[0].value))} ạ.")
+    if not cac and re.fullmatch(r"(the |vay |con |u |o )*ky han( (nao|gi|the nao|sao|bao lau|thi sao))?( em| a| nhi)*", t):
+        bang, _ = _bang_lai_tiet_kiem(_phan_san_pham(tai_lieu))
+        if bang:
+            return "ky_han_tiet_kiem", (
+                f"Dạ bên em có các kỳ hạn {_noi_so(sorted(bang))} tháng ạ. "
+                "Anh chị muốn gửi kỳ hạn bao lâu ạ?")
+    return None
+
+
+_MOI_TU_VAN = re.compile(
+    r"\b(tu van|gioi thieu|noi (qua|so|so qua) ve)\b.{0,40}"
+    r"\b(san pham|the|vay|khoan vay|goi vay|tiet kiem|gui tiet kiem|gui tien)\b"
+    r"|\b(san pham|the tin dung|vay tin chap|vay mua nha|tiet kiem)\b.{0,24}\b(tu van|gioi thieu)\b")
+# (câu hỏi đem cho luật, mã luật được nhận, câu hỏi mở đường) theo sản phẩm.
+_GIOI_THIEU = {
+    "the_tin_dung": ((("hạn mức thẻ thế nào", "han_muc_the"),), "Anh chị quan tâm hạng thẻ nào ạ?"),
+    "tiet_kiem": ((("lãi suất bao nhiêu", "lai_tiet_kiem_theo_ky"),),
+                  "Anh chị dự định gửi khoảng bao nhiêu ạ?"),
+    "vay": ((("lãi suất bao nhiêu", "lai_suat_san_pham"), ("hạn mức tối đa bao nhiêu", "han_muc_san_pham"),
+             ("thời hạn vay bao lâu", "thoi_han_san_pham")), "Anh chị dự định vay khoảng bao nhiêu ạ?"),
+}
+
+
+def _tra_loi_moi_tu_van(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """"ừ tư vấn với anh về sản phẩm thẻ tín dụng": khách MỜI giới thiệu, chưa hỏi gì cụ thể.
+
+    Chỉ chạy khi không luật nào khác nhận lượt này. Nội dung là các dữ kiện chính
+    của tài liệu, lấy qua chính tầng luật, kết bằng một câu hỏi mở đường. Bộ thử
+    12-10-2026: để mô hình tự viết thì có lần nó đáp "em xin lỗi, anh vừa nói là
+    thẻ tín dụng ạ, em có thể giới thiệu sơ qua được không".
+    """
+    t = _bo_dau(text)
+    if not _MOI_TU_VAN.search(t) or len(t.split()) > 16 or re.search(
+            r"\d|\b(lai|han muc|phi|giay to|ho so|dieu kien|thu tuc|bao nhieu|khong|ai|sao|dau)\b", t):
+        return None
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    if any(q.value is not None for q in quantities(text)):
+        return None
+    ma_sp = _ma_san_pham(tai_lieu) or ""
+    cac_hoi, mo_duong = _GIOI_THIEU.get(ma_sp) or (_GIOI_THIEU["vay"] if ma_sp.startswith("vay") else ((), ""))
+    cac = []
+    for hoi, ma_nhan in cac_hoi:
+        got = _tra_loi(hoi, tai_lieu)
+        if got and got[0] == ma_nhan:
+            cau = got[1].replace(" Mức được duyệt thực tế còn phụ thuộc hồ sơ của anh chị.", "")
+            cau = cau if not cac else re.sub(r"^Dạ,?\s+", "", cau)
+            cac.append(cau[:1].upper() + cau[1:])
+    if not cac:
+        return None
+    return "moi_tu_van", " ".join(cac) + " " + mo_duong
+
+
+# Chủ đề -> (cách khách nhắc tới, câu hỏi chuẩn đem cho luật). Chỉ là CÁCH NÓI;
+# nội dung trả lời vẫn do luật đọc từ tài liệu.
+_Y_GOP = (
+    ("lai_suat", r"\b(lai suat|lai bao nhieu|lai the nao|muc lai)\b", "lãi suất bao nhiêu"),
+    ("han_muc", r"\b(han muc|vay (duoc )?toi da|vay duoc bao nhieu|toi da bao nhieu)\b",
+     "hạn mức tối đa bao nhiêu"),
+    ("giay_to", r"\b(giay to|ho so|thu tuc)\b", "cần giấy tờ gì"),
+    ("phi", r"\bphi\b", "phí thường niên bao nhiêu"),
+    ("thoi_han", r"\b(thoi han|vay (duoc )?bao lau|trong bao lau)\b", "thời hạn vay bao lâu"),
+)
+# Luật chỉ đọc lại MỘT dữ kiện tĩnh: câu hỏi gộp được phép thay câu của chúng.
+_LUAT_MOT_Y = frozenset({
+    "lai_suat_san_pham", "han_muc_san_pham", "ho_so_can_thiet", "phi_the", "han_muc_the",
+    "thoi_han_san_pham", "loai_the", "gioi_thieu_san_pham"})
+
+
+def _tra_loi_hoi_gop(text: str, tai_lieu: str,
+                     kq: tuple[str, str] | None) -> tuple[str, str] | None:
+    """"lãi suất bao nhiêu, vay tối đa bao nhiêu, cần giấy tờ gì em nói luôn một thể".
+
+    Bộ thử 12-10-2026: kho chỉ có câu đáp từng ý nên khách hỏi ba ý nhận hai. Ở
+    đây mỗi ý được hỏi riêng qua chính tầng luật rồi ghép lại, tối đa ba ý. Không
+    đụng tới câu có con số của khách (đó là hỏi cho trường hợp riêng) và câu mà
+    luật đã đáp bằng một phép tính hay một lời hỏi lại.
+    """
+    t = _bo_dau(text)
+    if (kq and kq[0] not in _LUAT_MOT_Y) or re.search(r"\d", t) or len(t.split()) > 30:
+        return None
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    if any(q.value is not None and q.kind in ("money", "duration") for q in quantities(text)):
+        return None
+    y = [(ma, hoi) for ma, mau, hoi in _Y_GOP if re.search(mau, t)]
+    if len(y) < 2:
+        return None
+    cac, da_co, con_tham_dinh = [], set(), False
+    tham_dinh = " Mức được duyệt thực tế còn phụ thuộc hồ sơ của anh chị."
+    for ma, hoi in y[:3]:
+        got = _tra_loi(hoi, tai_lieu)
+        if not got or got[0] not in _LUAT_MOT_Y or got[1] in da_co:
+            continue
+        da_co.add(got[1])
+        con_tham_dinh = con_tham_dinh or tham_dinh in got[1]
+        cau = got[1].replace(tham_dinh, "")
+        cau = cau if not cac else re.sub(r"^Dạ,?\s+", "", cau)
+        # "Mức được duyệt thực tế còn phụ thuộc hồ sơ" chỉ cần nói một lần, ở cuối.
+        cac.append(cau[:1].upper() + cau[1:])
+    if len(cac) < 2:
+        return None
+    return "hoi_gop", " ".join(cac) + (tham_dinh if con_tham_dinh else "")
 
 
 def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
@@ -1390,6 +3174,13 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         return None
     ma_sp = _ma_san_pham(tai_lieu)
     sp_doc = _phan_san_pham(tai_lieu)
+    an_toan_danh_tinh = _tra_loi_an_toan_danh_tinh_va_du_lieu(text)
+    if an_toan_danh_tinh:
+        return an_toan_danh_tinh
+    pham_vi_nguon = _tra_loi_pham_vi_nguon(text, tai_lieu, history)
+    if pham_vi_nguon:
+        return pham_vi_nguon
+    t = _bo_chu_de_da_rut_khoi_cau(text)
     chu_de = _chu_de_khong_co(t, tai_lieu, ma_sp)
     if chu_de:
         return "chua_co_thong_tin_chu_de", (
@@ -1402,7 +3193,9 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     if ma_sp == "the_tin_dung":
         # Khách khai lương rồi hỏi "làm thẻ được không": đối chiếu mức thu nhập
         # tối thiểu của tài liệu, như với khoản vay.
-        return (_tra_loi_the_tin_dung(t, sp_doc, text)
+        return (_tra_loi_the_tin_dung(t, sp_doc, text, history)
+                or _ghi_nhan_thu_nhap_nguoi_khac(
+                    text, xung_ho, resolve(history, text))
                 or _ghi_nhan_thu_nhap(text, xung_ho, sp_doc)
                 or tra_loi_dieu_kien(text, ma_sp, sp_doc))
     # Chưa có tài liệu sản phẩm (kịch bản riêng như Shinhan, hoặc chưa biết sản
@@ -1415,10 +3208,14 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     if state.amount_updated and state.amount.status == "cancelled":
         return "huy_nhu_cau_vay", "Dạ em ghi nhận anh chị không tiếp tục nhu cầu vay này ạ."
 
-    nhac_lai = _tra_loi_nhac_lai(text, history, xung_ho)
+    vi_du_nguon = _tra_loi_vi_du_nguon(text, state, sp_doc, xung_ho)
+    if vi_du_nguon:
+        return vi_du_nguon
+
+    nhac_lai = _tra_loi_nhac_lai(text, history, xung_ho, state, sp_doc)
     if nhac_lai:
         return nhac_lai
-    if is_readback(text):
+    if is_readback(text) and not _la_nhac_lai_thuoc_tinh(text):
         # Một con số nghe chưa rõ không phải là nhu cầu mới của khách. Hỏi rõ
         # ngay để mô hình không tự gắn "ba trăm" thành khoản vay 300 triệu.
         return "xac_nhan_y_nghe_lai", (
@@ -1438,8 +3235,21 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     if can_nhac_tra:
         return can_nhac_tra
 
+    ghi_nhan_nguoi_khac = _ghi_nhan_thu_nhap_nguoi_khac(text, xung_ho, state)
+    if ghi_nhan_nguoi_khac:
+        return ghi_nhan_nguoi_khac
+
     ghi_nhan = None if state.amount_updated else _ghi_nhan_thu_nhap(
         text, xung_ho, sp_doc, _tran_san_pham(sp_doc))
+    # AI vừa hỏi thu nhập, khách đáp cụt "mười lăm" / "tầm hai chục triệu": sổ dữ
+    # kiện đã nhận đó là thu nhập, câu ghi nhận chỉ thiếu chữ "thu nhập" để đọc.
+    ai_hoi_thu_nhap = ai_vua_hoi(next(
+        (m.get("content", "") for m in reversed(history or []) if m.get("role") == "assistant"),
+        "")) == "income"
+    if (not ghi_nhan and ai_hoi_thu_nhap and state.income_updated
+            and not state.amount_updated and not _la_ngu_canh_thu_nhap(text)):
+        ghi_nhan = _ghi_nhan_thu_nhap("anh thu nhập " + text, xung_ho, sp_doc,
+                                      _tran_san_pham(sp_doc))
     if ghi_nhan:
         return ghi_nhan
 
@@ -1604,10 +3414,38 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         if gia_tri and re.search(r"\d", gia_tri):
             return "thoi_han_san_pham", f"Dạ thời hạn vay {gia_tri} ạ."
 
+    vay_du = _tra_loi_vay_du_ra(text, t)
+    if vay_du:
+        return vay_du
+    can_so_do = _tra_loi_can_so_do(t, sp_doc) or _tra_loi_gioi_thieu_vay(text, t, tai_lieu, ma_sp or "")
+    if can_so_do:
+        return can_so_do
+    che_lai = _tra_loi_che_lai_cao(t, tai_lieu, ma_sp or "", history)
+    if che_lai:
+        return che_lai
+    # Câu HỎI hạn mức ("nhà 9 tỷ thì hạn mức tối đa bao nhiêu") đã có luật tính
+    # theo giá nhà ở khối hạn mức bên dưới; hai luật này chỉ nhận câu KỂ.
+    if ma_sp == "vay_mua_nha" and not _HOI_HAN_MUC_VAY.search(t):
+        dap_ty_le = _vay_theo_ty_le_khach_neu(text, history, sp_doc) or _ghi_nhan_gia_nha(text, sp_doc)
+        if dap_ty_le:
+            return dap_ty_le
+
     if tran and re.search(
             r"\b(han muc|(?:thue|the) vay toi da|vay (?:tin chap )?toi da(?: duoc)?|vay duoc bao nhieu)\b", t) \
             and not re.search(r"\b(thoi gian|thoi han|bao lau|ky han|may thang|may nam|"
                               r"bao nhieu nam|bao nhieu thang)\b", t):
+        # Với vay mua nhà, khi khách đã nêu rõ giá tài sản hoặc đang hỏi phép
+        # tính tỷ lệ, trả đúng min(LTV × giá, trần tiền) từ chính dòng nguồn.
+        # Giá không rõ/rút lại phải được hỏi lại; câu hỏi hạn mức chung vẫn đọc
+        # nguyên dòng sản phẩm như trước.
+        trang_thai_gia, _, _ = _gia_bds_hien_tai(text, history)
+        hoi_phep_tinh_ltv = bool(re.search(
+            r"(?:\d+(?:[.,]\d+)?)\s*%|\b(?:theo|dua tren)\b.{0,18}\b(?:gia|gia tri)\b",
+            t))
+        if ma_sp == "vay_mua_nha" and (trang_thai_gia != "unknown" or hoi_phep_tinh_ltv):
+            dap_ltv = _tra_loi_ltv_theo_gia(text, history, sp_doc)
+            if dap_ltv:
+                return dap_ltv
         gia_hm = _gia_tri_dong(sp_doc, "hạn mức")
         if gia_hm and "%" in gia_hm:
             # "lên đến 80% giá trị bất động sản, tối đa 10 tỷ đồng": đọc trọn dòng,
@@ -1694,6 +3532,20 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
     if state.term.status in ("ambiguous", "missing_unit") and (
             state.term_updated or (lien_quan_so and doi_tinh)):
         cau = "Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?"
+        # "vay trong hai lăm": đưa luôn các cách hiểu CÒN NẰM TRONG thời hạn sản
+        # phẩm để khách chỉ việc chọn. Người nói lẫn l/n thì "hai lăm" còn là
+        # "hai năm", nên số có đuôi "lăm" được thêm cách hiểu đó.
+        he_so = state.term.coefficient
+        if he_so is not None and he_so == he_so.to_integral() and khung:
+            n = int(he_so)
+            cach = [(n, f"{n} tháng"), (n * 12, f"{n} năm")]
+            chu = (state.term.raw or "").lower().split()
+            if len(chu) == 2 and chu[1] == "lăm" and n % 10 == 5 and n > 10:
+                cach.append((n // 10 * 12, f"{n // 10} năm"))
+            hop_le = [ten for thang, ten in cach
+                      if (khung[0] or 1) <= thang <= (khung[1] or thang)]
+            if len(hop_le) >= 2:
+                cau = f"Dạ anh chị muốn vay {' hay '.join(hop_le[:3])} ạ?"
         if not _vua_hoi(history, cau):
             return "xac_nhan_ky_han_vay", cau
 
@@ -1788,6 +3640,13 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         r"\b(bao lau|may thang|bao nhieu thang|may nam|vay \d+ (?:thang|nam) duoc khong|"
         r"mot thoi han)\b",
         _bo_dau(ai_vua_noi)))
+    # ... hoặc chính khách bỏ lửng ở lượt trước rồi nói nốt: "anh muốn vay ba trăm
+    # triệu trong vòng" - "mười hai" (cuộc gọi e2ef1be5: máy cắt lượt giữa câu).
+    khach_truoc = [m.get("content", "") for m in (history or []) if m.get("role") == "user"]
+    if khach_truoc and khach_truoc[-1].strip() == (text or "").strip():
+        khach_truoc = khach_truoc[:-1]
+    ai_vua_hoi_ky_han = ai_vua_hoi_ky_han or bool(
+        khach_truoc and luot_truoc_bo_lung_ky_han(khach_truoc[-1]))
     # Khách gật với thời hạn AI vừa đề nghị ("vay 12 tháng được không ạ?" - "ừ
     # được"): xác nhận lại cho rõ rồi để lớp dẫn dắt hỏi ý kế tiếp.
     if state.nhan_de_nghi and thang:

@@ -34,7 +34,7 @@ def _ma(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", s).strip("_")
 
 
-def _doc_tep(duong: str) -> str:
+def _doc_tep(duong: str, *, fresh: bool = False) -> str:
     """Nội dung tệp, nhớ lại theo (mtime, kích thước). Tệp không có -> "" ."""
     try:
         st = os.stat(duong)
@@ -42,7 +42,7 @@ def _doc_tep(duong: str) -> str:
         _NHO.pop(duong, None)
         return ""
     cu = _NHO.get(duong)
-    if cu and cu[0] == st.st_mtime and cu[1] == st.st_size:
+    if not fresh and cu and cu[0] == st.st_mtime and cu[1] == st.st_size:
         return cu[2]
     try:
         with open(duong, encoding="utf-8", errors="replace") as f:
@@ -61,7 +61,7 @@ def _goc_mac_dinh() -> str:
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def toan_van(san_pham: str | None, goc: str | None = None) -> str:
+def toan_van(san_pham: str | None, goc: str | None = None, *, fresh: bool = False) -> str:
     """Trọn tài liệu của `san_pham` kèm FAQ chung; "" nếu không có tài liệu.
 
     Trả "" là tín hiệu để đường sinh RƠI VỀ mảnh RAG như cũ - dùng cho lượt chưa
@@ -71,8 +71,8 @@ def toan_van(san_pham: str | None, goc: str | None = None) -> str:
     if not ma:
         return ""
     thu = goc or _goc_mac_dinh()
-    sp = _doc_tep(os.path.join(thu, "knowledge", "products", f"{ma}.md"))
+    sp = _doc_tep(os.path.join(thu, "knowledge", "products", f"{ma}.md"), fresh=fresh)
     if not sp.strip():
         return ""
-    faq = _doc_tep(os.path.join(thu, "knowledge", "faq", "faq_banking.md"))
+    faq = _doc_tep(os.path.join(thu, "knowledge", "faq", "faq_banking.md"), fresh=fresh)
     return f"{sp.strip()}\n\n{faq.strip()}".strip() if faq.strip() else sp.strip()
