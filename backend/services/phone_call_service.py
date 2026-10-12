@@ -797,7 +797,11 @@ class PhoneCallBridge:
         if serial or self.serial:
             try:
                 from backend.services import adb_service
-                await adb_service.forward_port(serial or self.serial, self.port)
+                ok, _ = await adb_service.forward_port(serial or self.serial, self.port)
+                # Forward không dựng được là máy đã rớt khỏi adb (offline), không
+                # phải mất mỗi forward: kéo máy lên lại rồi dựng lần nữa.
+                if not ok and await adb_service.hoi_sinh_adb(serial or self.serial):
+                    await adb_service.forward_port(serial or self.serial, self.port)
             except Exception as e:
                 logger.debug(f"{self.tag} dựng lại forward không được: {e}")
         try:

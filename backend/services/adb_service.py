@@ -281,6 +281,10 @@ async def dial(serial: str, number: str,
     (`dialer_service.dial` -> đây) thì không có - một trong nhiều chỗ hai đường
     lệch nhau.
     """
+    # Máy rớt xuống `offline` (lỗi USB, xem `hoi_sinh_adb`) thì nằm đó tới khi
+    # có người reconnect: không kéo lên trước thì mọi lệnh dưới đây đều hỏng.
+    if not await hoi_sinh_adb(serial):
+        return False, "Điện thoại đang offline với adb, đã thử nối lại nhưng chưa lên"
     number = number.replace(" ", "")
     await _run("-s", serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP")
     await _run("-s", serial, "shell", "wm", "dismiss-keyguard")
@@ -564,6 +568,40 @@ async def forward_port(serial: str, port: int) -> tuple[bool, str]:
     if code != 0:
         return False, err.strip() or "Không tạo được adb forward"
     return True, ""
+
+
+_LAN_HOI_SINH: dict[str, float] = {}
+_KHOA_HOI_SINH = asyncio.Lock()
+
+
+async def hoi_sinh_adb(serial: str, cho_toi_da: float = 8.0) -> bool:
+    """Kéo máy đang `offline` trở lại `device` bằng `adb reconnect offline`.
+
+    Gọi thật 12-10-2026 (máy 228b, Android 10): giữa cuộc gọi máy chủ adb ghi
+    "remote usb: write terminated: Input/output error", `adb devices` báo
+    offline và CỨ THẾ nằm đó hơn một phút - trong khi cuộc gọi vẫn sống, khách
+    chỉ nghe im. Ra lệnh reconnect ngay thì 3 giây sau máy lên lại.
+
+    Hai vòng thu/phát cùng gọi vào đây khi ổ cắm đứt, nên có khoá và giãn cách:
+    reconnect dồn dập làm chính nó không bao giờ xong.
+    """
+    import time
+    async with _KHOA_HOI_SINH:
+        code, out, _ = await _run("-s", serial, "get-state", timeout=3)
+        if code == 0 and out.strip() == "device":
+            return True
+        if time.monotonic() - _LAN_HOI_SINH.get(serial, 0.0) >= 4.0:
+            _LAN_HOI_SINH[serial] = time.monotonic()
+            logger.warning("ADB %s đang offline - ra lệnh reconnect", serial)
+            await _run("reconnect", "offline", timeout=6)
+        het = time.monotonic() + cho_toi_da
+        while time.monotonic() < het:
+            await asyncio.sleep(0.4)
+            code, out, _ = await _run("-s", serial, "get-state", timeout=3)
+            if code == 0 and out.strip() == "device":
+                logger.warning("ADB %s đã lên lại", serial)
+                return True
+        return False
 
 
 def _lenh_bridge(serial: str, port: int, src: int,
