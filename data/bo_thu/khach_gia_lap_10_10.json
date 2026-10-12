@@ -1,0 +1,45 @@
+[
+  {
+    "ma": "lai_thieu_tien_lap_1",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      "Anh muốn vay ờ, nhưng chưa biết bao nhiêu.",
+      "Hai trăm... à khoan, không, mấy trăm gì đấy.",
+      "Ba năm đi, nhưng anh chưa quyết định số tiền."
+    ]
+  },
+  {
+    "ma": "lai_thieu_tien_lap_2",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      "Anh muốn vay ờ, nhưng chưa biết bao nhiêu.",
+      "Hai trăm... à khoan, không, mấy trăm gì đấy.",
+      "Ba năm đi, nhưng anh chưa quyết định số tiền."
+    ]
+  },
+  {
+    "ma": "dong_the_lap",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      "Gold phí năm bao nhiêu?",
+      "Anh không dùng thì phí năm thứ hai có bị tính không?",
+      "Nếu anh đóng thẻ ngay ngày mai có bị phạt một tỷ không?"
+    ]
+  },
+  {
+    "ma": "giai_ngan_hop_dong_lap",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      "Anh muốn vay 200 triệu trong 24 tháng.",
+      "Thế bao lâu có tiền, có phí gì giấu trong hợp đồng không?"
+    ]
+  },
+  {
+    "ma": "tu_choi_lap",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      "Anh muốn vay 200 triệu trong 24 tháng.",
+      "Thôi không trêu nữa, anh chưa có nhu cầu. Em đừng mời vay tiếp."
+    ]
+  }
+]

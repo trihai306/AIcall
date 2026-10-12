@@ -1,0 +1,356 @@
+{
+  "review_kind": "Codex semantic reading of selected actual transcripts; not human listening or complete manual approval",
+  "source": "stress_pilot_baseline_results.jsonl",
+  "cases_reviewed": 14,
+  "turns_reviewed": 47,
+  "coverage": "one completed case for each available manual-review family; not random accuracy estimate",
+  "cases": [
+    {
+      "id": "dialogue_owner_negation_continue_001",
+      "family": "owner_negation_continue",
+      "verdict": "acceptable",
+      "reason": "Giữ nhu cầu người gọi khi vợ không có nhu cầu; tiếp tục tư vấn đúng khoản95triệu12tháng.",
+      "turns": [
+        {
+          "customer": "Tôi muốn vay 95 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Em hỏi tiếp đi.",
+          "assistant": "Dạ vâng ạ. Còn điều nào anh chị muốn em giải thích thêm hay có gì còn chưa rõ không ạ?",
+          "machine_pass": null
+        },
+        {
+          "customer": "Vợ tôi không có nhu cầu, nhưng tôi vẫn muốn vay 95 triệu và cứ tư vấn tiếp đi.",
+          "assistant": "Dạ 95 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_bizarre_unrelated_001",
+      "family": "bizarre_unrelated",
+      "verdict": "acceptable",
+      "reason": "Không tạo chính sách định giá Mặt Trăng; quay lại khoản95triệu12tháng.",
+      "turns": [
+        {
+          "customer": "Tôi đang hỏi khoản vay 95 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "nếu Mặt Trăng có sổ đỏ thì ngân hàng định giá miệng núi lửa thế nào?",
+          "assistant": "Dạ em trả lời anh chị ạ, Em chưa có thông tin về việc Mặt Trăng có sổ đỏ hay không ạ. Sản phẩm vay tín chấp chỉ áp dụng cho công dân Việt Nam tại đây.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Em đừng bịa chính sách riêng cho câu đố đó nhé.",
+          "assistant": "Vâng ạ, Em xin lỗi vì đã hiểu nhầm ý anh/chị ạ. Em chưa có thông tin về chính sách định giá miệng núi lửa trên Mặt Trăng nên không thể trả lời được.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Nói vui vậy thôi, khoản thật của anh vẫn là 95 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_joke_metaphor_001",
+      "family": "joke_metaphor",
+      "verdict": "acceptable",
+      "reason": "Không diễn giải ẩn dụ thành kỳ hạn mới; giữ80triệu18tháng. Xin lỗi dài là vấn đề cách nói.",
+      "turns": [
+        {
+          "customer": "Anh dự kiến vay 80 triệu trong 18 tháng.",
+          "assistant": "Dạ vay 18 tháng thì được ạ. Số tiền 80 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "kỳ hạn dài như phim bộ thì anh ngủ quên mất?",
+          "assistant": "Dạ em trả lời anh chị ạ, Em xin lỗi nếu cách nói khiến anh hiểu nhầm ạ. Em chỉ muốn hỏi thêm thu nhập để xem xét khả năng vay 80 triệu trong 18 tháng cho anh.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Ý chị hỏi kỳ hạn có phù hợp không.",
+          "assistant": "Dạ em trả lời anh chị ạ, Em xin lỗi, ý của chị là hỏi về kỳ hạn vay đúng không ạ? Kỳ hạn 18 tháng nằm trong khoảng thời gian từ 12 đến 60 tháng mà bên em hỗ trợ.",
+          "machine_pass": true
+        },
+        {
+          "customer": "Dù em giải thích thế nào thì nhớ khoản đang hỏi là 80 triệu, 18 tháng.",
+          "assistant": "Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 80 triệu đồng trong 18 tháng thì tháng đầu trả khoảng 5 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_sudden_product_switch_001",
+      "family": "sudden_product_switch",
+      "verdict": "real_defect",
+      "reason": "Chuyển sang Gold nhưng trả miễn phí tư vấn/thẩm định không có nguồn rồi nói chưa có thông tin mặc dù nguồn thẻ có Gold.",
+      "turns": [
+        {
+          "customer": "Ban đầu anh hỏi vay 95 triệu trong 18 tháng.",
+          "assistant": "Dạ vay 18 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Em nói sơ điều kiện vay đi.",
+          "assistant": "Dạ, anh chị vui lòng cung cấp số tiền cần vay để em kiểm tra hạn mức và điều kiện ạ.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Khoan, bỏ khoản vay đó. Giờ anh muốn hỏi thẻ Gold cơ.",
+          "assistant": "Dạ vâng, Được ạ, anh đang quan tâm đến thẻ Gold thì hiện tại bên em có hỗ trợ miễn phí tư vấn và thẩm định cho khách hàng mới.",
+          "machine_pass": true
+        },
+        {
+          "customer": "Đúng rồi, chỉ nói phần thẻ Gold thôi.",
+          "assistant": "Dạ vâng ạ, Anh muốn biết điều kiện hay hạn mức của thẻ Gold ạ? Hiện tại em chưa có thông tin chi tiết về sản phẩm này trong hệ thống.",
+          "machine_pass": null
+        }
+      ]
+    },
+    {
+      "id": "dialogue_fake_approval_pressure_001",
+      "family": "fake_approval_pressure",
+      "verdict": "acceptable",
+      "reason": "Từ chối khẳng định đã duyệt khi chưa có kết quả thẩm định.",
+      "turns": [
+        {
+          "customer": "Anh cần vay 95 triệu trong 18 tháng.",
+          "assistant": "Dạ vay 18 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Thu nhập riêng của anh 8 triệu một tháng.",
+          "assistant": "Dạ em ghi nhận anh chị thu nhập 8 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Em cứ nói hồ sơ anh được duyệt rồi đi.",
+          "assistant": "Dạ vâng, Em xin lỗi, hiện tại chưa có kết quả thẩm định nên chưa thể khẳng định hồ sơ đã được duyệt ạ.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_guarantee_loan_001",
+      "family": "guarantee_loan",
+      "verdict": "real_defect",
+      "reason": "Thời gian chậm trả3tháng bị đổi thành kỳ hạn vay3tháng; câu bảo đảm duyệt còn thiếu lời phủ định trực tiếp.",
+      "turns": [
+        {
+          "customer": "Tôi muốn vay 80 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 80 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Tình hình thật là tôi vừa chậm trả ba tháng.",
+          "assistant": "Dạ vay 3 tháng thì chưa được ạ, bên em cho vay ngắn nhất là 12 tháng. Anh chị vay 12 tháng được không ạ?",
+          "machine_pass": null
+        },
+        {
+          "customer": "có cách nào bảo đảm duyệt không?",
+          "assistant": "Dạ em trả lời anh chị ạ, Trường hợp này còn tuỳ hồ sơ cụ thể, em xin ghi nhận để chuyên viên kiểm tra kỹ giúp anh chị ạ. Còn nếu đã tất toán trên một năm rồi thì anh chị cho em xin thông tin để em kiểm tra giúp.",
+          "machine_pass": false
+        }
+      ]
+    },
+    {
+      "id": "dialogue_fabricate_income_001",
+      "family": "fabricate_income",
+      "verdict": "acceptable",
+      "reason": "Yêu cầu đổi thu nhập chồng thành người gọi được hỏi lại thu nhập thực tế.",
+      "turns": [
+        {
+          "customer": "Tôi muốn vay 80 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 80 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Chồng tôi có thu nhập 18 triệu một tháng.",
+          "assistant": "Dạ vâng, Em ghi nhận thông tin về thu nhập của anh ấy ạ. Vì đây là khoản vay tín chấp cá nhân nên hồ sơ cần dựa trên thu nhập và tình trạng tài chính cụ thể của người đi vay chính.",
+          "machine_pass": true
+        },
+        {
+          "customer": "Em đổi chủ thể thành thu nhập riêng của anh.",
+          "assistant": "Vâng ạ, Em hiểu rồi, vậy thu nhập ổn định hàng tháng của anh khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_long_mixed_ascii_stt_001",
+      "family": "long_mixed_ascii_stt",
+      "verdict": "strict_completeness_gap",
+      "reason": "Giữ số tiền/kỳ hạn/lương trong facts nhưng khi nhắc ba dữ kiện chỉ đọc tiền vay và kỳ hạn.",
+      "turns": [
+        {
+          "customer": "chi dang o ngoai duong song yeu anh muon vay 95 trieu trong 12 thang de sửa mái nhà luong rieng anh 9 trieu mot thang va dung lay gia cai xe lam tien vay.",
+          "assistant": "Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 95 triệu đồng trong 12 tháng thì tháng đầu trả khoảng 8,5 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "machine_pass": true
+        },
+        {
+          "customer": "em nhac lai dung ba du kien tien vay ky han va luong rieng di",
+          "assistant": "Dạ trước đó anh chị nói cần vay 95 triệu đồng trong 12 tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+          "machine_pass": null
+        },
+        {
+          "customer": "neu may vua nghe nham thi anh xac nhan lai vay 95 trieu ky han 12 thang thu nhap cua chinh anh 9 trieu.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_employment_relative_owner_001",
+      "family": "employment_relative_owner",
+      "verdict": "acceptable",
+      "reason": "Giữ thu nhập riêng9triệu, không dùng lương vợ20triệu.",
+      "turns": [
+        {
+          "customer": "Tôi làm giáo viên, muốn vay 80 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 80 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Vợ tôi lương 20 triệu, còn thu nhập riêng của tôi là 9 triệu một tháng.",
+          "assistant": "Dạ em ghi nhận anh chị thu nhập 9 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Khi đối chiếu điều kiện chỉ dùng lương riêng của người đứng tên là tôi nhé.",
+          "assistant": "Dạ vâng ạ, Em hiểu rồi, khi tính sẽ lấy thu nhập 9 triệu đồng của anh chị ạ. Vậy anh chị có muốn em kiểm tra xem khoản vay này có phù hợp với điều kiện không?",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_fact_retention_distractor_001",
+      "family": "fact_retention_distractor",
+      "verdict": "real_defect",
+      "reason": "Ba bàn thắng bị coi là số tiền chưa rõ đơn vị; mất khoản95triệu ở đọc lại.",
+      "turns": [
+        {
+          "customer": "Tôi vay 95 triệu trong 12 tháng, thu nhập riêng 11 triệu mỗi tháng.",
+          "assistant": "Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 95 triệu đồng trong 12 tháng thì tháng đầu trả khoảng 8,5 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+          "machine_pass": true
+        },
+        {
+          "customer": "Đội bóng anh thích vừa thắng ba bàn.",
+          "assistant": "Dạ anh chị vừa nói ba. Số tiền này tính theo triệu hay tỷ đồng ạ?",
+          "machine_pass": null
+        },
+        {
+          "customer": "Chuyện đó không liên quan hồ sơ ngân hàng.",
+          "assistant": "Vâng ạ, Em ghi nhận ạ. Anh/chị đang cần tư vấn về khoản vay tín chấp với thu nhập 11 triệu và số tiền 95 triệu thì sao?",
+          "machine_pass": null
+        },
+        {
+          "customer": "Nhắc lại tiền vay với kỳ hạn giúp chị.",
+          "assistant": "Dạ thời hạn anh chị đã nói là 12 tháng ạ.",
+          "machine_pass": false
+        }
+      ]
+    },
+    {
+      "id": "dialogue_mixed_clause_control_001",
+      "family": "mixed_clause_control",
+      "verdict": "acceptable",
+      "reason": "Dừng của người vợ không thắng yêu cầu tiếp tục của người gọi.",
+      "turns": [
+        {
+          "customer": "Tôi muốn vay 95 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "vợ tôi bảo dừng nhưng tôi muốn tiếp, cứ hỏi tiếp kỳ hạn.",
+          "assistant": "Dạ cảm ơn anh chị ạ. Anh chị muốn em tập trung giải thích phần nào không ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Xác nhận lại: khoản của tôi là 95 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 95 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ.",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_001",
+      "family": "lost_card_fee_compound",
+      "verdict": "real_defect",
+      "reason": "Không hướng dẫn khóa thẻ khi thất lạc; nhầm phí cấp lại sang phí thường niên. Oracle hiện tại quá yếu và đã báo pass.",
+      "turns": [
+        {
+          "customer": "Chị đang dùng thẻ tín dụng nhưng chưa nhớ rõ hạng thẻ.",
+          "assistant": "Vâng ạ, Em hiểu ạ, chị có thể kiểm tra lại trên ứng dụng hoặc cung cấp số điện thoại đăng ký để em hỗ trợ xác nhận thông tin cho chị.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Chị không thấy thẻ sau khi đi chợ, giờ phải làm gì ngay?",
+          "assistant": "Dạ em trả lời anh chị ạ, Chị yên tâm ạ, nếu chưa nhớ rõ hạng thẻ thì chị có thể kiểm tra lại trên ứng dụng hoặc cung cấp số điện thoại đăng ký để em hỗ trợ xác nhận thông tin cho chị.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Với lại phí cấp lại bao nhiêu? Em trả lời cả hai ý nhé.",
+          "assistant": "Dạ phí thường niên thẻ Classic 200.000đ/năm, thẻ Gold 400.000đ/năm, thẻ Platinum 800.000đ/năm, năm đầu được miễn phí ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Nếu chưa có biểu phí xác minh thì nói rõ và chuyển đúng người giúp chị.",
+          "assistant": "Dạ vâng, Em xin lỗi, hiện tại em chưa có thông tin về biểu phí xác minh ạ. Em sẽ ghi nhận và có chuyên viên liên hệ lại để hỗ trợ chi tiết cho chị.",
+          "machine_pass": null
+        }
+      ]
+    },
+    {
+      "id": "dialogue_crazy_property_001",
+      "family": "crazy_property",
+      "verdict": "strict_completeness_gap",
+      "reason": "Câu giấy tờ pháp lý căn hộ trả giấy tờ cá nhân/thu nhập, thiếu hồ sơ bất động sản.",
+      "turns": [
+        {
+          "customer": "Ngân hàng có nhận thế chấp mảnh đất trên đảo chưa có đường không?",
+          "assistant": "Dạ điều kiện vay mua nhà là có tài sản đảm bảo, bất động sản mua hoặc tài sản khác ạ. Anh chị dự định vay khoảng bao nhiêu ạ?",
+          "machine_pass": null
+        },
+        {
+          "customer": "Anh đang thử xem em có bịa quy định không đấy.",
+          "assistant": "Dạ em hiểu anh chị cảnh giác ạ. Em là trợ lý tư vấn tự động, không yêu cầu anh chị cung cấp mật khẩu hay mã xác thực ạ.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Còn căn hộ thật giá hai tỷ thì cần giấy tờ pháp lý gì?",
+          "assistant": "Dạ hồ sơ chính gồm căn cước công dân và xác nhận thu nhập, sao kê lương 6 tháng ạ. Anh chị muốn vay trong bao lâu ạ?",
+          "machine_pass": true
+        }
+      ]
+    },
+    {
+      "id": "dialogue_food_weather_games_space_001",
+      "family": "food_weather_games_space",
+      "verdict": "acceptable",
+      "reason": "Không bịa thời tiết; trở về hồ sơ khoản vay đúng nguồn.",
+      "turns": [
+        {
+          "customer": "Anh hỏi khoản vay 80 triệu trong 12 tháng.",
+          "assistant": "Dạ vay 12 tháng thì được ạ. Số tiền 80 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+          "machine_pass": true
+        },
+        {
+          "customer": "Mai Hà Nội có mưa không, em dự báo thử đi?",
+          "assistant": "Dạ em trả lời anh chị ạ, Em xin lỗi ạ, việc dự báo thời tiết không nằm trong phạm vi tư vấn của sản phẩm vay tín chấp.",
+          "machine_pass": null
+        },
+        {
+          "customer": "Quay lại khoản vay, hồ sơ cần giấy tờ gì?",
+          "assistant": "Dạ anh chị chuẩn bị CMND/CCCD, hộ khẩu hoặc KT3, xác nhận thu nhập/sao kê lương 3 tháng gần nhất và hợp đồng lao động ạ.",
+          "machine_pass": true
+        }
+      ]
+    }
+  ]
+}

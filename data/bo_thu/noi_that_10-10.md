@@ -1,0 +1,340 @@
+# Bộ thử "nói như người thường" - trước và sau khi sửa (10-10-2026)
+
+156 lượt, chạy qua backend thật trên máy Win, chấm tay từng lượt (2 = được, 1 = tạm, 0 = sai).
+
+| | Được | Tạm | Sai | Điểm TB |
+|---|---|---|---|---|
+| Trước | 84 | 34 | 38 | 1.29 |
+| Sau | 127 | 24 | 5 | 1.78 |
+
+| Kiểu nói | Số lượt | Sai trước | Sai sau | TB trước | TB sau |
+|---|---|---|---|---|---|
+| so_mieng | 10 | 8 | 0 | 0.20 | 1.80 |
+| hoi_don | 5 | 2 | 1 | 0.60 | 1.00 |
+| tu_sua | 8 | 4 | 1 | 0.88 | 1.75 |
+| long_tien | 14 | 7 | 0 | 0.93 | 1.93 |
+| ngap_ngung | 16 | 7 | 1 | 0.94 | 1.75 |
+| nhieu | 4 | 1 | 1 | 1.00 | 1.25 |
+| cam_xuc | 6 | 2 | 0 | 1.17 | 1.83 |
+| ke_le | 4 | 0 | 0 | 1.25 | 1.75 |
+| ngoai_le | 5 | 1 | 0 | 1.40 | 1.80 |
+| ngong | 11 | 2 | 0 | 1.45 | 1.82 |
+| vung_mien | 15 | 2 | 1 | 1.47 | 1.73 |
+| cat_doi | 11 | 1 | 0 | 1.55 | 1.91 |
+| chot | 5 | 0 | 0 | 1.60 | 1.80 |
+| stt_sai | 12 | 1 | 0 | 1.67 | 1.92 |
+| lon_tuoi | 6 | 0 | 0 | 1.67 | 1.83 |
+| hoi_lai | 7 | 0 | 0 | 1.86 | 1.86 |
+| noi_cut | 13 | 0 | 0 | 1.92 | 1.77 |
+| chem_anh | 4 | 0 | 0 | 2.00 | 2.00 |
+
+## Từng lượt từng sai hoặc tạm ở lần chạy đầu
+
+- `ngap_ngung_01#1` điểm 1 -> 1
+  - Khách: ờ ừm em ơi cho anh hỏi cái
+  - Trước (kho): Dạ em gọi để hỗ trợ anh chị tìm hiểu về dịch vụ của ngân hàng ạ. Anh chị tiện nghe không ạ?
+  - Sau (kho): Dạ em gọi để hỗ trợ anh chị tìm hiểu về dịch vụ của ngân hàng ạ. Anh chị tiện nghe không ạ?
+- `ngap_ngung_01#3` điểm 0 -> 2
+  - Khách: ờ thì tầm tầm ờ khoảng ờ hai trăm gì đấy
+  - Trước (kho): Dạ, hạn mức vay tín chấp cá nhân lên đến 500 triệu đồng ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ 200 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `ngap_ngung_01#4` điểm 0 -> 2
+  - Khách: thì ờ chắc là ờ hai ba năm gì đó
+  - Trước (Qwen viết): Dạ vâng, Anh muốn vay trong thời gian bao nhiêu tháng ạ? Sản phẩm này có thời hạn từ 12 đến 60 tháng.
+  - Sau (luật): Dạ vay 2 đến 3 năm thì được ạ. Anh chị chốt giúp em một thời hạn cụ thể ạ?
+- `ngap_ngung_01#5` điểm 0 -> 2
+  - Khách: ừ thì ba năm đi
+  - Trước (Qwen viết): Vâng ạ, Số tiền trả hàng tháng phải tính theo số tiền và thời hạn vay cụ thể, anh chị cho em xin hai thông tin đó để em tính ạ. Anh có đồng ý không?
+  - Sau (luật): Dạ vay 3 năm thì được ạ. Bên em cho vay từ 1 đến 5 năm. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+- `ngap_ngung_01#6` điểm 0 -> 2
+  - Khách: thế ờ thì mỗi tháng ờ anh phải đóng bao nhiêu
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Con số này phụ thuộc vào lãi suất và số tiền vay cụ thể, hiện em chưa có đủ dữ liệu để tính chính xác cho anh ạ. Anh chị muốn vay trong bao lâu?
+  - Sau (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 3 năm thì tháng đầu trả khoảng 6,9 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+- `ngap_ngung_02#3` điểm 0 -> 2
+  - Khách: thế thẻ bên em ờ nó có cái gì ờ hơn không
+  - Trước (kho): Dạ vâng ạ, anh chị đang dùng bên khác thì vẫn có thể tham khảo thêm để so sánh ạ. Anh chị có muốn nghe nhanh điểm khác biệt không ạ?
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Thẻ của ngân hàng Quân đội có miễn phí thường niên năm đầu, thời gian miễn lãi lên đến 55 ngày và hoàn tiền 3% cho chi tiêu ăn uống ạ.
+- `ngap_ngung_02#4` điểm 0 -> 0
+  - Khách: phí phí thế nào ấy nhỉ phí năm ấy
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Em xin lỗi, hiện tại em chưa có thông tin cụ thể về mức phí của anh chị ạ. Anh chị đang dùng loại thẻ nào để em tra cứu giúp?
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Em xin lỗi ạ, hiện tại bên em chưa có thông tin cụ thể về mức phí chính xác của anh chị nên chưa thể báo ngay được. Thu nhập hàng tháng của anh chị khoảng bao nhiêu?
+- `ngap_ngung_03#1` điểm 1 -> 1
+  - Khách: em ơi chị có ít tiền ờ muốn ờ
+  - Trước (kho): Dạ em hiểu ạ. Anh chị cứ tham khảo thông tin trước, khi nào thấy phù hợp thì mình tính tiếp, không có gì ràng buộc ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?
+  - Sau (kho): Dạ em hiểu ạ. Anh chị cứ tham khảo thông tin trước, khi nào thấy phù hợp thì mình tính tiếp, không có gì ràng buộc ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?
+- `ngap_ngung_03#3` điểm 1 -> 2
+  - Khách: sáu tháng thì ờ được bao nhiêu phần trăm
+  - Trước (kho): Dạ, gửi tiết kiệm kỳ hạn 6 tháng lãi suất là 4.5%/năm ạ Anh chị muốn gửi kỳ hạn bao lâu ạ?
+  - Sau (luật): Dạ gửi tiết kiệm kỳ hạn 6 tháng lãi suất 4,5% một năm ạ.
+- `ngap_ngung_03#4` điểm 0 -> 2
+  - Khách: thế một năm
+  - Trước (kho): Dạ, gửi tiết kiệm kỳ hạn 6 tháng lãi suất là 4.5%/năm ạ.
+  - Sau (luật): Dạ gửi tiết kiệm kỳ hạn 12 tháng lãi suất 5,5% một năm ạ.
+- `ngong_ln_01#2` điểm 1 -> 1
+  - Khách: thế anh nàm công nhân nương tám triệu thì có vay được không
+  - Trước (kho): Dạ, anh chị đủ điều kiện vì thu nhập ổn định từ 5 triệu đồng/tháng trở lên ạ.
+  - Sau (kho): Dạ, anh chị đủ điều kiện vì thu nhập ổn định từ 5 triệu đồng/tháng trở lên ạ.
+- `ngong_ln_01#4` điểm 1 -> 1
+  - Khách: vay trong hai lăm được không
+  - Trước (luật): Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?
+  - Sau (luật): Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?
+- `ngong_ln_01#6` điểm 0 -> 2
+  - Khách: ừ thế nà được dồi anh cảm ơn
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (kho): Dạ không có gì ạ. Anh chị cần em hỗ trợ thêm thông tin nào nữa không ạ?
+- `ngong_ln_02#4` điểm 0 -> 2
+  - Khách: thu nhập hai vợ chồng chị nà bốn mươi chiệu một tháng
+  - Trước (Qwen viết): Dạ vâng ạ, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? hồ sơ của anh chị hoàn toàn đáp ứng điều kiện về thu nhập ổn định từ 10 triệu đồng trở lên.
+  - Sau (luật): Dạ em ghi nhận anh chị thu nhập 40 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?
+- `giong_nam_01#2` điểm 0 -> 2
+  - Khách: dậy anh muốn day chừng hai trăm chai được hông
+  - Trước (Qwen viết): Dạ vâng, Với khoản vay 200 triệu, số tiền trả hàng tháng phải tính theo số tiền và thời hạn vay cụ thể, anh chị cho em xin hai thông tin đó để em tính ạ.
+  - Sau (luật): Dạ 200 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `giong_nam_01#3` điểm 1 -> 2
+  - Khách: trả góp ba năm thì mỗi tháng đóng nhiêu
+  - Trước (kho): Vay 100 triệu trả khoảng 3,4 triệu; 200 triệu trả 6,8 triệu mỗi tháng ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 3 năm thì tháng đầu trả khoảng 6,9 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+- `giong_nam_01#5` điểm 1 -> 1
+  - Khách: dậy thôi hả kỳ dậy
+  - Trước (Qwen viết): Vâng ạ, Em xin lỗi, anh/chị đang muốn hỏi về điều kiện hay lãi suất ạ? Em chưa rõ ý của anh/chị nên không thể trả lời chính xác được.
+  - Sau (Qwen viết): Dạ vâng ạ, Em xin lỗi vì đã làm anh mất thời gian ạ. Em ghi nhận yêu cầu của anh và sẽ có chuyên viên liên hệ lại để hỗ trợ anh khi hồ sơ phù hợp hơn.
+- `giong_nam_02#2` điểm 0 -> 2
+  - Khách: lương chị có bảy triệu à mần được hông
+  - Trước (Qwen viết): Dạ vâng ạ, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? anh/chị đã đáp ứng điều kiện mở thẻ tín dụng rồi. Anh/chị đang quan tâm loại thẻ nào trong Classic, Gold hay Platinum?
+  - Sau (luật): Dạ thu nhập 7 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ mở thẻ không ạ?
+- `giong_nam_02#4` điểm 1 -> 1
+  - Khách: dzậy phí thường niên tính sao em
+  - Trước (kho): Dạ, anh chị được miễn phí thường niên năm đầu tiên. Các loại thẻ Classic, Gold, Platinum đều áp dụng ưu đãi này ạ.
+  - Sau (kho): Dạ, anh chị được miễn phí thường niên năm đầu tiên. Các loại thẻ Classic, Gold, Platinum đều áp dụng ưu đãi này ạ.
+- `giong_trung_01#3` điểm 1 -> 2
+  - Khách: rứa gửi online có khác chi không
+  - Trước (kho): Dạ, gửi online lãi cao hơn 0.2%/năm, mở sổ nhanh trong 5 phút và tất toán mọi lúc ạ. Anh chị muốn gửi kỳ hạn bao lâu ạ?
+  - Sau (kho): Dạ, gửi online lãi cao hơn 0.2%/năm, mở sổ nhanh trong 5 phút và tất toán mọi lúc ạ.
+- `giong_trung_01#4` điểm 2 -> 0
+  - Khách: o gửi năm chục triệu thì có được tặng chi không
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Hiện bên em đang tặng bảo hiểm tai nạn cho sổ từ 100 triệu đồng trở lên ạ. Với số tiền 50 triệu, anh chị sẽ nhận miễn phí mở sổ và tất toán.
+  - Sau (kho): Dạ, được ạ. Anh chị mở sổ online hoặc gửi tại quầy với số tiền tối thiểu 1 triệu đồng.
+- `long_tien_01#1` điểm 0 -> 2
+  - Khách: anh cần vay tầm trăm củ
+  - Trước (kho): Dạ, hạn mức vay tín chấp cá nhân lên đến 500 triệu đồng ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ 100 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `long_tien_01#2` điểm 0 -> 2
+  - Khách: à không chắc phải trăm rưỡi
+  - Trước (Qwen viết): Dạ vâng, Anh chị cần vay khoảng 500 triệu thì em chưa có thông tin về hạn mức cụ thể ạ.
+  - Sau (luật): Dạ 150 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ.
+- `long_tien_01#3` điểm 0 -> 2
+  - Khách: vay năm rưỡi được không
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ vay 18 tháng thì được ạ. Bên em cho vay từ 12 đến 60 tháng. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+- `long_tien_01#4` điểm 0 -> 2
+  - Khách: lương anh hai chục một tháng
+  - Trước (Qwen viết): Dạ vâng ạ, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? Anh chị cho em xin thêm thông tin về thời gian muốn vay để em tính toán giúp.
+  - Sau (luật): Dạ em ghi nhận anh chị thu nhập 20 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?
+- `long_tien_01#5` điểm 0 -> 2
+  - Khách: thế mỗi tháng anh mất mấy củ
+  - Trước (luật): Dạ để tính khoản trả hàng tháng, anh chị cho em biết số tiền muốn vay kèm đơn vị và thời hạn vay ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 150 triệu đồng trong 18 tháng thì tháng đầu trả khoảng 9,3 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+- `long_tien_02#1` điểm 0 -> 2
+  - Khách: anh định mua căn chung cư ba tỏi hai
+  - Trước (Qwen viết): Vâng ạ, Anh đang muốn vay mua căn chung cư Ba Đình II ạ? Em cần biết giá trị bất động sản và thu nhập của anh để tư vấn hạn mức phù hợp nhé.
+  - Sau (Qwen viết): Vâng ạ, Anh định mua căn chung cư trị giá 3,2 tỷ ạ. Với số tiền này, bên em có thể hỗ trợ vay tối đa 80% giá trị tài sản đó. Anh chị dự định vay khoảng bao nhiêu?
+- `long_tien_02#2` điểm 0 -> 2
+  - Khách: anh có sẵn một tỷ rồi cần vay thêm hai tỷ hai
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ 2,2 tỷ đồng thì trong hạn mức ạ. Bên em cho vay tối đa 10 tỷ đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `long_tien_03#2` điểm 1 -> 1
+  - Khách: anh xài mỗi tháng chừng mười lăm hai chục củ thì nên làm thẻ gì
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? anh/chị có thể cân nhắc mở thẻ Classic hoặc Gold để phù hợp.
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Với thu nhập trên, anh có thể cân nhắc mở thẻ Platinum để được hạn mức cao nhất ạ. Anh muốn biết thêm chi tiết về loại thẻ này không?
+- `tu_sua_01#1` điểm 0 -> 2
+  - Khách: anh muốn vay ba trăm à không hai trăm triệu thôi
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ 200 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `tu_sua_01#2` điểm 0 -> 2
+  - Khách: vay ba năm à mà thôi bốn năm đi cho nhẹ
+  - Trước (luật): Dạ anh chị muốn vay trong bao nhiêu tháng hoặc năm ạ?
+  - Sau (luật): Dạ vay 4 năm thì được ạ. Bên em cho vay từ 1 đến 5 năm. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+- `tu_sua_01#5` điểm 0 -> 2
+  - Khách: vậy hai trăm ba năm thì tháng trả bao nhiêu
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 3 năm thì tháng đầu trả khoảng 6,9 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+- `tu_sua_02#1` điểm 1 -> 2
+  - Khách: chị muốn gửi hai trăm triệu kỳ hạn sáu tháng à nhầm mười hai tháng
+  - Trước (Qwen viết): Vâng ạ, Chị gửi 200 triệu kỳ hạn 12 tháng thì lãi suất là 5,5%/năm ạ. Anh chị dự định gửi khoảng bao nhiêu?
+  - Sau (Qwen viết): Vâng ạ, Anh/chị đang muốn gửi 200 triệu với kỳ hạn 12 tháng ạ. Với kỳ hạn này, lãi suất bên em là 5.5% một năm.
+- `tu_sua_02#3` điểm 0 -> 0
+  - Khách: à không hay là chị vay nhỉ bên em có cho vay không
+  - Trước (kho): Dạ em xin ghi nhận ạ. Nếu lúc nào anh chị có nhu cầu thì em rất vui được hỗ trợ ạ.
+  - Sau (kho): Dạ em xin ghi nhận ạ. Nếu lúc nào anh chị có nhu cầu thì em rất vui được hỗ trợ ạ.
+- `hoi_don_01#1` điểm 1 -> 1
+  - Khách: lãi suất bao nhiêu vay được tối đa bao nhiêu với lại cần giấy tờ gì em nói luôn một thể
+  - Trước (kho): Dạ, lãi suất từ 7.9%/năm, hạn mức lên đến 500 triệu đồng với thời hạn 12 - 60 tháng ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (kho): Dạ, lãi suất từ 7.9%/năm, hạn mức lên đến 500 triệu đồng với thời hạn 12 - 60 tháng ạ. Anh chị muốn vay trong bao lâu ạ?
+- `hoi_don_01#2` điểm 0 -> 2
+  - Khách: anh ba mươi tuổi lương mười hai triệu có hợp đồng lao động rồi thì vay được không và được bao nhiêu
+  - Trước (luật): Dạ em ghi nhận anh chị thu nhập 12 triệu đồng một tháng ạ.
+  - Sau (luật): Dạ thu nhập 12 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ. Hạn mức tối đa là 500 triệu đồng, mức được duyệt còn tuỳ thẩm định hồ sơ ạ.
+- `hoi_don_01#3` điểm 0 -> 0
+  - Khách: thế bao lâu thì có tiền mà có mất phí gì không
+  - Trước (kho): Dạ, vay tín chấp miễn phí trả trước hạn. Vay mua nhà miễn phí sau 3 năm, trước đó phí 1-2% số tiền trả trước ạ.
+  - Sau (kho): Dạ, vay tín chấp miễn phí trả trước hạn. Vay mua nhà miễn phí sau 3 năm, trước đó phí 1-2% số tiền trả trước ạ.
+- `hoi_don_02#1` điểm 1 -> 1
+  - Khách: thẻ có mấy loại phí từng loại bao nhiêu và hạn mức thế nào
+  - Trước (luật): Dạ hạn mức thẻ tín dụng từ 10 triệu đến 500 triệu đồng tuỳ loại thẻ: thẻ Classic 10-50 triệu, thẻ Gold 30-200 triệu, thẻ Platinum 100-500 triệu ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ hạn mức thẻ tín dụng từ 10 triệu đến 500 triệu đồng tuỳ loại thẻ: thẻ Classic 10-50 triệu, thẻ Gold 30-200 triệu, thẻ Platinum 100-500 triệu ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+- `hoi_don_02#2` điểm 1 -> 1
+  - Khách: chị lương sáu triệu mười chín tuổi làm được không
+  - Trước (luật): Dạ điều kiện mở thẻ tín dụng là từ 18 tuổi trở lên ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ mở thẻ không ạ?
+  - Sau (luật): Dạ thu nhập 6 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ mở thẻ không ạ?
+- `noi_cut_01#1` điểm 2 -> 1
+  - Khách: vay
+  - Trước (Qwen viết): Dạ vâng ạ, Anh/chị muốn vay sản phẩm gì ạ? Em xin tư vấn về gói vay tín chấp với lãi suất từ 7.9% một năm và hạn mức lên đến 500 triệu đồng.
+  - Sau (Qwen viết): Vâng ạ, Anh/chị đang quan tâm sản phẩm vay tín chấp ạ. Em xin phép hỏi thêm một chút để tư vấn cụ thể hơn cho mình nhé?
+- `noi_cut_01#3` điểm 2 -> 1
+  - Khách: nhiêu
+  - Trước (Qwen viết): Dạ vâng, Anh/chị cho em xin phép nhắc lại, hiện bên em lãi suất vay tín chấp từ 7.9% một năm ạ. Anh chị dự định vay khoảng bao nhiêu?
+  - Sau (Qwen viết): Dạ vâng ạ, Anh/chị chưa cho em biết số tiền cần vay ạ. Em xin phép hỏi thêm để tư vấn chính xác hơn nhé?
+- `noi_cut_02#2` điểm 1 -> 1
+  - Khách: lãi
+  - Trước (Qwen viết): Dạ vâng ạ, Anh/chị đang quan tâm đến lãi suất của sản phẩm gửi tiết kiệm ạ. Anh chị dự định gửi khoảng bao nhiêu?
+  - Sau (Qwen viết): Dạ vâng, Anh/chị đang quan tâm đến lãi suất của sản phẩm gửi tiết kiệm ạ. Anh chị dự định gửi khoảng bao nhiêu?
+- `hoi_lai_01#4` điểm 1 -> 1
+  - Khách: em nói nhanh quá anh không nghe kịp
+  - Trước (kho): Dạ em xin lỗi ạ, em sẽ nói chậm hơn để anh chị nghe rõ ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (kho): Dạ em xin lỗi ạ, em sẽ nói chậm hơn để anh chị nghe rõ ạ.
+- `stt_that_01#1` điểm 1 -> 2
+  - Khách: ờ cho anh thông tin về khoảng tay bên mình
+  - Trước (Qwen viết): Dạ vâng, Em xin lỗi ạ, hiện tại em chưa có thông tin cụ thể về khoản vay này của anh/chị nên chưa thể cung cấp được. Anh chị dự định vay khoảng bao nhiêu?
+  - Sau (Qwen viết): Vâng ạ, Anh đang muốn hỏi về hạn mức vay tín chấp ạ? Hiện bên em có hỗ trợ lên đến 500 triệu đồng.
+- `stt_that_01#3` điểm 0 -> 2
+  - Khách: xuất bao nhiêu
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Em xin lỗi ạ, hiện tại em chưa có thông tin cụ thể về số tiền anh/chị cần vay nên chưa thể xác định được. Anh chị muốn vay trong bao lâu?
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Anh/chị đang muốn hỏi về số tiền giải ngân hay lãi suất ạ? Hiện bên em có hỗ trợ lên đến 500 triệu với lãi suất từ 7.9%/năm.
+- `stt_that_02#3` điểm 1 -> 1
+  - Khách: phí thường liên thế nào
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Phí thường niên miễn phí năm đầu tiên ạ. Các năm sau thì tùy loại thẻ mà có mức phí khác nhau.
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Phí thường niên năm đầu tiên miễn phí cho tất cả các loại thẻ ạ.
+- `ke_le_01#1` điểm 1 -> 2
+  - Khách: chả là thế này em ạ nhà anh đang sửa cái bếp mà thợ nó báo giá cao quá vợ anh thì cứ giục mà tiền thì đang kẹt nên anh mới tính hỏi xem bên em cho vay thế nào
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Hiểu rõ khó khăn của anh rồi. Để em kiểm tra điều kiện và hạn mức cụ thể phù hợp với nhu cầu sửa bếp của anh ạ. Anh chị dự định vay khoảng bao nhiêu?
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Em hiểu rồi, anh đang cần vốn để sửa bếp đúng không ạ? Hiện bên em có sản phẩm vay tín chấp với hạn mức lên đến 500 triệu đồng.
+- `ke_le_01#2` điểm 1 -> 2
+  - Khách: thì anh làm ở công ty may được sáu năm rồi lương thì cũng không cao lắm tầm chín mười triệu thôi nhưng mà ổn định tháng nào cũng có
+  - Trước (luật): Dạ em ghi nhận anh chị đã làm việc tại công ty 6 năm ạ.
+  - Sau (luật): Dạ em ghi nhận anh chị đã làm việc tại công ty 6 năm và thu nhập khoảng 9 đến 10 triệu đồng một tháng ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+- `ke_le_01#3` điểm 2 -> 1
+  - Khách: sửa bếp thì chắc hết tầm tám chục triệu mà anh muốn vay dư ra tí cho chắc
+  - Trước (luật): Dạ 80 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ.
+  - Sau (kho): Dạ anh chị được vay lên đến 500 triệu đồng ạ.
+- `ke_le_01#4` điểm 1 -> 2
+  - Khách: ừ thì trăm triệu đi trả dần hai năm
+  - Trước (kho): Dạ, anh chị được vay với thời hạn từ 12 đến 60 tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?
+  - Sau (luật): Dạ vay 2 năm thì được ạ. Số tiền 100 triệu đồng cũng trong hạn mức, còn hạn mức thực tế thì cần thẩm định theo hồ sơ ạ.
+- `cam_xuc_01#1` điểm 0 -> 2
+  - Khách: lại gọi mời vay à tôi không có nhu cầu
+  - Trước (kho): Dạ em xin lỗi anh chị ạ. Em xin ghi nhận ngay để bên em không liên hệ lại về chương trình này nữa ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+  - Sau (kho): Dạ em xin lỗi anh chị ạ. Em xin ghi nhận ngay để bên em không liên hệ lại về chương trình này nữa ạ.
+- `cam_xuc_01#4` điểm 0 -> 2
+  - Khách: thế máy thì biết gì mà tư vấn
+  - Trước (luật): Dạ anh chị vừa nói tư. Số tiền này tính theo triệu hay tỷ đồng ạ?
+  - Sau (Qwen viết): Dạ vâng ạ, Em có thể cung cấp thông tin chung về sản phẩm và điều kiện vay tín chấp của ngân hàng ạ. Anh chị dự định vay khoảng bao nhiêu?
+- `cam_xuc_01#6` điểm 1 -> 1
+  - Khách: cao thế bên kia có sáu phẩy mấy thôi
+  - Trước (Qwen viết): Dạ vâng ạ, Anh/chị đang so sánh với bên nào vậy ạ? Bên em lãi suất từ 7.9%/năm, còn các ngân hàng khác thì tùy thuộc vào từng sản phẩm cụ thể của họ.
+  - Sau (Qwen viết): Vâng ạ, Em xin lỗi anh chị, thông tin lãi suất của bên em là từ 7.9%/năm ạ. Mức lãi suất khác mà anh chị nghe có thể thuộc về sản phẩm hoặc ngân hàng khác.
+- `ngoai_le_01#2` điểm 0 -> 2
+  - Khách: em bao nhiêu tuổi rồi có người yêu chưa
+  - Trước (luật): Dạ điều kiện vay tín chấp là công dân Việt Nam, từ 22 đến 60 tuổi ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+  - Sau (kho): Dạ cảm ơn anh chị đã quan tâm ạ. Em không tiện chia sẻ chuyện riêng, anh chị cần em hỗ trợ gì thêm không ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+- `ngoai_le_01#4` điểm 1 -> 1
+  - Khách: thế bên em có bán bảo hiểm không
+  - Trước (luật): Dạ hiện bên em chưa có sản phẩm bảo hiểm, bên em đang có vay tín chấp, vay mua nhà, thẻ tín dụng và tiết kiệm ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (luật): Dạ hiện bên em chưa có sản phẩm bảo hiểm, bên em đang có vay tín chấp, vay mua nhà, thẻ tín dụng và tiết kiệm ạ. Anh chị muốn vay trong bao lâu ạ?
+- `so_mieng_x1#1` điểm 0 -> 2
+  - Khách: anh vay ba trăm rưỡi
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ 350 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?
+- `so_mieng_x1#2` điểm 1 -> 2
+  - Khách: ba sáu tháng
+  - Trước (Qwen viết): Dạ vâng ạ, Anh chị cho em biết thêm thu nhập hàng tháng để em xem xét khả năng duyệt hạn mức ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu?
+  - Sau (luật): Dạ vay 36 tháng thì được ạ. Bên em cho vay từ 12 đến 60 tháng. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?
+- `so_mieng_x1#3` điểm 0 -> 2
+  - Khách: à lương anh mười lăm mười sáu gì đấy
+  - Trước (Qwen viết): Dạ vâng, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? anh có thể vay tối đa 500 triệu trong thời hạn từ 12 đến 60 tháng. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không?
+  - Sau (luật): Dạ em ghi nhận anh chị thu nhập khoảng 15 đến 16 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?
+- `so_mieng_x1#4` điểm 0 -> 2
+  - Khách: vay bốn lăm tháng được không
+  - Trước (luật): Dạ vay 4 đến 5 tháng thì chưa được ạ, bên em cho vay ngắn nhất là 12 tháng. Anh chị vay 12 tháng được không ạ?
+  - Sau (luật): Dạ vay 45 tháng thì được ạ. Bên em cho vay từ 12 đến 60 tháng.
+- `so_mieng_x1#5` điểm 1 -> 1
+  - Khách: anh ba hai tuổi
+  - Trước (luật): Dạ điều kiện vay tín chấp là công dân Việt Nam, từ 22 đến 60 tuổi ạ.
+  - Sau (luật): Dạ điều kiện vay tín chấp là công dân Việt Nam, từ 22 đến 60 tuổi ạ.
+- `so_mieng_x1#6` điểm 0 -> 2
+  - Khách: thế vay một tỷ hai được không
+  - Trước (luật): Dạ anh chị nhắc lại giúp em một số tiền muốn vay, kèm đơn vị triệu hoặc tỷ đồng ạ.
+  - Sau (luật): Dạ gói này hỗ trợ tối đa 500 triệu đồng. Nhu cầu 1,2 tỷ đồng đang vượt trần sản phẩm nên chưa phù hợp ạ.
+- `so_mieng_x2#1` điểm 0 -> 1
+  - Khách: nhà hai tỷ tám anh vay bảy mươi phần trăm
+  - Trước (luật): Dạ anh chị vừa nói bảy mươi. Số tiền này tính theo triệu hay tỷ đồng ạ?
+  - Sau (kho): Dạ, bên em cho vay lên đến 80% giá trị bất động sản ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+- `so_mieng_x2#2` điểm 0 -> 2
+  - Khách: trả mười lăm năm
+  - Trước (Qwen viết): Dạ vâng ạ, Hiện tại em chưa có thông tin về thời hạn vay cụ thể của khách hàng ạ. Anh/chị đang làm việc ở đâu để em xem xét khả năng duyệt hồ sơ?
+  - Sau (luật): Dạ vay 15 năm thì được ạ. Bên em cho vay dài nhất là 25 năm.
+- `so_mieng_x2#3` điểm 0 -> 2
+  - Khách: lương anh ba chục vợ anh hai chục
+  - Trước (Qwen viết): Dạ vâng, Anh chị cho em xin mức thu nhập hàng tháng để em tư vấn hạn mức chính xác ạ? điều này đã đạt yêu cầu tối thiểu 10 triệu. Anh chị muốn vay trong bao lâu?
+  - Sau (luật): Dạ em ghi nhận anh chị thu nhập hai vợ chồng là 30 triệu và 20 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?
+- `so_mieng_x2#4` điểm 0 -> 2
+  - Khách: thế lãi sáu rưỡi là cố định mấy năm
+  - Trước (luật): Dạ anh chị vừa nói năm. Số tiền này tính theo triệu hay tỷ đồng ạ?
+  - Sau (kho): Dạ, ưu đãi lãi suất cố định 6.5% áp dụng trong 2 năm đầu, sau đó lãi suất sẽ thả nổi theo thị trường ạ.
+- `lon_tuoi_01#4` điểm 1 -> 2
+  - Khách: lãi là bao nhiêu cháu nhỉ bác quên rồi
+  - Trước (luật): Dạ lãi suất gửi tiết kiệm từ 3,5% một năm cho kỳ hạn 1 tháng đến 6% một năm cho kỳ hạn 36 tháng ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ lãi suất gửi tiết kiệm từ 3,5% một năm cho kỳ hạn 1 tháng đến 6% một năm cho kỳ hạn 36 tháng ạ. Anh chị muốn gửi kỳ hạn bao lâu ạ?
+- `lon_tuoi_01#5` điểm 2 -> 1
+  - Khách: năm phẩy năm là sao bác không hiểu một trăm triệu thì được bao nhiêu tiền
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Lãi suất năm phẩy lăm tức là 5,5% một năm ạ. Với số tiền 100 triệu gửi đúng kỳ hạn tương ứng, bác sẽ nhận được lãi khoảng 5,5 triệu đồng sau mỗi năm.
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Em xin giải thích ạ. Năm phẩy năm nghĩa là lãi suất 5,5% mỗi năm.
+- `lon_tuoi_01#6` điểm 1 -> 2
+  - Khách: bác không biết dùng điện thoại thông minh thì có gửi được không
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Anh/chị yên tâm ạ. Bác chỉ cần gọi đến quầy hoặc nhờ người thân hỗ trợ là vẫn mở sổ được ngay. Anh chị muốn gửi kỳ hạn bao lâu?
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Anh/chị vẫn hoàn toàn gửi được ạ. Anh/chị chỉ cần đến quầy ngân hàng để em hướng dẫn trực tiếp cách mở sổ.
+- `nhieu_01#1` điểm 1 -> 1
+  - Khách: chờ anh tí con ơi đừng nghịch ừ em nói đi
+  - Trước (Qwen viết): Vâng ạ, Em đang nghe ạ. Anh/chị cứ bình tĩnh nói tiếp nhé. Anh chị dự định vay khoảng bao nhiêu?
+  - Sau (Qwen viết): Dạ vâng ạ, Em xin phép chờ anh một chút ạ. Anh chị dự định vay khoảng bao nhiêu?
+- `nhieu_01#2` điểm 1 -> 0
+  - Khách: ừ anh nghe ờ mà cái gì ba trăm cơ
+  - Trước (Qwen viết): Dạ em trả lời anh chị ạ, Anh đang nghe ạ. Anh cho em biết cụ thể số tiền anh muốn vay là bao nhiêu để em tư vấn giúp.
+  - Sau (Qwen viết): Dạ em trả lời anh chị ạ, Anh đang muốn vay số tiền là 300 triệu ạ. Em cần biết thêm thời gian anh muốn trả trong bao nhiêu tháng để tính toán giúp anh nhé.
+- `nhieu_01#3` điểm 0 -> 2
+  - Khách: à à anh đang lái xe em nói nhanh lên
+  - Trước (kho): Dạ vậy anh chị tập trung lái xe cho an toàn ạ. Em xin phép liên hệ lại vào lúc khác, em chào anh chị ạ. Anh chị muốn vay trong bao lâu ạ?
+  - Sau (kho): Dạ vậy anh chị tập trung lái xe cho an toàn ạ. Em xin phép liên hệ lại vào lúc khác, em chào anh chị ạ.
+- `chot_01#3` điểm 1 -> 1
+  - Khách: thế em gửi zalo cho anh đi
+  - Trước (Qwen viết): Vâng ạ, Hiện tại bên em chưa có số Zalo của anh ạ. Anh vui lòng để lại số điện thoại để chuyên viên gọi lại nhé?
+  - Sau (Qwen viết): Dạ vâng ạ, Hiện tại bên em chưa có số Zalo của anh ạ. Anh vui lòng để lại số điện thoại để chuyên viên liên hệ trực tiếp nhé.
+- `chot_01#4` điểm 1 -> 2
+  - Khách: số anh là số này luôn nhé
+  - Trước (Qwen viết): Dạ vâng, Em ghi nhận số điện thoại của anh rồi ạ. Chuyên viên sẽ liên hệ lại ngay. Anh chị muốn vay trong bao lâu?
+  - Sau (Qwen viết): Dạ vâng, Em ghi nhận số điện thoại của anh rồi ạ. Chuyên viên sẽ gọi lại cho anh theo số này trong thời gian sớm nhất nhé.
+- `cat_doi_01#1` điểm 1 -> 2
+  - Khách: anh muốn vay ờ
+  - Trước (kho): Dạ anh chị mở ứng dụng ngân hàng để đăng ký vay tín chấp cá nhân ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ vâng ạ, gói vay bên em hỗ trợ tối đa 500 triệu đồng ạ. Anh chị dự định vay khoảng bao nhiêu ạ?
+- `cat_doi_01#6` điểm 1 -> 1
+  - Khách: trả bao nhiêu
+  - Trước (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 3 năm thì tháng đầu trả khoảng 6,9 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+  - Sau (luật): Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 3 năm thì tháng đầu trả khoảng 6,9 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.
+- `cat_doi_02#1` điểm 0 -> 2
+  - Khách: chị muốn gửi
+  - Trước (kho): Dạ anh chị muốn nhận nội dung bằng chữ thì em xin ghi nhận để chuyên viên liên hệ hỗ trợ anh chị ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?
+  - Sau (luật): Dạ vâng ạ, bên em nhận gửi tiết kiệm từ 1 triệu đồng ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?
+- `cat_doi_02#5` điểm 1 -> 2
+  - Khách: lãi bao nhiêu
+  - Trước (luật): Dạ lãi suất gửi tiết kiệm từ 3,5% một năm cho kỳ hạn 1 tháng đến 6% một năm cho kỳ hạn 36 tháng ạ.
+  - Sau (luật): Dạ gửi tiết kiệm kỳ hạn 6 tháng lãi suất 4,5% một năm ạ.

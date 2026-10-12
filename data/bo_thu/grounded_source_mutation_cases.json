@@ -1,0 +1,712 @@
+{
+  "fixture_version": "grounded-source-mutation-v1-2026-10-11",
+  "synthetic_notice": "TOÀN BỘ CHÍNH SÁCH TRONG FILE NÀY LÀ DỮ LIỆU KIỂM THỬ TỔNG HỢP, KHÔNG PHẢI SẢN PHẨM THẬT.",
+  "cohorts": [
+    {
+      "id": "card-reorder-custom-tier",
+      "product": "card",
+      "goal": "Không phụ thuộc thứ tự; hỗ trợ hạng tổng hợp Aurora; thiếu hoặc mâu thuẫn phí phải giữ unknown.",
+      "variants": [
+        {
+          "id": "card-A",
+          "snippets": [
+            {
+              "id": "test-card-a",
+              "text": "[TEST ONLY A] Aurora: hạn mức 250-900 triệu, phí năm 555.000đ. Gold: phí 333.000đ, hạn mức 45-180 triệu. Classic: 111.000đ, 12-48 triệu. Platinum: 777.000đ, 150-650 triệu."
+            }
+          ],
+          "claims": [
+            {
+              "key": "tier_min",
+              "value": "250000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-a"
+            },
+            {
+              "key": "tier_max",
+              "value": "900000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-a"
+            },
+            {
+              "key": "annual_fee",
+              "value": "555000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-a"
+            },
+            {
+              "key": "annual_fee",
+              "value": "333000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-a"
+            },
+            {
+              "key": "tier_min",
+              "value": "45000000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-a"
+            },
+            {
+              "key": "tier_max",
+              "value": "180000000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-a"
+            }
+          ]
+        },
+        {
+          "id": "card-B-reordered",
+          "snippets": [
+            {
+              "id": "test-card-b",
+              "text": "[TEST ONLY B, REORDERED] Gold giới hạn từ 45 đến 180 triệu; phí năm Gold 333.000đ. Phí Aurora 555.000đ; Aurora có giới hạn 250-900 triệu."
+            }
+          ],
+          "claims": [
+            {
+              "key": "tier_max",
+              "value": "180000000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-b"
+            },
+            {
+              "key": "tier_min",
+              "value": "45000000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-b"
+            },
+            {
+              "key": "annual_fee",
+              "value": "333000",
+              "unit": "vnd",
+              "tier": "Gold",
+              "source_ref": "test-card-b"
+            },
+            {
+              "key": "annual_fee",
+              "value": "555000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-b"
+            },
+            {
+              "key": "tier_max",
+              "value": "900000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-b"
+            },
+            {
+              "key": "tier_min",
+              "value": "250000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-b"
+            }
+          ]
+        },
+        {
+          "id": "card-C-fee-removed",
+          "snippets": [
+            {
+              "id": "test-card-c",
+              "text": "[TEST ONLY C] Aurora có hạn mức 250-900 triệu. Tài liệu này không công bố phí thường niên."
+            }
+          ],
+          "claims": [
+            {
+              "key": "tier_min",
+              "value": "250000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-c"
+            },
+            {
+              "key": "tier_max",
+              "value": "900000000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-c"
+            }
+          ]
+        },
+        {
+          "id": "card-D-fee-conflict",
+          "snippets": [
+            {
+              "id": "test-card-d1",
+              "text": "[TEST ONLY D1] Phí Aurora 444.000đ."
+            },
+            {
+              "id": "test-card-d2",
+              "text": "[TEST ONLY D2] Phí Aurora 666.000đ."
+            }
+          ],
+          "claims": [
+            {
+              "key": "annual_fee",
+              "value": "444000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-d1"
+            },
+            {
+              "key": "annual_fee",
+              "value": "666000",
+              "unit": "vnd",
+              "tier": "Aurora",
+              "source_ref": "test-card-d2"
+            }
+          ]
+        }
+      ],
+      "probes": [
+        {
+          "id": "card-fee",
+          "text": "Phí thường niên thẻ Aurora hiện là bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["question"],
+            "topics": ["annual_fee"]
+          },
+          "expect_by_variant": {
+            "card-A": {
+              "require": [
+                "555[,.]?000"
+              ]
+            },
+            "card-B-reordered": {
+              "require": [
+                "555[,.]?000"
+              ]
+            },
+            "card-C-fee-removed": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?phi"
+              ],
+              "forbid_affirmative": [
+                "(?:phi|muc phi).*?\\d+"
+              ]
+            },
+            "card-D-fee-conflict": {
+              "require": [
+                "(mau thuan|xung dot|khong the|chua the).*?(phi|xac nhan)"
+              ],
+              "forbid_affirmative": [
+                "(?:phi|muc phi).*?(?:444|666)[,.]?000"
+              ]
+            }
+          }
+        },
+        {
+          "id": "card-limit",
+          "text": "Khoảng hạn mức hiện tại của thẻ Aurora là gì?",
+          "meaning_expect": {
+            "intents": ["question"],
+            "topics": ["limit"]
+          },
+          "expect_by_variant": {
+            "card-A": {
+              "require": [
+                "250.*900\\s*trieu"
+              ]
+            },
+            "card-B-reordered": {
+              "require": [
+                "250.*900\\s*trieu"
+              ]
+            },
+            "card-C-fee-removed": {
+              "require": [
+                "250.*900\\s*trieu"
+              ]
+            },
+            "card-D-fee-conflict": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?han muc"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "savings-apr-bonus-min",
+      "product": "savings",
+      "goal": "Đổi APR, bonus online và số tiền tối thiểu phải đổi kết quả; thiếu bonus không được mặc định.",
+      "variants": [
+        {
+          "id": "save-A",
+          "snippets": [
+            {
+              "id": "test-save-a",
+              "text": "[TEST ONLY A] Kỳ hạn 6 tháng 4,10%/năm; online cộng 0,15 điểm phần trăm; tối thiểu 2 triệu."
+            }
+          ],
+          "claims": [
+            {
+              "key": "apr",
+              "value": "4.10",
+              "unit": "percent",
+              "term_months": 6,
+              "source_ref": "test-save-a"
+            },
+            {
+              "key": "online_bonus",
+              "value": "0.15",
+              "unit": "percent",
+              "source_ref": "test-save-a"
+            },
+            {
+              "key": "min_amount",
+              "value": "2000000",
+              "unit": "vnd",
+              "source_ref": "test-save-a"
+            }
+          ]
+        },
+        {
+          "id": "save-B",
+          "snippets": [
+            {
+              "id": "test-save-b",
+              "text": "[TEST ONLY B] Tối thiểu 5 triệu. Gửi online cộng 0,40 điểm %. Lãi kỳ hạn 6 tháng là 5,35%/năm."
+            }
+          ],
+          "claims": [
+            {
+              "key": "min_amount",
+              "value": "5000000",
+              "unit": "vnd",
+              "source_ref": "test-save-b"
+            },
+            {
+              "key": "online_bonus",
+              "value": "0.40",
+              "unit": "percent",
+              "source_ref": "test-save-b"
+            },
+            {
+              "key": "apr",
+              "value": "5.35",
+              "unit": "percent",
+              "term_months": 6,
+              "source_ref": "test-save-b"
+            }
+          ]
+        },
+        {
+          "id": "save-C-bonus-removed",
+          "snippets": [
+            {
+              "id": "test-save-c",
+              "text": "[TEST ONLY C] Kỳ hạn 6 tháng 4,10%/năm; tối thiểu 2 triệu. Không có dữ liệu về cộng lãi online."
+            }
+          ],
+          "claims": [
+            {
+              "key": "apr",
+              "value": "4.10",
+              "unit": "percent",
+              "term_months": 6,
+              "source_ref": "test-save-c"
+            },
+            {
+              "key": "min_amount",
+              "value": "2000000",
+              "unit": "vnd",
+              "source_ref": "test-save-c"
+            }
+          ]
+        }
+      ],
+      "probes": [
+        {
+          "id": "save-calc",
+          "text": "Tôi gửi online 120 triệu đúng 6 tháng. Tiền lãi đơn cuối kỳ là bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["calculate_interest"],
+            "topics": ["rate"]
+          },
+          "math": {
+            "formula": "principal * (apr + online_bonus) / 100 * months / 12",
+            "principal": "120000000",
+            "months": "6",
+            "expected_by_variant": {
+              "save-A": "2550000",
+              "save-B": "3450000",
+              "save-C-bonus-removed": null
+            }
+          },
+          "expect_by_variant": {
+            "save-A": {
+              "require": [
+                "2[,.]?550[,.]?000|2[,.]?55\\s*trieu"
+              ]
+            },
+            "save-B": {
+              "require": [
+                "3[,.]?450[,.]?000|3[,.]?45\\s*trieu"
+              ]
+            },
+            "save-C-bonus-removed": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?(bonus|cong|online)"
+              ],
+              "forbid_affirmative": [
+                "(?:tien lai|nhan duoc).*?\\d+[,.]?\\d*\\s*(?:trieu|dong)"
+              ]
+            }
+          }
+        },
+        {
+          "id": "save-min",
+          "text": "Mức tiền gửi tối thiểu hiện tại là bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["question"],
+            "topics": ["conditions"]
+          },
+          "expect_by_variant": {
+            "save-A": {
+              "require": [
+                "2\\s*trieu"
+              ]
+            },
+            "save-B": {
+              "require": [
+                "5\\s*trieu"
+              ]
+            },
+            "save-C-bonus-removed": {
+              "require": [
+                "2\\s*trieu"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mortgage-ltv-age-income",
+      "product": "mortgage",
+      "goal": "LTV thập phân, tuổi và thu nhập thay đổi theo nguồn; xung đột/thiếu phải giữ unknown.",
+      "variants": [
+        {
+          "id": "mort-A",
+          "snippets": [
+            {
+              "id": "test-mort-a",
+              "text": "[TEST ONLY A] Tối đa 65% giá trị nhà. Tuổi 25-58. Thu nhập tối thiểu 18 triệu/tháng."
+            }
+          ],
+          "claims": [
+            {
+              "key": "ltv",
+              "value": "65",
+              "unit": "percent",
+              "source_ref": "test-mort-a",
+              "qualifier": "maximum"
+            },
+            {
+              "key": "min_age",
+              "value": "25",
+              "unit": "age",
+              "source_ref": "test-mort-a",
+              "qualifier": "minimum"
+            },
+            {
+              "key": "max_age",
+              "value": "58",
+              "unit": "age",
+              "source_ref": "test-mort-a",
+              "qualifier": "maximum"
+            },
+            {
+              "key": "min_income",
+              "value": "18000000",
+              "unit": "vnd",
+              "source_ref": "test-mort-a",
+              "qualifier": "minimum"
+            }
+          ]
+        },
+        {
+          "id": "mort-B",
+          "snippets": [
+            {
+              "id": "test-mort-b",
+              "text": "[TEST ONLY B] Thu nhập từ 14,5 triệu; tuổi từ 23 đến 63; tỷ lệ cho vay tối đa 72,5% giá trị."
+            }
+          ],
+          "claims": [
+            {
+              "key": "min_income",
+              "value": "14500000",
+              "unit": "vnd",
+              "source_ref": "test-mort-b",
+              "qualifier": "minimum"
+            },
+            {
+              "key": "max_age",
+              "value": "63",
+              "unit": "age",
+              "source_ref": "test-mort-b",
+              "qualifier": "maximum"
+            },
+            {
+              "key": "min_age",
+              "value": "23",
+              "unit": "age",
+              "source_ref": "test-mort-b",
+              "qualifier": "minimum"
+            },
+            {
+              "key": "ltv",
+              "value": "72.5",
+              "unit": "percent",
+              "source_ref": "test-mort-b",
+              "qualifier": "maximum"
+            }
+          ]
+        },
+        {
+          "id": "mort-C-ltv-conflict",
+          "snippets": [
+            {
+              "id": "test-mort-c1",
+              "text": "[TEST ONLY C1] LTV tối đa 60%."
+            },
+            {
+              "id": "test-mort-c2",
+              "text": "[TEST ONLY C2] LTV tối đa 75%."
+            }
+          ],
+          "claims": [
+            {
+              "key": "ltv",
+              "value": "60",
+              "unit": "percent",
+              "source_ref": "test-mort-c1",
+              "qualifier": "maximum"
+            },
+            {
+              "key": "ltv",
+              "value": "75",
+              "unit": "percent",
+              "source_ref": "test-mort-c2",
+              "qualifier": "maximum"
+            }
+          ]
+        },
+        {
+          "id": "mort-D-income-removed",
+          "snippets": [
+            {
+              "id": "test-mort-d",
+              "text": "[TEST ONLY D] Tuổi 25-58; LTV tối đa 65%. Không công bố mức thu nhập tối thiểu."
+            }
+          ],
+          "claims": [
+            {
+              "key": "min_age",
+              "value": "25",
+              "unit": "age",
+              "source_ref": "test-mort-d",
+              "qualifier": "minimum"
+            },
+            {
+              "key": "max_age",
+              "value": "58",
+              "unit": "age",
+              "source_ref": "test-mort-d",
+              "qualifier": "maximum"
+            },
+            {
+              "key": "ltv",
+              "value": "65",
+              "unit": "percent",
+              "source_ref": "test-mort-d",
+              "qualifier": "maximum"
+            }
+          ]
+        }
+      ],
+      "probes": [
+        {
+          "id": "mort-max",
+          "text": "Nhà trị giá 3,2 tỷ. Theo tỷ lệ cho vay tối đa hiện tại, trần tiền vay là bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["calculate_ltv"],
+            "topics": ["limit"]
+          },
+          "math": {
+            "formula": "property_value * ltv / 100",
+            "property_value": "3200000000",
+            "expected_by_variant": {
+              "mort-A": "2080000000",
+              "mort-B": "2320000000",
+              "mort-C-ltv-conflict": null,
+              "mort-D-income-removed": "2080000000"
+            }
+          },
+          "expect_by_variant": {
+            "mort-A": {
+              "require": [
+                "2[,.]?08\\s*ty"
+              ]
+            },
+            "mort-B": {
+              "require": [
+                "2[,.]?32\\s*ty"
+              ]
+            },
+            "mort-C-ltv-conflict": {
+              "require": [
+                "(mau thuan|xung dot|khong the|chua the).*?(ltv|ty le|tinh)"
+              ],
+              "forbid_affirmative": [
+                "(?:toi da|tran|vay).*?\\d+[,.]?\\d*\\s*ty"
+              ]
+            },
+            "mort-D-income-removed": {
+              "require": [
+                "2[,.]?08\\s*ty"
+              ]
+            }
+          }
+        },
+        {
+          "id": "mort-income",
+          "text": "Điều kiện hiện tại yêu cầu thu nhập tối thiểu bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["question", "eligibility"],
+            "topics": ["conditions"]
+          },
+          "expect_by_variant": {
+            "mort-A": {
+              "require": [
+                "18\\s*trieu"
+              ]
+            },
+            "mort-B": {
+              "require": [
+                "14[,.]?5\\s*trieu"
+              ]
+            },
+            "mort-C-ltv-conflict": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?thu nhap"
+              ]
+            },
+            "mort-D-income-removed": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?thu nhap"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "loan-apr-absence-conflict",
+      "product": "loan",
+      "goal": "APR chính xác có thể trả lời; bị gỡ hoặc mâu thuẫn thì không được dùng số cũ.",
+      "variants": [
+        {
+          "id": "loan-A",
+          "snippets": [
+            {
+              "id": "test-loan-a",
+              "text": "[TEST ONLY A] APR cố định cho bài kiểm thử là 8,40%/năm."
+            }
+          ],
+          "claims": [
+            {
+              "key": "apr",
+              "value": "8.40",
+              "unit": "percent",
+              "source_ref": "test-loan-a"
+            }
+          ]
+        },
+        {
+          "id": "loan-B-removed",
+          "snippets": [
+            {
+              "id": "test-loan-b",
+              "text": "[TEST ONLY B] Tài liệu không công bố APR."
+            }
+          ],
+          "claims": []
+        },
+        {
+          "id": "loan-C-conflict",
+          "snippets": [
+            {
+              "id": "test-loan-c1",
+              "text": "[TEST ONLY C1] APR 7,20%."
+            },
+            {
+              "id": "test-loan-c2",
+              "text": "[TEST ONLY C2] APR 9,10%."
+            }
+          ],
+          "claims": [
+            {
+              "key": "apr",
+              "value": "7.20",
+              "unit": "percent",
+              "source_ref": "test-loan-c1"
+            },
+            {
+              "key": "apr",
+              "value": "9.10",
+              "unit": "percent",
+              "source_ref": "test-loan-c2"
+            }
+          ]
+        }
+      ],
+      "probes": [
+        {
+          "id": "loan-rate",
+          "text": "Lãi suất APR hiện tại là bao nhiêu?",
+          "meaning_expect": {
+            "intents": ["question"],
+            "topics": ["rate"]
+          },
+          "expect_by_variant": {
+            "loan-A": {
+              "require": [
+                "8[,.]?4\\s*%"
+              ]
+            },
+            "loan-B-removed": {
+              "require": [
+                "(khong|chua).*?(co|neu|xac nhan).*?(apr|lai suat)"
+              ],
+              "forbid_affirmative": [
+                "(?:apr|lai suat).*?\\d+(?:[,.]\\d+)?\\s*%"
+              ]
+            },
+            "loan-C-conflict": {
+              "require": [
+                "(mau thuan|xung dot|khong the|chua the).*?(apr|lai suat|xac nhan)"
+              ],
+              "forbid_affirmative": [
+                "(?:apr|lai suat).*?(?:7[,.]?2|9[,.]?1)\\s*%"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

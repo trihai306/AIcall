@@ -1,0 +1,238 @@
+{
+ "maps": [
+  {
+   "key": "tang_luat",
+   "tom_tat": "`_generate_response()` trong `streaming_pipeline.py` (dòng 1994) chạy 8 tầng luật tuần tự trước khi quyết định có gọi LLM không.\n\nTầng 1 (`luot_thuong_gap`, tra_loi_san): regex bắt 16 tình huống không liên quan sản phẩm (chào hỏi, từ chối, \"ai đấy\"...), giới hạn ≤8 từ. Tầng 2 (`shinhan_fast_facts.tra_loi_nhanh`): tra chỉ mục tĩnh cho câu đặc thù ngân hàng. Tầng 3 (`rag.neo_moi_tu_cau`): cập nhật session.product theo câu khách — đây là neo sản phẩm quyết định RAG sau đó. Tầng 4 (`danh_muc_san_pham`, tra_loi_danh_muc): bắt \"có X không\" và câu hỏi catalog bằng regex, tham chiếu bộ tài liệu thực tế. Tầng 5 (`banking_fact_precheck`, direct_condition_answer): bắt câu hỏi điều kiện vay (CMND, thu nhập...). Tầng 6 (`tra_loi_khoan_vay`): CHỈ kích hoạt khi resolve_loan_facts() tìm đủ số tiền + kỳ hạn trong lịch sử; khi đủ thì tính toán từ tài liệu, không giao LLM. Tầng 7 (`tra_loi_ho_so`): bắt câu hỏi về hồ sơ vay. Tầng 8 (`choose_answer_bank` + `_tra_bang_hoi_dap`): cosine+Qwen chọn trong kho ~5.500 câu đã soạn; song song có _tra_bang_cong_cu gọi công cụ.\n\nKhi chi_chon_trong_kho=True mà không có kết quả từ tầng 1-8, trả CAU_KHO_KHONG_CO — 3 câu cố định luân phiên theo session._luot_kho_khong_co.\n\nNăm điểm yếu chính: (1) Không có tầng khám phá nhu cầu — câu hỏi chung về khoản vay không khớp tầng nào, thẳng vào RAG/LLM đọc bảng lãi suất. (2) Tầng 6 im lặng bỏ qua kỳ hạn khi đơn vị tiền chưa rõ — hỏi đơn vị nhưng kỳ hạn 10 tháng (không hợp lệ) biến mất. (3) Câu nối mở đầu bằng \"thì\" không được nhận dạng — moi_noi_tiep chỉ bắt \"anh ơi/tiếp ạ\", rơi CAU_KHO_KHONG_CO. (4) Phản hồi ngắn của khách (\"đây ạ\", \"mấy tháng ạ\") sau câu làm rõ không được đọc ngữ cảnh lượt AI trước, rơi CAU_KHO_KHONG_CO. (5) choose_answer_bank không loại trừ câu đã dùng trong phiên — excluded_ids chỉ lọc theo tình huống, không theo lịch sử phiên, cùng câu thắng cosine mỗi lần.",
+   "thu_tu_xu_ly": [
+    "streaming_pipeline.py:2015 — Dọn trạng thái đoán trước (spec_answer / spec_rag / spec_transcript): bỏ bản nghĩ sẵn nếu khách nói khác với đoán trước",
+    "streaming_pipeline.py:2022 — Tầng 1: tra_loi_san() [luot_thuong_gap] — 16 tình huống thường gặp bằng regex, giới hạn ≤8 từ (≤12 cho hen_lai/chua_ro_nhu_cau)",
+    "streaming_pipeline.py:2035 — Tầng 2: shinhan_fast_facts.tra_loi_nhanh() — tra chỉ mục câu đặc thù cố định",
+    "streaming_pipeline.py:2051 — Tầng 3: rag.neo_moi_tu_cau() — cập nhật session.product theo từ khóa trong câu khách",
+    "streaming_pipeline.py:2067 — Tầng 4: tra_loi_danh_muc() [danh_muc_san_pham] — câu hỏi catalog và kiểm tra sản phẩm có/không bằng regex + ma_co_tai_lieu",
+    "streaming_pipeline.py:2099 — Tầng 5: direct_condition_answer() [banking_fact_precheck] — câu hỏi điều kiện vay (CMND, thu nhập, tài sản...)",
+    "streaming_pipeline.py:2111 — Tầng 6: resolve_loan_facts() + tra_loi_khoan_vay() — chỉ bật khi đủ số tiền + kỳ hạn trong lịch sử; tính toán từ tài liệu sản phẩm",
+    "streaming_pipeline.py:2123 — Tầng 7: tra_loi_ho_so() — câu hỏi về hồ sơ vay",
+    "streaming_pipeline.py:2143 — Kiểm tra LUAT_NHUONG_KHO: nếu dap_san mang mã luật nằm trong tập nhường thì cho kho thắng (và không có chữ số trong user_text)",
+    "streaming_pipeline.py:2167 — Tầng 8: choose_answer_bank() [cosine+Qwen] + _tra_bang_hoi_dap() — chọn trong ~5.500 câu đã soạn, loại trừ theo bo_qua_chi_theo_tinh_huong",
+    "streaming_pipeline.py:2204 — Khởi tác vụ song song _tra_bang_cong_cu() (function calling Qwen để trả lời bằng công cụ nếu cần)",
+    "streaming_pipeline.py:2218 — Khối RAG: tra ngữ cảnh tài liệu nếu chưa có dap_san/dong_bang",
+    "streaming_pipeline.py:2306 — build_system_prompt() + stream LLM (đường sinh câu mới khi không có kết quả từ tầng 1-8 và RAG đã tra xong)",
+    "streaming_pipeline.py:2649 — Fallback CAU_KHO_KHONG_CO: 3 câu cố định luân phiên khi chi_chon_trong_kho=True mà toàn bộ tầng 1-8 không cho kết quả"
+   ],
+   "diem_yeu": [
+    {
+     "mo_ta": "Không có tầng khám phá nhu cầu trước khi đọc sản phẩm. Câu hỏi chung về khoản vay không kích hoạt tầng nào (tầng 6 đòi phải có đủ số tiền+kỳ hạn trong lịch sử), nên rơi thẳng vào RAG+LLM đọc ngay bảng lãi suất/hạn mức. Khách nghe như AI đọc catalog thay vì hỏi thăm nhu cầu.",
+     "vi_tri": "streaming_pipeline.py:2111",
+     "huong_sua": "Chèn tầng phát hiện 'câu hỏi mở về sản phẩm vay' giữa tầng 4 và tầng 5: chứa từ khóa khoản vay/tín dụng nhưng không có số tiền/kỳ hạn và session.product chưa neo đủ → trả câu hỏi nhu cầu ('Anh chị cần vay khoảng bao nhiêu và trong bao lâu ạ?') thay vì đi RAG",
+     "vi_du_cau_khach": "cho anh hỏi khoản vay bên mình với"
+    },
+    {
+     "mo_ta": "Tầng 6 hỏi đơn vị tiền nhưng im lặng bỏ qua kỳ hạn bất hợp lệ. Khi 'bốn trăm' chưa rõ đơn vị, resolve() trả None cho amount; tầng 6 chỉ hỏi lại đơn vị mà không nhắc kỳ hạn 10 tháng. Kỳ hạn này không nằm trong tập hợp lệ của bất kỳ sản phẩm nào và biến mất sau câu hỏi đơn vị, không bao giờ được xử lý lại.",
+     "vi_tri": "tra_loi_khoan_vay.py:43-51",
+     "huong_sua": "Khi cùng lúc phát hiện đơn vị tiền mơ hồ VÀ kỳ hạn nằm ngoài bảng hợp lệ, tích hợp cả hai vào câu hỏi làm rõ: 'em chưa rõ anh muốn vay bao nhiêu triệu, và bên mình cho vay các kỳ 12/24/36 tháng — anh chị muốn gói bao lâu ạ?'",
+     "vi_du_cau_khach": "anh muốn vay bốn trăm trong vòng mười tháng được không"
+    },
+    {
+     "mo_ta": "Câu nối tu từ mở đầu bằng 'thì' không được nhận dạng bởi tầng nào. Pattern moi_noi_tiep trong tầng 1 chỉ bắt 'anh ơi / em ơi / tiếp ạ / tiếp không'. 'Thì bên em cho vay' không khớp bất kỳ pattern nào trong 16 tình huống, cũng không khớp tầng 2-8. Kết quả là CAU_KHO_KHONG_CO dù đây là câu nối ngữ cảnh hợp lệ.",
+     "vi_tri": "luot_thuong_gap.py (pattern moi_noi_tiep)",
+     "huong_sua": "Thêm pattern bắt câu bắt đầu bằng 'thì' không có dấu hỏi khi session.product đã neo: nhận là câu nối, trả câu đệm chuyển tiếp hoặc nhường cho answer bank với flag tinh_huong=continuation thay vì fallback",
+     "vi_du_cau_khach": "thì bên em cho vay"
+    },
+    {
+     "mo_ta": "Phản hồi cực ngắn của khách sau câu làm rõ của AI rơi vào CAU_KHO_KHONG_CO. Không tầng nào đọc lượt AI trước để biết 'đây ạ' hay 'mấy tháng ạ' là trả lời cho câu hỏi gì. choose_answer_bank không nhận tham số loại câu hỏi vừa hỏi nên không thể định hướng chọn câu kế tiếp.",
+     "vi_tri": "streaming_pipeline.py:2167",
+     "huong_sua": "Trước khi gọi choose_answer_bank, kiểm tra: lượt AI trước kết thúc bằng '?' VÀ lượt hiện tại ≤3 từ → trích xuất giá trị từ câu ngắn theo loại câu hỏi đã hỏi (đơn vị tiền, kỳ hạn...) và tiếp tục luồng xử lý tầng 6 thay vì chạy thẳng sang answer bank rồi fallback",
+     "vi_du_cau_khach": "đây ạ / mấy tháng ạ"
+    },
+    {
+     "mo_ta": "choose_answer_bank không loại trừ câu đã phát trong phiên hiện tại. Tham số excluded_ids chỉ nhận kết quả từ bo_qua_chi_theo_tinh_huong (lọc theo cờ ngữ cảnh như 'đã qua màn chào'), không nhận lịch sử câu đã dùng. Cùng câu cosine cao nhất thắng mỗi lần → AI phát nguyên văn y hệt khi khách hỏi lặp.",
+     "vi_tri": "streaming_pipeline.py:2167",
+     "huong_sua": "Duy trì session._used_answer_ids: set[str] và cộng vào excluded_ids mỗi lượt. Khi tất cả ứng viên đều bị loại, nhường LLM sinh câu mới thay vì lặp lại câu cũ.",
+     "vi_du_cau_khach": "khách hỏi 'lãi suất vay tín chấp bao nhiêu' ba lần liên tiếp"
+    }
+   ]
+  },
+  {
+   "key": "bo_chon_kho",
+   "tom_tat": "Mỗi lượt khách nói đi qua 8 lớp lọc tuần tự bên trong `_generate_response()` (streaming_pipeline.py:1994). Từ trên xuống: (1) `tra_loi_san` — regex bảng cố định ≤8 từ cho lượt xã giao (luot_thuong_gap.py:53), (2) `tra_loi_nhanh` — dữ kiện nhanh từ JSON, (3) `neo_moi_tu_cau` — phát hiện neo sản phẩm, (4) `tra_loi_danh_muc` — quy tắc danh mục, (5) `direct_condition_answer` — điều kiện vay từ tài liệu nguồn, (6) `tra_loi_khoan_vay` — tính số tiền/kỳ hạn, (7) `tra_loi_ho_so` — hồ sơ riêng khách, (8) `choose_answer_bank` — kho câu duyệt qua cosine + Qwen. Chỉ khi TẤT CẢ 8 lớp không trả kết quả VÀ `chi_chon_trong_kho=True` thì tại streaming_pipeline.py:2651 hệ thống gán `CAU_KHO_KHONG_CO` — xoay vòng 3 câu ghi nhận. Khi cờ này tắt, lượt rơi xuống LLM đầy đủ.\n\nĐường kho câu (answer_bank_selector.py): trước tiên tra cache `_da_chon` theo khoá `(_norm(sản_phẩm), _norm(tên_ngân_hàng), khoa_cau_hoi(câu_hỏi))`. Hàm `khoa_cau_hoi` trả tập từ ngữ nghĩa sau khi `_words()` lọc ~20 stop word (\"thi\", \"ben\", \"em\", \"cho\", \"co\", \"la\"…). Nếu trúng cache, trả lại câu cũ ngay, không hỏi Qwen. Không trúng thì nhúng câu hỏi (hoặc `_contextual_query()` nếu `_is_follow_up()=True`), lọc ứng viên theo ngưỡng cosine `NGUONG_DIEM`, gửi tối đa C1..C8 cho Qwen. Qwen nhận sản phẩm, tên ngân hàng, 6 lượt lịch sử gần nhất (≤240 ký tự/lượt), câu hỏi (≤300 ký tự), danh sách ứng viên, rồi trả một bí danh Cn.\n\nĐiểm mấu chốt về cờ follow-up: `_is_follow_up(\"dạ vâng\")` trả False (không có từ nối đầu câu, không kết bằng \"sao/nữa\", không có \"đó/này/kia\") → `needs_context_selection()` = False → nhánh Qwen KHÔNG được gọi (streaming_pipeline.py:2151) → `dong_bang=None` → rơi thẳng vào `CAU_KHO_KHONG_CO`. Đây là gốc của mọi câu xác nhận ngắn bị trả \"ghi nhận\".\n\nKhi `session.product` rỗng (lượt mở đầu), `bo_qua_khac_san_pham()` (bang_hoi_dap.py) trả frozenset rỗng → toàn bộ hàng mọi sản phẩm đều được tính cosine → hàng lãi suất khoản vay thắng ngay khi khách nhắc \"khoản vay\" mà chưa có nhu cầu cụ thể.",
+   "thu_tu_xu_ly": [
+    "streaming_pipeline.py:2022 — tra_loi_san(): regex BANG (luot_thuong_gap.py:53), chỉ lượt ≤8 từ; trả dap_san nếu khớp, bỏ qua toàn bộ phía dưới",
+    "streaming_pipeline.py:2035 — tra_loi_nhanh(): tra dữ kiện Shinhan từ JSON; trả dap_san nếu khớp",
+    "streaming_pipeline.py:2050 — neo_moi_tu_cau(): phát hiện tên sản phẩm từ lời khách, cập nhật session.product",
+    "streaming_pipeline.py:~2070 — tra_loi_danh_muc(): quy tắc danh mục sản phẩm; trả dap_san nếu khớp",
+    "streaming_pipeline.py:2099 — direct_condition_answer(): đối chiếu điều kiện vay từ tài liệu nguồn (banking_fact_precheck); trả dap_san nếu khớp",
+    "streaming_pipeline.py:2113 — tra_loi_khoan_vay(): tính toán số tiền/kỳ hạn qua resolve(); trả dap_san nếu khớp",
+    "streaming_pipeline.py:2122 — tra_loi_ho_so(): dữ liệu hồ sơ riêng khách; trả dap_san nếu khớp",
+    "streaming_pipeline.py:2143 — kiểm tra LUAT_NHUONG_KHO: nếu dap_san là luật tĩnh VÀ nằm trong danh sách nhường thì tiếp tục tra kho để thay thế",
+    "streaming_pipeline.py:2146 — _tra_bang_hoi_dap(): đường đồng bộ nhanh — tra _chi_muc (khớp chính xác) rồi _da_chon (cache word-key); trả dong_nhanh",
+    "answer_bank_selector.py:74 — _is_follow_up(): kiểm tra câu nối tiếp (≤7 từ + từ nối đầu/đuôi sao/nữa/đó/này/kia); quyết định có dùng _contextual_query hay không",
+    "streaming_pipeline.py:2151 — nếu dong_nhanh.can_chon_qwen=True HOẶC (dong_nhanh=None VÀ needs_context_selection()=True) thì mới gọi choose_answer_bank()",
+    "streaming_pipeline.py:2167 — choose_answer_bank(): nhúng câu hỏi, lọc cosine >= NGUONG_DIEM, gửi ứng viên C1..Cn cho Qwen, ghi kết quả vào _da_chon; trả dong_bang",
+    "streaming_pipeline.py:2651 — CAU_KHO_KHONG_CO: khi chi_chon_trong_kho=True VÀ dap_san=None VÀ dong_bang không doc_nguyen_van; xoay vòng 3 câu theo _luot_kho_khong_co của session",
+    "streaming_pipeline.py:~2720 — LLM đầy đủ: khi chi_chon_trong_kho=False và mọi lớp trên đều rỗng; build_system_prompt + RAG context + stream token về TTS"
+   ],
+   "diem_yeu": [
+    {
+     "mo_ta": "Câu hỏi lặp lại luôn trả đúng một đáp án do cache _da_chon không có thời hạn. Sau khi Qwen chọn một hàng cho tập từ khoá, mọi lượt sau với cùng câu hỏi đều trả về kết quả cache mà không gọi Qwen lần nào nữa. Không có rotation, không có TTL.",
+     "vi_tri": "answer_bank_selector.py:fast_direct (khoảng dòng 300, hàm _da_chon cache)",
+     "huong_sua": "Thêm TTL cho _da_chon (ví dụ 24 giờ hoặc hết phiên), hoặc cho phép rotation khi cùng cache key bằng cách lưu danh sách các hàng đã chọn rồi luân phiên trong số đó thay vì chỉ lưu một. Nhanh nhất: xóa cache key sau mỗi K lần dùng (K=3).",
+     "vi_du_cau_khach": "Khách hỏi cùng một câu 3 lần liên tiếp → AI đọc y hệt câu đáp 3 lần"
+    },
+    {
+     "mo_ta": "Lượt xác nhận ngắn ('dạ vâng', 'ờ ke em nha', 'mấy tháng à') rơi thẳng vào CAU_KHO_KHONG_CO vì không khớp bảng luot_thuong_gap VÀ _is_follow_up() trả False (thiếu từ nối thế/còn/vậy) → needs_context_selection()=False → nhánh Qwen không được gọi → dong_bang=None → ghi nhận.",
+     "vi_tri": "streaming_pipeline.py:2151 (điều kiện gọi choose_answer_bank), answer_bank_selector.py:74 (_is_follow_up), luot_thuong_gap.py:53 (BANG không có mục xác nhận)",
+     "huong_sua": "Thêm nhóm 'khach_xac_nhan' vào BANG của luot_thuong_gap.py với regex bắt 'da vang', 'o ke', 'ok', 'duoc roi', 'roi', 'vang anh', 'vang chi' (≤4 từ, chỉ xét khi đang có session.product). Câu đáp: 'Dạ vâng ạ. Anh/chị còn muốn em hỗ trợ gì thêm không ạ?' Cách này rẻ (regex) và không cần embedding.",
+     "vi_du_cau_khach": "'Dạ vâng' / 'ờ ke em nha' → AI: 'Dạ phần này em xin phép ghi nhận lại…'"
+    },
+    {
+     "mo_ta": "Câu ngắn thiếu từ khóa sau khi lọc stop word ('thì bên em cho vay' → chỉ còn {'vay'}) cho điểm cosine quá thấp, không đủ ứng viên, Qwen không được gọi, rơi vào CAU_KHO_KHONG_CO. Hàm _words() lọc 'thi', 'ben', 'em', 'cho' — đây đều là glue word thật của tiếng Việt tự nhiên.",
+     "vi_tri": "answer_bank_selector.py:40 (_words stop word list), bang_hoi_dap.py:NGUONG_DIEM (ngưỡng cosine)",
+     "huong_sua": "Với câu nối tiếp mà word set sau _words() chỉ còn ≤1 từ, mở rộng _contextual_query() để tự động thêm sản phẩm hiện tại và từ khóa lượt trước vào query trước khi nhúng. Hoặc giảm NGUONG_DIEM riêng cho trường hợp _is_follow_up()=True (không giảm chung vì sẽ tăng false positive).",
+     "vi_du_cau_khach": "'Thì bên em cho vay' (câu nối sau khi AI vừa giới thiệu) → AI: 'Dạ câu này em chưa có thông tin chính xác…'"
+    },
+    {
+     "mo_ta": "Lượt mở đầu khi session.product rỗng, bo_qua_khac_san_pham() trả frozenset() rỗng → không lọc hàng nào → toàn bộ hàng mọi sản phẩm đều được tính cosine → hàng lãi suất/hạn mức cho vay (nhiều hàng, điểm cao) thắng ngay khi khách chỉ đề cập 'khoản vay' mà chưa nêu nhu cầu cụ thể. Không có hàng 'khám phá nhu cầu' trong kho.",
+     "vi_tri": "bang_hoi_dap.py:bo_qua_khac_san_pham (trả frozenset() khi san_pham rỗng)",
+     "huong_sua": "Thêm một tập hàng loại 'kham_pha_nhu_cau' trong kho câu đáp (ví dụ 'Dạ anh/chị đang muốn tìm hiểu về khoản vay mới hay muốn tính cụ thể số tiền/kỳ hạn ạ?'). Gắn điều kiện ưu tiên: khi session.product rỗng VÀ không có con số trong câu khách thì chọn hàng loại này trước khi đọc lãi suất.",
+     "vi_du_cau_khach": "'Cho anh hỏi khoản vay bên mình với' → AI đọc lãi suất/hạn mức ngay thay vì hỏi thêm nhu cầu"
+    },
+    {
+     "mo_ta": "tra_loi_khoan_vay xử lý số tiền và kỳ hạn độc lập qua resolve(). 'Bốn trăm' mơ hồ đơn vị (triệu/tỷ) → module phải hỏi làm rõ trước khi tính. 'Mười tháng' được phát hiện đúng nhưng không thể dùng cho đến khi đơn vị được xác nhận — nên khách cảm thấy AI bỏ qua thông tin kỳ hạn vừa nêu.",
+     "vi_tri": "tra_loi_khoan_vay.py:_so_tien_nhu_cau (dùng resolve()), _so_thang (dùng resolve())",
+     "huong_sua": "Khi hỏi làm rõ đơn vị, nhắc lại kỳ hạn đã nghe được trong câu hỏi ('Bốn trăm anh tính theo triệu hay tỷ ạ, để em tính kỳ hạn mười tháng cho anh?'). Lưu kỳ hạn đã phát hiện vào session context để dùng lại sau khi đơn vị được xác nhận, tránh phải hỏi lại.",
+     "vi_du_cau_khach": "'Anh muốn vay bốn trăm trong vòng mười tháng được không' → AI hỏi 'Bốn trăm tính theo triệu hay tỷ' rồi im lặng về mười tháng"
+    },
+    {
+     "mo_ta": "_ma_san_pham() trong tra_loi_khoan_vay.py chỉ nhận 4 mẫu tiêu đề (tiet_kiem, the_tin_dung, vay_mua_nha, vay_tin_chap). Tài liệu có tiêu đề ngoài 4 mẫu này trả '' → toàn bộ quy tắc tính khoản vay vẫn được gọi cho sản phẩm tiết kiệm/thẻ → AI trả lời sai về hạn mức/lãi suất cho sản phẩm không phải vay.",
+     "vi_tri": "tra_loi_khoan_vay.py:_ma_san_pham, streaming_pipeline.py:2113 (điểm gọi tra_loi_khoan_vay)",
+     "huong_sua": "Tại streaming_pipeline.py:2113, thêm guard kiểm tra session.product hoặc kết quả _ma_san_pham(tai_lieu_chuan) trước khi gọi tra_loi_khoan_vay(). Chỉ gọi khi xác định rõ là sản phẩm vay. Cách nhanh: nếu _ma_san_pham() trả '' thì bỏ qua hoàn toàn layer này."
+    },
+    {
+     "mo_ta": "Qwen chỉ nhận bối cảnh hội thoại 6 lượt gần nhất (≤240 ký tự/lượt) và câu hỏi ≤300 ký tự, nhưng không nhận toàn bộ sản phẩm hiện tại hay nhu cầu đã xác định. Khi mạch hội thoại dài hơn 6 lượt (khách hỏi nhiều điểm khác nhau về cùng sản phẩm), Qwen mất ngữ cảnh sản phẩm đã neo và chọn nhầm hàng cho sản phẩm khác.",
+     "vi_tri": "answer_bank_selector.py:_prompt (xây prompt cho Qwen), streaming_pipeline.py:2167 (truyền product và history vào choose_answer_bank)",
+     "huong_sua": "Thêm trường 'san_pham_hien_tai' rõ ràng vào prompt Qwen (hiện chỉ có current_bank và current_product nhưng không kèm tóm tắt nhu cầu). Với session dài, đính kèm bản tóm tắt 1-2 câu về nhu cầu đã xác định (số tiền, kỳ hạn, mục đích) thay vì chỉ 6 lượt thô."
+    }
+   ]
+  }
+ ],
+ "facts": {
+  "san_pham": [
+   {
+    "ten": "Vay Tín Chấp Cá Nhân",
+    "tep": "knowledge/products/vay_tin_chap.md",
+    "du_kien": [
+     "Lãi suất: từ 7.9%/năm",
+     "Hạn mức: lên đến 500 triệu đồng",
+     "Thời hạn: 12 - 60 tháng",
+     "Giải ngân: trong vòng 24 giờ sau khi phê duyệt",
+     "Phê duyệt hồ sơ: 24 - 48 giờ",
+     "Điều kiện: công dân Việt Nam, 22 - 60 tuổi",
+     "Điều kiện: thu nhập ổn định từ 5 triệu đồng/tháng trở lên",
+     "Điều kiện: có hợp đồng lao động hoặc giấy phép kinh doanh",
+     "Điều kiện: không có nợ xấu tại CIC",
+     "Hồ sơ: CMND/CCCD",
+     "Hồ sơ: hộ khẩu hoặc KT3",
+     "Hồ sơ: xác nhận thu nhập hoặc sao kê lương 3 tháng gần nhất",
+     "Hồ sơ: hợp đồng lao động (nếu là người đi làm)",
+     "Ưu đãi: miễn phí tư vấn và thẩm định",
+     "Ưu đãi: giảm 0.5% lãi suất cho khách hàng có lương qua ngân hàng",
+     "Ưu đãi: tặng voucher 500.000đ khi giải ngân thành công",
+     "Trả trước hạn: miễn phí",
+     "Ví dụ trả góp: vay 100 triệu/36 tháng trả ~3.4 triệu/tháng",
+     "Ví dụ trả góp: vay 200 triệu/36 tháng trả ~6.8 triệu/tháng",
+     "Ví dụ trả góp: vay 300 triệu/48 tháng trả ~8.2 triệu/tháng",
+     "Nợ xấu nhóm 3-5 tại CIC: hồ sơ rất khó được phê duyệt",
+     "Nợ đã tất toán trên 1 năm: có thể xem xét, cần kiểm tra hồ sơ cụ thể"
+    ]
+   },
+   {
+    "ten": "Vay Mua Nhà / Bất Động Sản",
+    "tep": "knowledge/products/vay_mua_nha.md",
+    "du_kien": [
+     "Lãi suất ưu đãi: từ 6.5%/năm (cố định 2 năm đầu)",
+     "Lãi suất thả nổi sau 2 năm đầu: 8 - 10%/năm",
+     "Hạn mức: tối đa 80% giá trị bất động sản",
+     "Hạn mức tối đa tuyệt đối: 10 tỷ đồng",
+     "Thời hạn vay: lên đến 25 năm",
+     "Phê duyệt hồ sơ: 3 - 5 ngày làm việc",
+     "Điều kiện: 22 - 65 tuổi",
+     "Điều kiện: thu nhập từ 10 triệu đồng/tháng trở lên",
+     "Điều kiện: có tài sản đảm bảo (nhà/đất)",
+     "Điều kiện: không có nợ xấu tại CIC",
+     "Hồ sơ: CMND/CCCD",
+     "Hồ sơ: hộ khẩu",
+     "Hồ sơ: xác nhận thu nhập",
+     "Hồ sơ: sao kê tài khoản 6 tháng gần nhất",
+     "Hồ sơ: hợp đồng mua bán bất động sản",
+     "Hồ sơ: giấy tờ pháp lý bất động sản",
+     "Hồ sơ: giấy phép xây dựng (nếu xây nhà)",
+     "Ưu đãi: miễn phí thẩm định tài sản",
+     "Ưu đãi: miễn phí trả trước hạn sau 3 năm",
+     "Phí trả trước hạn trong 3 năm đầu: 1 - 2%"
+    ]
+   },
+   {
+    "ten": "Gửi Tiết Kiệm",
+    "tep": "knowledge/products/tiet_kiem.md",
+    "du_kien": [
+     "Số tiền gửi tối thiểu: 1 triệu đồng",
+     "Kỳ hạn: 1 - 36 tháng, hoặc không kỳ hạn",
+     "Hình thức: gửi tại quầy hoặc gửi online",
+     "Nhận lãi: cuối kỳ, hoặc hàng tháng nếu khách chọn",
+     "Lãi suất không kỳ hạn: 0.5%/năm",
+     "Lãi suất kỳ hạn 1 tháng: 3.5%/năm",
+     "Lãi suất kỳ hạn 3 tháng: 3.8%/năm",
+     "Lãi suất kỳ hạn 6 tháng: 4.5%/năm",
+     "Lãi suất kỳ hạn 12 tháng: 5.5%/năm",
+     "Lãi suất kỳ hạn 24 tháng: 5.8%/năm",
+     "Lãi suất kỳ hạn 36 tháng: 6%/năm",
+     "Gửi online: cộng thêm 0.2%/năm so với gửi tại quầy",
+     "Gửi online: mở sổ trong 5 phút trên ứng dụng, không cần đến quầy",
+     "Điều kiện: công dân Việt Nam từ 18 tuổi trở lên",
+     "Điều kiện: CMND/CCCD còn hiệu lực",
+     "Điều kiện: không yêu cầu chứng minh thu nhập",
+     "Rút trước hạn: chỉ được hưởng lãi suất không kỳ hạn 0.5%/năm (phần rút ra)",
+     "Ưu đãi: miễn phí mở sổ và tất toán",
+     "Ưu đãi: tặng bảo hiểm tai nạn cho sổ từ 100 triệu đồng trở lên"
+    ]
+   },
+   {
+    "ten": "Thẻ Tín Dụng",
+    "tep": "knowledge/products/the_tin_dung.md",
+    "du_kien": [
+     "Hạn mức: 10 triệu - 500 triệu đồng",
+     "Miễn phí thường niên năm đầu (tất cả loại thẻ)",
+     "Thời gian miễn lãi: lên đến 55 ngày",
+     "Cashback: 1 - 3%",
+     "Thẻ Classic: hạn mức 10 - 50 triệu, phí thường niên 200.000đ/năm (từ năm 2)",
+     "Thẻ Gold: hạn mức 30 - 200 triệu, phí thường niên 400.000đ/năm (từ năm 2)",
+     "Thẻ Platinum: hạn mức 100 - 500 triệu, phí thường niên 800.000đ/năm (từ năm 2)",
+     "Điều kiện: từ 18 tuổi trở lên",
+     "Điều kiện: thu nhập từ 5 triệu đồng/tháng trở lên",
+     "Điều kiện: CMND/CCCD",
+     "Ưu đãi: hoàn tiền 3% cho chi tiêu ăn uống",
+     "Ưu đãi: trả góp 0% lãi suất tại đối tác",
+     "Ưu đãi: tích điểm đổi quà và vé máy bay"
+    ]
+   }
+  ],
+  "khong_co_trong_tai_lieu": [
+   "Lãi suất phạt / lãi thẻ tín dụng khi không trả đúng hạn (con số % cụ thể)",
+   "Phí rút tiền mặt bằng thẻ tín dụng (con số cụ thể)",
+   "Số tiền thanh toán tối thiểu mỗi kỳ thẻ tín dụng (% hoặc số tiền cụ thể)",
+   "Bảng lãi suất vay tín chấp theo từng kỳ hạn cụ thể (tài liệu chỉ ghi 'từ 7.9%')",
+   "Lãi suất vay mua nhà thả nổi chính xác sau kỳ ưu đãi (tài liệu chỉ ghi '8-10%')",
+   "Số hotline / tổng đài chính thức của ngân hàng",
+   "Địa chỉ và danh sách chi nhánh",
+   "Giờ làm việc của ngân hàng / chi nhánh",
+   "Thời gian phát hành / mở thẻ tín dụng mất bao lâu",
+   "Phí chuyển đổi ngoại tệ khi dùng thẻ tín dụng",
+   "Có được vay khi đang còn khoản vay khác hay không",
+   "Vay mua nhà dự án / chung cư cụ thể nào được ngân hàng hỗ trợ",
+   "Bảo hiểm nhân thọ / mất sức lao động gắn với khoản vay",
+   "Phí xử lý / phí hồ sơ khi vay (nếu có)",
+   "Quy trình đăng ký vay online chi tiết từng bước"
+  ],
+  "ten_ngan_hang_nhan_vien": "Ngân hàng ABC, nhân viên: Lan"
+ }
+}

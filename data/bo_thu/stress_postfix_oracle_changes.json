@@ -1,0 +1,407 @@
+{
+  "baseline_corpus_unchanged": true,
+  "change_count": 100,
+  "scope": "100 card-loss cases only; original transcripts remain unchanged",
+  "changes": [
+    {
+      "id": "dialogue_lost_card_fee_compound_000",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_001",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_002",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_003",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_004",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_005",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_006",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_007",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_008",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_009",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_010",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_011",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_012",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_013",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_014",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_015",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_016",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_017",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_018",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_019",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_020",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_021",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_022",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_023",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_024",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_025",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_026",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_027",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_028",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_029",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_030",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_031",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_032",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_033",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_034",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_035",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_036",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_037",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_038",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_039",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_040",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_041",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_042",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_043",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_044",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_045",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_046",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_047",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_048",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_049",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_050",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_051",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_052",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_053",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_054",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_055",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_056",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_057",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_058",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_059",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_060",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_061",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_062",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_063",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_064",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_065",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_066",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_067",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_068",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_069",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_070",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_071",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_072",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_073",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_074",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_075",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_076",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_077",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_078",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_079",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_080",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_081",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_082",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_083",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_084",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_085",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_086",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_087",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_088",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_089",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_090",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_091",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_092",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_093",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_094",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_095",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_096",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_097",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_098",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    },
+    {
+      "id": "dialogue_lost_card_fee_compound_099",
+      "change": "Score urgent lost-card answer and require fee-source uncertainty; forbid annual-fee numbers substituted for replacement fee."
+    }
+  ]
+}

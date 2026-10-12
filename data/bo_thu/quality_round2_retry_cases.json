@@ -1,0 +1,692 @@
+[
+  {
+    "ma": "ascii_deposit_0",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      {
+        "khach": "Chị muốn gửi 100 triệu, lãi suất thế nào?",
+        "expect": null
+      },
+      {
+        "khach": "gui 50 trieu sau thang",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "ky han 1 thang.*3[,.]5"
+          ]
+        }
+      },
+      {
+        "khach": "lai duoc bao nhieu tien",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "chua.*thong tin.*toan bo"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "ascii_deposit_1",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      {
+        "khach": "Chị muốn gửi 100 triệu, lãi suất thế nào?",
+        "expect": null
+      },
+      {
+        "khach": "chi gui100trieu12thang",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "ky han 1 thang.*3[,.]5"
+          ]
+        }
+      },
+      {
+        "khach": "lai duoc bao nhieu tien",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "chua.*thong tin.*toan bo"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "ascii_deposit_2",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      {
+        "khach": "Chị muốn gửi 100 triệu, lãi suất thế nào?",
+        "expect": null
+      },
+      {
+        "khach": "gui 200 trieu mot nam",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "ky han 1 thang.*3[,.]5"
+          ]
+        }
+      },
+      {
+        "khach": "lai duoc bao nhieu tien",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "chua.*thong tin.*toan bo"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "ascii_deposit_3",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      {
+        "khach": "Chị muốn gửi 100 triệu, lãi suất thế nào?",
+        "expect": null
+      },
+      {
+        "khach": "sau thang",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "ky han 1 thang.*3[,.]5"
+          ]
+        }
+      },
+      {
+        "khach": "lai duoc bao nhieu tien",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "chua.*thong tin.*toan bo"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "ascii_deposit_4",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      {
+        "khach": "Chị muốn gửi 100 triệu, lãi suất thế nào?",
+        "expect": null
+      },
+      {
+        "khach": "the mot nam",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "ky han 1 thang.*3[,.]5"
+          ]
+        }
+      },
+      {
+        "khach": "lai duoc bao nhieu tien",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "forbid": [
+            "chua.*thong tin.*toan bo"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "card_close_0",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      {
+        "khach": "Gold phí năm bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "400"
+          ]
+        }
+      },
+      {
+        "khach": "Đóng thẻ ngay ngày mai có bị phạt một tỷ không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "chua|khong.*nguon|khong.*xac nhan"
+          ],
+          "forbid": [
+            "ben em mien phi",
+            "tra truoc han.*mien phi"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "card_close_1",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      {
+        "khach": "Gold phí năm bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "400"
+          ]
+        }
+      },
+      {
+        "khach": "Hủy thẻ Gold có mất phí không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "chua|khong.*nguon|khong.*xac nhan"
+          ],
+          "forbid": [
+            "ben em mien phi",
+            "tra truoc han.*mien phi"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "card_close_2",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      {
+        "khach": "Gold phí năm bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "400"
+          ]
+        }
+      },
+      {
+        "khach": "Chị muốn chấm dứt thẻ thì phí thế nào?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "chua|khong.*nguon|khong.*xac nhan"
+          ],
+          "forbid": [
+            "ben em mien phi",
+            "tra truoc han.*mien phi"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "card_close_3",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      {
+        "khach": "Gold phí năm bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "400"
+          ]
+        }
+      },
+      {
+        "khach": "Dong the co mat phi khong?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "chua|khong.*nguon|khong.*xac nhan"
+          ],
+          "forbid": [
+            "ben em mien phi",
+            "tra truoc han.*mien phi"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "card_close_4",
+    "san_pham": "thẻ tín dụng",
+    "luot": [
+      {
+        "khach": "Gold phí năm bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "400"
+          ]
+        }
+      },
+      {
+        "khach": "Anh không dùng nữa, đóng thẻ được miễn phí à?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "chua|khong.*nguon|khong.*xac nhan"
+          ],
+          "forbid": [
+            "ben em mien phi",
+            "tra truoc han.*mien phi"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "fee_compound_0",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh muốn vay 200 triệu trong 24 tháng.",
+        "expect": {
+          "facts": {
+            "amount": {
+              "status": "known",
+              "value": "200000000"
+            },
+            "term": {
+              "status": "known",
+              "value": "24"
+            }
+          }
+        }
+      },
+      {
+        "khach": "Thế bao lâu có tiền, có phí gì giấu trong hợp đồng không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "24\\s+gio",
+            "phe duyet",
+            "phi"
+          ],
+          "forbid": [
+            "tra truoc han"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "fee_compound_1",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh muốn vay 200 triệu trong 24 tháng.",
+        "expect": {
+          "facts": {
+            "amount": {
+              "status": "known",
+              "value": "200000000"
+            },
+            "term": {
+              "status": "known",
+              "value": "24"
+            }
+          }
+        }
+      },
+      {
+        "khach": "Bao lâu nhận được tiền và phí tư vấn là bao nhiêu?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "24\\s+gio",
+            "phe duyet",
+            "phi"
+          ],
+          "forbid": [
+            "tra truoc han"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "fee_compound_2",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh muốn vay 200 triệu trong 24 tháng.",
+        "expect": {
+          "facts": {
+            "amount": {
+              "status": "known",
+              "value": "200000000"
+            },
+            "term": {
+              "status": "known",
+              "value": "24"
+            }
+          }
+        }
+      },
+      {
+        "khach": "Phí thẩm định có không, bao lâu thì giải ngân?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "24\\s+gio",
+            "phe duyet",
+            "phi"
+          ],
+          "forbid": [
+            "tra truoc han"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "fee_compound_3",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh muốn vay 200 triệu trong 24 tháng.",
+        "expect": {
+          "facts": {
+            "amount": {
+              "status": "known",
+              "value": "200000000"
+            },
+            "term": {
+              "status": "known",
+              "value": "24"
+            }
+          }
+        }
+      },
+      {
+        "khach": "Cho chị hỏi trong hợp đồng có phí gì không mà bao giờ nhận được tiền?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "24\\s+gio",
+            "phe duyet",
+            "phi"
+          ],
+          "forbid": [
+            "tra truoc han"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "fee_compound_4",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh muốn vay 200 triệu trong 24 tháng.",
+        "expect": {
+          "facts": {
+            "amount": {
+              "status": "known",
+              "value": "200000000"
+            },
+            "term": {
+              "status": "known",
+              "value": "24"
+            }
+          }
+        }
+      },
+      {
+        "khach": "bao lau co tien co mat phi khong",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "24\\s+gio",
+            "phe duyet",
+            "phi"
+          ],
+          "forbid": [
+            "tra truoc han"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "age_18",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh 18 tuổi thì vay tín chấp có được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "18",
+            "22",
+            "60"
+          ],
+          "forbid": [
+            "chac chan.*duyet",
+            "bao nhieu.*muon vay"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "age_21",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh 21 tuổi thì vay tín chấp có được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "21",
+            "22",
+            "60"
+          ],
+          "forbid": [
+            "chac chan.*duyet",
+            "bao nhieu.*muon vay"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "age_22",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh 22 tuổi thì vay tín chấp có được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "22",
+            "22",
+            "60"
+          ],
+          "forbid": [
+            "chac chan.*duyet",
+            "bao nhieu.*muon vay"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "age_61",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh 61 tuổi thì vay tín chấp có được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "61",
+            "60"
+          ],
+          "forbid": [
+            "chac chan.*duyet",
+            "bao nhieu.*muon vay"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "age_70",
+    "san_pham": "vay tín chấp",
+    "luot": [
+      {
+        "khach": "Anh 70 tuổi thì vay tín chấp có được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "70",
+            "60"
+          ],
+          "forbid": [
+            "chac chan.*duyet",
+            "bao nhieu.*muon vay"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "asset_0",
+    "san_pham": "vay mua nhà",
+    "luot": [
+      {
+        "khach": "Đất trên Sao Hỏa làm tài sản thế chấp được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "(?:chua|khong).*(?:thong tin|chinh sach)|khong.*de cap"
+          ],
+          "forbid": [
+            "dieu kien.*co tai san dam bao"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "asset_1",
+    "san_pham": "vay mua nhà",
+    "luot": [
+      {
+        "khach": "Nhà trên mặt trăng có vay mua nhà được không?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "(?:chua|khong).*(?:thong tin|chinh sach)|khong.*de cap"
+          ],
+          "forbid": [
+            "dieu kien.*co tai san dam bao"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "ma": "online_interest",
+    "san_pham": "tiết kiệm",
+    "luot": [
+      "Chị gửi online100triệu kỳ hạn6tháng",
+      {
+        "khach": "Cuối kỳ được bao nhiêu tiền lãi?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "2[,.]35\\s+trieu",
+            "4[,.]7"
+          ]
+        }
+      },
+      "À không, chị gửi tại quầy 100 triệu kỳ hạn6tháng",
+      {
+        "khach": "Cuối kỳ được bao nhiêu tiền lãi?",
+        "expect": {
+          "modes": [
+            "rule"
+          ],
+          "require": [
+            "2[,.]25\\s+trieu",
+            "4[,.]5"
+          ]
+        }
+      }
+    ]
+  }
+]

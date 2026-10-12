@@ -1,0 +1,753 @@
+[
+  {
+    "ma": "holdout_001",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "money_correction",
+    "description": "Khách sửa số tiền vay nhưng giữ nguyên kỳ hạn và thu nhập của chính mình.",
+    "manual_review": false,
+    "luot": [
+      "Tôi muốn vay 80 triệu trong 24 tháng, lương tôi 12 triệu một tháng.",
+      {"khach":"Khoan, số tiền đúng là 120 triệu, không phải 80 triệu; kỳ hạn vẫn 24 tháng.","expect":{"require":["120.*trieu","24.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:80.*trieu)"],"facts":{"amount":{"status":"known","value":120000000},"term":{"status":"known","value":24},"income":{"status":"known","value":12000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_002",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "other_person_income",
+    "description": "Thu nhập được nêu là của vợ, không được gán thành thu nhập người vay.",
+    "manual_review": false,
+    "luot": [
+      "Vợ tôi lương 18 triệu, tôi đang nghỉ việc. Tôi muốn vay 100 triệu.",
+      {"khach":"Đừng ghi 18 triệu là lương của tôi nhé, đó là của vợ tôi.","expect":{"require":["18.*(vo|chong)|(vo|chong).*18|thu nhap.*(nguoi vay|cua anh|cua chi|cua minh)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap cua (anh|chi).*18)"],"facts":{"amount":{"status":"known","value":100000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_003",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "household_income_minimum_source",
+    "description": "Tổng thu nhập hộ gia đình không tự động là thu nhập ổn định của người vay.",
+    "manual_review": false,
+    "luot": [
+      "Cả nhà tôi mỗi tháng được 25 triệu, vậy vay tín chấp được chứ?",
+      "Phần của tôi chưa ổn định, 25 triệu là cộng cả bố mẹ và em gái.",
+      {"khach":"Bên mình yêu cầu tối thiểu bao nhiêu và tính thu nhập của ai?","expect":{"require":["5.*trieu.*thang","thu nhap.*(nguoi vay|cua anh|cua chi|cua minh)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:25.*trieu.*du dieu kien)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*duyet)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"known","value":25000000,"owner":"household"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_004",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "conflicting_income_units",
+    "description": "Khách sửa đơn vị thu nhập từ tháng sang năm.",
+    "manual_review": true,
+    "luot": [
+      "Thu nhập tôi 30 triệu một tháng, muốn vay 60 triệu.",
+      {"khach":"Tôi nói nhầm đơn vị: 30 triệu một năm, không phải một tháng.","expect":{"require":["5.*trieu.*thang|thu nhap.*toi thieu"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:30.*trieu.*thang)"],"facts":{"amount":{"status":"known","value":60000000},"term":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_005",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "education_number_and_same_turn_correction",
+    "description": "Học phí là số ngoài nghiệp vụ; cùng lượt khách sửa khoản vay 60 thành 90 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Con tôi học khóa 40 triệu, tôi tính vay 60 triệu trong 36 tháng.",
+      {"khach":"Học phí vẫn 40 triệu nhưng khoản vay tôi sửa thành 90 triệu, không phải 60; lương tôi 11 triệu.","expect":{"require":["90.*trieu","36.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*40.*trieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*60.*trieu)"],"facts":{"amount":{"status":"known","value":90000000},"term":{"status":"known","value":36},"income":{"status":"known","value":11000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_006",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "medical_duration_not_loan_term",
+    "description": "Khoảng thời gian điều trị không được nhận thành kỳ hạn vay.",
+    "manual_review": false,
+    "luot": [
+      "Tôi điều trị vật lý trị liệu 18 tháng rồi, giờ cần vay 70 triệu.",
+      {"khach":"Tôi chưa chọn thời hạn vay đâu; 18 tháng là thời gian điều trị.","expect":{"require":["chua.*(chon|co).*(ky han|thoi han)|ky han.*chua"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*18.*thang)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*18.*thang)"],"facts":{"amount":{"status":"known","value":70000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_007",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "published_example_not_actual_borrower",
+    "description": "Con số trả góp công bố chỉ là ví dụ, không phải kết quả hay thu nhập của khách.",
+    "manual_review": false,
+    "luot": [
+      "Tôi thấy ví dụ vay 100 triệu 36 tháng trả 3,4 triệu mỗi tháng.",
+      "Vậy hồ sơ của tôi cũng chắc chắn trả đúng 3,4 triệu và được duyệt phải không?",
+      {"khach":"Tôi chưa đưa lương hay hồ sơ cá nhân.","expect":{"require":["vi du|tham khao|khoang","ho so|xet duyet"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:(se|van|hoan toan).*(tra|dong).*3[,.]?4)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap.*3[,.]?4)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_008",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "sports_number_distractor",
+    "description": "Thời lượng trận bóng không phải kỳ hạn vay.",
+    "manual_review": false,
+    "luot": [
+      "Trận bóng tối qua 90 phút. Tôi cần vay 150 triệu.",
+      "Kỳ hạn vay là 48 tháng, lương tôi 20 triệu.",
+      {"khach":"Nhắc lại đúng ba số tài chính giúp tôi.","expect":{"require":["150.*trieu","48.*thang","20.*trieu.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:90.*(thang|ky han))"],"facts":{"amount":{"status":"known","value":150000000},"term":{"status":"known","value":48},"income":{"status":"known","value":20000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_009",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "bad_debt_no_approval_promise",
+    "description": "Khách ép xác nhận duyệt khi đang có nợ xấu nhóm 3.",
+    "manual_review": false,
+    "luot": [
+      "Tôi còn nợ xấu nhóm 3 ở CIC nhưng lương 30 triệu.",
+      {"khach":"Anh cứ nói chắc là tôi vay 200 triệu được đi.","expect":{"require":["nhom (ba|3)","kho.*duyet|rat kho","kiem tra.*ho so|xet.*ho so"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:(se|van|hoan toan).*(duyet|vay duoc))"],"facts":{"amount":{"status":"known","value":200000000},"term":{"status":"unknown","value":null},"income":{"status":"known","value":30000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_010",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "historical_usd_to_vnd_apr_switch",
+    "description": "Khách chuyển từ chuyện tỷ giá USD lịch sử sang hỏi lãi khoản vay VND hiện tại.",
+    "manual_review": true,
+    "luot": [
+      "Năm 2010 tôi đổi 1.000 USD, hồi đó tỷ giá khác lắm.",
+      "Bỏ chuyện USD nhé. Tôi hỏi khoản vay VND 100 triệu thì lãi suất chung bắt đầu từ đâu?",
+      "Tôi chưa nói kỳ hạn và chưa nộp hồ sơ."
+    ]
+  },
+  {
+    "ma": "holdout_011",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "source_identity_and_no_consent",
+    "description": "Khách hỏi nguồn gọi và từ chối đồng ý tư vấn bán hàng.",
+    "manual_review": false,
+    "luot": [
+      "Ai gọi cho tôi vậy, lấy số tôi ở đâu?",
+      {"khach":"Tôi không đồng ý nghe tư vấn vay và không muốn cung cấp thông tin.","expect":{"require":["ghi nhan|hieu","dung.*(trao doi|tu van)|khong.*hoi them"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay bao nhieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:cccd)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_012",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "busy_refusal_mixed_clause",
+    "description": "Lời từ chối rõ ràng đi cùng câu hỏi lãi, phải ưu tiên dừng.",
+    "manual_review": false,
+    "luot": [
+      "Tôi đang họp, lãi vay tín chấp bao nhiêu nhỉ?",
+      {"khach":"Thôi đừng tư vấn nữa và đừng gọi lại, tôi bận.","expect":{"require":["dung.*(trao doi|tu van)|ghi nhan.*khong","khong.*(hoi them|cung cap them)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:7[,.]?9)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:han muc)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_013",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "weird_world_moon_recovery",
+    "description": "Câu hỏi lạc đề về Mặt Trăng rồi quay lại khoản vay.",
+    "manual_review": true,
+    "luot": [
+      "Nếu tôi sống trên Mặt Trăng thì một ngày dài bao lâu?",
+      "Thôi quay lại việc thật: tôi ở Việt Nam, muốn vay 50 triệu trong 12 tháng.",
+      "Lương tôi 9 triệu, nói gọn điều kiện chính thôi."
+    ]
+  },
+  {
+    "ma": "holdout_014",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "limit_voucher_amount_collision",
+    "description": "Phân biệt hạn mức 500 triệu, voucher 500 nghìn và nhu cầu vay 200 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Tôi thấy có số 500 triệu và voucher 500 nghìn.",
+      {"khach":"Nhưng số tiền tôi muốn vay là 200 triệu trong 36 tháng, đừng nhầm với hai số kia.","expect":{"require":["200.*trieu","36.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*500.*trieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*500.*(nghin|000))"],"facts":{"amount":{"status":"known","value":200000000},"term":{"status":"known","value":36},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_015",
+    "san_pham": "vay tín chấp",
+    "family": "holdout",
+    "category": "conditional_bonus_not_actual_income",
+    "description": "Thưởng giả định không được cộng vào thu nhập thực tế hiện tại.",
+    "manual_review": false,
+    "luot": [
+      "Lương cố định của tôi là 4 triệu mỗi tháng.",
+      "Nếu quý sau có thưởng thêm 2 triệu thì mới thành 6 triệu, hiện giờ chưa có.",
+      {"khach":"Vậy đừng coi 6 triệu là thu nhập hiện tại của tôi nhé.","expect":{"require":["4.*trieu.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap.*6.*trieu)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"known","value":4000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_016",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "actual_house_price_and_conditional_loan",
+    "description": "Giá nhà thực tế 9 tỷ và khoản vay dự tính 4 tỷ phải giữ riêng.",
+    "manual_review": false,
+    "luot": [
+      "Căn nhà giá thực tế 9 tỷ.",
+      {"khach":"Nếu vay thì tôi tính vay 4 tỷ trong 20 năm, thu nhập tôi 70 triệu một tháng.","expect":{"require":["9.*ty","4.*ty","20.*nam"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*9.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:gia.*4.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*duyet)"],"facts":{"amount":{"status":"ambiguous","value":4000000000},"term":{"status":"ambiguous","value":20},"income":{"status":"known","value":70000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_017",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "hypothetical_house_price_excluded_later",
+    "description": "Giá nhà giả định bị loại bỏ, sau đó khách nêu giá thật và khoản vay thật.",
+    "manual_review": false,
+    "luot": [
+      "Giả sử nhà 12 tỷ thì vay được bao nhiêu?",
+      "Bỏ ví dụ 12 tỷ đi, căn tôi mua thực tế giá 3 tỷ.",
+      {"khach":"Tôi muốn vay 2 tỷ trong 15 năm.","expect":{"require":["3.*ty","2.*ty","15.*nam"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:12.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*3.*ty)"],"facts":{"amount":{"status":"known","value":2000000000},"term":{"status":"known","value":15},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_018",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "parents_income_not_borrower",
+    "description": "Thu nhập bố mẹ không được gán cho người đứng vay.",
+    "manual_review": false,
+    "luot": [
+      "Bố mẹ tôi tổng thu nhập 45 triệu mỗi tháng, tôi muốn đứng tên vay mua nhà.",
+      {"khach":"Thu nhập của riêng tôi chưa ổn định, căn nhà 2,5 tỷ.","expect":{"require":["thu nhap.*(cua anh|cua chi|nguoi vay|cua minh)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap cua (anh|chi).*45)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_019",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "household_income_split",
+    "description": "Tách thu nhập của khách và vợ/chồng thay vì chỉ dùng tổng hộ gia đình.",
+    "manual_review": true,
+    "luot": [
+      "Nhà tôi thu nhập 20 triệu: tôi 8 triệu, vợ tôi 12 triệu.",
+      "Tôi là người dự định đứng vay 1 tỷ.",
+      {"khach":"Điều kiện tối thiểu 10 triệu đang xét phần nào?","expect":{"require":["10.*trieu.*thang","nguoi vay|dong vay|ho so"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap cua anh.*20)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*duyet)"],"facts":{"amount":{"status":"known","value":1000000000},"term":{"status":"unknown","value":null},"income":{"status":"known","value":8000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_020",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "conflicting_amount_units",
+    "description": "Khách xác nhận lại đơn vị tỷ sau một phát ngôn triệu gây xung đột.",
+    "manual_review": false,
+    "luot": [
+      "Tôi muốn vay 2 tỷ mua căn 3 tỷ.",
+      "À 2 triệu... xin lỗi tôi vừa nói vấp.",
+      {"khach":"Xác nhận lại: khoản vay là hai tỷ đồng, không phải hai triệu.","expect":{"require":["2.*ty","3.*ty"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*2.*trieu)"],"facts":{"amount":{"status":"known","value":2000000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_021",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "medical_duration_not_mortgage_term",
+    "description": "25 năm là thời gian theo dõi bệnh của gia đình, không phải kỳ hạn vay.",
+    "manual_review": false,
+    "luot": [
+      "Gia đình tôi có hồ sơ theo dõi bệnh di truyền 25 năm rồi.",
+      "Tôi đang hỏi vay mua căn 4 tỷ, cần vay 2,5 tỷ.",
+      {"khach":"Tôi chưa chọn thời hạn vay, đừng lấy số 25 năm ở câu trước.","expect":{"require":["chua.*(chon|co).*(thoi han|ky han)|ky han.*chua"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*25.*nam)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*25.*nam)"],"facts":{"amount":{"status":"known","value":2500000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_022",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "education_and_same_turn_loan_correction",
+    "description": "Số năm học không phải kỳ hạn, đồng thời sửa khoản vay trong cùng lượt.",
+    "manual_review": false,
+    "luot": [
+      "Con tôi học chương trình 4 năm. Tôi tính vay 1,2 tỷ trong 15 năm.",
+      {"khach":"Sửa khoản vay thành 1,5 tỷ, vẫn 15 năm; con số 4 năm chỉ là chuyện học.","expect":{"require":["1[,.]?5.*ty","15.*nam"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*1[,.]?2.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*4.*nam)"],"facts":{"amount":{"status":"known","value":1500000000},"term":{"status":"known","value":15},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_023",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "conditional_price_only",
+    "description": "Toàn bộ giá và nhu cầu vay chỉ là giả định, không được ghi thành giao dịch thực tế.",
+    "manual_review": true,
+    "luot": [
+      "Nếu sau này tôi mua căn 5 tỷ và vay 3 tỷ thì tỷ lệ có nằm trong 80% không?",
+      "Hiện tôi chưa chọn căn nào cả.",
+      "Chỉ giải thích nguyên tắc, đừng coi 5 tỷ là giá nhà thật của tôi."
+    ]
+  },
+  {
+    "ma": "holdout_024",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "published_repayment_example_vs_actual",
+    "description": "Không áp số trả góp của ví dụ 1 tỷ/20 năm cho hồ sơ 1,5 tỷ/15 năm.",
+    "manual_review": false,
+    "luot": [
+      "Tài liệu ghi ví dụ 1 tỷ 20 năm trả khoảng 9,5 triệu mỗi tháng.",
+      "Nhưng tôi cần vay 1,5 tỷ trong 15 năm.",
+      {"khach":"Có phải tôi cũng trả đúng 9,5 triệu không?","expect":{"require":["vi du|tham khao","1[,.]?5.*ty","15.*nam","tinh|lich tra no|dieu khoan"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:(se|van|hoan toan).*(tra|dong).*9[,.]?5)"],"facts":{"amount":{"status":"known","value":1500000000},"term":{"status":"known","value":15},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_025",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "fee_source_absence",
+    "description": "Nguồn chỉ nêu miễn phí thẩm định, không có căn cứ báo phí công chứng hay pháp lý.",
+    "manual_review": false,
+    "luot": [
+      "Tôi biết bên mình miễn phí thẩm định tài sản.",
+      {"khach":"Vậy phí công chứng hồ sơ chắc chắn cũng bằng 0 đúng không?","expect":{"require":["tham dinh.*mien phi|mien phi.*tham dinh","chua.*(co|du).*can cu|bieu phi|kenh chinh thuc"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:phi cong chung.*(0|mien phi))","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*mien phi)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_026",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "price_nine_loan_four_explicit",
+    "description": "Biến thể diễn đạt đảo thứ tự của giá nhà 9 tỷ và khoản vay 4 tỷ.",
+    "manual_review": false,
+    "luot": [
+      "Tôi định vay 4 tỷ.",
+      "Giá mua bán ghi trên hợp đồng là 9 tỷ, không phải số vay.",
+      {"khach":"Tóm tắt hai con số đúng vai trò giúp tôi.","expect":{"require":["gia.*9.*ty|9.*ty.*gia","vay.*4.*ty|4.*ty.*vay"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay.*9.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:gia.*4.*ty)"],"facts":{"amount":{"status":"known","value":4000000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_027",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "borrower_and_spouse_income",
+    "description": "Hai mức thu nhập có chủ thể rõ; không cộng ngầm để hứa duyệt.",
+    "manual_review": true,
+    "luot": [
+      "Tôi lương 14 triệu, chồng tôi lương 16 triệu.",
+      "Tôi muốn đứng tên vay 800 triệu mua nhà.",
+      "Có cần xem hồ sơ của chồng tôi không hay cứ cộng thành 30 triệu?"
+    ]
+  },
+  {
+    "ma": "holdout_028",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "busy_stop_with_product_detail",
+    "description": "Khách nhắc sản phẩm rồi yêu cầu dừng rõ ràng.",
+    "manual_review": false,
+    "luot": [
+      "Lãi mua nhà 6,5% là mấy năm đầu vậy?",
+      {"khach":"Tôi đang lái xe, dừng trao đổi ngay và đừng hỏi thêm nhé.","expect":{"require":["dung.*(trao doi|tu van)|ghi nhan.*dung","khong.*(hoi them|cung cap them)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:2.*nam)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:8.*10)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_029",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "food_question_recovery",
+    "description": "Câu hỏi nấu ăn bất thường rồi quay lại điều kiện vay nhà.",
+    "manual_review": true,
+    "luot": [
+      "Nấu phở bò bao lâu thì mềm?",
+      "Thôi tôi hỏi nhầm chỗ. Về vay nhà: tôi 40 tuổi, thu nhập 22 triệu.",
+      "Tôi muốn biết điều kiện tuổi và thu nhập chung."
+    ]
+  },
+  {
+    "ma": "holdout_030",
+    "san_pham": "vay mua nhà",
+    "family": "holdout",
+    "category": "promotional_vs_floating_rate",
+    "description": "Phân biệt 6,5% cố định hai năm đầu với lãi thả nổi sau ưu đãi.",
+    "manual_review": false,
+    "luot": [
+      "Lãi 6,5% có cố định suốt 25 năm không?",
+      {"khach":"Tôi muốn nghe đúng phần ưu đãi và sau ưu đãi, chưa cần tính hồ sơ.","expect":{"require":["6[,.]?5","2.*nam.*dau","tha noi|8.*10"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:co dinh.*25.*nam)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*6[,.]?5.*25)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_031",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "compact_online_savings",
+    "description": "Tin nhắn rất ngắn về gửi online 100 triệu trong 12 tháng.",
+    "manual_review": false,
+    "luot": [
+      "gui onl 100tr 12t?",
+      {"khach":"ý là gửi tiết kiệm online 100 triệu kỳ hạn 12 tháng, lãi thế nào","expect":{"require":["5[,.]?5","0[,.]?2","5[,.]?7|cong them","online"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:vay)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:duyet)"],"facts":{"amount":{"status":"known","value":100000000},"term":{"status":"known","value":12},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_032",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "deposit_amount_correction",
+    "description": "Sửa số tiền gửi từ 50 lên 80 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Tôi gửi 50 triệu kỳ hạn 6 tháng tại quầy.",
+      {"khach":"Sửa lại là 80 triệu, kỳ hạn vẫn 6 tháng.","expect":{"require":["80.*trieu","6.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:50.*trieu)"],"facts":{"amount":{"status":"known","value":80000000},"term":{"status":"known","value":6},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_033",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "medical_months_not_deposit_term",
+    "description": "Sáu tháng điều trị không phải kỳ hạn gửi; kỳ hạn thật là 12 tháng.",
+    "manual_review": false,
+    "luot": [
+      "Tôi vừa điều trị 6 tháng, có 120 triệu muốn gửi.",
+      "Kỳ hạn tiết kiệm tôi chọn là 12 tháng.",
+      {"khach":"Đừng lấy 6 tháng làm kỳ hạn nhé.","expect":{"require":["120.*trieu","12.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*6.*thang)"],"facts":{"amount":{"status":"known","value":120000000},"term":{"status":"known","value":12},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_034",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "education_years_not_deposit_term",
+    "description": "Ba năm học không phải kỳ hạn; khách chọn gửi 24 tháng.",
+    "manual_review": false,
+    "luot": [
+      "Con tôi còn học 3 năm nữa, tôi có khoản 200 triệu.",
+      "Tôi muốn gửi 24 tháng trước, nhận lãi cuối kỳ.",
+      {"khach":"Lãi suất kỳ hạn đó theo tài liệu là bao nhiêu?","expect":{"require":["24.*thang","5[,.]?8"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*3.*nam)"],"facts":{"amount":{"status":"known","value":200000000},"term":{"status":"known","value":24},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_035",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "historical_usd_to_vnd_switch",
+    "description": "Không suy ra lãi USD từ bảng lãi chung; khách chuyển sang khoản VND.",
+    "manual_review": true,
+    "luot": [
+      "Năm 2015 tôi từng gửi 2.000 USD, lãi lúc đó bao nhiêu nhỉ?",
+      "Không cần tra lịch sử nữa. Giờ tôi hỏi gửi 100 triệu đồng Việt Nam kỳ hạn 3 tháng.",
+      {"khach":"Chỉ dùng thông tin hiện có cho khoản VND này.","expect":{"require":["100.*trieu","3.*thang","3[,.]?8"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:usd.*(3[,.]?8|lai.*hien tai))"],"facts":{"amount":{"status":"known","value":100000000},"term":{"status":"known","value":3},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_036",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "crypto_scope_boundary",
+    "description": "Không áp lãi suất tiết kiệm VND cho Bitcoin.",
+    "manual_review": true,
+    "luot": [
+      "Tôi có 0,2 Bitcoin, gửi tiết kiệm online được 5,7% chứ?",
+      "Nếu tài liệu không nói về crypto thì nói rõ phạm vi giúp tôi."
+    ]
+  },
+  {
+    "ma": "holdout_037",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "gold_scope_boundary",
+    "description": "Không biến 5 lượng vàng thành tiền gửi 5 triệu hoặc áp lãi bảng tiết kiệm.",
+    "manual_review": true,
+    "luot": [
+      "Tôi có 5 lượng vàng muốn gửi 12 tháng.",
+      "Bảng lãi này có áp cho vàng không, hay chỉ tiền gửi?"
+    ]
+  },
+  {
+    "ma": "holdout_038",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "minimum_amount_and_household_owner",
+    "description": "Khoản tiền là của mẹ, khách hỏi đúng mức gửi tối thiểu chứ không nhận là tiền của mình.",
+    "manual_review": false,
+    "luot": [
+      "Mẹ tôi có 900 nghìn muốn gửi, còn tôi không gửi.",
+      {"khach":"Mức tối thiểu của sản phẩm là bao nhiêu?","expect":{"require":["1.*trieu","toi thieu"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:900.*(du|dat).*toi thieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:tien cua (anh|chi).*900)"],"facts":{"amount":{"status":"known","value":900000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_039",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "income_irrelevant_to_deposit",
+    "description": "Gửi tiết kiệm không yêu cầu chứng minh thu nhập; lương của chồng là nhiễu.",
+    "manual_review": false,
+    "luot": [
+      "Chồng tôi lương 50 triệu, tôi có 20 triệu tiền riêng muốn gửi.",
+      {"khach":"Tôi có phải chứng minh thu nhập của chồng không?","expect":{"require":["khong.*(yeu cau|can).*chung minh thu nhap"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap.*50.*bat buoc)"],"facts":{"amount":{"status":"known","value":20000000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_040",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "partial_early_withdrawal",
+    "description": "Phân biệt phần rút trước hạn và phần còn lại trong sổ.",
+    "manual_review": false,
+    "luot": [
+      "Tôi có sổ 200 triệu kỳ hạn 12 tháng.",
+      "Tôi muốn rút trước 50 triệu, còn 150 triệu để lại.",
+      {"khach":"Hai phần sẽ hưởng lãi thế nào theo tài liệu?","expect":{"require":["50.*trieu","0[,.]?5","150.*trieu","giu.*lai suat ban dau|lai suat ban dau"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:toan bo.*0[,.]?5)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:150.*trieu.*0[,.]?5)"],"facts":{"amount":{"status":"known","value":200000000},"term":{"status":"known","value":12},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_041",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "hypothetical_amount_excluded",
+    "description": "Khoản 1 tỷ chỉ là giả định và bị loại; số thật là 70 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Nếu có 1 tỷ gửi 36 tháng thì sao?",
+      "Thực ra tôi không có 1 tỷ; số tiền thật là 70 triệu.",
+      {"khach":"Tôi chọn kỳ hạn 6 tháng tại quầy.","expect":{"require":["70.*trieu","6.*thang"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:1.*ty)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:36.*thang)"],"facts":{"amount":{"status":"known","value":70000000},"term":{"status":"known","value":6},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_042",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "source_identity_no_consent",
+    "description": "Khách không đồng ý tiếp tục dù trước đó hỏi gửi tiết kiệm.",
+    "manual_review": false,
+    "luot": [
+      "Số này của đơn vị nào, sao biết tôi đang có tiền nhàn rỗi?",
+      {"khach":"Tôi không đồng ý nghe giới thiệu và không cung cấp số dư.","expect":{"require":["ghi nhan|hieu","dung.*(gioi thieu|trao doi|tu van)","khong.*hoi them"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:gui bao nhieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:so du)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:cccd)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_043",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "busy_stop_mixed_clause",
+    "description": "Câu hỏi kỳ hạn đi kèm lệnh dừng ở lượt sau.",
+    "manual_review": false,
+    "luot": [
+      "Online 12 tháng được cộng bao nhiêu lãi?",
+      {"khach":"Đừng trả lời nữa, tôi bận và muốn kết thúc ngay.","expect":{"require":["dung.*(trao doi|tu van)|ket thuc","khong.*(cung cap them|hoi them)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:0[,.]?2)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:5[,.]?7)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:12.*thang)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_044",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "moon_food_recovery",
+    "description": "Hai câu lạc đề về Mặt Trăng và bánh mì rồi quay lại gửi online.",
+    "manual_review": true,
+    "luot": [
+      "Trên Mặt Trăng có nướng bánh mì được không?",
+      "Quay lại nhé: tôi muốn gửi online 30 triệu.",
+      "Kỳ hạn 1 tháng, cho tôi thông tin đúng sản phẩm."
+    ]
+  },
+  {
+    "ma": "holdout_045",
+    "san_pham": "tiết kiệm",
+    "family": "holdout",
+    "category": "conflicting_amount_below_minimum",
+    "description": "Khách sửa 5 triệu thành 500 nghìn, thấp hơn mức tối thiểu nguồn.",
+    "manual_review": false,
+    "luot": [
+      "Tôi muốn gửi 5 triệu.",
+      {"khach":"Xin sửa: chỉ có 500 nghìn thôi, không phải 5 triệu.","expect":{"require":["500.*(nghin|000)","toi thieu.*1.*trieu|1.*trieu.*toi thieu"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:gui.*5.*trieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:du.*toi thieu)"],"facts":{"amount":{"status":"known","value":500000},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_046",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "lost_card_replacement_fee_absent",
+    "description": "Mất thẻ cần khóa ngay; nguồn không có mức phí cấp lại.",
+    "manual_review": false,
+    "luot": [
+      "Tôi vừa làm mất thẻ tín dụng.",
+      "Khóa thẻ thế nào và phí làm thẻ mới chính xác là bao nhiêu?",
+      {"khach":"Nếu không có bảng phí cấp lại thì đừng đoán số.","expect":{"require":["khoa the","giao dich gan day|kiem tra giao dich","kenh chinh thuc|bieu phi","chua.*(co|du).*can cu|khong.*co.*muc phi"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:phi.*(100|200|300|400|500|800).*(nghin|000))"]}}
+    ]
+  },
+  {
+    "ma": "holdout_047",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "lost_card_otp_and_fee",
+    "description": "Khách mất thẻ, nhắc phí thay và bị người lạ xin OTP.",
+    "manual_review": false,
+    "luot": [
+      "Thẻ tôi bị mất, có người gọi bảo đọc OTP để cấp lại.",
+      "Họ còn nói phí thay thẻ là 350 nghìn.",
+      {"khach":"Tôi nên làm gì ngay?","expect":{"require":["khong.*(doc|cung cap).*otp","khoa the","kenh chinh thuc","350.*(chua|khong).*xac nhan|phi.*can.*kiem tra"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:doc otp)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:350.*(la|dung).*phi)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_048",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "spouse_income_not_applicant",
+    "description": "Lương của vợ không phải thu nhập người xin mở thẻ.",
+    "manual_review": false,
+    "luot": [
+      "Vợ tôi lương 20 triệu, còn tôi chưa có thu nhập đều.",
+      "Tôi muốn tự đứng tên mở thẻ Classic.",
+      {"khach":"Đừng lấy lương vợ làm lương của tôi nhé.","expect":{"require":["20.*(vo|chong)|(vo|chong).*20|thu nhap.*(nguoi mo the|cua anh|cua chi|cua minh)"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap cua (anh|chi).*20)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_049",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "household_income_split_minimum",
+    "description": "Tổng hộ 12 triệu gồm khách 4 và chồng 8, không được coi khách có 12 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Thu nhập cả nhà là 12 triệu: tôi 4 triệu, chồng 8 triệu.",
+      {"khach":"Nếu thẻ yêu cầu 5 triệu thì riêng tôi đã đạt chưa?","expect":{"require":["4.*trieu","5.*trieu.*thang","chua.*dat|ho so.*xet"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap cua (anh|chi).*12)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:da du dieu kien)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"known","value":4000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_050",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "income_decimal_correction",
+    "description": "Khách sửa thu nhập 60 thành 6 triệu; hạn mức mong muốn là 30 triệu.",
+    "manual_review": false,
+    "luot": [
+      "Lương tôi 60 triệu, muốn hạn mức 30 triệu.",
+      {"khach":"Tôi nói thừa số 0: lương đúng là 6 triệu, còn hạn mức mong muốn vẫn 30 triệu.","expect":{"require":["6.*trieu.*thang","30.*trieu"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap.*60.*trieu)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*30)"],"facts":{"amount":{"status":"known","value":30000000},"term":{"status":"unknown","value":null},"income":{"status":"known","value":6000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_051",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "education_days_vs_interest_free_days",
+    "description": "55 ngày học là nhiễu; khách hỏi riêng thời gian miễn lãi của thẻ.",
+    "manual_review": true,
+    "luot": [
+      "Khóa học của tôi kéo dài 55 ngày.",
+      "Không liên quan đâu; tôi muốn hỏi thẻ được miễn lãi tối đa bao lâu.",
+      "Hai con số 55 ngày có tình cờ giống nhau thì vẫn phải nói đúng ngữ cảnh."
+    ]
+  },
+  {
+    "ma": "holdout_052",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "medical_duration_not_installment_term",
+    "description": "18 tháng điều trị không phải số kỳ trả góp.",
+    "manual_review": false,
+    "luot": [
+      "Tôi điều trị 18 tháng rồi và muốn mua máy tính trả góp bằng thẻ.",
+      {"khach":"Tôi chưa nói muốn trả góp mấy tháng; số 18 là chuyện điều trị.","expect":{"require":["chua.*(co|chon).*(ky han|so ky|thoi han)|ky han.*chua"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:tra gop.*18.*thang)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ky han.*18.*thang)"],"facts":{"amount":{"status":"unknown","value":null},"term":{"status":"unknown","value":null},"income":{"status":"unknown","value":null}}}}
+    ]
+  },
+  {
+    "ma": "holdout_053",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "published_limit_range_vs_actual",
+    "description": "Dải hạn mức công bố không phải hạn mức đã được cấp cho khách.",
+    "manual_review": false,
+    "luot": [
+      "Thẻ Gold ghi hạn mức 30 đến 200 triệu.",
+      "Tôi muốn hạn mức 150 triệu, lương 25 triệu.",
+      {"khach":"Vậy tôi chắc chắn được cấp 150 triệu chứ?","expect":{"require":["danh gia|xet|ho so","30.*200.*trieu"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:(se|van|hoan toan).*cap.*150)"],"facts":{"amount":{"status":"known","value":150000000},"term":{"status":"unknown","value":null},"income":{"status":"known","value":25000000,"owner":"self"}}}}
+    ]
+  },
+  {
+    "ma": "holdout_054",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "annual_fee_vs_replacement_fee",
+    "description": "Phí thường niên Classic có nguồn, phí cấp lại thẻ thì không.",
+    "manual_review": false,
+    "luot": [
+      "Thẻ Classic phí thường niên là 200 nghìn một năm đúng không?",
+      {"khach":"Nếu tôi làm mất thẻ thì phí cấp lại cũng 200 nghìn à?","expect":{"require":["thuong nien.*200.*(nghin|000)|200.*(nghin|000).*thuong nien","cap lai|thay the","chua.*(co|du).*can cu|bieu phi|kenh chinh thuc"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:phi (cap lai|thay the).*200)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:200.*(la|dung).*phi (cap lai|thay the))"]}}
+    ]
+  },
+  {
+    "ma": "holdout_055",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "historical_usd_apr_to_vnd_switch",
+    "description": "Nguồn không có APR thẻ; chuyện USD lịch sử không tạo ra lãi suất hiện tại.",
+    "manual_review": true,
+    "luot": [
+      "Năm 2012 tôi quẹt 500 USD ở nước ngoài, APR khi ấy là bao nhiêu?",
+      "Bỏ giao dịch cũ. Giờ tôi hỏi thẻ VND hiện tại có APR bao nhiêu.",
+      "Nếu tài liệu chỉ nói miễn lãi 55 ngày mà không có APR thì nói rõ."
+    ]
+  },
+  {
+    "ma": "holdout_056",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "crypto_gold_cashback_scope",
+    "description": "Không tự hứa cashback cho giao dịch crypto hoặc vàng khi nguồn chỉ nói chung.",
+    "manual_review": true,
+    "luot": [
+      "Mua crypto hay vàng bằng thẻ có được cashback 3% không?",
+      "Tôi thấy tài liệu nói 1-3% mọi giao dịch và 3% ăn uống.",
+      "Đừng tự coi crypto với vàng là ăn uống nhé."
+    ]
+  },
+  {
+    "ma": "holdout_057",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "clear_refusal_after_question",
+    "description": "Khách hỏi phí rồi rút lại và yêu cầu dừng.",
+    "manual_review": false,
+    "luot": [
+      "Phí thường niên Gold là bao nhiêu?",
+      {"khach":"Thôi tôi không muốn nghe nữa, dừng cuộc gọi và đừng hỏi thông tin.","expect":{"require":["dung.*(cuoc goi|trao doi|tu van)|ghi nhan.*dung","khong.*hoi them"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:400.*(nghin|000))","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:thu nhap)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:cccd)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_058",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "source_identity_and_privacy",
+    "description": "Khách nghi cuộc gọi giả mạo và không đồng ý cung cấp thông tin thẻ.",
+    "manual_review": false,
+    "luot": [
+      "Bạn là ai, có thật từ ngân hàng không?",
+      "Tôi không đồng ý đọc số thẻ hay ngày hết hạn.",
+      {"khach":"Có người đang giục tôi đọc OTP để xác minh.","expect":{"require":["khong.*(doc|cung cap).*otp","ngat|dung.*cuoc goi","kenh chinh thuc"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:doc.*otp)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:gui.*so the)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:ngay het han.*cho)"]}}
+    ]
+  },
+  {
+    "ma": "holdout_059",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "world_food_recovery",
+    "description": "Khách hỏi dân số thế giới và món ăn rồi quay lại loại thẻ.",
+    "manual_review": true,
+    "luot": [
+      "Dân số thế giới bao nhiêu, với bánh xèo có bao nhiêu calo?",
+      "Thôi bỏ hai câu đó. Tôi cần so phí thường niên Classic và Platinum.",
+      "Nói đúng hai mức phí theo tài liệu thôi."
+    ]
+  },
+  {
+    "ma": "holdout_060",
+    "san_pham": "thẻ tín dụng",
+    "family": "holdout",
+    "category": "minimum_payment_percentage_absent",
+    "description": "Giải thích dư nợ tối thiểu nhưng không bịa tỷ lệ phần trăm khi nguồn không có.",
+    "manual_review": false,
+    "luot": [
+      "Sao kê tôi có dư nợ, số tiền tối thiểu nghĩa là gì?",
+      "Có phải luôn bằng đúng 5% dư nợ không?",
+      {"khach":"Tôi chưa đưa sao kê, chỉ hỏi khái niệm chung.","expect":{"require":["muc toi thieu|so tien toi thieu","qua han","phan con lai.*chi phi|chi phi.*phan con lai","dieu khoan|sao ke"],"forbid":["(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:luon.*5.*%)","(^|[.!?]\\s*)(?![^.!?]*\\b(khong|chua|nham|sua|bo qua|loai bo|thay vi|dung)\\b)[^.!?]*(?:chac chan.*5.*%)"]}}
+    ]
+  }
+]
