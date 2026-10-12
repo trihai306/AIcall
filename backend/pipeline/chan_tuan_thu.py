@@ -65,7 +65,7 @@ def chan_tu_cam(text: str) -> tuple[str, str | None]:
 # CỐ Ý KHÔNG bắt câu nói về ĐIỀU KIỆN sản phẩm ("điều kiện là có lương từ 5
 # triệu trở lên") - câu đó không gán cho ai, và nó là thứ tài liệu cho phép nói.
 # Phân biệt bằng chính chủ thể: có "anh/chị/mình" thì mới là gán.
-_CHU_THE = r"(?:anh|chị|anh/chị|anh chị|mình)"
+_CHU_THE = r"(?:anh|chị|anh/chị|anh chị|mình|cô|chú|bác|ông|bà)"
 _THU_NHAP = r"(?:lương|(?:tổng\s+)?thu nhập)"
 _SO = r"\d+(?:[.,]\d+)?"
 _GAN_RE = re.compile(
@@ -77,6 +77,10 @@ _GAN_RE = re.compile(
     # triệu" (con số của điều kiện sản phẩm) rồi kết luận thay khách. Không bắt
     # "với thu nhập TỪ 5 triệu" - đó là câu nêu điều kiện, không gán cho ai.
     rf"|với\s+(?:mức\s+)?{_THU_NHAP}\s+(?!từ\b)(?:khoảng\s+|là\s+)?{_SO}"
+    # "Thu nhập 5 triệu đồng của cô đã vượt mức yêu cầu": con số đứng TRƯỚC chủ
+    # thể. Khách đóng vai 12-10-2026 nói lương 14 triệu, Qwen lấy số 5 của điều kiện.
+    rf"|{_THU_NHAP}\s+(?!từ\b)(?:khoảng\s+|là\s+)?{_SO}\s*(?:triệu|tr)\b(?:\s+đồng)?"
+    rf"(?:\s+(?:một|mỗi)\s+tháng)?\s+của\s+{_CHU_THE}\b"
     # "Nếu tính theo thu nhập 18 triệu thì anh/chị đủ điều kiện": cùng một
     # phép gán, chỉ khác cụm dẫn. Buộc phải có chủ thể khách và kết luận hồ sơ
     # phía sau để không chặn bài toán giả định chung về một mức thu nhập.

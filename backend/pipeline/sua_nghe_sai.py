@@ -33,6 +33,15 @@ _CUM = [
     (r"\b(lãi|phí|làm|tính)\s+răng\b", r"\1 sao"),
     (r"\blãi\s+(?:sao|thế nào|ra sao|như nào)\b(?! kê)", "lãi suất thế nào"),
 ]
+_SO_CHU = r"(?:một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mươi|chục|\d+)"
+_CUM += [
+    # "vay một tỷ rưỡi hai mươi năm tháng trả bao nhiêu": lời nói không có dấu
+    # phẩy nên bộ đọc số ghép "rưỡi" với số sau và đọc "hai mươi năm tháng" là
+    # 25 tháng (khách đóng vai 12-10-2026: tính ra "1 tỷ trong 25 tháng").
+    (rf"\b(rưỡi|rưởi) (?=(?:hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|\d+)\b[^,.]{{0,15}}\b(?:năm|tháng)\b)",
+     r"\1, "),
+    (rf"\b({_SO_CHU} năm) (?=(?:mỗi |một )?tháng (?:trả|đóng|góp|phải|hết|mất|nộp)\b)", r"\1, "),
+]
 _CUM = [(re.compile(m, re.IGNORECASE), t) for m, t in _CUM]
 
 # Lượt chỉ có một hai chữ: khách hỏi cụt, hoặc máy nuốt mất nửa đầu câu.
@@ -100,3 +109,48 @@ def sua_nghe_sai(text: str, luot_truoc: str = "",
             ra = truoc if "bao nhiêu" in truoc else f"{truoc} bao nhiêu"
             sua.append(f"nối lượt trước -> {ra}")
     return (ra, "; ".join(sua)) if sua else (text, "")
+
+
+_QUANH_SO_TIEN = frozenset(
+    "tầm khoảng chừng độ cỡ chắc được không em ạ thôi anh chị tôi mình cần là thì nhé nha hả "
+    "à ừ ờ thế vậy đó đấy cũng phải lấy".split())
+_CAN_TIEN = re.compile(r"\b(vay|mượn|cần (?:ít |chút |một ít |thêm )?(?:tiền|vốn)|kẹt tiền|thiếu tiền)\b",
+                       re.IGNORECASE)
+
+
+def neo_so_tien_vay(text: str, lich_su_khach, san_pham: str) -> tuple[str, str]:
+    """"tầm trăm rưỡi được không em" sau khi khách kể đang cần tiền -> "vay tầm trăm rưỡi...".
+
+    Sổ dữ kiện khoản vay chỉ nhận con số có chữ "vay" neo trước (hoặc khi AI vừa
+    hỏi số tiền). Khách đóng vai 12-10-2026: khách nói "đang cần ít tiền làm đám
+    cưới", AI hỏi vu vơ, khách đáp "tầm trăm rưỡi được không em" - con số không
+    được gắn vào khoản vay, và hai lượt hỏi trả góp sau đó đều hỏng theo.
+
+    Chỉ thêm chữ "vay" khi: sản phẩm là vay, khách ĐÃ nói cần tiền/vay ở lượt
+    trước, lượt này gần như chỉ có một con số, và con số đó không thể là kỳ hạn
+    (có đơn vị tiền, hoặc số trần lớn hơn 60).
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    goc = text or ""
+    if "vay" not in (san_pham or "").lower() or re.search(r"\bvay\b", goc, re.IGNORECASE):
+        return text, ""
+    # "chị cần gấp tám chục triệu đóng học cho con": chính lượt này nói CẦN một
+    # khoản tiền. Thêm chữ "vay" ngay sau "cần" để sổ dữ kiện nhận đó là số tiền vay.
+    m = re.search(r"\bcần\b((?:\s+(?:gấp|khoảng|tầm|chừng|độ|thêm|có|đúng))*)\s+(?=\S)", goc, re.IGNORECASE)
+    if m:
+        sau = [q for q in quantities(goc[m.end():]) if q.value is not None]
+        if sau and sau[0].kind == "money" and sau[0].start <= 2:
+            moi = goc[:m.start()] + "cần vay" + m.group(1) + " " + goc[m.end():]
+            return moi, f"neo số tiền vay -> {moi}"
+    if not any(_CAN_TIEN.search(c or "") for c in list(lich_su_khach or [])[-4:]):
+        return text, ""
+    cac = [q for q in quantities(goc) if q.value is not None]
+    if len(cac) != 1 or cac[0].kind == "duration":
+        return text, ""
+    q = cac[0]
+    if q.kind != "money" and not (q.kind == "bare" and q.value > 60):
+        return text, ""
+    con = re.findall(r"\w+", (goc[:q.start] + " " + goc[q.end:]).lower())
+    if len(con) > 6 or any(c not in _QUANH_SO_TIEN for c in con):
+        return text, ""
+    return f"vay {goc.strip()}", f"neo số tiền vay -> vay {goc.strip()}"

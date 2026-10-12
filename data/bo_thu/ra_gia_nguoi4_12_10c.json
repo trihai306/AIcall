@@ -1,0 +1,272 @@
+[
+ {
+  "ma": "gia4_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "anh nghe",
+   "thẻ tín dụng thì anh có hai cái rồi cái này có gì khác",
+   "hạn mức cao nhất được bao nhiêu",
+   "muốn hạn mức ba trăm triệu thì làm thẻ nào",
+   "phí hạng đó một năm bao nhiêu",
+   "anh thu nhập không cố định tháng nhiều tháng ít",
+   "miễn lãi tối đa bao nhiêu ngày",
+   "mất thẻ thì gọi ai",
+   "để anh xem lại đã"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "anh nghe",
+    "ai": "Dạ em chào anh chị ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình thẻ tín dụng ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thẻ tín dụng thì anh có hai cái rồi cái này có gì khác",
+    "ai": "Dạ vâng, Hiện tại em chưa rõ chi tiết 2 thẻ của anh đang dùng ạ. Thẻ mới bên em sẽ miễn phí thường niên năm đầu và có hoàn tiền cho chi tiêu ăn uống.",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "hạn mức cao nhất được bao nhiêu",
+    "ai": "Dạ, hạn mức tối đa của thẻ tín dụng là 500 triệu đồng ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "muốn hạn mức ba trăm triệu thì làm thẻ nào",
+    "ai": "Dạ hạn mức 300 triệu đồng thì nằm trong khoảng của thẻ Platinum, hạn mức 100-500 triệu ạ. Hạn mức được cấp thực tế vẫn cần thẩm định theo hồ sơ.",
+    "duong": "rule",
+    "ly_do": "hang_the_theo_han_muc",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "phí hạng đó một năm bao nhiêu",
+    "ai": "Dạ phí thường niên thẻ Classic 200.000đ/năm, thẻ Gold 400.000đ/năm, thẻ Platinum 800.000đ/năm, năm đầu được miễn phí ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ mở thẻ không ạ?",
+    "duong": "rule",
+    "ly_do": "phi_the",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh thu nhập không cố định tháng nhiều tháng ít",
+    "ai": "Dạ em hiểu anh chị đang cân nhắc dựa trên hoàn cảnh tài chính hiện tại ạ. Em xin ghi nhận ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "miễn lãi tối đa bao nhiêu ngày",
+    "ai": "Dạ, thời gian miễn lãi lên đến 55 ngày ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mất thẻ thì gọi ai",
+    "ai": "Dạ anh chị nên chủ động khóa thẻ ngay qua kênh chính thức nếu có chức năng này, đồng thời kiểm tra các giao dịch gần đây ạ. Nếu không tự khóa được, anh chị hãy liên hệ kênh hỗ trợ chính thức và không cung cấp OTP, PIN hoặc mật khẩu ạ.",
+    "duong": "rule",
+    "ly_do": "mat_the",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "để anh xem lại đã",
+    "ai": "Dạ vâng ạ. Em cảm ơn anh chị, khi nào tiện anh chị gọi lại bên em nhé.",
+    "duong": "rule",
+    "ly_do": "hen_lai",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "gia4_co_giao",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "alo ai gọi đấy ạ",
+   "cô đang dạy học em nói ngắn thôi nhé",
+   "cô muốn vay hai trăm triệu sửa nhà",
+   "trả góp bốn năm",
+   "mỗi tháng hết bao nhiêu",
+   "lãi có thay đổi không hay cố định",
+   "cô năm mươi tám tuổi rồi có vay được không",
+   "cần người bảo lãnh không",
+   "cô lương mười bốn triệu chuyển khoản",
+   "được em ghi nhận giúp cô"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "alo ai gọi đấy ạ",
+    "ai": "Dạ em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình vay tín chấp ạ.",
+    "duong": "rule",
+    "ly_do": "ai_day",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cô đang dạy học em nói ngắn thôi nhé",
+    "ai": "Dạ vâng em nói ngắn thôi ạ. Anh chị khi nào tiện thì hỏi thêm ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cô muốn vay hai trăm triệu sửa nhà",
+    "ai": "Dạ 200 triệu đồng thì trong hạn mức ạ. Bên em cho vay tối đa 500 triệu đồng, hạn mức thực tế vẫn cần thẩm định theo hồ sơ. Anh chị muốn vay trong bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "nhu_cau_vay",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "trả góp bốn năm",
+    "ai": "Dạ vay 4 năm thì được ạ. Bên em cho vay từ 1 đến 5 năm. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "ky_han_trong_khung",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mỗi tháng hết bao nhiêu",
+    "ai": "Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. Nếu được duyệt 200 triệu đồng trong 4 năm thì tháng đầu trả khoảng 5,5 triệu đồng, các tháng sau giảm dần. Đây là số ước tính, chưa phải lịch trả nợ chính thức.",
+    "duong": "rule",
+    "ly_do": "tinh_tra_gop",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi có thay đổi không hay cố định",
+    "ai": "Dạ tài liệu bên em ghi lãi suất từ 7.9%/năm ạ. Còn lãi cố định hay thay đổi theo thời gian thì em chưa có thông tin chính thức, chuyên viên sẽ nói rõ khi làm hồ sơ ạ.",
+    "duong": "rule",
+    "ly_do": "lai_co_dinh_hay_tha_noi",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cô năm mươi tám tuổi rồi có vay được không",
+    "ai": "Dạ tuổi 58 nằm trong khung từ 22 đến 60 tuổi ạ. Việc đủ điều kiện vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.",
+    "duong": "rule",
+    "ly_do": "dieu_kien_tuoi_khop",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cần người bảo lãnh không",
+    "ai": "Dạ, vay tín chấp là khoản vay không cần tài sản bảo đảm ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cô lương mười bốn triệu chuyển khoản",
+    "ai": "Dạ em ghi nhận anh chị thu nhập chuyển khoản 14 triệu đồng một tháng ạ.",
+    "duong": "rule",
+    "ly_do": "ghi_nhan_thu_nhap",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "được em ghi nhận giúp cô",
+    "ai": "Dạ dạ, anh chị cứ tham khảo thêm. Em xin ghi nhận ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "gia4_tre",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "em muốn hỏi gửi tiết kiệm online",
+   "gửi ít nhất bao nhiêu",
+   "mười triệu gửi sáu tháng online được bao nhiêu lãi",
+   "rút trước một nửa được không",
+   "mở sổ có mất phí không",
+   "em mười bảy tuổi gửi được không",
+   "vậy thôi em cảm ơn"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "em muốn hỏi gửi tiết kiệm online",
+    "ai": "Dạ, anh chị mở sổ trong 5 phút trên ứng dụng, không cần đến quầy ạ. Anh chị dự định gửi khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "gửi ít nhất bao nhiêu",
+    "ai": "Dạ, số tiền gửi tối thiểu là 1 triệu đồng ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mười triệu gửi sáu tháng online được bao nhiêu lãi",
+    "ai": "Dạ với 10 triệu đồng, kỳ hạn 6 tháng và lãi suất gửi online 4,7% một năm, tiền lãi ước tính khoảng 0,235 triệu đồng ạ. Số thực nhận còn phụ thuộc số ngày gửi thực tế và điều kiện tại thời điểm mở sổ; đây chưa phải lịch lãi chính thức.",
+    "duong": "rule",
+    "ly_do": "uoc_tinh_tien_lai_tiet_kiem",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "rút trước một nửa được không",
+    "ai": "Dạ, anh chị tất toán online bất kỳ lúc nào. Phần tiền rút chỉ hưởng lãi suất không kỳ hạn 0.5%/năm ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mở sổ có mất phí không",
+    "ai": "Dạ, anh chị mở sổ và tất toán đều không mất bất kỳ khoản phí nào ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "em mười bảy tuổi gửi được không",
+    "ai": "Dạ điều kiện tuổi của gửi tiết kiệm là từ 18 tuổi trở lên ạ. Tuổi 17 đang dưới giới hạn này, nên em chưa thể xác nhận hồ sơ phù hợp; việc xét hồ sơ vẫn cần thẩm định cụ thể ạ.",
+    "duong": "rule",
+    "ly_do": "dieu_kien_tuoi_khong_khop",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vậy thôi em cảm ơn",
+    "ai": "Vâng ạ, Không sao ạ, cảm ơn anh/chị đã liên hệ với em. Dạ em hiểu. Em xin ghi nhận trường hợp của anh chị để chuyên viên xem kỹ và hỗ trợ thêm.",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   }
+  ]
+ }
+]

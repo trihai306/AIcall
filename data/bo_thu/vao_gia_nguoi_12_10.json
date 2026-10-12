@@ -1,0 +1,90 @@
+[
+ {
+  "ma": "gia_nguoi_vay",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách 12-10",
+  "luot": [
+   "alo ai đấy",
+   "à ngân hàng hả gọi có việc gì thế em",
+   "ừ thì anh cũng đang cần ít tiền làm đám cưới cho thằng em",
+   "tầm trăm rưỡi được không em",
+   "lãi thế nào",
+   "thế trả trong ba năm thì mỗi tháng anh đóng bao nhiêu",
+   "nhiều thế hả kéo dài ra năm năm thì sao",
+   "anh lương mười một triệu có bảng lương đàng hoàng",
+   "anh đang còn nợ thẻ bên ngân hàng khác có sao không",
+   "giấy tờ cần những gì",
+   "bao lâu thì có tiền",
+   "ừ được đấy để anh bàn với vợ đã rồi anh gọi lại nhé"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia_nguoi_gui",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10",
+  "luot": [
+   "alo cô nghe",
+   "cô có khoản tiền hưu ba trăm triệu muốn gửi cho an toàn",
+   "gửi một năm thì lãi bao nhiêu hả cháu",
+   "thế mỗi tháng cô lĩnh lãi được không",
+   "lỡ giữa chừng cô ốm đau cần rút thì có mất hết lãi không",
+   "ngân hàng mà phá sản thì tiền cô có mất không",
+   "cô không biết dùng app đâu ra quầy được không",
+   "thế cần mang giấy tờ gì",
+   "ừ để mai cô ra"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia_nguoi_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách 12-10",
+  "luot": [
+   "ai cho em số của chị",
+   "em là người hay máy đấy",
+   "thẻ này có mất phí gì không",
+   "chị lương tám triệu thì mở được hạng nào",
+   "quẹt xong bao lâu phải trả",
+   "trả chậm thì lãi bao nhiêu",
+   "rút tiền mặt được không",
+   "thôi chị không có nhu cầu đâu đừng gọi nữa nhé"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

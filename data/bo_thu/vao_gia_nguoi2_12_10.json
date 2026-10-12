@@ -1,0 +1,116 @@
+[
+ {
+  "ma": "gia2_mua_nha",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 2",
+  "luot": [
+   "alo",
+   "chị đang tính mua căn chung cư hai tỷ rưỡi",
+   "bên em cho vay được mấy phần",
+   "lãi năm đầu bao nhiêu sau đó thế nào",
+   "chị vay một tỷ rưỡi trả hai mươi năm thì mỗi tháng khoảng bao nhiêu",
+   "vợ chồng chị thu nhập cỡ bốn chục triệu có đủ không",
+   "nhà chưa có sổ thì vay được không",
+   "trả trước hạn có bị phạt không",
+   "ừ chị cần thêm thời gian suy nghĩ"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia2_tu_do",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 2",
+  "luot": [
+   "ai đấy",
+   "lại mời vay à lãi cắt cổ lắm đúng không",
+   "bảy phẩy chín là một năm hay một tháng",
+   "anh bán hàng online không có hợp đồng lao động thì có được không",
+   "anh cần khoảng sáu chục triệu thôi",
+   "vay một năm thì tháng trả bao nhiêu",
+   "có phải thế chấp gì không",
+   "có mất phí hồ sơ không",
+   "thế giờ anh phải làm gì",
+   "ok em ghi lại đi"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia2_gui",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 2",
+  "luot": [
+   "anh đang có năm trăm triệu để không",
+   "gửi sáu tháng với mười hai tháng chênh nhau bao nhiêu",
+   "gửi online thì được thêm bao nhiêu",
+   "năm trăm triệu gửi một năm online thì lãi được bao nhiêu tiền",
+   "lãi trả hàng tháng hay cuối kỳ",
+   "đến hạn anh không ra rút thì sao",
+   "gửi tối thiểu bao nhiêu",
+   "thôi được rồi cảm ơn em nhé"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia2_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 2",
+  "luot": [
+   "em nghe nói bên mình có thẻ hoàn tiền hả",
+   "hoàn bao nhiêu phần trăm",
+   "em mới đi làm lương bảy triệu mở được không",
+   "hạn mức được bao nhiêu",
+   "phí năm đầu thế nào",
+   "em hai mươi mốt tuổi",
+   "mở thẻ mất bao lâu",
+   "cần giấy tờ gì",
+   "trả góp không phần trăm được không",
+   "ok để em suy nghĩ thêm"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

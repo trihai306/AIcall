@@ -41,6 +41,12 @@ _PHAN_THEO_THU_NHAP = re.compile(
     r"\b(voi|theo|dua tren|can cu)\b[^.?!]{0,25}\b(thu nhap|muc luong|luong|ho so)\b"
     r"[^.?!]{0,40}\b(co the|se|du dieu kien|duoc)\b[^.?!]{0,15}"
     r"\b(vay|duyet|mo the|cap han muc|cap the)\b")
+# "chuẩn bị 500 triệu cho đất 1,2 tỷ thì đủ điều kiện vay rồi ạ": phán hồ sơ khách
+# ĐẠT. Câu nêu điều kiện chung ("cần thu nhập từ 5 triệu mới đủ điều kiện") thì
+# không phải lời phán nên không bắt chữ "mới/phải/cần ... đủ điều kiện".
+_PHAN_DU_DIEU_KIEN = re.compile(
+    r"\b(thi|la|da|hoan toan|chac chan)\s+(du dieu kien|dat dieu kien|duoc duyet|vay duoc)\b"
+    r"|\b(du dieu kien|dat dieu kien)\b[^.?!]{0,30}\broi\b")
 # Câu đã nói rõ còn phải thẩm định thì không phải lời phán.
 _CON_THAM_DINH = re.compile(r"\b(tham dinh|tuy ho so|chuyen vien|chua the xac nhan|can doi chieu)\b")
 
@@ -87,8 +93,8 @@ def chan_phan_theo_thu_nhap(doan: str) -> tuple[str, str]:
     """Bỏ câu phán khách vay được bao nhiêu dựa trên thu nhập/hồ sơ của khách."""
     def vi_pham(c: str) -> bool:
         t = _bo_dau(c)
-        return ("?" not in c and bool(_PHAN_THEO_THU_NHAP.search(t))
-                and not _CON_THAM_DINH.search(t))
+        return ("?" not in c and not _CON_THAM_DINH.search(t)
+                and bool(_PHAN_THEO_THU_NHAP.search(t) or _PHAN_DU_DIEU_KIEN.search(t)))
     return _bo_cau(doan, vi_pham, CAU_GHI_NHAN)
 
 
@@ -161,6 +167,23 @@ _NHAN_LA_NGUOI = re.compile(
     r"\b(em la nguoi that|em la nhan vien that|em khong phai (la )?(may|robot|ai|tro ly ao)|"
     r"(dang )?(tro chuyen|noi chuyen) truc tiep voi \w+( \w+)? nhan vien|"
     r"em la nguoi chu khong phai)\b")
+
+
+_LOAI_LAI = re.compile(r"\blai( suat)?\b[^.?!]{0,40}\b(?P<loai>tha noi|co dinh)\b|"
+                       r"\b(?P<loai2>tha noi|co dinh)\b[^.?!]{0,25}\blai( suat)?\b")
+
+
+def chan_loai_lai_bia(doan: str, tai_lieu: str) -> tuple[str, str]:
+    """Bỏ câu bảo lãi "thả nổi"/"cố định" khi tài liệu sản phẩm không có chữ đó."""
+    tl = _bo_dau(tai_lieu)
+    if not tl:
+        return doan, ""
+
+    def vi_pham(c: str) -> bool:
+        m = _LOAI_LAI.search(_bo_dau(c))
+        loai = m and (m.group("loai") or m.group("loai2"))
+        return bool(loai) and "?" not in c and loai not in tl
+    return _bo_cau(doan, vi_pham, CAU_GHI_NHAN)
 
 
 def chan_tu_nhan_la_nguoi(doan: str) -> tuple[str, str]:

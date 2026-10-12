@@ -953,6 +953,12 @@ def chan_lai_suat_bia(text: str, tai_lieu: str,
     if la_bia:
         sau_cong = _tri_sau_cong_them(tai_lieu)
         la_bia = [v for v in la_bia if round(v, 4) not in sau_cong]
+    if la_bia and re.search(r"chênh|cao hơn|thấp hơn|hơn nhau|nhiều hơn|ít hơn", text, re.IGNORECASE):
+        # "6 tháng 4,5%, 12 tháng 5,5%, chênh nhau 1%": hiệu của hai mức có trong tài
+        # liệu là phép trừ đúng, không phải số bịa (khách đóng vai 12-10-2026).
+        co = sorted(co_can_cu)
+        hieu = {round(b - a, 4) for i, a in enumerate(co) for b in co[i + 1:]}
+        la_bia = [v for v in la_bia if round(v, 4) not in hieu]
     if not la_bia:
         return text, None
     return CAU_KIEM_TRA_LAI, (

@@ -69,3 +69,15 @@ def test_hai_lam_cua_nguoi_lan_l_n_la_hai_nam():
     # có đơn vị theo sau thì là con số thật
     for cau in ("anh ba lăm tuổi", "vay hai lăm triệu", "một trăm lăm mươi triệu"):
         assert sua_nghe_sai(cau, lich_su_khach=ngong) == (cau, "")
+
+
+def test_neo_so_tien_vao_khoan_vay_khi_khach_da_noi_can_tien():
+    from backend.pipeline.sua_nghe_sai import neo_so_tien_vay
+    ls = ["ừ thì anh cũng đang cần ít tiền làm đám cưới cho thằng em"]
+    assert neo_so_tien_vay("tầm trăm rưỡi được không em", ls, "vay tín chấp")[0] \
+        == "vay tầm trăm rưỡi được không em"
+    # số trần nhỏ có thể là kỳ hạn; khách chưa nói cần tiền; sản phẩm không phải vay
+    assert neo_so_tien_vay("ba sáu", ls, "vay tín chấp") == ("ba sáu", "")
+    assert neo_so_tien_vay("tầm trăm rưỡi", ["lãi suất bao nhiêu"], "vay tín chấp")[1] == ""
+    assert neo_so_tien_vay("tầm trăm rưỡi", ls, "tiết kiệm")[1] == ""
+    assert neo_so_tien_vay("trăm rưỡi lãi bao nhiêu", ls, "vay tín chấp")[1] == ""

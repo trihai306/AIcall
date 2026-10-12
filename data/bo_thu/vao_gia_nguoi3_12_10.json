@@ -1,0 +1,84 @@
+[
+ {
+  "ma": "gia3_gap",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 3",
+  "luot": [
+   "alo em nói nhanh giúp chị chị đang ở cơ quan",
+   "chị cần gấp tám chục triệu đóng học cho con",
+   "bao giờ nhận được tiền",
+   "lãi một tháng tính ra bao nhiêu phần trăm",
+   "trả trong mười tám tháng được không",
+   "mỗi tháng chị phải trả bao nhiêu",
+   "chị ba mươi tám tuổi lương mười lăm triệu",
+   "hồ sơ nộp ở đâu",
+   "có ai đến nhà lấy hồ sơ không",
+   "được rồi em đăng ký cho chị đi"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia3_chu",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 3",
+  "luot": [
+   "chú nghe",
+   "lãi tiết kiệm bây giờ thấp lắm gửi làm gì",
+   "ba tháng được bao nhiêu",
+   "hai trăm triệu gửi ba tháng thì được bao nhiêu tiền lãi",
+   "gửi dài nhất là bao lâu",
+   "có được tặng quà gì không",
+   "chú sáu mươi tám tuổi gửi được không",
+   "để chú hỏi ý bà nhà đã"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia3_dat",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 3",
+  "luot": [
+   "anh muốn hỏi vay mua đất được không",
+   "đất một tỷ hai anh có sẵn năm trăm",
+   "vay bảy trăm triệu mười năm thì tháng trả bao nhiêu",
+   "lãi sau ưu đãi là bao nhiêu",
+   "anh bốn mươi lăm tuổi rồi vay hai mươi lăm năm được không",
+   "phí thẩm định có mất không",
+   "giải ngân mất mấy ngày",
+   "ok anh hiểu rồi cảm ơn em"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

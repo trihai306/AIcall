@@ -412,6 +412,25 @@ BANG = [
      "Dạ em là trợ lý tự động của ngân hàng ạ. Em tư vấn theo đúng thông tin sản phẩm ngân "
      "hàng công bố, phần nào cần chuyên viên thì em xin ghi nhận để chuyên viên liên hệ anh chị ạ."),
 
+    # "ừ để mai cô ra": khách tự hẹn RA QUẦY. Kho từng đáp "em xin ghi nhận để bên
+    # em liên hệ lại anh chị vào ngày mai" - ngược ý khách (khách đóng vai 12-10-2026).
+    ("hen_ra_quay",
+     [r"\b(mai|mot|hom nao|hom sau|tuan sau|cuoi tuan|chieu nay|sang mai|luc nao ranh|khi nao ranh|de)\b"
+      r".{0,24}\b(ra|den|qua|ghe|chay ra|tat qua)\b( (quay|chi nhanh|ngan hang|phong giao dich|do|ben do|ben em))?"
+      r"( (nhe|nha|a|em|vay|xem|hoi|lam))*\s*$"],
+     "Dạ vâng ạ, em cảm ơn anh chị. Khi ra quầy anh chị mang theo giấy tờ tuỳ thân để được "
+     "hỗ trợ ạ."),
+
+    # "ok em ghi lại đi": khách ĐỒNG Ý để ghi nhận. Kho từng đáp "em chờ máy, khi
+    # nào anh chị sẵn sàng thì báo em" rồi hỏi lại đúng câu khách vừa gật.
+    ("dong_y_ghi_nhan",
+     # Neo cả câu: "ghi lại lãi suất cho anh", "anh ghi lại số em đi" là việc khác.
+     [r"^\s*((ok|oke|u+|uh|duoc|vang|da|the|vay|thoi|roi)\s+)*(thi\s+)?(em\s+)?"
+      r"(ghi (lai|nhan)|dang ky|len ho so|lam ho so)"
+      r"(\s+(di|giup|cho|luon|nhe|nha|ho|anh|chi|em|toi|minh|a))*\s*$"],
+     "Dạ vâng ạ, em đã ghi nhận nhu cầu của anh chị. Chuyên viên của ngân hàng sẽ liên hệ lại "
+     "để hướng dẫn hồ sơ ạ. Em cảm ơn anh chị ạ."),
+
     ("xin_gui_qua_kenh",
      [r"\b(gui|nhan|ban)\b.{0,25}\b(zalo|sms|email|mail|link|facebook|messenger)\b",
       r"\b(zalo|email|mail)\b.{0,15}\b(cho|qua) (anh|chi|toi|minh)\b"],
@@ -441,6 +460,8 @@ BANG = [
     # Để CUỐI: "alo" trần trụi, sau khi các ý định cụ thể hơn đã xét xong.
     ("chao_bat_may",
      [r"^\s*(a\s*lo\s*)+$", r"^\s*(alo\s*)+$", r"^\s*(nghe|toi nghe|noi di)\s*$",
+      # "chú nghe", "alo cô nghe đây": người lớn tuổi nhấc máy hay nói vậy.
+      r"^\s*(a\s*lo\s+|alo\s+)?(anh|chi|co|chu|bac|ong|ba|toi|tui|em|chau)\s+nghe(\s+(day|a))*\s*$",
       r"^\s*(a\s*lo|alo)\s+(em|anh|chi)\s*(oi|a|ah)?\s*$"],
      None),      # tuỳ lúc đầu hay giữa cuộc gọi, xem `tra_loi_san`
 ]

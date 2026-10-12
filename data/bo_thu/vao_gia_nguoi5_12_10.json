@@ -1,0 +1,88 @@
+[
+ {
+  "ma": "gia5_bac",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 5",
+  "luot": [
+   "ờ bác nghe đây",
+   "bác muốn mua cái nhà cho thằng con",
+   "nhà hai tỷ rưỡi bác có một tỷ",
+   "vay một tỷ rưỡi hai mươi năm tháng trả bao nhiêu",
+   "hai năm đầu lãi bao nhiêu",
+   "sau đó lãi lên bao nhiêu",
+   "bác sáu mươi hai tuổi đứng tên vay được không",
+   "thế cho con bác đứng tên nó hai mươi tám tuổi",
+   "lương nó hai mươi lăm triệu",
+   "trả hết sớm có bị phạt không",
+   "ừ để bác bàn với nó"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia5_ban",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 5",
+  "luot": [
+   "alo",
+   "em là ai đấy",
+   "chị không dùng thẻ đâu sợ tiêu quá tay",
+   "thẻ này có rút tiền mặt được không",
+   "phí rút là bao nhiêu",
+   "chị lương tám triệu có mở được không",
+   "mở thẻ có mất tiền không",
+   "bao lâu thì có thẻ",
+   "thôi được em ghi tên chị đi"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia5_sv",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 5",
+  "luot": [
+   "dạ em nghe ạ",
+   "em có năm chục triệu muốn gửi",
+   "gửi một năm lãi bao nhiêu phần trăm",
+   "thế một năm được bao nhiêu tiền",
+   "giữa chừng cần tiền thì sao",
+   "gửi online hay ra quầy thì lợi hơn",
+   "em cần chuẩn bị gì",
+   "ok em cảm ơn chị"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

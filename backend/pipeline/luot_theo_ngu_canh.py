@@ -24,7 +24,7 @@ _CHU_XIN_LAI = frozenset(
     "voi mot lan nua nghe ro chua the".split())
 _XIN_LAI = re.compile(r"\b(noi lai|nhac lai|lap lai)\b|^(ha+|hu+|gi|gi co|gi a|cai gi|cai gi co|sao co)$")
 _THANG_HAY_NAM = re.compile(
-    r"^(the |vay |la |tinh )*(mot |theo |moi )?thang hay (la )?(mot |theo |moi )?nam( a| vay| the| em| ha)*$")
+    r"\b(mot |theo |moi )?(thang|nam) hay (la )?(mot |theo |moi )?(thang|nam)\b")
 _MO_DAU = re.compile(r"^(Dạ|Vâng)(\s+(vâng|em trả lời anh chị|em xin lỗi))?\s*ạ?[,.]?\s+", re.IGNORECASE)
 
 
@@ -42,7 +42,9 @@ def tra_loi_theo_ngu_canh(text: str, history: list[dict] | None) -> tuple[str, s
                                 "Anh chị cần em tư vấn phần nào ạ?")
     if not t or not ai:
         return None
-    if _THANG_HAY_NAM.match(t):
+    m_tn = _THANG_HAY_NAM.search(t)
+    if m_tn and m_tn.group(2) != m_tn.group(5) and len(t.split()) <= 12 \
+            and not re.search(r"\b(vay|gui|tra|ky han)\b", t):
         # "một tháng hay một năm" ngay sau khi nghe mức lãi: khách hỏi ĐƠN VỊ của
         # con số đó. Chỉ đáp khi chính câu AI vừa nói đã ghi rõ là theo năm.
         gan_day = " ".join(m.get("content", "") for m in (history or [])[-4:]

@@ -1,0 +1,84 @@
+[
+ {
+  "ma": "gia4_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "anh nghe",
+   "thẻ tín dụng thì anh có hai cái rồi cái này có gì khác",
+   "hạn mức cao nhất được bao nhiêu",
+   "muốn hạn mức ba trăm triệu thì làm thẻ nào",
+   "phí hạng đó một năm bao nhiêu",
+   "anh thu nhập không cố định tháng nhiều tháng ít",
+   "miễn lãi tối đa bao nhiêu ngày",
+   "mất thẻ thì gọi ai",
+   "để anh xem lại đã"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia4_co_giao",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "alo ai gọi đấy ạ",
+   "cô đang dạy học em nói ngắn thôi nhé",
+   "cô muốn vay hai trăm triệu sửa nhà",
+   "trả góp bốn năm",
+   "mỗi tháng hết bao nhiêu",
+   "lãi có thay đổi không hay cố định",
+   "cô năm mươi tám tuổi rồi có vay được không",
+   "cần người bảo lãnh không",
+   "cô lương mười bốn triệu chuyển khoản",
+   "được em ghi nhận giúp cô"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "gia4_tre",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách 12-10 vòng 4",
+  "luot": [
+   "em muốn hỏi gửi tiết kiệm online",
+   "gửi ít nhất bao nhiêu",
+   "mười triệu gửi sáu tháng online được bao nhiêu lãi",
+   "rút trước một nửa được không",
+   "mở sổ có mất phí không",
+   "em mười bảy tuổi gửi được không",
+   "vậy thôi em cảm ơn"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]
