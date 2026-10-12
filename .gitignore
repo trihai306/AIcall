@@ -54,3 +54,24 @@ nghe/
 # Bản thu tạm khi thử cuộc gọi
 /*.wav
 /data/tu_goi/
+
+# Kết quả chạy bộ thử: nặng (~46 MB) và chạy lại là có. Tệp ĐẦU VÀO (vao_*,
+# *_cases.json) vẫn theo dõi; kết quả nào cần giữ thì `git add -f`.
+data/bo_thu/ra_*.json
+data/bo_thu/cham*.json
+data/bo_thu/cham*/
+data/bo_thu/qwen/
+data/bo_thu/args_cham.json
+data/bo_thu/*_results.json
+data/bo_thu/*_results.jsonl
+data/bo_thu/*_trace.jsonl
+data/bo_thu/*_attempt*.jsonl
+data/bo_thu/*_report.json
+data/bo_thu/*_report.txt
+data/bo_thu/*_triage.json
+data/bo_thu/*_manifest*.json
+data/bo_thu/*_state.json
+data/bo_thu/*_summary.json
+data/bo_thu/*_replay.json
+data/bo_thu/stress_voice_smoke*/
+data/bo_thu/*.jpg
