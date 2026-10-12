@@ -11,6 +11,7 @@ Số đo và lý do chọn cách này nằm ở đầu `tests/test_ngu_canh_tai_
 import logging
 import os
 import re
+import time
 import unicodedata
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,9 @@ logger = logging.getLogger(__name__)
 # (mtime, kích thước) của từng tệp đã đọc -> nội dung. Nhớ theo cả hai vì mtime
 # trên một số hệ tệp chỉ chính xác tới giây, sửa nhanh hai lần trong cùng giây
 # thì chỉ nhìn mtime là tưởng chưa đổi.
-_NHO: dict[str, tuple[float, int, str]] = {}
+_NHO: dict[str, tuple[int, int, str]] = {}
+# Tệp sửa trong khoảng này thì không tin bản nhớ - xem `_doc_tep`.
+_VUA_SUA_S = 3.0
 
 
 def quen_nho() -> None:
@@ -42,7 +45,14 @@ def _doc_tep(duong: str, *, fresh: bool = False) -> str:
         _NHO.pop(duong, None)
         return ""
     cu = _NHO.get(duong)
-    if not fresh and cu and cu[0] == st.st_mtime and cu[1] == st.st_size:
+    # Tệp vừa sửa trong vài giây thì LUÔN đọc lại: đổi "7.9%" thành "8.5%" giữ
+    # nguyên kích thước, mà hai lần ghi sát nhau trên Windows có thể cùng một
+    # nhịp đồng hồ (~15ms) nên giờ sửa cũng y nguyên - bản nhớ cũ vẫn "hợp lệ" và
+    # lưới số tiếp tục coi con số cũ là đúng. Lộ ra ở một bài test chập chờn
+    # (12-10-2026). Tệp đã yên thì vẫn dùng bản nhớ như trước.
+    vua_sua = time.time() - st.st_mtime < _VUA_SUA_S
+    if (not fresh and not vua_sua and cu
+            and cu[0] == st.st_mtime_ns and cu[1] == st.st_size):
         return cu[2]
     try:
         with open(duong, encoding="utf-8", errors="replace") as f:
@@ -52,7 +62,7 @@ def _doc_tep(duong: str, *, fresh: bool = False) -> str:
         # vì một tệp. Nhưng phải kêu to: im lặng ở đây là bot tư vấn thiếu.
         logger.warning("Không đọc được tài liệu %r: %s", duong, e)
         return ""
-    _NHO[duong] = (st.st_mtime, st.st_size, noi_dung)
+    _NHO[duong] = (st.st_mtime_ns, st.st_size, noi_dung)
     return noi_dung
 
 

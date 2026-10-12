@@ -22,6 +22,11 @@ def _pipeline():
 
 def test_cau_tu_nhien_bo_luot_llm_dinh_tuyen_khi_da_co_tron_tai_lieu(monkeypatch):
     monkeypatch.setattr(settings, "ngu_canh_tron_tai_lieu", True)
+    # Bài này canh nhánh "bộ phân loại KHÔNG chắc". Có tệp mô hình định tuyến
+    # (models/bankvn/router) thì bộ phân loại tự quyết "không cần công cụ" ở nhánh
+    # trước đó, nên phải tắt nó ở đây cho kết quả không phụ thuộc máy có tệp hay không.
+    from backend.pipeline import cong_cu_llm
+    monkeypatch.setattr(cong_cu_llm, "quyet_dinh_classifier", lambda cau: (None, None))
     metrics = {}
     ra = asyncio.run(_pipeline()._tra_bang_cong_cu(
         "gói này có ưu điểm gì em", SimpleNamespace(), metrics))

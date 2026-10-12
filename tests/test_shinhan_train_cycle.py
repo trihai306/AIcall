@@ -15,32 +15,32 @@ def test_bulk_training_requires_exact_hash_and_audited_sample(tmp_path, monkeypa
     bulk = tmp_path / "bulk.jsonl"
     audit = tmp_path / "audit.json"
     output = tmp_path / "train.jsonl"
-    manual.write_text(json.dumps(_row("Câu hỏi duyệt tay"), ensure_ascii=False) + "\n")
+    manual.write_text(json.dumps(_row("Câu hỏi duyệt tay"), ensure_ascii=False) + "\n", encoding="utf-8")
     bulk.write_text("".join(json.dumps(_row(f"Câu hỏi {i}"), ensure_ascii=False) + "\n"
-                            for i in range(900)))
+                            for i in range(900)), encoding="utf-8")
     monkeypatch.setattr(cycle, "MANUAL_DATASET", manual)
     monkeypatch.setattr(cycle, "BULK_DATASET", bulk)
     monkeypatch.setattr(cycle, "BULK_AUDIT", audit)
     monkeypatch.setattr(cycle, "DATASET", output)
     assert cycle.assemble_dataset()[2] == "awaiting_bulk_shortlist_and_audit"
     audit.write_text(json.dumps({"shortlist_sha256": "wrong", "sample_size": 100,
-                                 "errors": 0}))
+                                 "errors": 0}), encoding="utf-8")
     assert cycle.assemble_dataset()[2] == "bulk_audit_stale_for_current_shortlist"
     digest = hashlib.sha256(bulk.read_bytes()).hexdigest()
-    rows = [json.loads(line) for line in bulk.read_text().splitlines()]
+    rows = [json.loads(line) for line in bulk.read_text(encoding="utf-8").splitlines()]
     items = [{"index": i, "scenario_id": None,
               "question": rows[i]["messages"][-2]["content"],
               "answer": rows[i]["messages"][-1]["content"],
               "decision": i >= 4} for i in range(100)]
     audit.write_text(json.dumps({"shortlist_sha256": digest, "sample_size": 100,
-                                 "errors": 4, "items": items}))
+                                 "errors": 4, "items": items}), encoding="utf-8")
     assert cycle.assemble_dataset()[2] == "bulk_audit_quality_failed"
     for item in items[:2]:
         item["decision"] = True
     audit.write_text(json.dumps({"shortlist_sha256": digest, "sample_size": 100,
-                                 "errors": 2, "items": items}))
+                                 "errors": 2, "items": items}), encoding="utf-8")
     assert cycle.assemble_dataset() == (1, 900, "ready")
-    assert len(output.read_text().splitlines()) == 901
+    assert len(output.read_text(encoding="utf-8").splitlines()) == 901
 
 
 def test_train_cycle_waits_for_thousand_diverse_rows(monkeypatch):

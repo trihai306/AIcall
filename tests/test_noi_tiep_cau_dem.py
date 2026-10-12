@@ -25,12 +25,16 @@ def _prompt(cau_dem: str = "") -> str:
 def test_co_cau_dem_thi_BO_dan_mo_dau_bang_da():
     """Câu đệm gần như luôn mở bằng "Dạ"; giữ lời dặn đó là khách nghe
     "Dạ ... Dạ ..." hai lần liền."""
-    assert 'mở đầu bằng "Dạ"' not in _prompt("Dạ về hạn mức thì,")
+    p = _prompt("Dạ về hạn mức thì,")
+    assert 'mở đầu bằng "Dạ"' not in p and "mở đầu lịch sự" not in p
 
 
 def test_khong_co_cau_dem_thi_GIU_NGUYEN():
+    # Lời dặn đã đổi chữ (commit 11cd358): không còn ép "mở đầu bằng Dạ" mà dặn
+    # mở đầu lịch sự và không lặp "Dạ" ở mọi lượt. Ý cần canh vẫn thế: lượt KHÔNG
+    # có câu đệm phải còn lời dặn về cách mở đầu.
     p = _prompt("")
-    assert 'mở đầu bằng "Dạ"' in p, "mất lời dặn của lượt không có câu đệm"
+    assert "mở đầu lịch sự" in p, "mất lời dặn của lượt không có câu đệm"
 
 
 def test_KHONG_con_dan_noi_cau_bang_chu():
@@ -124,4 +128,7 @@ def test_luot_tra_loi_that_PHAI_prefill():
     """Kết quả gọi hàm chảy vào system prompt rồi vào đúng lượt này - nên đường
     gọi hàm đã có prefill mà không cần vá riêng."""
     src = _nguon("_generate_response")
-    assert 'prefill=metrics.get("filler_text", "")' in src
+    # Câu đệm giờ đi qua biến `prefill` (bị bỏ khi lượt nói trước / câu nguyên văn)
+    # rồi mới vào `stream_response`.
+    assert 'prefill = metrics.get("filler_text", "")' in src
+    assert "prefill=prefill" in src

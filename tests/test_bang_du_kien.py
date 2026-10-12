@@ -154,3 +154,17 @@ def test_phien_ban_doi_khi_tai_lieu_doi(goc):
     truoc = b.phien_ban_chung(goc)
     _sua(goc, "vay_tin_chap", "7.9%", "8.5%")
     assert b.phien_ban_chung(goc) != truoc
+
+
+def test_sua_tai_lieu_cung_kich_thuoc_cung_gio_van_thay(goc):
+    """Bản nhớ đọc tệp không được che một lần sửa giữ nguyên kích thước và giờ sửa."""
+    import os
+    from backend.pipeline import ngu_canh_tai_lieu as n
+    tep = os.path.join(goc, "knowledge", "products", "vay_tin_chap.md")
+    truoc = n._doc_tep(tep)
+    st = os.stat(tep)
+    _sua(goc, "vay_tin_chap", "7.9%", "8.5%")
+    os.utime(tep, ns=(st.st_atime_ns, st.st_mtime_ns))     # ép giờ sửa y như cũ
+    assert os.stat(tep).st_size == st.st_size
+    sau = n._doc_tep(tep)
+    assert "8.5%" in sau and sau != truoc

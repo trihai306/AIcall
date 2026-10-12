@@ -85,6 +85,6 @@ def test_bulk_shortlist_requires_current_source_and_fixed_answer(tmp_path, monke
              "answer": "Vào SOL để kích hoạt thẻ."}}
     manifest = {"card_guide": {"sha256": "abc", "url": "https://shinhan.com.vn/a.pdf"}}
     assert bulk.save_shortlist(db, cards, manifest) == 1
-    item = json.loads(bulk.OUTPUT.read_text().splitlines()[0])
+    item = json.loads(bulk.OUTPUT.read_text(encoding="utf-8").splitlines()[0])
     assert item["messages"][-1]["content"] == "Vào SOL để kích hoạt thẻ."
     assert item["reviewed_by"] == "automated_candidate_review_not_manual"

@@ -88,6 +88,9 @@ def test_phan_loai_dong_bo_dung_lai_vector_spec(monkeypatch):
         spec_stt=(1234, "lai suat"),
         spec_vector=("lai suat", np.asarray([1.0, 0.0], dtype=np.float32)),
         da_tu_van=set(),
+        # `_phan_loai_dong_bo` đọc lịch sử để chọn phản hồi ngắn theo phiên; thiếu
+        # trường này thì nó nuốt AttributeError và để `tinh_huong` rỗng.
+        history=[],
     )
 
     pipe._phan_loai_dong_bo(session)
