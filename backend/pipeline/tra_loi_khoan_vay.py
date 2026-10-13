@@ -3102,11 +3102,36 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         return (_tra_loi_hoi_gop(text, tai_lieu, kq) or kq or _tra_loi_moi_tu_van(text, tai_lieu)
                 or _tra_loi_tiet_kiem_ngan(text, tai_lieu)
                 or _tra_loi_noi_nop_ho_so(text, tai_lieu)
-                or _tra_loi_lai_co_dinh_hay_tha_noi(text, tai_lieu))
+                or _tra_loi_lai_co_dinh_hay_tha_noi(text, tai_lieu)
+                or _tra_loi_vay_duoc_khong_theo_thu_nhap(text, tai_lieu, history))
 
 
 _CHU_QUANH_SO_TIEN = frozenset(
     "gui khoang tam chung do thoi em a anh chi co duoc la thi u o minh toi bac chau nhe nha".split())
+
+
+def _tra_loi_vay_duoc_khong_theo_thu_nhap(text: str, tai_lieu: str,
+                                          history: list[dict] | None) -> tuple[str, str] | None:
+    """"thế giờ anh có vay được không" sau khi khách đã khai thu nhập ở lượt trước.
+
+    Cuộc gọi thật 13-10-2026: mô hình đáp "hiện chưa thể xác định được ạ" dù
+    khách vừa nói mức lương. Đối chiếu đúng mức đó với thu nhập tối thiểu của
+    tài liệu, bằng chính luật đã có cho câu nói liền một hơi.
+    """
+    t = _bo_dau(text)
+    if not re.search(r"\b(vay duoc khong|duoc vay khong|du dieu kien|co duoc khong|vay duoc chua)\b", t) \
+            or len(t.split()) > 12 or resolve(text=text).income.value is not None:
+        return None
+    thu_nhap = _thu_nhap_gan_nhat(history)
+    if not thu_nhap:
+        return None
+    kq = _tra_loi(f"anh thu nhập {_fmt_trieu(thu_nhap)} thì có vay được không", tai_lieu,
+                  None, None, "anh chị", None)
+    if not kq or kq[0] not in ("thu_nhap_dat_muc", "thu_nhap_duoi_muc"):
+        return None
+    # Khách chỉ hỏi "được không": đáp đúng vế đó, không kèm hạn mức sản phẩm.
+    m = re.search(r"[.?!](?=\s)", kq[1])
+    return (kq[0], kq[1][:m.end()]) if kq[0] == "thu_nhap_dat_muc" and m else kq
 
 
 def _tra_loi_noi_nop_ho_so(text: str, tai_lieu: str) -> tuple[str, str] | None:
@@ -3504,7 +3529,8 @@ def _tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
         if mien:
             cac = [mien[0]] + [m_[:1].lower() + m_[1:] for m_ in mien[1:2]]
             return "phi_khoan_vay", (
-                "Dạ theo tài liệu bên em: " + ", ".join(cac)
+                "Dạ bên em " + cac[0][:1].lower() + cac[0][1:]
+                + "".join(", " + c_ for c_ in cac[1:])
                 + " ạ. Các khoản phí khác nếu có thì chuyên viên sẽ báo rõ khi làm hồ sơ ạ.")
 
     if re.search(r"\b(phi tu van|tu van.{0,12}mat phi)\b", t):

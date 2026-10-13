@@ -198,7 +198,7 @@ def test_dung_hoan_ban_khong_bi_noi_cau_hoi_dan_dat(cau):
 
 def test_sau_cau_khong_phai_dieu_khien_dan_dat_van_hoat_dong():
     assert _dan_dat("lãi suất vay bao nhiêu") == (
-        "so_tien", "Anh chị dự định vay khoảng bao nhiêu ạ?",
+        "dt_tung_vay", "Anh chị đã từng vay tín chấp bao giờ chưa ạ?",
     )
 
 

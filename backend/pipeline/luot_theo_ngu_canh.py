@@ -51,6 +51,18 @@ def tra_loi_theo_ngu_canh(text: str, history: list[dict] | None) -> tuple[str, s
                            if m.get("role") == "assistant")
         if re.search(r"(%|phần trăm)\s*(/\s*|một |mỗi )năm", gan_day):
             return "don_vi_lai", "Dạ mức lãi suất đó tính theo năm ạ."
+    # "thấp thế", "phức tạp vậy" trơ trọi ngay sau khi nghe hạn mức / hồ sơ:
+    # khách đang CHÊ điều AI vừa nói. Đáp một câu nhận rồi để lớp hành động
+    # (`hanh_dong_ngu_canh`) nối lời trấn an - đừng để mô hình tự viết lời bênh.
+    from backend.pipeline.hanh_dong_ngu_canh import chu_de, dang_che, dap_cau_hoi_hanh_dong
+    dap = dap_cau_hoi_hanh_dong(text, ai, " ".join(
+        m.get("content", "") for m in (history or []) if m.get("role") == "assistant"))
+    if dap:
+        return dap
+    if len(t.split()) <= 5 and dang_che(text) and not re.search(r"\blai\b", t):
+        cd = chu_de("", ai)
+        if cd in ("han_muc", "thu_tuc"):
+            return f"che_{cd}", "Dạ em hiểu ạ."
     if _GAT_DAU.match(t) and not ai.rstrip().endswith("?"):
         return "gat_dau", "Dạ vâng ạ."
     if _GAT_DAU.match(t):

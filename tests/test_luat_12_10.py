@@ -130,7 +130,7 @@ def test_khach_dong_vai_vong_ba():
     from backend.pipeline.sua_nghe_sai import neo_so_tien_vay
     vay, nha = toan_van("vay tín chấp"), toan_van("vay mua nhà")
     ma, cau = tra_loi("phí thẩm định có mất không", nha)
-    assert ma == "phi_khoan_vay" and "Miễn phí thẩm định tài sản" in cau
+    assert ma == "phi_khoan_vay" and "miễn phí thẩm định tài sản" in cau
     assert tra_loi("trả trước hạn có mất phí không", vay)[0] == "phi_tra_truoc_han"
     assert tra_loi("hồ sơ nộp ở đâu", vay)[0] == "noi_nop_ho_so_chua_co"
     assert tra_loi("làm thủ tục ở đâu", toan_van("tiết kiệm")) is None

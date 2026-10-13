@@ -101,11 +101,13 @@ def _dd(**kw):
 
 
 def test_dan_dat_hoi_thu_con_thieu_theo_thu_tu():
-    assert _dd(khach=["lãi suất bao nhiêu em"])[0] == "so_tien"
+    # Từ 13-10-2026 (bảng mẫu bên A): khách hỏi lãi thì hỏi lại đúng chuyện vay
+    # tín chấp, không nhảy sang số tiền. Xem `hanh_dong_ngu_canh`.
+    assert _dd(khach=["lãi suất bao nhiêu em"])[0] == "dt_tung_vay"
     assert _dd(khach=["anh muốn vay ba trăm triệu"])[0] == "ky_han"
     assert _dd(khach=["anh muốn vay ba trăm triệu trong hai năm"])[0] == "thu_nhap"
     # Đã hỏi rồi thì không hỏi lại ý đó.
-    assert _dd(khach=["lãi suất bao nhiêu em"], da_hoi={"so_tien"})[0] == "ky_han"
+    assert _dd(khach=["lãi suất bao nhiêu em"], da_hoi={"so_tien", "dt_tung_vay"})[0] == "ky_han"
 
 
 def test_dan_dat_khong_hoi_don_khi_khach_khep_hoac_cau_da_la_cau_hoi():

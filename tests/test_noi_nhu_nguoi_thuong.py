@@ -248,7 +248,7 @@ def test_khong_noi_cau_hoi_sau_khi_khach_tu_choi_hoac_cau_tra_loi_da_khep():
     assert _dd(["em nói nhanh quá anh không nghe kịp"],
                "Dạ em xin lỗi ạ, em sẽ nói chậm hơn ạ.") is None
     # Câu trả lời thường thì vẫn hỏi tiếp như cũ.
-    assert _dd(["lãi suất bao nhiêu em"])[0] == "so_tien"
+    assert _dd(["lãi suất bao nhiêu em"])[0] == "dt_tung_vay"
 
 
 def test_tiet_kiem_khong_hoi_lai_so_tien_ky_han_khach_da_noi():

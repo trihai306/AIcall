@@ -2286,6 +2286,9 @@ class StreamingPipeline:
                 loi_khach_luot_nay=user_text, cau_tra_loi=cau_tra_loi, da_hoi=da_hoi,
                 y_dinh_thuong_gap=metrics.get("luot_thuong_gap", "") or "",
                 ma_luat=ma_luat,
+                tai_lieu=(_toan_van_tai_lieu(session.product)
+                          if (session.product or "").strip() else ""),
+                lich_su=lich_su,
                 vua_hoi=(getattr(session, "_dan_dat_vua_hoi", ("", -1))[0]
                          if getattr(session, "_dan_dat_vua_hoi", ("", -1))[1]
                          == session.turn_count - 1 else ""))
@@ -3191,6 +3194,12 @@ class StreamingPipeline:
             ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
         elif dong_bang and doc_nguyen_van(dong_bang):
             ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
+        # Rút câu của luật còn một ý trước khi nối hành động (bảng mẫu bên A).
+        if dap_san and ma_tieng_san:
+            from backend.pipeline.hanh_dong_ngu_canh import gon_cau
+            gon = gon_cau(dap_san[0], chu_tieng_san)
+            if gon != chu_tieng_san:
+                chu_tieng_san, ma_tieng_san = gon, ma_tieng_san + "_gon"
         ma_goc, chu_goc, cau_dd = ma_tieng_san, chu_tieng_san, ""
         # CÂU HỎI DẪN DẮT nối sau câu trả lời cố định (luật / kho). Xem
         # `pipeline/dan_dat.py`. Mã tiếng sẵn mang thêm hậu tố để bản có câu hỏi
@@ -3200,6 +3209,12 @@ class StreamingPipeline:
                                    ma_luat=dap_san[0] if dap_san else "")
             if dd:
                 cau_dd = dd[1]
+                # Khách đang CHÊ và đã có lời trấn an nối sau: câu gốc chỉ giữ
+                # câu đầu (lời nhận), kẻo thành bốn câu liền một hơi.
+                from backend.pipeline.hanh_dong_ngu_canh import cau_dau, dang_che
+                if dang_che(user_text) and cau_dau(chu_tieng_san) != chu_tieng_san:
+                    chu_tieng_san = chu_goc = cau_dau(chu_tieng_san)
+                    ma_tieng_san = ma_goc = ma_tieng_san + "_cd"
                 chu_tieng_san = chu_tieng_san.rstrip() + " " + dd[1]
                 ma_tieng_san += f"_dd_{dd[0]}"
         if ma_tieng_san:

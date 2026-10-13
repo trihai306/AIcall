@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 
 TOI_DA_TU = 42
+TOI_DA_TU_TRAN_AN = 60
 
 # Thứ tự hỏi theo sản phẩm. Mỗi mục: (mã ý, câu hỏi).
 _VAY = [
@@ -106,7 +107,8 @@ def _da_biet(ma: str, trang_thai, loi_khach: str, ma_san_pham: str = "") -> bool
 def cau_hoi_tiep(*, ma_san_pham: str, trang_thai, loi_khach_ca_cuoc: str,
                  loi_khach_luot_nay: str, cau_tra_loi: str, da_hoi: set[str],
                  y_dinh_thuong_gap: str = "", ma_luat: str = "",
-                 vua_hoi: str = "") -> tuple[str, str] | None:
+                 vua_hoi: str = "", tai_lieu: str = "",
+                 lich_su: list[dict] | None = None) -> tuple[str, str] | None:
     """`(mã ý, câu hỏi)` để nối sau `cau_tra_loi`, hoặc None nếu không nên hỏi.
 
     `trang_thai` là `LoanState` dựng từ lời khách; `da_hoi` là các ý đã hỏi
@@ -130,12 +132,29 @@ def cau_hoi_tiep(*, ma_san_pham: str, trang_thai, loi_khach_ca_cuoc: str,
         return None
     if _CAU_DA_KHEP.search(cau_tra_loi or ""):
         return None
+    # HÀNH ĐỘNG THEO NGỮ CẢNH (bảng mẫu của bên A, 13-10-2026) đi trước chuỗi
+    # hỏi cố định: khách chê thì trấn an, khách hỏi thông tin thì hỏi lại đúng
+    # chủ đề đó. Xem `hanh_dong_ngu_canh`.
+    from backend.pipeline.hanh_dong_ngu_canh import hanh_dong
+    hd = hanh_dong(ma_san_pham=ma_san_pham, tai_lieu=tai_lieu, lich_su=lich_su,
+                   loi_khach=loi_khach_luot_nay, da_hoi=da_hoi,
+                   da_biet_so_tien=_da_biet("so_tien", trang_thai, loi_khach_ca_cuoc, ma_san_pham),
+                   ma_luat=ma_luat)
+    if hd and hd[0] == "tran_an":
+        # Trấn an được dài hơn và không bị chặn bởi "lượt trước vừa hỏi": khách
+        # đang chê, im lặng trước lời chê mới là thứ nghe như máy.
+        if len((cau_tra_loi or "").split()) + len(hd[2].split()) <= TOI_DA_TU_TRAN_AN:
+            return hd[1], hd[2]
     # Lượt TRƯỚC vừa hỏi một ý mà khách chưa trả lời (họ hỏi lại chuyện khác):
     # lượt này không hỏi dồn sang ý kế tiếp. Bản đầu hỏi "vay bao nhiêu", khách
     # nói "vay tiêu dùng ấy", AI hỏi luôn "vay trong bao lâu" - nghe như máy
     # đọc danh sách. Lượt sau nữa mới hỏi tiếp.
-    if vua_hoi and not _da_biet(vua_hoi, trang_thai, loi_khach_ca_cuoc, ma_san_pham):
+    if (vua_hoi and not vua_hoi.startswith(("dt_", "ta_"))
+            and not _da_biet(vua_hoi, trang_thai, loi_khach_ca_cuoc, ma_san_pham)):
         return None
+    if (hd and hd[0] == "dong_tinh"
+            and len((cau_tra_loi or "").split()) + len(hd[2].split()) <= TOI_DA_TU):
+        return hd[1], hd[2]
     for ma, cau in buoc:
         if ma in da_hoi:
             continue

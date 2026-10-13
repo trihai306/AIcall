@@ -1,0 +1,218 @@
+[
+ {
+  "ma": "bang_mau_ben_a",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "alo",
+   "lãi bao nhiêu",
+   "cao thế",
+   "vay được bao nhiêu",
+   "thấp thế",
+   "thủ tục nhanh không",
+   "phức tạp vậy",
+   "có mất phí gì không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "alo",
+    "ai": "Dạ em chào anh chị ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình vay tín chấp ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi bao nhiêu",
+    "ai": "Dạ, mức lãi suất vay tín chấp cá nhân của chúng em từ 7.9%/năm ạ. Anh chị đã từng vay tín chấp bao giờ chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cao thế",
+    "ai": "Dạ, mức lãi này có thể khiến mình cân nhắc. Bên em đang giảm 0.5% lãi suất cho khách hàng có lương qua ngân hàng ạ. Anh chị có đang nhận lương qua ngân hàng không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "exact_match",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vay được bao nhiêu",
+    "ai": "Dạ, hạn mức vay lên đến 500 triệu đồng ạ. Anh chị đang cần khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thấp thế",
+    "ai": "Dạ em hiểu ạ. Anh chị định dùng khoản này vào việc gì ạ?",
+    "duong": "rule",
+    "ly_do": "che_han_muc",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thủ tục nhanh không",
+    "ai": "Dạ giải ngân trong vòng 24 giờ sau khi phê duyệt ạ. Anh chị đang đi làm hưởng lương hay tự kinh doanh ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "phức tạp vậy",
+    "ai": "Dạ em hiểu ạ. Hồ sơ đủ thì bên em giải ngân trong vòng 24 giờ sau khi phê duyệt ạ.",
+    "duong": "rule",
+    "ly_do": "che_thu_tuc",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "có mất phí gì không",
+    "ai": "Dạ bên em miễn phí tư vấn và thẩm định ạ. Anh chị muốn vay trong bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "phi_khoan_vay",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "cuoc_goi_13_10",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "ừ tư vấn cho anh khoản vay bên mình",
+   "muốn vay hai trăm triệu",
+   "anh muốn vay mười hai tháng",
+   "lương bảy triệu",
+   "thế giờ anh có vay được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "ừ tư vấn cho anh khoản vay bên mình",
+    "ai": "Dạ em tư vấn sản phẩm vay tín chấp cá nhân, lãi suất từ 7.9%/năm, hạn mức đến 500 triệu ạ. Anh chị dự định vay khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "muốn vay hai trăm triệu",
+    "ai": "Dạ 200 triệu đồng thì trong hạn mức ạ. Anh chị muốn vay trong bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "nhu_cau_vay",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh muốn vay mười hai tháng",
+    "ai": "Dạ vay 12 tháng thì được ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "ky_han_trong_khung",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lương bảy triệu",
+    "ai": "Dạ em ghi nhận anh chị thu nhập 7 triệu đồng một tháng ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+    "duong": "rule",
+    "ly_do": "ghi_nhan_thu_nhap",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thế giờ anh có vay được không",
+    "ai": "Dạ thu nhập 7 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ.",
+    "duong": "rule",
+    "ly_do": "thu_nhap_dat_muc",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "bang_mau_noi_khac",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "em ơi lãi suất bên em thế nào",
+   "ôi sao cao vậy",
+   "rồi anh từng vay rồi",
+   "thế tối đa cho vay bao nhiêu",
+   "cần những giấy tờ gì",
+   "nhiều thế rườm rà quá",
+   "ừ anh làm công ty lương chuyển khoản"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "em ơi lãi suất bên em thế nào",
+    "ai": "Dạ, mức lãi suất vay tín chấp cá nhân của chúng tôi là từ 7.9%/năm ạ. Anh chị đã từng vay tín chấp bao giờ chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "ôi sao cao vậy",
+    "ai": "Dạ, mức lãi này có thể khiến mình cân nhắc. Bên em đang giảm 0.5% lãi suất cho khách hàng có lương qua ngân hàng ạ. Anh chị có đang nhận lương qua ngân hàng không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "exact_match",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "rồi anh từng vay rồi",
+    "ai": "Dạ vâng ạ, vậy mình cũng quen với cách vay này rồi ạ. Anh chị dự định vay khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "dap_tung_vay",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thế tối đa cho vay bao nhiêu",
+    "ai": "Dạ hạn mức vay tín chấp lên đến 500 triệu đồng ạ. Nếu số tiền cần vượt quá thì em kiểm tra hồ sơ cụ thể giúp anh chị ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cần những giấy tờ gì",
+    "ai": "Dạ anh chị chuẩn bị CMND/CCCD, hộ khẩu hoặc KT3, xác nhận thu nhập/sao kê lương 3 tháng gần nhất và hợp đồng lao động ạ. Anh chị đang đi làm hưởng lương hay tự kinh doanh ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "nhiều thế rườm rà quá",
+    "ai": "Dạ em hiểu ạ. Hồ sơ đủ thì bên em giải ngân trong vòng 24 giờ sau khi phê duyệt ạ.",
+    "duong": "rule",
+    "ly_do": "che_thu_tuc",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "ừ anh làm công ty lương chuyển khoản",
+    "ai": "Dạ vâng ạ, Tốt rồi ạ, với thu nhập qua ngân hàng thì bên em đang có ưu đãi giảm 0.5% lãi suất. Anh chị muốn vay trong bao lâu?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   }
+  ]
+ }
+]

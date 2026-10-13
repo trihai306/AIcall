@@ -1,0 +1,72 @@
+[
+ {
+  "ma": "bang_mau_ben_a",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "alo",
+   "lãi bao nhiêu",
+   "cao thế",
+   "vay được bao nhiêu",
+   "thấp thế",
+   "thủ tục nhanh không",
+   "phức tạp vậy",
+   "có mất phí gì không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "cuoc_goi_13_10",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "ừ tư vấn cho anh khoản vay bên mình",
+   "muốn vay hai trăm triệu",
+   "anh muốn vay mười hai tháng",
+   "lương bảy triệu",
+   "thế giờ anh có vay được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "bang_mau_noi_khac",
+  "kieu": "bang_mau",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "bảng mẫu bên A 13-10",
+  "luot": [
+   "em ơi lãi suất bên em thế nào",
+   "ôi sao cao vậy",
+   "rồi anh từng vay rồi",
+   "thế tối đa cho vay bao nhiêu",
+   "cần những giấy tờ gì",
+   "nhiều thế rườm rà quá",
+   "ừ anh làm công ty lương chuyển khoản"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]
