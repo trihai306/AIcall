@@ -19,7 +19,7 @@ from backend.pipeline.chan_tu_che import (
     CAU_GHI_NHAN, CAU_GIU_KHACH, CAU_HIEU, chan_chua_co_thong_tin_sai,
     chan_loai_lai_bia, chan_phan_theo_thu_nhap, chan_phu_thuoc_bia, chan_tu_cup_may,
     chan_tu_nhan_la_nguoi)
-from backend.pipeline.sua_nghe_sai import neo_so_tien_vay, sua_nghe_sai
+from backend.pipeline.sua_nghe_sai import neo_du_kien_ke, neo_so_tien_vay, sua_nghe_sai
 from backend.pipeline.loi_dan_luot import loi_dan_luot_ngan
 from backend.pipeline.xung_ho_khach import doi_xung_ho, ma_xung_ho, xung_ho_theo_loi
 from backend.pipeline.luot_theo_ngu_canh import rut_gon_neu_lap, tra_loi_theo_ngu_canh
@@ -2395,6 +2395,8 @@ class StreamingPipeline:
             logger.info("SỬA LỜI NGHE SAI: %s -> %r", da_sua_nghe, user_text)
             metrics["sua_nghe_sai"] = da_sua_nghe
         user_text, da_neo_vay = neo_so_tien_vay(user_text, khach_truoc, session.product or "")
+        if not da_neo_vay:
+            user_text, da_neo_vay = neo_du_kien_ke(user_text, khach_truoc, session.product or "")
         if da_neo_vay:
             logger.info("NEO SỐ TIỀN VAY: %s", da_neo_vay)
             metrics["neo_so_tien_vay"] = da_neo_vay

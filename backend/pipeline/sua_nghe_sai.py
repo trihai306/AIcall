@@ -42,6 +42,11 @@ _CUM += [
      r"\1, "),
     (rf"\b({_SO_CHU} năm) (?=(?:mỗi |một )?tháng (?:trả|đóng|góp|phải|hết|mất|nộp)\b)", r"\1, "),
 ]
+_CUM += [
+    # "trả trong một năm rưỡi thì tháng bao nhiêu": thiếu chữ "mỗi ... trả" nên luật
+    # chỉ xác nhận kỳ hạn, không tính khoản trả góp (đóng vai 14-10-2026).
+    (r"\b(thì|là) tháng (?:trả |đóng |góp |hết |mất )?bao nhiêu\b", r"\1 mỗi tháng trả bao nhiêu"),
+]
 _CUM = [(re.compile(m, re.IGNORECASE), t) for m, t in _CUM]
 
 # Lượt chỉ có một hai chữ: khách hỏi cụt, hoặc máy nuốt mất nửa đầu câu.
@@ -154,3 +159,63 @@ def neo_so_tien_vay(text: str, lich_su_khach, san_pham: str) -> tuple[str, str]:
     if len(con) > 6 or any(c not in _QUANH_SO_TIEN for c in con):
         return text, ""
     return f"vay {goc.strip()}", f"neo số tiền vay -> vay {goc.strip()}"
+
+
+_NHA = re.compile(r"\b(nhà|căn|căn hộ|chung cư|đất|biệt thự|nhà phố)\b", re.IGNORECASE)
+_CO_SAN = re.compile(r"\b(có|sẵn|tích luỹ|tích lũy|gom được|để dành được)\b", re.IGNORECASE)
+_VIEC_KHAC = re.compile(r"\b(vay|gửi|rút|lãi|trả|góp|lương|thu nhập|phí)\b", re.IGNORECASE)
+DAU_CAN_VAY = ", tức cần vay "
+
+
+def _doc_tien(dong) -> str:
+    ty = dong / 1_000_000_000
+    if ty >= 1:
+        return (f"{ty:.2f}".rstrip("0").rstrip(".").replace(".", ",")) + " tỷ"
+    return f"{int(dong / 1_000_000)} triệu"
+
+
+def neo_du_kien_ke(text: str, lich_su_khach, san_pham: str) -> tuple[str, str]:
+    """Khách KỂ con số của mình mà không dùng chữ sổ dữ kiện nhận ra.
+
+    Đóng vai 14-10-2026, sáu trong tám lượt sai là mất dữ kiện giữa các lượt:
+      - tiết kiệm: "chị có khoản năm trăm triệu đang để không" -> lượt sau hỏi
+        "sáu tháng lãi được bao nhiêu tiền" thì AI hỏi lại số tiền gửi;
+      - mua nhà: "nhà phố ba tỷ rưỡi" ... "anh có sẵn một tỷ" -> lượt sau hỏi trả
+        góp thì AI hỏi lại số tiền vay.
+    Sổ dữ kiện đọc lại LỊCH SỬ, nên chữa bằng cách viết lời khách về dạng nó nhận
+    ra: "có ... X" thành "muốn gửi X"; giá nhà trừ vốn sẵn có thành ", tức cần
+    vay Y" nối ở đuôi. Không bịa con số nào: Y là phép trừ hai số khách nói.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    goc = text or ""
+    sp = (san_pham or "").lower()
+    cac = [q for q in quantities(goc) if q.value is not None and q.kind in ("money", "bare")]
+    if "tiết kiệm" in sp:
+        if len(cac) != 1 or cac[0].kind != "money" or _VIEC_KHAC.search(goc):
+            return text, ""
+        truoc = goc[:cac[0].start]
+        m = re.search(r"\bcó\b((?:\s+(?:khoản|sẵn|được|ít|tầm|khoảng|chừng|độ|đâu|một khoản))*)\s*$",
+                      truoc, re.IGNORECASE)
+        if not m or len(goc.split()) > 12:
+            return text, ""
+        moi = truoc[:m.start()] + "muốn gửi " + goc[cac[0].start:]
+        return moi, f"neo tiền gửi -> {moi}"
+    if "mua nhà" not in sp or DAU_CAN_VAY in goc or re.search(r"\bvay\b", goc, re.IGNORECASE):
+        return text, ""
+    gia = von = None
+    if len(cac) == 2 and cac[0].kind == "money" and _NHA.search(goc[:cac[0].start]) \
+            and _CO_SAN.search(goc[cac[0].end:cac[1].start]):
+        gia = cac[0].value
+        von = cac[1].value * (1_000_000 if cac[1].kind == "bare" else 1)
+    elif len(cac) == 1 and cac[0].kind == "money" and _CO_SAN.search(goc[:cac[0].start]) \
+            and not _NHA.search(goc) and len(goc.split()) <= 10:
+        von = cac[0].value
+        for cu in reversed(list(lich_su_khach or [])[-6:]):
+            qs = [q for q in quantities(cu or "") if q.value is not None and q.kind == "money"]
+            if len(qs) == 1 and _NHA.search((cu or "")[:qs[0].start]) and not _VIEC_KHAC.search(cu or ""):
+                gia = qs[0].value
+                break
+    if not gia or not von or not (0 < von < gia):
+        return text, ""
+    moi = goc.rstrip(" .,!?") + DAU_CAN_VAY + _doc_tien(gia - von)
+    return moi, f"neo số cần vay -> {moi}"

@@ -374,6 +374,12 @@ BANG = [
      "Dạ bên em đang có chương trình {product} ưu đãi, em xin phép giới thiệu "
      "nhanh với anh chị ạ."),
 
+    # "chị đang bận em nói nhanh nhé": khách CHO PHÉP nói, chỉ cần ngắn. Luật
+    # `dang_ban` từng xin gọi lại (đóng vai 14-10-2026). Phải đứng TRƯỚC `dang_ban`.
+    ("noi_nhanh",
+     [r"\bnoi (nhanh|ngan|gon|ngan gon|le)\b(?!.{0,12}\b(qua|khong nghe|khong kip|lam)\b)"],
+     "Dạ vâng, em nói ngắn gọn thôi ạ. Anh chị quan tâm phần nào thì cứ hỏi em ạ."),
+
     ("dang_ban",
      # Liệt kê từng cụm thay vì bắt trơ "ban": bỏ dấu rồi thì "bận", "bạn" và
      # "bàn" trùng nhau, bắt trơ là chặn nhầm "bạn anh cũng vay bên em".
@@ -467,7 +473,7 @@ BANG = [
 
     # Để CUỐI: "alo" trần trụi, sau khi các ý định cụ thể hơn đã xét xong.
     ("chao_bat_may",
-     [r"^\s*(a\s*lo\s*)+$", r"^\s*(alo\s*)+$", r"^\s*(nghe|toi nghe|noi di)\s*$",
+     [r"^\s*((da|vang|u|o)\s+)?(a\s*lo\s*)+(a)?\s*$", r"^\s*(alo\s*)+$", r"^\s*(nghe|toi nghe|noi di)\s*$",
       # "chú nghe", "alo cô nghe đây": người lớn tuổi nhấc máy hay nói vậy.
       r"^\s*(a\s*lo\s+|alo\s+)?(anh|chi|co|chu|bac|ong|ba|toi|tui|em|chau)\s+nghe(\s+(day|a|em|chau))*\s*$",
       r"^\s*(a\s*lo|alo)\s+(em|anh|chi)\s*(oi|a|ah)?\s*$"],
@@ -488,6 +494,11 @@ def nhan_dang(text: str) -> str | None:
     # Quyền điều khiển cuộc gọi phải thắng mọi luật sản phẩm và không chịu trần
     # 8 từ. Danh tính tự động/nguồn số cũng cần trả lời thẳng, kể cả câu ghép.
     dieu_khien = y_dinh_dung_tu_van(text)
+    # Đang lái xe / đang họp thì vẫn xin gọi lại: nói tiếp lúc đó là không an toàn.
+    if dieu_khien == "dang_ban" and len(t.split()) <= 10 and not re.search(
+            r"\b(lai xe|dang hop|chay xe|di duong)\b", t) and any(
+            re.search(m, t) for m in next(x for x in BANG if x[0] == "noi_nhanh")[1]):
+        return "noi_nhanh"          # "đang bận, em nói nhanh nhé": được nói, chỉ cần ngắn
     if dieu_khien:
         return dieu_khien
     danh_tinh_nguon = _y_dinh_danh_tinh_nguon(text)

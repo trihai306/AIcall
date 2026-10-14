@@ -1,0 +1,392 @@
+[
+ {
+  "ma": "v7_chu_vay",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "alo chú nghe đây",
+   "vay à chú đang cần ít vốn buôn bán",
+   "khoảng tám chục triệu thôi",
+   "chú buôn bán tự do không có lương",
+   "thế có vay được không",
+   "lãi tính sao cháu",
+   "trả trong một năm rưỡi thì tháng bao nhiêu",
+   "có phải thế chấp sổ đỏ không",
+   "bao lâu thì nhận được tiền",
+   "ừ cháu ghi cho chú"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "alo chú nghe đây",
+    "ai": "Dạ em chào chú ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình vay tín chấp ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vay à chú đang cần ít vốn buôn bán",
+    "ai": "Dạ vâng ạ, Đúng rồi chú, sản phẩm vay tín chấp của bên em phù hợp cho nhu cầu buôn bán của chú ạ. Chú dự định vay khoảng bao nhiêu?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "khoảng tám chục triệu thôi",
+    "ai": "Dạ 80 triệu đồng thì trong hạn mức ạ. Chú muốn vay trong bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "nhu_cau_vay",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "chú buôn bán tự do không có lương",
+    "ai": "Vâng ạ, Chú làm việc tự do thì em cần xác nhận chú có giấy phép kinh doanh hoặc hợp đồng lao động để xem xét hồ sơ ạ.",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thế có vay được không",
+    "ai": "Dạ em trả lời anh chị ạ, Nếu chú có giấy phép kinh doanh thì hồ sơ sẽ được xem xét ạ. Chú có mang theo giấy phép này chưa?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi tính sao cháu",
+    "ai": "Dạ, mức lãi suất vay tín chấp cá nhân của chúng tôi là từ 7.9%/năm ạ. Chú đã từng vay tín chấp bao giờ chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "trả trong một năm rưỡi thì tháng bao nhiêu",
+    "ai": "Dạ vay 18 tháng thì được ạ. Chú có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+    "duong": "rule",
+    "ly_do": "ky_han_trong_khung",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "có phải thế chấp sổ đỏ không",
+    "ai": "Dạ, vay tín chấp cá nhân không yêu cầu tài sản thế chấp ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "bao lâu thì nhận được tiền",
+    "ai": "Dạ, khoản vay giải ngân trong vòng 24 giờ sau khi phê duyệt ạ. Chú đang đi làm hưởng lương hay tự kinh doanh ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "ừ cháu ghi cho chú",
+    "ai": "Dạ vâng, Em ghi nhận yêu cầu của chú rồi ạ. Em sẽ có chuyên viên liên hệ lại để hỗ trợ hồ sơ vay tín chấp.",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "v7_em_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "dạ alo",
+   "em mới đi làm lương chín triệu mở thẻ được không ạ",
+   "thẻ nào hợp với em",
+   "hạn mức thẻ đó bao nhiêu",
+   "phí thường niên bao nhiêu ạ",
+   "nếu em không trả hết thì lãi tính sao",
+   "có trả góp được không ạ",
+   "mở thẻ cần giấy tờ gì ạ",
+   "vâng để em suy nghĩ thêm"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "dạ alo",
+    "ai": "Dạ vâng, Chào anh/chị, em là Lan từ Ngân hàng Quân đội ạ. Anh/chị đang quan tâm đến sản phẩm gì?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "em mới đi làm lương chín triệu mở thẻ được không ạ",
+    "ai": "Dạ thu nhập 9 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ.",
+    "duong": "rule",
+    "ly_do": "thu_nhap_dat_muc",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thẻ nào hợp với em",
+    "ai": "Dạ, Thẻ Classic hạn mức 10-50 triệu, phí 200.000đ/năm; Gold là 30-200 triệu, phí 400.000đ/năm và Platinum từ 100-500 triệu, phí 800.000đ/năm ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "hạn mức thẻ đó bao nhiêu",
+    "ai": "Dạ hạn mức thẻ tín dụng từ 10 triệu đến 500 triệu đồng tuỳ loại thẻ: thẻ Classic 10-50 triệu, thẻ Gold 30-200 triệu, thẻ Platinum 100-500 triệu ạ. Mỗi tháng anh chị chi tiêu qua thẻ khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "han_muc_the",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "phí thường niên bao nhiêu ạ",
+    "ai": "Dạ, tất cả loại thẻ đều miễn phí thường niên năm đầu tiên. Các năm sau: Classic 200.000đ, Gold 400.000đ và Platinum 800.000đ/năm ạ. Anh chị đang dùng thẻ tín dụng nào chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "nếu em không trả hết thì lãi tính sao",
+    "ai": "Dạ, lãi trên dư nợ giảm dần chỉ tính trên số tiền gốc còn nợ nên tiền lãi giảm dần theo từng kỳ trả ạ. Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ mở thẻ không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "có trả góp được không ạ",
+    "ai": "Dạ, anh chị được trả góp 0% lãi suất tại các đối tác ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mở thẻ cần giấy tờ gì ạ",
+    "ai": "Dạ, anh chị từ 18 tuổi, thu nhập trên 5 triệu/tháng và có CMND/CCCD còn hiệu lực ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vâng để em suy nghĩ thêm",
+    "ai": "Dạ vâng ạ. Em cảm ơn anh chị, khi nào tiện anh chị gọi lại bên em nhé.",
+    "duong": "rule",
+    "ly_do": "hen_lai",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "v7_chi_tk",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "chị đang bận em nói nhanh nhé",
+   "chị có khoản năm trăm triệu đang để không",
+   "gửi ba tháng với sáu tháng khác nhau thế nào",
+   "sáu tháng thì lãi được bao nhiêu tiền",
+   "gửi online có an toàn không",
+   "lãi thấp hơn bên ngân hàng khác nhỉ",
+   "nếu chị cần rút gấp một trăm triệu thì sao",
+   "mở sổ mất bao lâu",
+   "ok em gửi thông tin qua zalo cho chị"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "chị đang bận em nói nhanh nhé",
+    "ai": "Dạ em xin lỗi đã gọi không đúng lúc ạ. Em xin phép gọi lại, khoảng mấy giờ thì tiện cho chị ạ?",
+    "duong": "rule",
+    "ly_do": "dang_ban",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "chị có khoản năm trăm triệu đang để không",
+    "ai": "Dạ em trả lời anh chị ạ, Hiện tại chưa có thông tin về số tiền cụ thể của chị ạ. Chị muốn gửi tiết kiệm với kỳ hạn bao nhiêu tháng thì em tư vấn lãi suất tương ứng?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "gửi ba tháng với sáu tháng khác nhau thế nào",
+    "ai": "Dạ em trả lời anh chị ạ, Gửi 3 tháng lãi 3,8%/năm, còn 6 tháng là 4,5%/năm ạ. Chị muốn chọn kỳ hạn nào để em tính toán cụ thể cho chị?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "sáu tháng thì lãi được bao nhiêu tiền",
+    "ai": "Dạ để ước tính tiền lãi, chị cho em biết số tiền gửi ạ.",
+    "duong": "rule",
+    "ly_do": "thieu_du_kien_tinh_lai_tiet_kiem",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "gửi online có an toàn không",
+    "ai": "Dạ em trả lời anh chị ạ, Gửi online rất an toàn và chị có thể tất toán bất cứ lúc nào ạ. Chị muốn mở sổ ngay trên ứng dụng hay đến quầy?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi thấp hơn bên ngân hàng khác nhỉ",
+    "ai": "Dạ mức này bên em thuộc tốp cao trên thị trường rồi ạ, và tiền gửi tiết kiệm thì được bảo hiểm tiền gửi nên chị hoàn toàn yên tâm về gốc ạ.",
+    "duong": "rule",
+    "ly_do": "phan_hoi_lai_thap",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "nếu chị cần rút gấp một trăm triệu thì sao",
+    "ai": "Dạ em chưa xác định được duy nhất phần tiền rút trước hạn và phần còn lại. Chị xác nhận giúp em mỗi phần một số tiền cụ thể ạ.",
+    "duong": "rule",
+    "ly_do": "xac_nhan_rut_mot_phan_tiet_kiem",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mở sổ mất bao lâu",
+    "ai": "Dạ, chị mở sổ trong 5 phút trên ứng dụng ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "ok em gửi thông tin qua zalo cho chị",
+    "ai": "Dạ em xin ghi nhận yêu cầu nhận thông tin bằng văn bản của anh chị để chuyên viên liên hệ gửi lại ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "v7_anh_nha",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "anh nghe",
+   "anh đang định mua nhà phố ba tỷ rưỡi",
+   "anh có sẵn một tỷ",
+   "vay hai mươi năm thì tháng đầu trả bao nhiêu",
+   "cao quá kéo lên hai lăm năm xem",
+   "lãi sáu rưỡi là được mấy năm",
+   "sau đó tăng lên bao nhiêu",
+   "thu nhập hai vợ chồng bốn chục triệu có đủ không",
+   "trả trước hạn có mất phí không",
+   "được anh sẽ qua chi nhánh"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "anh nghe",
+    "ai": "Dạ em chào anh ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình vay mua nhà ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh đang định mua nhà phố ba tỷ rưỡi",
+    "ai": "Dạ với căn 3,5 tỷ đồng thì bên em cho vay tối đa 80% giá trị, tức khoảng 2,8 tỷ đồng ạ. Mức được duyệt thực tế còn tuỳ thẩm định hồ sơ ạ.",
+    "duong": "rule",
+    "ly_do": "ghi_nhan_gia_nha",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh có sẵn một tỷ",
+    "ai": "Vâng ạ, Anh đã có tiền mặt 1 tỷ thì tổng số tiền vay sẽ là 2,5 tỷ ạ. Em cần hỏi thêm thu nhập hàng tháng của anh để xem xét khả năng duyệt hạn mức cụ thể nhé?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vay hai mươi năm thì tháng đầu trả bao nhiêu",
+    "ai": "Dạ để tính khoản trả hàng tháng, anh cho em biết số tiền muốn vay kèm đơn vị ạ.",
+    "duong": "rule",
+    "ly_do": "thieu_du_kien_tinh_lai",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cao quá kéo lên hai lăm năm xem",
+    "ai": "Dạ vâng ạ, Với 2,5 tỷ đồng vay trong 25 năm, số tiền trả hàng tháng phải tính theo số tiền và thời hạn vay cụ thể, anh chị cho em xin hai thông tin đó để em tính ạ. Anh dự định vay khoảng bao nhiêu?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi sáu rưỡi là được mấy năm",
+    "ai": "Dạ, lãi suất ưu đãi 6.5%/năm được áp dụng trong 2 năm đầu ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "sau đó tăng lên bao nhiêu",
+    "ai": "Dạ em trả lời anh chị ạ, Sau hai năm ưu đãi, lãi suất sẽ thả nổi theo thị trường từ 8-10%/năm ạ. Thu nhập hàng tháng của anh khoảng bao nhiêu?",
+    "duong": "generated",
+    "ly_do": "no_matching_answer",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thu nhập hai vợ chồng bốn chục triệu có đủ không",
+    "ai": "Dạ điều kiện của bên em yêu cầu thu nhập cá nhân từ 10 triệu đồng một tháng ạ. Mức anh vừa nêu là thu nhập chung của hộ gia đình. Anh cho em biết thu nhập riêng mỗi tháng của người đứng tên vay để đối chiếu ạ.",
+    "duong": "rule",
+    "ly_do": "xac_nhan_thu_nhap_ca_nhan",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "trả trước hạn có mất phí không",
+    "ai": "Dạ, vay tín chấp miễn phí trả trước hạn. Vay mua nhà miễn phí sau 3 năm, trước đó phí 1-2% số tiền trả trước ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "được anh sẽ qua chi nhánh",
+    "ai": "Dạ anh hoàn toàn có thể đến chi nhánh, hoặc chuyên viên ngân hàng cũng sẽ liên hệ hướng dẫn anh ạ. Anh có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   }
+  ]
+ }
+]

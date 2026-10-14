@@ -273,3 +273,51 @@ def test_cac_luot_tam_con_lai_cua_vong_sau():
     assert tra_loi("lãi cố định hay thả nổi", nha)[0] == "lai_co_dinh_hay_tha_noi"
     assert nhan_dang("lại ngân hàng à dạo này gọi suốt") == "bi_goi_nhieu"
     assert nhan_dang("mai em gọi lại nhé") != "bi_goi_nhieu" and nhan_dang("ngân hàng nào đấy") != "bi_goi_nhieu"
+
+
+def test_khach_dong_vai_vong_bay_nho_du_kien_khach_ke():
+    from backend.pipeline.ngu_canh_tai_lieu import toan_van
+    from backend.pipeline.sua_nghe_sai import neo_du_kien_ke as neo, sua_nghe_sai
+    vay, nha, the, tk = (toan_van(x) for x in ("vay tín chấp", "vay mua nhà", "thẻ tín dụng", "tiết kiệm"))
+
+    def H(*loi):
+        return [{"role": "user" if i % 2 == 0 else "assistant", "content": c} for i, c in enumerate(loi)]
+    # tiết kiệm: "có khoản X đang để không" -> nhớ là tiền gửi
+    moi, _ = neo("chị có khoản năm trăm triệu đang để không", [], "tiết kiệm")
+    assert moi == "chị muốn gửi năm trăm triệu đang để không"
+    assert tra_loi(moi, tk)[0] == "ghi_nhan_tien_gui"
+    h = H(moi, "Dạ em ghi nhận ạ. Chị muốn gửi kỳ hạn bao lâu ạ?")
+    ma, dap = tra_loi("sáu tháng thì lãi được bao nhiêu tiền", tk, history=h)
+    assert ma == "uoc_tinh_tien_lai_tiet_kiem" and "500 triệu" in dap
+    h += H("sáu tháng thì lãi được bao nhiêu tiền", dap)
+    ma, dap = tra_loi("nếu chị cần rút gấp một trăm triệu thì sao", tk, history=h)
+    assert ma == "lai_rut_mot_phan_tiet_kiem" and "400 triệu" in dap
+    assert neo("gửi năm trăm triệu lãi bao nhiêu", [], "tiết kiệm")[1] == ""
+    assert neo("chị có hai sổ rồi", [], "tiết kiệm")[1] == ""
+    # mua nhà: giá nhà lượt trước + vốn lượt này -> số cần vay, nhớ sang lượt hỏi trả góp
+    moi, _ = neo("anh có sẵn một tỷ", ["anh nghe", "anh đang định mua nhà phố ba tỷ rưỡi"], "vay mua nhà")
+    assert moi == "anh có sẵn một tỷ, tức cần vay 2,5 tỷ"
+    assert tra_loi(moi, nha)[0] == "nhu_cau_vay"
+    h = H("anh đang định mua nhà phố ba tỷ rưỡi", "Dạ.", moi, "Dạ 2,5 tỷ đồng thì trong hạn mức ạ.")
+    ma, dap = tra_loi("vay hai mươi năm thì tháng đầu trả bao nhiêu", nha, history=h)
+    assert ma == "tinh_tra_gop" and "2,5 tỷ đồng trong 20 năm" in dap
+    ma, dap2 = tra_loi("cao quá kéo lên hai lăm năm xem", nha,
+                       history=h + H("vay hai mươi năm thì tháng đầu trả bao nhiêu", dap))
+    assert ma == "tinh_tra_gop" and "25 năm" in dap2
+    moi, _ = neo("căn một tỷ tám cô có sáu trăm", [], "vay mua nhà")
+    assert moi.endswith(", tức cần vay 1,2 tỷ") and tra_loi(moi, nha)[0] == "can_vay_theo_gia_nha"
+    assert neo("anh có sẵn một tỷ", ["alo"], "vay mua nhà")[1] == ""          # chưa biết giá nhà
+    assert neo("anh có sẵn một tỷ", ["nhà ba tỷ"], "vay tín chấp")[1] == ""
+    # "thì tháng bao nhiêu" là hỏi khoản trả góp
+    cau = sua_nghe_sai("trả trong một năm rưỡi thì tháng bao nhiêu")[0]
+    ma, dap = tra_loi(cau, vay, history=H("vay khoảng tám chục triệu thôi", "Dạ."))
+    assert ma == "tinh_tra_gop" and "80 triệu đồng trong 18 tháng" in dap
+    # hai lượt còn lại
+    ma, dap = tra_loi("nếu em không trả hết thì lãi tính sao", the)
+    assert ma == "lai_the_chua_tra_het" and "55 ngày" in dap and "dư nợ giảm dần" not in dap
+    assert tra_loi("trả chậm thì lãi tính sao", vay) is None
+    assert nhan_dang("chị đang bận em nói nhanh nhé") == "noi_nhanh"
+    assert nhan_dang("anh đang bận") == "dang_ban"
+    assert nhan_dang("à à anh đang lái xe em nói nhanh lên") == "dang_ban"
+    assert nhan_dang("em nói nhanh quá anh không nghe kịp") != "noi_nhanh"
+    assert nhan_dang("dạ alo") == "chao_bat_may"

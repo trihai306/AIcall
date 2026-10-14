@@ -1,0 +1,118 @@
+[
+ {
+  "ma": "v7_chu_vay",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "alo chú nghe đây",
+   "vay à chú đang cần ít vốn buôn bán",
+   "khoảng tám chục triệu thôi",
+   "chú buôn bán tự do không có lương",
+   "thế có vay được không",
+   "lãi tính sao cháu",
+   "trả trong một năm rưỡi thì tháng bao nhiêu",
+   "có phải thế chấp sổ đỏ không",
+   "bao lâu thì nhận được tiền",
+   "ừ cháu ghi cho chú"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v7_em_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "dạ alo",
+   "em mới đi làm lương chín triệu mở thẻ được không ạ",
+   "thẻ nào hợp với em",
+   "hạn mức thẻ đó bao nhiêu",
+   "phí thường niên bao nhiêu ạ",
+   "nếu em không trả hết thì lãi tính sao",
+   "có trả góp được không ạ",
+   "mở thẻ cần giấy tờ gì ạ",
+   "vâng để em suy nghĩ thêm"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v7_chi_tk",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "chị đang bận em nói nhanh nhé",
+   "chị có khoản năm trăm triệu đang để không",
+   "gửi ba tháng với sáu tháng khác nhau thế nào",
+   "sáu tháng thì lãi được bao nhiêu tiền",
+   "gửi online có an toàn không",
+   "lãi thấp hơn bên ngân hàng khác nhỉ",
+   "nếu chị cần rút gấp một trăm triệu thì sao",
+   "mở sổ mất bao lâu",
+   "ok em gửi thông tin qua zalo cho chị"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v7_anh_nha",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách vòng 7 (14-10)",
+  "luot": [
+   "anh nghe",
+   "anh đang định mua nhà phố ba tỷ rưỡi",
+   "anh có sẵn một tỷ",
+   "vay hai mươi năm thì tháng đầu trả bao nhiêu",
+   "cao quá kéo lên hai lăm năm xem",
+   "lãi sáu rưỡi là được mấy năm",
+   "sau đó tăng lên bao nhiêu",
+   "thu nhập hai vợ chồng bốn chục triệu có đủ không",
+   "trả trước hạn có mất phí không",
+   "được anh sẽ qua chi nhánh"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

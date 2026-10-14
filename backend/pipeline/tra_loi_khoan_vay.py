@@ -3101,6 +3101,14 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
             # đúng giá đó nếu đọc được.
             kq = _ghi_nhan_gia_nha(text, _phan_san_pham(tai_lieu)) or kq
         kq = _han_muc_the_theo_thu_nhap(text, tai_lieu, kq) or kq
+        if not kq or kq[0] in ("che_lai_cao", "ky_han_trong_khung"):
+            # "cao quá kéo lên hai lăm năm xem" ngay sau một lần tính: khách muốn
+            # TÍNH LẠI với kỳ hạn mới, không phải chê lãi hay chỉ hỏi kỳ hạn.
+            kq = _tra_loi_tinh_lai_ky_han_moi(text, tai_lieu, history) or kq
+        if ", tức cần vay " in (text or "") and len(quantities_cua(text)) == 3:
+            # Khách nói giá nhà + vốn trong MỘT lượt: câu "cần vay khoảng ..." rõ hơn
+            # câu "... thì trong hạn mức" của luật nhu cầu.
+            kq = _tra_loi_gia_nha_va_von(text, tai_lieu) or kq
         return (_tra_loi_hoi_gop(text, tai_lieu, kq) or kq or _tra_loi_moi_tu_van(text, tai_lieu)
                 or _tra_loi_tiet_kiem_ngan(text, tai_lieu)
                 or _tra_loi_noi_nop_ho_so(text, tai_lieu)
@@ -3109,6 +3117,7 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
                 or _tra_loi_tinh_lai_ky_han_moi(text, tai_lieu, history)
                 or _tra_loi_gia_nha_va_von(text, tai_lieu)
                 or _tra_loi_linh_lai_tiet_kiem(text, tai_lieu)
+                or _tra_loi_lai_the_chua_tra_het(text, tai_lieu)
                 or _tra_loi_nghia_loai_lai(text, tai_lieu))
 
 
@@ -3116,7 +3125,31 @@ _CHU_QUANH_SO_TIEN = frozenset(
     "gui khoang tam chung do thoi em a anh chi co duoc la thi u o minh toi bac chau nhe nha "
     # "chú có hai trăm triệu muốn gửi", "chị đang có năm chục định gửi tiết kiệm":
     # khách KỂ số tiền của mình. Kho từng đáp "gửi được tối thiểu 1 triệu đồng ạ".
-    "chu muon dinh can dang tiet kiem san roi day".split())
+    "chu muon dinh can dang tiet kiem san roi day de khong ranh nhan khoan it".split())
+
+
+def quantities_cua(text: str) -> list:
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    return [q for q in quantities(text or "") if q.value is not None]
+
+
+def _tra_loi_lai_the_chua_tra_het(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """"nếu em không trả hết thì lãi tính sao" (thẻ): tài liệu chỉ có thời gian miễn lãi.
+
+    Đóng vai 14-10-2026: kho đáp bằng kiến thức "lãi trên dư nợ giảm dần" của
+    KHOẢN VAY. Đọc dòng miễn lãi, phần mức lãi thì nói thật là chưa có.
+    """
+    if _ma_san_pham(tai_lieu) != "the_tin_dung":
+        return None
+    t = _bo_dau(text)
+    if not re.search(r"\blai\b", t) or not re.search(
+            r"\b(khong tra het|tra khong het|chua tra het|tra thieu|tra cham|qua han|tra toi thieu|no lai)\b", t):
+        return None
+    mien = _gia_tri_dong(_phan_san_pham(tai_lieu), "thời gian miễn lãi")
+    dau = f"Dạ thẻ được miễn lãi {mien} ạ. " if mien else "Dạ "
+    return "lai_the_chua_tra_het", (
+        dau + "Còn mức lãi khi chưa trả hết dư nợ thì em chưa có thông tin chính xác, "
+        "chuyên viên sẽ nói rõ khi mở thẻ ạ.")
 
 
 def _han_muc_the_theo_thu_nhap(text: str, tai_lieu: str, kq) -> tuple[str, str] | None:
@@ -3219,6 +3252,7 @@ def _tra_loi_gia_nha_va_von(text: str, tai_lieu: str) -> tuple[str, str] | None:
     from backend.pipeline.du_kien_khoan_vay import quantities
     if _ma_san_pham(tai_lieu) != "vay_mua_nha":
         return None
+    text = text.split(", tức cần vay ")[0]         # đuôi do `neo_du_kien_ke` nối
     t = _bo_dau(text)
     gioi_han = _gioi_han_ltv(_phan_san_pham(tai_lieu))
     cac = [q for q in quantities(text) if q.value is not None and q.kind in ("money", "bare")]
@@ -3336,13 +3370,15 @@ def _tra_loi_tiet_kiem_ngan(text: str, tai_lieu: str) -> tuple[str, str] | None:
     if rut_truoc:
         return rut_truoc
     tu = t.split()
-    if not tu or len(tu) > 7:
+    if not tu or len(tu) > 10:
         return None
     from backend.pipeline.du_kien_khoan_vay import quantities
     cac = [q for q in quantities(text) if q.value is not None]
     if len(cac) == 1 and cac[0].kind == "money":
         con = _bo_dau(text[:cac[0].start] + " " + text[cac[0].end:]).split()
-        if all(c in _CHU_QUANH_SO_TIEN for c in con):
+        # "gửi được năm chục triệu không" là câu HỎI, không phải lời kể số tiền.
+        if all(c in _CHU_QUANH_SO_TIEN for c in con) and not re.search(
+                r"\b(duoc|co)\b.*\bkhong\s*$", t):
             return "ghi_nhan_tien_gui", (
                 f"Dạ em ghi nhận anh chị dự định gửi khoảng {_fmt_trieu(float(cac[0].value))} ạ.")
     if not cac and re.fullmatch(r"(the |vay |con |u |o )*ky han( (nao|gi|the nao|sao|bao lau|thi sao))?( em| a| nhi)*", t):
