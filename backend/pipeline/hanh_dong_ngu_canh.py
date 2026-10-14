@@ -40,7 +40,8 @@ def _bo_dau(text: str) -> str:
 
 _CHE = re.compile(
     r"\b(cao|dat|nhieu|thap|it|lau|cham|kho|phuc tap|ruom ra|lang nhang|nhieu khe)"
-    r"\s+(the|vay|qua|ghe|du|nhi)\b|\b(cat co|chat chem|qua cao|qua thap|qua it|qua lau)\b")
+    r"\s+(the|vay|qua|ghe|du|nhi|phet|that)\b|"
+    r"\b(cat co|chat chem|qua cao|qua thap|qua it|qua lau|co the thoi|duoc co the|chi the thoi)\b")
 _CHU_DE = (
     # "lãi" xét trên chữ CÒN DẤU ở `chu_de`: bỏ dấu thì "tính lại" cũng thành "lai".
     ("lai", re.compile(r"\blai suat\b|phan tram|% (mot )?nam")),
@@ -165,6 +166,8 @@ def hanh_dong(*, ma_san_pham: str, tai_lieu: str, lich_su: list[dict] | None,
     "Riêng câu hỏi" để người gọi lùi về khi cả lời trấn an thì quá dài."""
     if not (ma_san_pham.startswith("vay") or ma_san_pham in ("the_tin_dung", "tiet_kiem")):
         return None
+    if (ma_luat or "").startswith(("tinh_", "uoc_tinh")):
+        return None            # câu vừa tính ra con số đã dài: không chèn lời trấn an hay câu hỏi
     la_vay = ma_san_pham.startswith("vay")
     ai_truoc = next((m.get("content", "") for m in reversed(lich_su or [])
                      if m.get("role") == "assistant"), "")
@@ -266,6 +269,11 @@ def dap_cau_hoi_hanh_dong(loi_khach: str, cau_ai_truoc: str,
         return "dap_muc_dich", "Dạ vâng ạ."
     # Thẻ và tiết kiệm: khách đáp gọn câu hỏi bắt chuyện thì nhận lời rồi đi tiếp.
     # Câu hỏi chi tiêu KHÔNG ở đây: khách đáp bằng con số, đã có luật gợi ý hạng thẻ.
+    if "giao dich tren dien thoai hay ra quay" in ai and re.search(
+            r"\b(quay|khong biet dung|khong ranh|khong quen|khong dung dien thoai)\b", t):
+        # Hình thức "gửi tại quầy" là mặc định của mọi sổ tiết kiệm; khách không
+        # dùng điện thoại thì nói luôn cho họ yên tâm (đóng vai 13-10: chỉ "Dạ vâng ạ").
+        return "dap_kenh_quay", "Dạ vâng ạ, mình ra quầy gửi cũng được ạ."
     for dau in ("dang dung the tin dung nao chua", "dang gui tiet kiem o dau chua",
                 "giao dich tren dien thoai hay ra quay"):
         if dau in ai and not re.search(r"\b(trieu|ty|phan tram)\b", t):

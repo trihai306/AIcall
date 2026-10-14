@@ -175,9 +175,12 @@ def tra_loi_dieu_kien(text: str, ma_sp: str, sp_doc: str) -> tuple[str, str] | N
                         f"Dạ điều kiện tuổi của {ten_sp} là {_noi_khung(dau, cuoi)} ạ. "
                         f"Tuổi {tuoi} đang {huong} giới hạn này, nên em chưa thể xác nhận "
                         "hồ sơ phù hợp; việc xét hồ sơ vẫn cần thẩm định cụ thể ạ.")
+                # Gửi tiết kiệm không có khâu thẩm định hồ sơ: câu rào của khoản vay
+                # nghe lạc với người đi gửi tiền ("bác 72 tuổi có gửi được không").
+                rao = ("" if "tiết kiệm" in ten_sp.lower() else
+                       " Việc đủ điều kiện vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.")
                 return "dieu_kien_tuoi_khop", (
-                    f"Dạ tuổi {tuoi} nằm trong khung {_noi_khung(dau, cuoi)} ạ. "
-                    "Việc đủ điều kiện vẫn cần đối chiếu các điều kiện khác và thẩm định hồ sơ.")
+                    f"Dạ tuổi {tuoi} nằm trong khung {_noi_khung(dau, cuoi)} ạ." + rao)
             return "dieu_kien_tuoi", _cau(ten_sp, cap)
 
     if (re.search(r"\b(thu nhap|luong)\b", t) and not co_so

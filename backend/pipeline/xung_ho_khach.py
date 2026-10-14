@@ -19,9 +19,11 @@ _DEM = r"(?:(?:thì|cũng|đang|mới|chỉ|đã|sẽ|vẫn|còn)\s+)?"
 _VIEC_CUA_MINH = (
     r"(?:muốn|cần|hỏi|vay|gửi|lương|làm|định|tính|từng|nghe|bận|chưa|xem|bàn|trả|mở|dùng|"
     r"nhận|thấy|nghĩ|biết|hiểu|sợ|lo|mua|thu nhập|kinh doanh|hết|vừa|quan tâm|đang|không|"
-    r"năm nay|\d+\s*tuổi|(?:hai|ba|bốn|năm|sáu|bảy)\s+mươi)")
+    r"năm nay|\d+\s*tuổi|(?:hai|ba|bốn|năm|sáu|bảy)\s+mươi|"
+    # "bác có ít tiền hưu muốn gửi". "chị có chương trình gì" là khách gọi AI: loại.
+    r"có(?!\s+(?:chương trình|sản phẩm|gói|ưu đãi|dịch vụ|khuyến mãi|cho vay|bán|gì|thể)))")
 _TU_XUNG = re.compile(rf"(?:^|[\s,.!?])(?:cho|của|giúp|với)?\s*{_VAI}\s+{_DEM}{_VIEC_CUA_MINH}\b", re.IGNORECASE)
-_CHO_MINH = re.compile(rf"\b(?:cho|giúp|của|với)\s+{_VAI}\b(?!\s+(?:ơi|ạ|à|nhé|nha))", re.IGNORECASE)
+_CHO_MINH = re.compile(rf"\b(?:cho|giúp|của|với|gọi)\s+{_VAI}\b(?!\s+(?:ơi|ạ|à|nhé|nha|ấy|ta))", re.IGNORECASE)
 # Khách xưng "em"/"cháu": người gọi là bề dưới, không đoán được nên gọi gì.
 _XUNG_EM = re.compile(
     r"\b(?:cho|giúp)\s+(?:em|cháu)\b|\b(?:em|cháu)\s+(?:muốn|cần|hỏi|vay|gửi|lương|làm|định|đang|chưa|mới)\b",

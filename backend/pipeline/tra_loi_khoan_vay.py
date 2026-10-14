@@ -3103,7 +3103,9 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
                 or _tra_loi_tiet_kiem_ngan(text, tai_lieu)
                 or _tra_loi_noi_nop_ho_so(text, tai_lieu)
                 or _tra_loi_lai_co_dinh_hay_tha_noi(text, tai_lieu)
-                or _tra_loi_vay_duoc_khong_theo_thu_nhap(text, tai_lieu, history))
+                or _tra_loi_vay_duoc_khong_theo_thu_nhap(text, tai_lieu, history)
+                or _tra_loi_tinh_lai_ky_han_moi(text, tai_lieu, history)
+                or _tra_loi_gia_nha_va_von(text, tai_lieu))
 
 
 _CHU_QUANH_SO_TIEN = frozenset(
@@ -3111,6 +3113,66 @@ _CHU_QUANH_SO_TIEN = frozenset(
     # "chú có hai trăm triệu muốn gửi", "chị đang có năm chục định gửi tiết kiệm":
     # khách KỂ số tiền của mình. Kho từng đáp "gửi được tối thiểu 1 triệu đồng ạ".
     "chu muon dinh can dang tiet kiem san roi day".split())
+
+
+def _tra_loi_tinh_lai_ky_han_moi(text: str, tai_lieu: str,
+                                 history: list[dict] | None) -> tuple[str, str] | None:
+    """"nhiều thế, kéo dài ba năm thì sao" ngay sau khi AI vừa tính khoản trả góp.
+
+    Khách đổi KỲ HẠN, số tiền giữ nguyên: tính lại đúng số tiền AI vừa dùng. Đóng
+    vai 13-10-2026: mô hình hỏi lại "cho em xin số tiền và thời hạn" dù cả hai
+    vừa được nói xong.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    ai = next((m.get("content", "") for m in reversed(history or [])
+               if m.get("role") == "assistant"), "")
+    m = re.search(r"Nếu được duyệt (.+?) trong ", ai)
+    if not m or "tháng đầu trả khoảng" not in ai:
+        return None
+    cac = [q for q in quantities(text) if q.value is not None]
+    if len(cac) != 1 or cac[0].kind != "duration" or len(_bo_dau(text).split()) > 12:
+        return None
+    kq = _tra_loi(f"vay {m.group(1)} trong {text[cac[0].start:cac[0].end]} mỗi tháng trả bao nhiêu",
+                  tai_lieu, None, None, "anh chị", None)
+    return kq if kq and kq[0] == "tinh_tra_gop" else None
+
+
+def _tra_loi_gia_nha_va_von(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """"căn một tỷ tám cô có sáu trăm": giá nhà + vốn sẵn có -> số cần vay.
+
+    Đóng vai 13-10-2026 (và "nhà hai tỷ rưỡi bác có một tỷ" hôm trước): mô hình
+    hỏi lại giá nhà khách vừa nói, hoặc tự phán hạn mức. Tỷ lệ cho vay đọc từ
+    tài liệu; vốn nói trống đơn vị ("sáu trăm") hiểu là triệu khi nhỏ hơn giá nhà.
+    """
+    from backend.pipeline.du_kien_khoan_vay import quantities
+    if _ma_san_pham(tai_lieu) != "vay_mua_nha":
+        return None
+    t = _bo_dau(text)
+    gioi_han = _gioi_han_ltv(_phan_san_pham(tai_lieu))
+    cac = [q for q in quantities(text) if q.value is not None and q.kind in ("money", "bare")]
+    if gioi_han is None or len(cac) != 2 or cac[0].kind != "money" or len(t.split()) > 16:
+        return None
+    if not re.search(r"\b(nha|can|can ho|chung cu|dat|biet thu)\b", _bo_dau(text[:cac[0].start])) \
+            or not re.search(r"\b(co|san|tich luy|tiet kiem duoc|gom duoc|tra truoc)\b",
+                             _bo_dau(text[cac[0].end:cac[1].start])) \
+            or re.search(r"\bvay\b", t):
+        return None
+    gia = Decimal(cac[0].value)
+    von = Decimal(cac[1].value) * (Decimal(1_000_000) if cac[1].kind == "bare" else 1)
+    if not (0 < von < gia):
+        return None
+    ty_le, tran = gioi_han
+    can = gia - von
+    toi_da = min(gia * ty_le / Decimal(100), tran)
+    doc = format(ty_le.normalize(), "f").replace(".", ",")
+    dau = (f"Dạ căn {_fmt_trieu(gia)} mà anh chị có sẵn {_fmt_trieu(von)} thì cần vay "
+           f"khoảng {_fmt_trieu(can)} ạ. ")
+    if can <= toi_da:
+        return "can_vay_theo_gia_nha", dau + (
+            f"Mức này nằm trong mức cho vay tối đa {doc}% giá trị căn nhà ạ.")
+    return "can_vay_theo_gia_nha", dau + (
+        f"Bên em cho vay tối đa {doc}% giá trị căn nhà, tức khoảng {_fmt_trieu(toi_da)}, "
+        f"nên mình cần chuẩn bị thêm khoảng {_fmt_trieu(can - toi_da)} ạ.")
 
 
 def _tra_loi_vay_duoc_khong_theo_thu_nhap(text: str, tai_lieu: str,
@@ -3122,7 +3184,10 @@ def _tra_loi_vay_duoc_khong_theo_thu_nhap(text: str, tai_lieu: str,
     tài liệu, bằng chính luật đã có cho câu nói liền một hơi.
     """
     t = _bo_dau(text)
-    if not re.search(r"\b(vay duoc khong|duoc vay khong|du dieu kien|co duoc khong|vay duoc chua)\b", t) \
+    # Phải hỏi về việc VAY / MỞ THẺ. Bản đầu nhận cả "có được không" trơ trọi nên
+    # "quẹt nước ngoài có được không" bị đáp bằng thu nhập (đóng vai 13-10-2026).
+    if not re.search(r"\b((vay|mo|lam|dang ky)( the)? duoc (khong|chua)|duoc (vay|mo the|lam the) khong|"
+                     r"du dieu kien)\b", t) \
             or len(t.split()) > 12 or resolve(text=text).income.value is not None:
         return None
     thu_nhap = _thu_nhap_gan_nhat(history)
@@ -3165,7 +3230,7 @@ def _tra_loi_lai_co_dinh_hay_tha_noi(text: str, tai_lieu: str) -> tuple[str, str
     t = _bo_dau(text)
     if not re.search(r"\blai\b", t) or not re.search(
             r"\b(co dinh|tha noi|thay doi|co doi|co tang|giu nguyen|dieu chinh)\b", t) \
-            or re.search(r"\b(may nam|bao lau|bao nhieu nam|may thang)\b", t):
+            or re.search(r"\b(may nam|bao lau|bao nhieu nam|may thang|la sao|la gi|nghia la)\b", t):
         return None
     sp_doc = _phan_san_pham(tai_lieu)
     if not (_ma_san_pham(tai_lieu) or "").startswith("vay"):

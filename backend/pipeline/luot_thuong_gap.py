@@ -461,7 +461,7 @@ BANG = [
     ("chao_bat_may",
      [r"^\s*(a\s*lo\s*)+$", r"^\s*(alo\s*)+$", r"^\s*(nghe|toi nghe|noi di)\s*$",
       # "chú nghe", "alo cô nghe đây": người lớn tuổi nhấc máy hay nói vậy.
-      r"^\s*(a\s*lo\s+|alo\s+)?(anh|chi|co|chu|bac|ong|ba|toi|tui|em|chau)\s+nghe(\s+(day|a))*\s*$",
+      r"^\s*(a\s*lo\s+|alo\s+)?(anh|chi|co|chu|bac|ong|ba|toi|tui|em|chau)\s+nghe(\s+(day|a|em|chau))*\s*$",
       r"^\s*(a\s*lo|alo)\s+(em|anh|chi)\s*(oi|a|ah)?\s*$"],
      None),      # tuỳ lúc đầu hay giữa cuộc gọi, xem `tra_loi_san`
 ]

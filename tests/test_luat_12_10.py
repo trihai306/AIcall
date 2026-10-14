@@ -219,3 +219,37 @@ def test_khach_ke_so_tien_muon_gui_va_hoi_uu_dai():
     assert not kho_cung_chu_de("uu_dai_hien_tai", "Dạ đây là chương trình ưu đãi ngân hàng đang dành "
                                "cho khách hàng ạ. Anh chị muốn nghe trước về lãi suất, hạn mức hay hồ sơ thủ tục ạ?")
     assert kho_cung_chu_de("uu_dai_hien_tai", "Dạ thẻ đang miễn phí thường niên năm đầu ạ.")
+
+
+def test_khach_dong_vai_vong_sau():
+    from backend.pipeline.hanh_dong_ngu_canh import dang_che, dap_cau_hoi_hanh_dong as dap, hanh_dong
+    from backend.pipeline.ngu_canh_tai_lieu import toan_van
+    from backend.pipeline.xung_ho_khach import xung_ho_theo_loi
+    vay, nha, the, tk = (toan_van(x) for x in ("vay tín chấp", "vay mua nhà", "thẻ tín dụng", "tiết kiệm"))
+    # "có được không" về chuyện khác không được đáp bằng thu nhập đã khai
+    h = [{"role": "user", "content": "lương mười tám triệu"}, {"role": "assistant", "content": "Dạ vâng."}]
+    assert tra_loi("quẹt nước ngoài có được không", the, history=h) is None
+    assert tra_loi("thế giờ anh có vay được không", vay, history=h)[0] == "thu_nhap_dat_muc"
+    # đổi kỳ hạn ngay sau khi vừa tính: giữ số tiền, tính lại
+    h2 = [{"role": "assistant", "content": "Dạ em tạm tính ạ. Nếu được duyệt 150 triệu đồng trong 2 năm "
+                                           "thì tháng đầu trả khoảng 7,2 triệu đồng, các tháng sau giảm dần."}]
+    ma, dap_ = tra_loi("nhiều thế kéo dài ba năm thì sao", vay, history=h2)
+    assert ma == "tinh_tra_gop" and "150 triệu đồng trong 3 năm" in dap_
+    assert tra_loi("ba năm thì sao", vay, history=h) is None                 # chưa tính gì thì không đoán
+    assert hanh_dong(ma_san_pham="vay_tin_chap", tai_lieu=vay, lich_su=h2, loi_khach="nhiều thế kéo dài ba năm thì sao",
+                     da_hoi=set(), da_biet_so_tien=True, ma_luat="tinh_tra_gop") is None
+    # giá nhà + vốn sẵn có -> số cần vay, tỷ lệ đọc từ tài liệu
+    ma, dap_ = tra_loi("căn một tỷ tám cô có sáu trăm", nha)
+    assert ma == "can_vay_theo_gia_nha" and "1,2 tỷ" in dap_ and "80%" in dap_
+    assert "chuẩn bị thêm khoảng 300 triệu" in tra_loi("căn hộ ba tỷ anh có sẵn ba trăm triệu", nha)[1]
+    assert (tra_loi("căn một tỷ tám cô có sáu trăm", vay) or ("",))[0] != "can_vay_theo_gia_nha"
+    # các lượt tạm
+    assert nhan_dang("chị nghe em") == "chao_bat_may"
+    assert xung_ho_theo_loi(["ai gọi bác đấy", "bác có ít tiền hưu muốn gửi"]) == "bác"
+    assert xung_ho_theo_loi(["chị có chương trình gì không"]) == ""
+    assert dang_che("thế cũng cao phết") and dang_che("có thế thôi à ít nhỉ") and not dang_che("vay nhiều ạ")
+    assert dap("bác không biết dùng điện thoại đâu",
+               "Dạ. Anh chị quen giao dịch trên điện thoại hay ra quầy ạ?")[0] == "dap_kenh_quay"
+    assert tra_loi("sau hai năm lãi thả nổi là sao", nha) is None            # hỏi NGHĨA: để kho/FAQ giải thích
+    assert "thẩm định" not in tra_loi("bác bảy mươi hai tuổi rồi có gửi được không", tk)[1]
+    assert "thẩm định" in tra_loi("anh năm mươi tuổi có vay được không", vay)[1]

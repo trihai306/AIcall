@@ -1,0 +1,118 @@
+[
+ {
+  "ma": "v6_anh_kho_tinh",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "Claude đóng vai khách vòng 6 (13-10, sau lớp hành động + xưng hô)",
+  "luot": [
+   "alo ai đấy",
+   "lại ngân hàng à dạo này gọi suốt",
+   "thôi nói xem lãi thế nào",
+   "một năm bảy phẩy chín à thế cũng cao phết",
+   "anh nhận lương tiền mặt",
+   "anh đang cần khoảng một trăm rưỡi",
+   "trả trong hai năm thì mỗi tháng bao nhiêu",
+   "nhiều thế kéo dài ba năm thì sao",
+   "giấy tờ có rắc rối không",
+   "được rồi để anh nghĩ đã"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v6_chi_the",
+  "kieu": "gia_nguoi",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "Claude đóng vai khách vòng 6 (13-10, sau lớp hành động + xưng hô)",
+  "luot": [
+   "chị nghe em",
+   "chị đang dùng thẻ bên khác rồi",
+   "thẻ bên em có gì hơn",
+   "phí năm bao nhiêu",
+   "năm đầu miễn phí thật không",
+   "chị lương mười tám triệu thì hạn mức được bao nhiêu",
+   "quẹt nước ngoài có được không",
+   "làm thẻ mất bao lâu",
+   "ừ em ghi nhận cho chị"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v6_bac_tk",
+  "kieu": "gia_nguoi",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "Claude đóng vai khách vòng 6 (13-10, sau lớp hành động + xưng hô)",
+  "luot": [
+   "ai gọi bác đấy",
+   "bác có ít tiền hưu muốn gửi",
+   "khoảng ba trăm triệu",
+   "gửi một năm thì lãi bao nhiêu",
+   "có thế thôi à ít nhỉ",
+   "bác không biết dùng điện thoại đâu",
+   "thế mỗi tháng lĩnh lãi được không",
+   "lỡ ốm đau cần rút thì sao",
+   "bác bảy mươi hai tuổi rồi có gửi được không",
+   "ừ để bác bảo con nó đưa đi"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "v6_co_nha",
+  "kieu": "gia_nguoi",
+  "san_pham": "vay mua nhà",
+  "mo_ta": "Claude đóng vai khách vòng 6 (13-10, sau lớp hành động + xưng hô)",
+  "luot": [
+   "cô đang tìm hiểu vay mua chung cư",
+   "căn một tỷ tám cô có sáu trăm",
+   "vay một tỷ hai được không",
+   "lãi năm đầu bao nhiêu",
+   "sau hai năm lãi thả nổi là sao",
+   "thế thì rủi ro quá",
+   "vay mười lăm năm mỗi tháng trả bao nhiêu",
+   "cô làm giáo viên lương mười sáu triệu có vay được không",
+   "cần thế chấp gì"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+]

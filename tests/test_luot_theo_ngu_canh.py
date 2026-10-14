@@ -69,3 +69,15 @@ def test_u_sau_cau_hoi_mo_thi_hoi_lai_dung_cau_do():
         "gat_dau_hoi_lai", "Dạ vâng ạ. Thu nhập hàng tháng của anh chị khoảng bao nhiêu ạ?")
     co_khong = _h("Anh chị có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?")
     assert tra_loi_theo_ngu_canh("ừ", co_khong) is None
+
+
+def test_ket_qua_moi_khong_bi_goi_la_nhu_em_vua_tinh():
+    from backend.pipeline.luot_theo_ngu_canh import rut_gon_neu_lap
+    dau = "Dạ em tạm tính theo lãi suất từ 7,9% một năm, trên dư nợ giảm dần ạ. "
+    duoi = " Đây là số ước tính, chưa phải lịch trả nợ chính thức."
+    cu = dau + "Nếu được duyệt 150 triệu đồng trong 2 năm thì tháng đầu trả khoảng 7,2 triệu đồng, các tháng sau giảm dần." + duoi
+    moi = dau + "Nếu được duyệt 150 triệu đồng trong 3 năm thì tháng đầu trả khoảng 5,2 triệu đồng, các tháng sau giảm dần." + duoi
+    h = [{"role": "assistant", "content": cu}]
+    ra = rut_gon_neu_lap(moi, h)
+    assert "như em vừa tính" not in ra and "3 năm" in ra and "5,2 triệu" in ra and ra.startswith("Dạ nếu")
+    assert rut_gon_neu_lap(cu, h).startswith("Dạ như em vừa tính ạ.")       # trùng thật thì vẫn rút gọn như cũ

@@ -107,5 +107,11 @@ def rut_gon_neu_lap(cau: str, history: list[dict] | None) -> str:
     co_so = [c.strip() for c in re.split(r"(?<=[.?!])\s+", cau) if re.search(r"\d", c)]
     if len(co_so) < 2:
         return cau
+    # Mở đầu giống nhưng CON SỐ đã khác (khách đổi kỳ hạn: "kéo dài ba năm thì
+    # sao"): đó là kết quả mới, không phải nhắc lại. Chỉ đọc các câu chưa nói.
+    moi = [c.strip() for c in re.split(r"(?<=[.?!])\s+", cau) if c.strip() and c.strip() not in ai]
+    if moi and any(re.search(r"\d", c) for c in moi):
+        loi = _MO_DAU.sub("", " ".join(moi), count=1)
+        return "Dạ " + loi[:1].lower() + loi[1:]
     loi = _MO_DAU.sub("", co_so[-1], count=1)
     return "Dạ như em vừa tính ạ. " + loi[:1].upper() + loi[1:]
