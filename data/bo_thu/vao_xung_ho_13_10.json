@@ -1,0 +1,86 @@
+[
+ {
+  "ma": "xh_anh_vay",
+  "kieu": "hanh_dong",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "ừ tư vấn cho anh khoản vay bên mình",
+   "anh muốn vay hai trăm triệu",
+   "mười hai tháng",
+   "lãi bao nhiêu",
+   "cao thế",
+   "anh lương bảy triệu",
+   "thế giờ anh có vay được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "xh_chi_the",
+  "kieu": "hanh_dong",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "alo chị nghe",
+   "thẻ này phí thường niên bao nhiêu",
+   "đắt thế",
+   "chị chưa dùng thẻ nào",
+   "hạn mức được bao nhiêu",
+   "có ưu đãi gì không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "xh_chu_tk",
+  "kieu": "hanh_dong",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "chú nghe",
+   "chú có hai trăm triệu muốn gửi",
+   "sáu tháng lãi bao nhiêu",
+   "thấp thế",
+   "chú quen ra quầy",
+   "rút trước hạn có được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ {
+  "ma": "khong_ro_xung_ho",
+  "kieu": "hanh_dong",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "alo",
+   "lãi bao nhiêu",
+   "vay được bao nhiêu"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   ""
+  ]
+ }
+]

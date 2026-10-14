@@ -55,14 +55,17 @@ def tra_loi_theo_ngu_canh(text: str, history: list[dict] | None) -> tuple[str, s
     # khách đang CHÊ điều AI vừa nói. Đáp một câu nhận rồi để lớp hành động
     # (`hanh_dong_ngu_canh`) nối lời trấn an - đừng để mô hình tự viết lời bênh.
     from backend.pipeline.hanh_dong_ngu_canh import chu_de, dang_che, dap_cau_hoi_hanh_dong
-    dap = dap_cau_hoi_hanh_dong(text, ai, " ".join(
-        m.get("content", "") for m in (history or []) if m.get("role") == "assistant"))
+    cac_ai = [m.get("content", "") for m in (history or []) if m.get("role") == "assistant"]
+    # Hai lượt AI gần nhất: khách hay trả lời câu hỏi bắt chuyện MUỘN một lượt.
+    dap = dap_cau_hoi_hanh_dong(text, " ".join(cac_ai[-2:]), " ".join(cac_ai))
     if dap:
         return dap
     if len(t.split()) <= 5 and dang_che(text) and not re.search(r"\blai\b", t):
         cd = chu_de("", ai)
-        if cd in ("han_muc", "thu_tuc"):
+        if cd in ("han_muc", "thu_tuc", "phi"):
             return f"che_{cd}", "Dạ em hiểu ạ."
+        if cd == "lai" and re.search(r"\b(thap|it)\b", t):
+            return "che_lai_thap", "Dạ em hiểu ạ."      # lãi TIẾT KIỆM bị chê thấp
     if _GAT_DAU.match(t) and not ai.rstrip().endswith("?"):
         return "gat_dau", "Dạ vâng ạ."
     if _GAT_DAU.match(t):

@@ -21,6 +21,7 @@ from backend.pipeline.chan_tu_che import (
     chan_tu_nhan_la_nguoi)
 from backend.pipeline.sua_nghe_sai import neo_so_tien_vay, sua_nghe_sai
 from backend.pipeline.loi_dan_luot import loi_dan_luot_ngan
+from backend.pipeline.xung_ho_khach import doi_xung_ho, ma_xung_ho, xung_ho_theo_loi
 from backend.pipeline.luot_theo_ngu_canh import rut_gon_neu_lap, tra_loi_theo_ngu_canh
 from backend.pipeline.chan_kenh import (CAU_CHUA_CO_KENH, chan_kenh_la,
                                         chan_phu_nhan_san_pham)
@@ -272,6 +273,11 @@ _CHU_DE_CUA_LUAT = {
     "thoi_han_san_pham": r"tháng|năm",
     "phi_tra_truoc_han": r"trước hạn|trả trước|tất toán",
     "dieu_kien_tuoi": r"tuổi",
+    # Khách hỏi "có ưu đãi gì không" mà kho chọn câu mở đầu chung chung "đây là
+    # chương trình ưu đãi ngân hàng đang dành cho khách hàng" (13-10-2026): câu
+    # của kho phải nêu được một ưu đãi CỤ THỂ, không thì luật đọc danh sách của
+    # tài liệu.
+    "uu_dai_hien_tai": r"miễn|giảm|tặng|hoàn tiền|voucher|tích điểm|trả góp|\d",
 }
 
 
@@ -2299,7 +2305,20 @@ class StreamingPipeline:
             da_hoi.add(dd[0])
             session._dan_dat_vua_hoi = (dd[0], session.turn_count)
             metrics["dan_dat"] = dd[0]
+            dd = (dd[0], doi_xung_ho(dd[1], self._goi_khach(session, user_text)))
         return dd
+
+    @staticmethod
+    def _goi_khach(session, user_text: str = "") -> str:
+        """Cách gọi khách: theo lời khách TỰ XƯNG trước, rồi mới tới giới tính
+        đoán từ giọng. Xem `xung_ho_khach`."""
+        khach = [m.get("content", "") for m in (getattr(session, "history", None) or [])
+                 if m.get("role") == "user"] + [user_text or ""]
+        theo_loi = xung_ho_theo_loi(khach)
+        if theo_loi:
+            return theo_loi
+        from backend.services.gender_detect import xung_ho
+        return xung_ho(getattr(session, "gender", ""), getattr(session, "gender_do_tin", None))
 
     async def _noi_dan_dat(self, nguon, session, user_text: str, metrics: dict):
         """Bọc luồng token của mô hình: hết câu thì nối thêm câu hỏi dẫn dắt."""
@@ -3194,6 +3213,14 @@ class StreamingPipeline:
             ma_tieng_san, chu_tieng_san = f"ltg_{dap_san[0]}", dap_san[1]
         elif dong_bang and doc_nguyen_van(dong_bang):
             ma_tieng_san, chu_tieng_san = f"hd_{dong_bang['id']}", dong_bang["tra_loi"]
+        # Gọi khách theo cách khách tự xưng. Mã tiếng sẵn mang hậu tố để bản "anh"
+        # và bản "anh chị" nằm cạnh nhau: kho tiếng khoá theo MÃ, không theo chữ.
+        if ma_tieng_san:
+            xh = self._goi_khach(session, user_text)
+            if ma_xung_ho(xh):
+                chu_tieng_san = doi_xung_ho(chu_tieng_san, xh)
+                ma_tieng_san += f"_xh_{ma_xung_ho(xh)}"
+                metrics["xung_ho"] = xh
         # Rút câu của luật còn một ý trước khi nối hành động (bảng mẫu bên A).
         if dap_san and ma_tieng_san:
             from backend.pipeline.hanh_dong_ngu_canh import gon_cau
@@ -3657,8 +3684,7 @@ class StreamingPipeline:
             return da_co + " " + them
 
         from backend.services.gender_detect import xung_ho as _xh_goi
-        _goi_khach = _xh_goi(getattr(session, "gender", ""),
-                             getattr(session, "gender_do_tin", None))
+        _goi_khach = self._goi_khach(session, user_text)
 
         def _don_loi(doan: str) -> str:
             # `sua_xung_ho` chạy TRƯỚC: nó bỏ số thứ tự đầu câu, mà các bước sau
@@ -3692,7 +3718,8 @@ class StreamingPipeline:
             # đúng con số đã qua kiểm để quyết "mảnh này là nội dung thật".
             vua_thay_cau[0] = False
             sau_chan = _chan_so(bo_cau_lui_thua(
-                sua_chu_mo_hinh(sua_xung_ho(doan, goi_khach=_goi_khach))))
+                sua_chu_mo_hinh(doi_xung_ho(sua_xung_ho(doan, goi_khach=_goi_khach),
+                                            _goi_khach))))
             if vua_thay_cau[0]:
                 # ĐI VÒNG qua `bo_hua_suong`. Câu này do LƯỚI chèn, là thứ BẮT
                 # BUỘC phải tới tai khách - không phải hứa suông của mô hình.

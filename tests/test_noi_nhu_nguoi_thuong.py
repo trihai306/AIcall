@@ -254,7 +254,8 @@ def test_khong_noi_cau_hoi_sau_khi_khach_tu_choi_hoac_cau_tra_loi_da_khep():
 def test_tiet_kiem_khong_hoi_lai_so_tien_ky_han_khach_da_noi():
     dd = _dd(["chị muốn gửi hai trăm triệu kỳ hạn mười hai tháng"],
              "Dạ gửi tiết kiệm kỳ hạn 12 tháng lãi suất 5,5% một năm ạ.", "tiet_kiem")
-    assert dd is None
+    # Không hỏi lại số tiền / kỳ hạn đã nói; từ 13-10 được hỏi bắt chuyện một câu.
+    assert dd is None or dd[0] not in ("so_tien", "ky_han")
     dd = _dd(["sáu tháng thì được bao nhiêu phần trăm"],
              "Dạ gửi tiết kiệm kỳ hạn 6 tháng lãi suất 4,5% một năm ạ.", "tiet_kiem")
     assert dd and dd[0] == "so_tien"               # kỳ hạn có rồi, số tiền thì chưa

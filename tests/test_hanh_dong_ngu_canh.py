@@ -74,7 +74,7 @@ def test_moi_hanh_dong_chi_mot_lan():
 def test_khong_co_dong_tai_lieu_thi_khong_tu_che_loi_tran_an():
     hd = hanh_dong(ma_san_pham="vay_tin_chap", tai_lieu="# Vay\n- Lãi suất: từ 9%/năm\n",
                    lich_su=[dict(CHAO)], loi_khach="lãi cao thế", da_hoi=set(), da_biet_so_tien=False)
-    assert hd == ("tran_an", "so_tien", "Anh chị đang cần khoảng bao nhiêu ạ?")
+    assert hd[:3] == ("tran_an", "so_tien", "Anh chị đang cần khoảng bao nhiêu ạ?")
 
 
 def test_ngu_canh_va_nhan_loi_che():
@@ -83,7 +83,7 @@ def test_ngu_canh_va_nhan_loi_che():
     nc = ngu_canh([dict(CHAO), {"role": "user", "content": "lãi bao nhiêu"},
                    {"role": "assistant", "content": "Dạ từ 7.9%/năm ạ."}], "cao thế")
     assert nc == {"da_biet_sp": True, "quan_tam": True, "che": True}
-    assert hanh_dong(ma_san_pham="tiet_kiem", tai_lieu="", lich_su=[], loi_khach="lãi thấp thế",
+    assert hanh_dong(ma_san_pham="bao_hiem", tai_lieu="", lich_su=[], loi_khach="phí cao thế",
                      da_hoi=set(), da_biet_so_tien=False) is None
 
 
@@ -106,3 +106,40 @@ def test_khach_tra_loi_cau_hoi_hanh_dong_khong_roi_xuong_mo_hinh():
     assert dap("rồi anh từng vay rồi", luong, hoi + " " + luong)[0] == "dap_tung_vay"   # trả lời muộn một lượt
     assert dap("cần giấy tờ gì", "Dạ em hiểu ạ. Anh chị định dùng khoản này vào việc gì ạ?") is None
     assert dap("sửa nhà em ạ", "Dạ em hiểu ạ. Anh chị định dùng khoản này vào việc gì ạ?")[0] == "dap_muc_dich"
+
+
+def test_the_va_tiet_kiem_cung_co_hanh_dong_theo_ngu_canh():
+    the, tk = toan_van("thẻ tín dụng"), toan_van("tiết kiệm")
+
+    def hd(sp, tl, loi, da=None, ai=""):
+        ls = [dict(CHAO)] + ([{"role": "assistant", "content": ai}] if ai else [])
+        return hanh_dong(ma_san_pham=sp, tai_lieu=tl, lich_su=ls, loi_khach=loi,
+                         da_hoi=da or set(), da_biet_so_tien=False)
+    # thẻ: hỏi phí -> bắt chuyện; chê phí -> trấn an bằng dòng miễn phí năm đầu của tài liệu
+    assert hd("the_tin_dung", the, "phí thường niên bao nhiêu")[1] == "dt_dang_dung_the"
+    kieu, ma, loi, hoi = hd("the_tin_dung", the, "phí cao thế")
+    assert kieu == "tran_an" and "miễn phí thường niên năm đầu" in loi.lower() and loi.endswith(hoi)
+    assert hd("the_tin_dung", the, "hạn mức được bao nhiêu")[1] == "dt_chi_tieu"
+    # tiết kiệm: hỏi lãi -> bắt chuyện; chê lãi thấp -> dòng cộng thêm khi gửi online
+    assert hd("tiet_kiem", tk, "lãi sáu tháng bao nhiêu") is None          # chưa biết số tiền: để chuỗi cũ hỏi
+    assert hanh_dong(ma_san_pham="tiet_kiem", tai_lieu=tk, lich_su=[dict(CHAO)],
+                     loi_khach="lãi sáu tháng bao nhiêu", da_hoi=set(), da_biet_so_tien=True)[1] == "dt_gui_o_dau"
+    kieu, ma, loi, hoi = hd("tiet_kiem", tk, "lãi thấp thế")
+    assert kieu == "tran_an" and "0.2%" in loi and ma == "dt_kenh_gui"
+    # mỗi hành động một lần
+    assert hd("the_tin_dung", the, "phí thường niên bao nhiêu", {"dt_dang_dung_the"}) is None
+    from backend.pipeline.hanh_dong_ngu_canh import dap_cau_hoi_hanh_dong as dap
+    assert dap("chưa em ạ", "Dạ vâng ạ. Anh chị đang dùng thẻ tín dụng nào chưa ạ?") == ("dap_hanh_dong", "Dạ vâng ạ.")
+    assert dap("đắt thế", "Dạ phí 800.000đ/năm ạ. Anh chị đang dùng thẻ tín dụng nào chưa ạ?") is None
+    from backend.pipeline.luot_theo_ngu_canh import tra_loi_theo_ngu_canh as ngu_canh_luot
+    h = [dict(CHAO), {"role": "user", "content": "phí thường niên bao nhiêu"},
+         {"role": "assistant", "content": "Dạ, thẻ Platinum có phí thường niên 800.000đ/năm ạ. Chị đang dùng thẻ tín dụng nào chưa ạ?"}]
+    assert ngu_canh_luot("đắt thế", h)[0] == "che_phi"
+    h += [{"role": "user", "content": "đắt thế"},
+          {"role": "assistant", "content": "Dạ em hiểu ạ. Bên em đang miễn phí thường niên năm đầu ạ."}]
+    assert ngu_canh_luot("chị chưa dùng thẻ nào", h)[0] == "dap_hanh_dong"      # trả lời muộn một lượt
+    hoi_the = "Dạ phí 800.000đ/năm ạ. Anh chị đang dùng thẻ tín dụng nào chưa ạ?"
+    assert dap("có hoàn tiền hông", hoi_the) is None and dap("có quẹt thẻ trả góp được hông", hoi_the) is None
+    from backend.pipeline.hanh_dong_ngu_canh import chu_de
+    assert chu_de("rứa à thôi để o tính lại đã") == "" and chu_de("lãi bao nhiêu") == "lai"
+    assert dap("khoảng mười triệu", "Dạ. Mỗi tháng anh chị chi tiêu qua thẻ khoảng bao nhiêu ạ?") is None

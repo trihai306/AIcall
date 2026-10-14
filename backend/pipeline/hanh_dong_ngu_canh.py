@@ -42,13 +42,16 @@ _CHE = re.compile(
     r"\b(cao|dat|nhieu|thap|it|lau|cham|kho|phuc tap|ruom ra|lang nhang|nhieu khe)"
     r"\s+(the|vay|qua|ghe|du|nhi)\b|\b(cat co|chat chem|qua cao|qua thap|qua it|qua lau)\b")
 _CHU_DE = (
-    ("lai", re.compile(r"\blai\b|phan tram|% (mot )?nam")),
+    # "lãi" xét trên chữ CÒN DẤU ở `chu_de`: bỏ dấu thì "tính lại" cũng thành "lai".
+    ("lai", re.compile(r"\blai suat\b|phan tram|% (mot )?nam")),
     ("han_muc", re.compile(r"han muc|toi da|vay duoc bao nhieu|duoc bao nhieu|cho vay")),
     ("thu_tuc", re.compile(r"thu tuc|ho so|giay to|cmnd|cccd|sao ke|giai ngan|bao lau thi|may ngay")),
     ("phi", re.compile(r"\bphi\b")),
+    ("uu_dai", re.compile(r"uu dai|hoan tien|cashback|tich diem|khuyen mai|qua tang")),
     ("dieu_kien", re.compile(r"dieu kien|co vay duoc khong|vay duoc khong")),
 )
-_THEO_LUAT = {"che_han_muc": "han_muc", "che_thu_tuc": "thu_tuc", "che_lai_cao": "lai", "lai_suat_san_pham": "lai", "han_muc_san_pham": "han_muc",
+_THEO_LUAT = {"che_phi": "phi", "che_lai_thap": "lai", "phan_hoi_lai_thap": "lai", "phi_the": "phi", "han_muc_the": "han_muc",
+              "lai_tiet_kiem_theo_ky": "lai", "che_han_muc": "han_muc", "che_thu_tuc": "thu_tuc", "che_lai_cao": "lai", "lai_suat_san_pham": "lai", "han_muc_san_pham": "han_muc",
               "ho_so_can_thiet": "thu_tuc", "phi_khoan_vay": "phi"}
 
 
@@ -58,20 +61,20 @@ def dang_che(loi_khach: str) -> bool:
 
 def chu_de(loi_khach: str, cau_ai_truoc: str = "", ma_luat: str = "") -> str:
     """Khách đang nói về gì: lời khách trước, rồi mã luật, rồi câu AI vừa nói."""
-    for nguon in (_bo_dau(loi_khach),):
-        for ten, mau in _CHU_DE:
-            if mau.search(nguon):
-                return ten
+    def _tim(goc: str) -> str:
+        if re.search(r"\blãi\b", unicodedata.normalize("NFC", (goc or "").lower())):
+            return "lai"
+        t_ = _bo_dau(goc)
+        return next((ten for ten, mau in _CHU_DE if mau.search(t_)), "")
+    cd = _tim(loi_khach)
+    if cd:
+        return cd
     if ma_luat in _THEO_LUAT:
         return _THEO_LUAT[ma_luat]
     # Chỉ xét phần KHẲNG ĐỊNH của câu AI: câu hỏi nối ở đuôi ("đang cần khoảng bao
     # nhiêu ạ?") nói về ý kế tiếp, không phải điều khách đang chê.
-    t = _bo_dau(" ".join(c for c in re.split(r"(?<=[.?!])\s+", cau_ai_truoc or "")
+    return _tim(" ".join(c for c in re.split(r"(?<=[.?!])\s+", cau_ai_truoc or "")
                          if not c.strip().endswith("?")))
-    for ten, mau in _CHU_DE:
-        if mau.search(t):
-            return ten
-    return ""
 
 
 def ngu_canh(lich_su: list[dict] | None, loi_khach: str) -> dict:
@@ -90,6 +93,28 @@ def _dong(tai_lieu: str, mau: str) -> str:
         if re.search(mau, _bo_dau(d)):
             return re.sub(r"^[\s\-*•]+", "", d).strip().rstrip(".")
     return ""
+
+
+_HOI_DUNG_THE = ("dt_dang_dung_the", "Anh chị đang dùng thẻ tín dụng nào chưa ạ?")
+_HOI_CHI_TIEU = ("dt_chi_tieu", "Mỗi tháng anh chị chi tiêu qua thẻ khoảng bao nhiêu ạ?")
+_HOI_GUI_O_DAU = ("dt_gui_o_dau", "Anh chị đang gửi tiết kiệm ở đâu chưa ạ?")
+_HOI_KENH_GUI = ("dt_kenh_gui", "Anh chị quen giao dịch trên điện thoại hay ra quầy ạ?")
+
+
+def _tran_an_the(cd: str, tai_lieu: str) -> tuple[str, str, str] | None:
+    if cd == "phi":
+        d = _dong(tai_lieu, r"^\W*mien phi thuong nien")
+        return (f"Bên em đang {d[:1].lower()}{d[1:]} ạ." if d else "", *_HOI_DUNG_THE)
+    if cd == "han_muc":
+        return ("", *_HOI_CHI_TIEU)
+    return None
+
+
+def _tran_an_tiet_kiem(cd: str, tai_lieu: str) -> tuple[str, str, str] | None:
+    if cd == "lai":
+        d = _dong(tai_lieu, r"^\W*lai suat cong them")
+        return (f"Gửi online thì {d[:1].lower()}{d[1:]} ạ." if d else "", *_HOI_KENH_GUI)
+    return None
 
 
 def _tran_an(cd: str, tai_lieu: str) -> tuple[str, str, str] | None:
@@ -113,6 +138,14 @@ def _tran_an(cd: str, tai_lieu: str) -> tuple[str, str, str] | None:
 
 
 def _dong_tinh(cd: str, ma_san_pham: str) -> tuple[str, str] | None:
+    if ma_san_pham == "the_tin_dung":
+        if cd in ("phi", "uu_dai", "lai"):
+            return _HOI_DUNG_THE
+        return _HOI_CHI_TIEU if cd == "han_muc" else None
+    if ma_san_pham == "tiet_kiem":
+        if cd == "lai":
+            return _HOI_GUI_O_DAU
+        return _HOI_KENH_GUI if cd == "thu_tuc" else None
     if cd == "lai":
         if ma_san_pham == "vay_tin_chap":
             return "dt_tung_vay", "Anh chị đã từng vay tín chấp bao giờ chưa ạ?"
@@ -126,11 +159,13 @@ def _dong_tinh(cd: str, ma_san_pham: str) -> tuple[str, str] | None:
 
 def hanh_dong(*, ma_san_pham: str, tai_lieu: str, lich_su: list[dict] | None,
               loi_khach: str, da_hoi: set[str], da_biet_so_tien: bool,
-              ma_luat: str = "") -> tuple[str, str, str] | None:
-    """`(kiểu, mã, lời nối)` với kiểu là "tran_an" hoặc "dong_tinh"; None thì để
-    lớp dẫn dắt cũ quyết định. Mỗi mã chỉ dùng một lần mỗi cuộc."""
-    if not ma_san_pham.startswith("vay"):
+              ma_luat: str = "") -> tuple[str, str, str, str] | None:
+    """`(kiểu, mã, lời nối, riêng câu hỏi)` với kiểu là "tran_an" hoặc "dong_tinh";
+    None thì để lớp dẫn dắt cũ quyết định. Mỗi mã chỉ dùng một lần mỗi cuộc.
+    "Riêng câu hỏi" để người gọi lùi về khi cả lời trấn an thì quá dài."""
+    if not (ma_san_pham.startswith("vay") or ma_san_pham in ("the_tin_dung", "tiet_kiem")):
         return None
+    la_vay = ma_san_pham.startswith("vay")
     ai_truoc = next((m.get("content", "") for m in reversed(lich_su or [])
                      if m.get("role") == "assistant"), "")
     nc = ngu_canh(lich_su, loi_khach)
@@ -140,7 +175,9 @@ def hanh_dong(*, ma_san_pham: str, tai_lieu: str, lich_su: list[dict] | None,
     if not cd:
         return None
     if nc["che"]:
-        ta = _tran_an(cd, tai_lieu)
+        ta = (_tran_an(cd, tai_lieu) if la_vay
+              else _tran_an_the(cd, tai_lieu) if ma_san_pham == "the_tin_dung"
+              else _tran_an_tiet_kiem(cd, tai_lieu))
         if not ta:
             return None
         loi, ma, hoi = ta
@@ -148,15 +185,18 @@ def hanh_dong(*, ma_san_pham: str, tai_lieu: str, lich_su: list[dict] | None,
             # Câu hỏi của chủ đề này đã dùng: còn lời trấn an thì nói riêng nó,
             # không thì hỏi mục đích vay - thứ chưa hỏi và hợp với mọi lời chê.
             if loi and f"ta_{cd}" not in da_hoi:
-                return "tran_an", f"ta_{cd}", loi
-            if "dt_muc_dich" not in da_hoi:
-                return "tran_an", "dt_muc_dich", "Anh chị định dùng khoản này vào việc gì ạ?"
+                return "tran_an", f"ta_{cd}", loi, ""
+            if la_vay and "dt_muc_dich" not in da_hoi:
+                hoi = "Anh chị định dùng khoản này vào việc gì ạ?"
+                return "tran_an", "dt_muc_dich", hoi, hoi
             return None
-        return "tran_an", ma, f"{loi} {hoi}".strip()
+        return "tran_an", ma, f"{loi} {hoi}".strip(), hoi
+    if ma_san_pham == "tiet_kiem" and cd == "lai" and not da_biet_so_tien:
+        return None            # chưa biết gửi bao nhiêu: hỏi số tiền (chuỗi cũ) có ích hơn
     dt = _dong_tinh(cd, ma_san_pham)
     if not dt or dt[0] in da_hoi or (dt[0] == "so_tien" and da_biet_so_tien):
         return None
-    return "dong_tinh", dt[0], dt[1]
+    return "dong_tinh", dt[0], dt[1], dt[1]
 
 
 def cau_dau(cau: str) -> str:
@@ -191,6 +231,8 @@ _HOI_MUC_DICH = "dinh dung khoan nay vao viec gi"
 def dap_cau_hoi_hanh_dong(loi_khach: str, cau_ai_truoc: str,
                           ai_ca_cuoc: str = "") -> tuple[str, str] | None:
     t, ai = _bo_dau(loi_khach), _bo_dau(cau_ai_truoc)
+    if dang_che(loi_khach):
+        return None             # "đắt thế" sau một câu hỏi bắt chuyện là lời chê, không phải câu trả lời
     # "rồi anh từng vay rồi" nói MUỘN một lượt, khi AI đã hỏi sang chuyện lương:
     # vẫn là câu trả lời cho câu hỏi đã từng vay. Để rơi xuống mô hình thì nó ghép
     # bừa hai ý: "đã từng vay thì bên em giảm thêm 0.5% lãi suất" (chạy thử 13-10).
@@ -198,10 +240,14 @@ def dap_cau_hoi_hanh_dong(loi_khach: str, cau_ai_truoc: str,
             and re.search(r"\b(tung vay|vay roi|da vay|chua vay|chua tung|chua bao gio vay)\b", t)
             and not re.search(r"\b(bao nhieu|the nao|gi|sao|duoc khong)\b", t)):
         ai = _HOI_TUNG_VAY
+    # "chưa dùng thẻ nào", "không có cái nào": chữ "nào" ở đây là phủ định, không phải hỏi.
+    t_hoi = re.sub(r"\b(chua|khong)\b(.{0,20})\bnao\b", r"\1\2", t)
     if not t or len(t.split()) > 10 or re.search(
-            r"\b(bao nhieu|the nao|ra sao|gi|nao|sao|duoc khong|co duoc|may|co .{0,20}khong)\b", t):
+            r"\b(bao nhieu|the nao|ra sao|gi|nao|sao|duoc khong|co duoc|may|"
+            r"co .{0,20}(khong|hong|hok|ko|k))\b", t_hoi):
         return None             # khách hỏi lại chuyện khác: không phải câu trả lời
-    if len(t.split()) >= 3 and t.endswith(" khong") and not t.startswith(("khong", "chua")):
+    if len(t.split()) >= 3 and t.endswith((" khong", " hong", " hok", " ko")) \
+            and not t.startswith(("khong", "chua")):
         return None             # "thủ tục nhanh không": câu hỏi có/không
     phu = bool(re.search(r"\b(chua|khong|chang|deo|ko)\b", t))
     co = bool(re.search(r"\b(roi|co|tung|u|vang|da|dung)\b", t))
@@ -218,4 +264,10 @@ def dap_cau_hoi_hanh_dong(loi_khach: str, cau_ai_truoc: str,
         return "dap_nghe", "Dạ vâng ạ."
     if _HOI_MUC_DICH in ai and not re.search(r"\b(trieu|ty|thang|nam)\b", t):
         return "dap_muc_dich", "Dạ vâng ạ."
+    # Thẻ và tiết kiệm: khách đáp gọn câu hỏi bắt chuyện thì nhận lời rồi đi tiếp.
+    # Câu hỏi chi tiêu KHÔNG ở đây: khách đáp bằng con số, đã có luật gợi ý hạng thẻ.
+    for dau in ("dang dung the tin dung nao chua", "dang gui tiet kiem o dau chua",
+                "giao dich tren dien thoai hay ra quay"):
+        if dau in ai and not re.search(r"\b(trieu|ty|phan tram)\b", t):
+            return "dap_hanh_dong", "Dạ vâng ạ."
     return None

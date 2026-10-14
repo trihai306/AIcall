@@ -202,3 +202,20 @@ def test_khach_dong_vai_vong_nam():
          {"role": "assistant", "content": "Dạ kỳ hạn 12 tháng lãi suất 5,5% một năm ạ."}]
     ma, dap = tra_loi("thế một năm được bao nhiêu tiền", tk, history=h)
     assert ma == "uoc_tinh_tien_lai_tiet_kiem" and "50 triệu" in dap and "2,75 triệu" in dap
+
+
+def test_khach_ke_so_tien_muon_gui_va_hoi_uu_dai():
+    from backend.pipeline.ngu_canh_tai_lieu import toan_van
+    from backend.pipeline.streaming_pipeline import kho_cung_chu_de
+    tk, the = toan_van("tiết kiệm"), toan_van("thẻ tín dụng")
+    for cau, so in (("chú có hai trăm triệu muốn gửi", "200 triệu"),
+                    ("em có năm chục triệu muốn gửi", "50 triệu"),
+                    ("chị muốn gửi hai trăm triệu", "200 triệu")):
+        ma, dap = tra_loi(cau, tk)
+        assert ma == "ghi_nhan_tien_gui" and so in dap
+    assert (tra_loi("gửi được năm chục triệu không", tk) or ("",))[0] != "ghi_nhan_tien_gui"
+    ma, dap = tra_loi("có ưu đãi gì không", the)
+    assert ma == "uu_dai_hien_tai" and "hoàn tiền 3%" in dap
+    assert not kho_cung_chu_de("uu_dai_hien_tai", "Dạ đây là chương trình ưu đãi ngân hàng đang dành "
+                               "cho khách hàng ạ. Anh chị muốn nghe trước về lãi suất, hạn mức hay hồ sơ thủ tục ạ?")
+    assert kho_cung_chu_de("uu_dai_hien_tai", "Dạ thẻ đang miễn phí thường niên năm đầu ạ.")

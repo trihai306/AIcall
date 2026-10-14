@@ -258,13 +258,13 @@ def test_static_rule_yields_to_prepared_answer(pipeline, monkeypatch):
     # thẻ, mà từ 09-10-2026 luật lãi suất chỉ nhường khi câu của kho có nêu lãi
     # (xem `test_static_rule_keeps_answer_when_bank_pick_is_off_topic`).
     monkeypatch.setattr(sp, "tra_loi_khoan_vay",
-                        lambda *_a, **_k: ("uu_dai_hien_tai", "Dạ câu của luật ạ."))
+                        lambda *_a, **_k: ("gioi_thieu_san_pham", "Dạ câu của luật ạ."))
     session, sink = _session(), Sink()
     asyncio.run(pipeline.process_text_turn(QUESTION, session, sink, soi=True))
     complete = next(e for e in sink.events if e["type"] == "turn_complete")
     assert complete["full_response"] == ANSWER
     assert complete["metrics"]["answer_route"]["mode"] == "answer_bank"
-    assert complete["metrics"]["luat_nhuong_kho"] == "uu_dai_hien_tai"
+    assert complete["metrics"]["luat_nhuong_kho"] == "gioi_thieu_san_pham"
 
 
 def test_static_rule_keeps_answer_when_bank_pick_is_off_topic(pipeline, monkeypatch):

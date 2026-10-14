@@ -3107,7 +3107,10 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
 
 
 _CHU_QUANH_SO_TIEN = frozenset(
-    "gui khoang tam chung do thoi em a anh chi co duoc la thi u o minh toi bac chau nhe nha".split())
+    "gui khoang tam chung do thoi em a anh chi co duoc la thi u o minh toi bac chau nhe nha "
+    # "chú có hai trăm triệu muốn gửi", "chị đang có năm chục định gửi tiết kiệm":
+    # khách KỂ số tiền của mình. Kho từng đáp "gửi được tối thiểu 1 triệu đồng ạ".
+    "chu muon dinh can dang tiet kiem san roi day".split())
 
 
 def _tra_loi_vay_duoc_khong_theo_thu_nhap(text: str, tai_lieu: str,

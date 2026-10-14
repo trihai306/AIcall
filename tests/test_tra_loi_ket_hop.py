@@ -171,4 +171,4 @@ def test_luat_chi_nhuong_khi_cau_cua_kho_dung_chu_de():
     assert kho_cung_chu_de("lai_suat_san_pham", "Dạ, lãi suất từ 7.9%/năm ạ.")
     assert not kho_cung_chu_de("lai_suat_san_pham", "Dạ anh chị được vay từ 12 đến 60 tháng ạ.")
     # Mã luật không nằm trong bảng soát thì kho vẫn được ưu tiên như cũ.
-    assert kho_cung_chu_de("uu_dai_hien_tai", "Dạ câu nào cũng được ạ.")
+    assert kho_cung_chu_de("gioi_thieu_san_pham", "Dạ câu nào cũng được ạ.")

@@ -1,0 +1,248 @@
+[
+ {
+  "ma": "xh_anh_vay",
+  "kieu": "hanh_dong",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "ừ tư vấn cho anh khoản vay bên mình",
+   "anh muốn vay hai trăm triệu",
+   "mười hai tháng",
+   "lãi bao nhiêu",
+   "cao thế",
+   "anh lương bảy triệu",
+   "thế giờ anh có vay được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "ừ tư vấn cho anh khoản vay bên mình",
+    "ai": "Dạ em tư vấn sản phẩm vay tín chấp cá nhân, lãi suất từ 7.9%/năm, hạn mức đến 500 triệu ạ. Anh dự định vay khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh muốn vay hai trăm triệu",
+    "ai": "Dạ 200 triệu đồng thì trong hạn mức ạ. Anh muốn vay trong bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "nhu_cau_vay",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "mười hai tháng",
+    "ai": "Dạ vay 12 tháng thì được ạ. Thu nhập hàng tháng của anh khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "ky_han_trong_khung",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi bao nhiêu",
+    "ai": "Dạ, mức lãi suất vay tín chấp cá nhân của chúng em từ 7.9%/năm ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "cao thế",
+    "ai": "Dạ, mức lãi này có thể khiến mình cân nhắc. Bên em đang giảm 0.5% lãi suất cho khách hàng có lương qua ngân hàng ạ. Anh có đang nhận lương qua ngân hàng không ạ?",
+    "duong": "answer_bank",
+    "ly_do": "exact_match",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "anh lương bảy triệu",
+    "ai": "Dạ em ghi nhận anh thu nhập 7 triệu đồng một tháng ạ. Anh có muốn em ghi nhận để chuyên viên hỗ trợ làm hồ sơ không ạ?",
+    "duong": "rule",
+    "ly_do": "ghi_nhan_thu_nhap",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thế giờ anh có vay được không",
+    "ai": "Dạ thu nhập 7 triệu đồng một tháng thì đạt mức thu nhập tối thiểu 5 triệu đồng của bên em ạ.",
+    "duong": "rule",
+    "ly_do": "thu_nhap_dat_muc",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "xh_chi_the",
+  "kieu": "hanh_dong",
+  "san_pham": "thẻ tín dụng",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "alo chị nghe",
+   "thẻ này phí thường niên bao nhiêu",
+   "đắt thế",
+   "chị chưa dùng thẻ nào",
+   "hạn mức được bao nhiêu",
+   "có ưu đãi gì không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "alo chị nghe",
+    "ai": "Dạ em chào chị ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình thẻ tín dụng ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thẻ này phí thường niên bao nhiêu",
+    "ai": "Dạ, thẻ Platinum có phí thường niên 800.000đ/năm ạ. Chị đang dùng thẻ tín dụng nào chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "đắt thế",
+    "ai": "Dạ em hiểu ạ. Bên em đang miễn phí thường niên năm đầu tiên ạ.",
+    "duong": "rule",
+    "ly_do": "che_phi",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "chị chưa dùng thẻ nào",
+    "ai": "Dạ vâng ạ. Thu nhập hàng tháng của chị khoảng bao nhiêu ạ?",
+    "duong": "rule",
+    "ly_do": "dap_hanh_dong",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "hạn mức được bao nhiêu",
+    "ai": "Dạ, hạn mức thẻ tín dụng từ 10 triệu đến 500 triệu đồng ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "có ưu đãi gì không",
+    "ai": "Dạ thẻ tín dụng hiện có ưu đãi miễn phí thường niên năm đầu cho tất cả loại thẻ, hoàn tiền 3% cho chi tiêu ăn uống, trả góp 0% lãi suất tại các đối tác và tích điểm đổi quà, vé máy bay ạ.",
+    "duong": "rule",
+    "ly_do": "uu_dai_hien_tai",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "xh_chu_tk",
+  "kieu": "hanh_dong",
+  "san_pham": "tiết kiệm",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "chú nghe",
+   "chú có hai trăm triệu muốn gửi",
+   "sáu tháng lãi bao nhiêu",
+   "thấp thế",
+   "chú quen ra quầy",
+   "rút trước hạn có được không"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "chú nghe",
+    "ai": "Dạ em chào chú ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình tiết kiệm ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "chú có hai trăm triệu muốn gửi",
+    "ai": "Dạ em ghi nhận chú dự định gửi khoảng 200 triệu đồng ạ. Chú muốn gửi kỳ hạn bao lâu ạ?",
+    "duong": "rule",
+    "ly_do": "ghi_nhan_tien_gui",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "sáu tháng lãi bao nhiêu",
+    "ai": "Dạ gửi tiết kiệm kỳ hạn 6 tháng lãi suất 4,5% một năm theo mức cơ sở trong tài liệu, chưa áp dụng cộng thêm online ạ. Chú đang gửi tiết kiệm ở đâu chưa ạ?",
+    "duong": "rule",
+    "ly_do": "lai_tiet_kiem_theo_ky",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "thấp thế",
+    "ai": "Dạ em hiểu ạ. Gửi online thì lãi suất cộng thêm 0.2%/năm so với gửi tại quầy ạ. Chú quen giao dịch trên điện thoại hay ra quầy ạ?",
+    "duong": "rule",
+    "ly_do": "che_lai_thap",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "chú quen ra quầy",
+    "ai": "Dạ vâng ạ.",
+    "duong": "rule",
+    "ly_do": "dap_hanh_dong",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "rút trước hạn có được không",
+    "ai": "Dạ, nếu rút trước hạn, phần tiền rút được hưởng lãi suất không kỳ hạn 0.5%/năm, phần còn lại giữ nguyên lãi suất ban đầu ạ.",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   }
+  ]
+ },
+ {
+  "ma": "khong_ro_xung_ho",
+  "kieu": "hanh_dong",
+  "san_pham": "vay tín chấp",
+  "mo_ta": "xưng hô + hành động thẻ/tiết kiệm 13-10",
+  "luot": [
+   "alo",
+   "lãi bao nhiêu",
+   "vay được bao nhiêu"
+  ],
+  "mong_doi": [
+   "",
+   "",
+   ""
+  ],
+  "ket_qua": [
+   {
+    "khach": "alo",
+    "ai": "Dạ em chào anh chị ạ. Em là Lan bên Ngân hàng Quân đội, em gọi để giới thiệu chương trình vay tín chấp ưu đãi ạ.",
+    "duong": "rule",
+    "ly_do": "chao_bat_may",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "lãi bao nhiêu",
+    "ai": "Dạ, mức lãi suất vay tín chấp cá nhân của chúng em từ 7.9%/năm ạ. Anh chị đã từng vay tín chấp bao giờ chưa ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   },
+   {
+    "khach": "vay được bao nhiêu",
+    "ai": "Dạ, hạn mức vay lên đến 500 triệu đồng ạ. Anh chị đang cần khoảng bao nhiêu ạ?",
+    "duong": "answer_bank",
+    "ly_do": "ai_selected",
+    "ttfa_ms": null
+   }
+  ]
+ }
+]

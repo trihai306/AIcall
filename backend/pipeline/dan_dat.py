@@ -145,6 +145,9 @@ def cau_hoi_tiep(*, ma_san_pham: str, trang_thai, loi_khach_ca_cuoc: str,
         # đang chê, im lặng trước lời chê mới là thứ nghe như máy.
         if len((cau_tra_loi or "").split()) + len(hd[2].split()) <= TOI_DA_TU_TRAN_AN:
             return hd[1], hd[2]
+        # Cả lời trấn an thì quá dài (câu gốc của tài liệu đã dài): chỉ hỏi.
+        if hd[3] and len((cau_tra_loi or "").split()) + len(hd[3].split()) <= TOI_DA_TU_TRAN_AN:
+            return hd[1], hd[3]
     # Lượt TRƯỚC vừa hỏi một ý mà khách chưa trả lời (họ hỏi lại chuyện khác):
     # lượt này không hỏi dồn sang ý kế tiếp. Bản đầu hỏi "vay bao nhiêu", khách
     # nói "vay tiêu dùng ấy", AI hỏi luôn "vay trong bao lâu" - nghe như máy
