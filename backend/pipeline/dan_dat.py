@@ -52,7 +52,7 @@ KHONG_HOI_SAU = frozenset({
     "tu_choi", "dang_ban", "hen_lai", "sao_co_so", "sao_biet_ten", "ai_day",
     "danh_tinh_tu_dong", "danh_tinh_va_nguon",
     "chao_hoi", "chao_bat_may", "nghe_ro_khong", "moi_noi_tiep",
-    "xin_gui_qua_kenh", "lam_qua_dien_thoai", "noi_cham_lai", "don_vi_lai", "gat_dau_hoi_lai", "hen_ra_quay", "dong_y_ghi_nhan",
+    "xin_gui_qua_kenh", "lam_qua_dien_thoai", "noi_cham_lai", "don_vi_lai", "gat_dau_hoi_lai", "hen_ra_quay", "dong_y_ghi_nhan", "bi_goi_nhieu",
 })
 
 # Khách đang khép cuộc gọi hoặc gạt đi - nhìn trên chính lời khách.

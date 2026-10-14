@@ -414,6 +414,14 @@ BANG = [
 
     # "ừ để mai cô ra": khách tự hẹn RA QUẦY. Kho từng đáp "em xin ghi nhận để bên
     # em liên hệ lại anh chị vào ngày mai" - ngược ý khách (khách đóng vai 12-10-2026).
+    # "lại ngân hàng à dạo này gọi suốt": khách phàn nàn bị gọi nhiều. Kho từng
+    # đáp "em xin lỗi vì anh chị không nhận ra số" rồi hỏi luôn số tiền vay.
+    ("bi_goi_nhieu",
+     [r"\bgoi (suot|hoai|mai|lien tuc|nhieu the|nhieu vay|nhieu qua|lam the|suot ngay)\b",
+      r"\b(lai|toan) (ngan hang|tiep thi|moi vay)\b.{0,20}\b(a|ha|nua)\b"],
+     "Dạ em xin lỗi vì đã làm phiền anh chị ạ. Em xin phép nói nhanh một phút thôi, "
+     "anh chị thấy không phù hợp thì em dừng ngay ạ."),
+
     ("hen_ra_quay",
      [r"\b(mai|mot|hom nao|hom sau|tuan sau|cuoi tuan|chieu nay|sang mai|luc nao ranh|khi nao ranh|de)\b"
       r".{0,24}\b(ra|den|qua|ghe|chay ra|tat qua)\b( (quay|chi nhanh|ngan hang|phong giao dich|do|ben do|ben em))?"

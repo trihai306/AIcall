@@ -2667,6 +2667,7 @@ _CHU_DE_HEP = (
     # "đến hạn anh không ra rút thì sao": tài liệu không nói gì về tái tục hay xử
     # lý khi đáo hạn. Kho từng đáp bằng câu RÚT TRƯỚC HẠN (khách đóng vai 12-10-2026).
     ("xử lý khi đến hạn", ("den han", "dao han", "tai tuc", "het ky han", "het han")),
+    ("dùng thẻ ở nước ngoài", ("nuoc ngoai", "quoc te", "ngoai te")),
     ("thời gian mở thẻ", ("mo the mat bao lau", "lam the mat bao lau", "bao lau thi co the",
                           "may ngay thi co the", "bao lau co the")),
 )
@@ -3099,13 +3100,16 @@ def tra_loi(text: str, tai_lieu: str, ho_so: dict | None = None,
             # gọn ("nhà chị định mua là ba tỷ thì vay được bao nhiêu"): tính theo
             # đúng giá đó nếu đọc được.
             kq = _ghi_nhan_gia_nha(text, _phan_san_pham(tai_lieu)) or kq
+        kq = _han_muc_the_theo_thu_nhap(text, tai_lieu, kq) or kq
         return (_tra_loi_hoi_gop(text, tai_lieu, kq) or kq or _tra_loi_moi_tu_van(text, tai_lieu)
                 or _tra_loi_tiet_kiem_ngan(text, tai_lieu)
                 or _tra_loi_noi_nop_ho_so(text, tai_lieu)
                 or _tra_loi_lai_co_dinh_hay_tha_noi(text, tai_lieu)
                 or _tra_loi_vay_duoc_khong_theo_thu_nhap(text, tai_lieu, history)
                 or _tra_loi_tinh_lai_ky_han_moi(text, tai_lieu, history)
-                or _tra_loi_gia_nha_va_von(text, tai_lieu))
+                or _tra_loi_gia_nha_va_von(text, tai_lieu)
+                or _tra_loi_linh_lai_tiet_kiem(text, tai_lieu)
+                or _tra_loi_nghia_loai_lai(text, tai_lieu))
 
 
 _CHU_QUANH_SO_TIEN = frozenset(
@@ -3113,6 +3117,74 @@ _CHU_QUANH_SO_TIEN = frozenset(
     # "chú có hai trăm triệu muốn gửi", "chị đang có năm chục định gửi tiết kiệm":
     # khách KỂ số tiền của mình. Kho từng đáp "gửi được tối thiểu 1 triệu đồng ạ".
     "chu muon dinh can dang tiet kiem san roi day".split())
+
+
+def _han_muc_the_theo_thu_nhap(text: str, tai_lieu: str, kq) -> tuple[str, str] | None:
+    """"chị lương mười tám triệu thì hạn mức được bao nhiêu": đáp cả hai vế.
+
+    Tài liệu không có bảng quy thu nhập ra hạn mức nên KHÔNG phán con số; chỉ đối
+    chiếu thu nhập tối thiểu rồi nêu khoảng hạn mức, mức cụ thể do thẩm định.
+    """
+    if not kq or kq[0] != "han_muc_the":
+        return None
+    thu_nhap = resolve(text=text).income.value
+    sp_doc = _phan_san_pham(tai_lieu)
+    toi_thieu, chung = _thu_nhap_toi_thieu(sp_doc), _gia_tri_dong(sp_doc, "hạn mức")
+    if not thu_nhap or not toi_thieu or not chung or float(thu_nhap) < toi_thieu:
+        return None
+    return "han_muc_the_theo_thu_nhap", (
+        f"Dạ thu nhập {_fmt_trieu(float(thu_nhap))} thì đạt mức tối thiểu {_fmt_trieu(toi_thieu)} ạ. "
+        f"Hạn mức thẻ từ {chung.replace(' - ', ' đến ')} tuỳ hạng thẻ, mức cụ thể sẽ theo thẩm định hồ sơ ạ.")
+
+
+def _tra_loi_linh_lai_tiet_kiem(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """"mỗi tháng lĩnh lãi được không": đọc dòng "Nhận lãi" của tài liệu.
+
+    Kho từng đáp "chọn hình thức gửi TẠI QUẦY và ký chọn nhận lãi hàng tháng" -
+    câu soạn cho một câu hỏi khác, tài liệu không buộc phải gửi tại quầy.
+    """
+    if _ma_san_pham(tai_lieu) != "tiet_kiem":
+        return None
+    t = _bo_dau(text)
+    if not re.search(r"\b(linh|nhan|lay|tra|rut) lai\b|\blai\b.{0,12}\b(linh|nhan|lay|tra)\b", t) \
+            or not re.search(r"\b(hang thang|moi thang|tung thang|cuoi ky|khi nao|luc nao|the nao)\b", t):
+        return None
+    dong = next((d.split(":", 1)[1].strip() for d in _phan_san_pham(tai_lieu).splitlines()
+                 if _bo_dau(d).strip(" -").startswith("nhan lai") and ":" in d), "")
+    if not dong:
+        return None
+    if re.search(r"\b(hang thang|moi thang|tung thang)\b", t) and "hang thang" in _bo_dau(dong):
+        return "linh_lai_tiet_kiem", "Dạ được ạ, mình có thể chọn nhận lãi hàng tháng hoặc nhận cuối kỳ ạ."
+    return "linh_lai_tiet_kiem", f"Dạ bên em trả lãi {dong.rstrip('.')} ạ."
+
+
+_TEP_KIEN_THUC_CHUNG = "knowledge/faq/kien_thuc_ngan_hang_chung.md"
+
+
+def _tra_loi_nghia_loai_lai(text: str, tai_lieu: str) -> tuple[str, str] | None:
+    """"lãi thả nổi là sao": giải thích NGHĨA bằng câu của tài liệu kiến thức chung.
+
+    Đóng vai 13-10-2026: kho chỉ đọc lại mức 8-10%/năm, không nói thả nổi là gì.
+    """
+    t = _bo_dau(text)
+    m = re.search(r"\b(tha noi|co dinh)\b.{0,12}\b(la sao|la gi|nghia la|la the nao|la nhu nao)\b", t)
+    if not m:
+        return None
+    from pathlib import Path
+    try:
+        chu = (Path(__file__).resolve().parents[2] / _TEP_KIEN_THUC_CHUNG).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    cau = next((c.strip() for c in re.split(r"(?<=[.])\s+|\n+", chu)
+                if _bo_dau(c).startswith(f"lai suat {m.group(1)} la")), "")
+    if not cau:
+        return None
+    them = next((d.strip(" -").rstrip(".") for d in _phan_san_pham(tai_lieu).splitlines()
+                 if m.group(1) in _bo_dau(d) and re.search(r"\d", d)), "")
+    ra = "Dạ " + cau[:1].lower() + cau.rstrip(".")[1:] + " ạ."
+    if them:
+        ra += f" Với gói này thì {them[:1].lower()}{them[1:]} ạ."
+    return "nghia_loai_lai", ra
 
 
 def _tra_loi_tinh_lai_ky_han_moi(text: str, tai_lieu: str,

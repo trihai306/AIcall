@@ -228,7 +228,7 @@ def test_khach_dong_vai_vong_sau():
     vay, nha, the, tk = (toan_van(x) for x in ("vay tín chấp", "vay mua nhà", "thẻ tín dụng", "tiết kiệm"))
     # "có được không" về chuyện khác không được đáp bằng thu nhập đã khai
     h = [{"role": "user", "content": "lương mười tám triệu"}, {"role": "assistant", "content": "Dạ vâng."}]
-    assert tra_loi("quẹt nước ngoài có được không", the, history=h) is None
+    assert tra_loi("quẹt nước ngoài có được không", the, history=h)[0] == "chua_co_thong_tin_chu_de"
     assert tra_loi("thế giờ anh có vay được không", vay, history=h)[0] == "thu_nhap_dat_muc"
     # đổi kỳ hạn ngay sau khi vừa tính: giữ số tiền, tính lại
     h2 = [{"role": "assistant", "content": "Dạ em tạm tính ạ. Nếu được duyệt 150 triệu đồng trong 2 năm "
@@ -250,6 +250,26 @@ def test_khach_dong_vai_vong_sau():
     assert dang_che("thế cũng cao phết") and dang_che("có thế thôi à ít nhỉ") and not dang_che("vay nhiều ạ")
     assert dap("bác không biết dùng điện thoại đâu",
                "Dạ. Anh chị quen giao dịch trên điện thoại hay ra quầy ạ?")[0] == "dap_kenh_quay"
-    assert tra_loi("sau hai năm lãi thả nổi là sao", nha) is None            # hỏi NGHĨA: để kho/FAQ giải thích
+    assert tra_loi("sau hai năm lãi thả nổi là sao", nha)[0] == "nghia_loai_lai"   # hỏi NGHĨA, không đọc lại mức lãi
     assert "thẩm định" not in tra_loi("bác bảy mươi hai tuổi rồi có gửi được không", tk)[1]
     assert "thẩm định" in tra_loi("anh năm mươi tuổi có vay được không", vay)[1]
+
+
+def test_cac_luot_tam_con_lai_cua_vong_sau():
+    from backend.pipeline.ngu_canh_tai_lieu import toan_van
+    vay, nha, the, tk = (toan_van(x) for x in ("vay tín chấp", "vay mua nhà", "thẻ tín dụng", "tiết kiệm"))
+    ma, dap = tra_loi("chị lương mười tám triệu thì hạn mức được bao nhiêu", the)
+    assert ma == "han_muc_the_theo_thu_nhap" and "18 triệu" in dap and "thẩm định" in dap
+    assert tra_loi("hạn mức được bao nhiêu", the)[0] == "han_muc_the"
+    ma, dap = tra_loi("quẹt nước ngoài có được không", the)
+    assert ma == "chua_co_thong_tin_chu_de" and "nước ngoài" in dap
+    ma, dap = tra_loi("thế mỗi tháng lĩnh lãi được không", tk)
+    assert ma == "linh_lai_tiet_kiem" and "hàng tháng" in dap and "quầy" not in dap
+    assert tra_loi("gửi một năm thì lãi bao nhiêu", tk)[0] == "lai_tiet_kiem_theo_ky"
+    ma, dap = tra_loi("sau hai năm lãi thả nổi là sao", nha)
+    assert ma == "nghia_loai_lai" and "điều chỉnh định kỳ" in dap and "8-10%" in dap
+    ma, dap = tra_loi("lãi cố định là gì", vay)
+    assert ma == "nghia_loai_lai" and "giữ nguyên" in dap and "Với gói này" not in dap
+    assert tra_loi("lãi cố định hay thả nổi", nha)[0] == "lai_co_dinh_hay_tha_noi"
+    assert nhan_dang("lại ngân hàng à dạo này gọi suốt") == "bi_goi_nhieu"
+    assert nhan_dang("mai em gọi lại nhé") != "bi_goi_nhieu" and nhan_dang("ngân hàng nào đấy") != "bi_goi_nhieu"
