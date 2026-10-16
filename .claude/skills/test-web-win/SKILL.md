@@ -19,6 +19,22 @@ Hai máy **không cùng LAN**, chỉ đi qua Tailscale (`ssh win` → `100.117.1
 
 Ý nghĩa thực tế: đây là nơi duy nhất kiểm chứng được hành vi thật của STT/TTS/LLM. Kết quả đo trên Mac không nói lên điều gì về độ trễ hay chất lượng.
 
+## Chạy từ phiên đám mây (Claude Code trên web)
+
+Phiên đám mây không có Tailscale sẵn. Nếu môi trường đã được cấu hình (biến
+`TS_AUTHKEY`, `WIN_SSH_USER`, `WIN_SSH_KEY_B64`) thì hook khởi động tự nối, và
+`ssh win` dùng được y như trên Mac. Chưa nối thì chạy tay:
+
+```bash
+scripts/cloud_noi_win.sh          # nối + kiểm ssh win
+scripts/cloud_noi_win.sh tunnel   # thêm: mở cổng 8100 về localhost
+```
+
+Khác Mac: repo ở phiên đám mây là bản git nên đẩy code bằng `scp`/tar như
+Bước 1 vẫn đúng, nhưng đường dẫn nguồn là thư mục repo của phiên (không phải
+`/Users/hainc/...`). Mã thoát của script: 3 thiếu cấu hình, 4 không vào được
+tailnet, 5 `ssh win` lỗi (thường là máy Windows đang ngủ).
+
 ## Bước 0 — Preflight (luôn làm trước)
 
 Một lệnh duy nhất trả lời cả ba câu hỏi: tunnel có chưa, backend sống không, và **đang nói chuyện với đúng máy Windows hay không**.
